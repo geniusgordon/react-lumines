@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-import Block from './Block';
-import { dimensions } from '../constants';
 
 const createColumn = (filter, BlockComponent) =>
 class Column extends Component {

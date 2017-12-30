@@ -12,6 +12,7 @@ export const dimensions = {
   SQUARE_STROKE_WIDTH: 0.1,
   SQUARE_STROKE_WIDTH_MATCHED: 0.5,
   GRID_STROKE_WIDTH: 0.1,
+  SCAN_LINE_WIDTH: SQUARE_SIZE * 2,
 };
 
 export const colors = {

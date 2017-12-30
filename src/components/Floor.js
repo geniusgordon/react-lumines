@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import Block from './Block';
 import MatchedBlock from './MatchedBlock';
 import createColumn from './Column';
-import { dimensions } from '../constants';
 
 const BlockColumn = createColumn(
   blocks => blocks.filter(block => !block.matched && !block.scanned),

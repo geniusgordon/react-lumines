@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Floor from './Floor';
 import Grid from './Grid';
 import Group from './Group';
+import ScanLine from './ScanLine';
 import { dimensions } from '../constants';
 
 const grid = [
@@ -35,6 +36,7 @@ class Game extends Component {
         <Group x={dimensions.PADDING}>
           <Grid />
           <Floor grid={grid} />
+          <ScanLine />
         </Group>
       </svg>
     );
