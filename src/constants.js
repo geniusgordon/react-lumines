@@ -24,3 +24,22 @@ export const colors = {
   SQUARE_SCANNED: '#757575',
   GRID_STROKE: '#616161',
 };
+
+export const speeds = {
+  SCAN_LINE_SLOW: 2 * SQUARE_SIZE,
+  SCAN_LINE_MEDIUM: 4 * SQUARE_SIZE,
+  SCAN_LINE_FAST: 10 * SQUARE_SIZE,
+  DROP_SLOW: 0.5 * SQUARE_SIZE,
+  DROP_FAST: 18 * SQUARE_SIZE,
+};
+
+export const keys = {
+  KEY_Z: 90,
+  KEY_X: 88,
+  KEY_UP: 38,
+  KEY_DOWN: 40,
+  KEY_LEFT: 37,
+  KEY_RIGHT: 39,
+  KEY_ESC: 27,
+  KEY_SPACE: 32,
+};

@@ -4,17 +4,17 @@ import MatchedBlock from './MatchedBlock';
 import createColumn from './Column';
 
 const BlockColumn = createColumn(
-  blocks => blocks.filter(block => !block.matched && !block.scanned),
+  blocks => blocks.filter(block => block && !block.matched && !block.scanned),
   Block,
 );
 
 const MatchedColumn = createColumn(
-  blocks => blocks.filter(block => block.matched),
+  blocks => blocks.filter(block => block && block.matched),
   MatchedBlock,
 );
 
 const ScannedColumn = createColumn(
-  blocks => blocks.filter(block => block.scanned),
+  blocks => blocks.filter(block => block && block.scanned),
   Block,
 );
 

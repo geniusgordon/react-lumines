@@ -13,7 +13,11 @@ const getBlockY = i => Math.floor(i / 2) * dimensions.SQUARE_SIZE;
 
 class Piece extends Component {
   render() {
-    const { x, y, blocks } = this.props;
+    const { x, blocks, dropped } = this.props;
+    const y = dropped
+      ? this.props.y
+      : Math.floor(this.props.y / dimensions.SQUARE_SIZE) *
+        dimensions.SQUARE_SIZE;
     return (
       <g>
         {blocks.map((color, i) => (

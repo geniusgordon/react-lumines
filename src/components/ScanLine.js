@@ -19,7 +19,7 @@ class ScanLine extends Component {
           </linearGradient>
         </defs>
         <rect
-          x={30}
+          x={this.props.x - dimensions.SCAN_LINE_WIDTH}
           y={2 * dimensions.SQUARE_SIZE}
           width={dimensions.SCAN_LINE_WIDTH}
           height={dimensions.GRID_HEIGHT - 2 * dimensions.SQUARE_SIZE}
