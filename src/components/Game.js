@@ -3,6 +3,7 @@ import Floor from './Floor';
 import Grid from './Grid';
 import Group from './Group';
 import ScanLine from './ScanLine';
+import Queue from './Queue';
 import { dimensions } from '../constants';
 
 const grid = [
@@ -25,15 +26,21 @@ const grid = [
   [{ color: 0, x: 70, y: 100 }, { color: 0, x: 70, y: 110 }],
 ];
 
+const queue = [[0, 1, 1, 0], [1, 1, 0, 0], [0, 0, 0, 1]];
+
 class Game extends Component {
   render() {
+    const PADDING = dimensions.SQUARE_SIZE / 2;
+    const QUEUE_WIDTH = dimensions.SQUARE_SIZE * 2;
     const width =
-      dimensions.PADDING + dimensions.GRID_WIDTH + dimensions.PADDING;
-    const height =
-      dimensions.PADDING + dimensions.GRID_HEIGHT + dimensions.PADDING;
+      PADDING + QUEUE_WIDTH + PADDING + dimensions.GRID_WIDTH + PADDING;
+    const height = PADDING + dimensions.GRID_HEIGHT + PADDING;
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
-        <Group x={dimensions.PADDING}>
+        <Group x={PADDING} y={dimensions.SQUARE_SIZE * 2}>
+          <Queue queue={queue} />
+        </Group>
+        <Group x={PADDING + QUEUE_WIDTH + PADDING}>
           <Grid />
           <Floor grid={grid} />
           <ScanLine />

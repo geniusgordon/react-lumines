@@ -3,7 +3,6 @@ const GRID_COLUMNS = 16;
 const GRID_ROWS = 12;
 
 export const dimensions = {
-  PADDING: SQUARE_SIZE / 2,
   SQUARE_SIZE,
   GRID_COLUMNS,
   GRID_ROWS,
