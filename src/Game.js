@@ -1,13 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import Floor from './components/Floor';
-import Grid from './components/Grid';
-import Group from './components/Group';
-import Piece from './components/Piece';
-import ScanLine from './components/ScanLine';
-import Queue from './components/Queue';
-import { update, rotate, move, drop } from './actions';
-import { dimensions, keys } from './constants';
+import Interface from './components/Interface';
+import { loop, rotate, move, drop, lock } from './actions';
+import { keys } from './constants';
+import { willLock } from './utils';
 
 class Game extends Component {
   componentDidMount() {
@@ -16,17 +12,23 @@ class Game extends Component {
   start = () => {
     window.addEventListener('keydown', this.handleKeyDown);
     this.time = performance.now();
-    const tick = now => {
-      const elapsed = (now - this.time) / 1000;
-      this.time = now;
-      this.props.dispatch(update(elapsed));
-      this.requestId = requestAnimationFrame(tick);
-    };
-    this.requestId = requestAnimationFrame(tick);
+    this.requestId = requestAnimationFrame(this.loop);
   };
   stop = () => {
     window.removeEventListener('keydown', this.handleKeyDown);
     cancelAnimationFrame(this.requestId);
+  };
+  loop = now => {
+    const elapsed = (now - this.time) / 1000;
+    this.time = now;
+
+    const { current, grid, dispatch } = this.props;
+    if (willLock(current, grid, elapsed)) {
+      dispatch(lock());
+    }
+
+    dispatch(loop(elapsed));
+    this.requestId = requestAnimationFrame(this.loop);
   };
   handleKeyDown = e => {
     const { dispatch } = this.props;
@@ -53,28 +55,14 @@ class Game extends Component {
     }
   };
   render() {
-    const PADDING = dimensions.SQUARE_SIZE / 2;
-    const QUEUE_WIDTH = dimensions.SQUARE_SIZE * 2;
-    const width =
-      PADDING + QUEUE_WIDTH + PADDING + dimensions.GRID_WIDTH + PADDING;
-    const height = PADDING + dimensions.GRID_HEIGHT + PADDING;
-    const { queue, grid, current } = this.props;
+    const { queue, grid, current, scanLine } = this.props;
     return (
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
-        <Group x={PADDING} y={dimensions.SQUARE_SIZE * 2}>
-          <Queue queue={queue} />
-        </Group>
-        <Group x={PADDING + QUEUE_WIDTH + PADDING}>
-          <Grid />
-          <Floor grid={grid} />
-          <Piece
-            x={current.x}
-            y={current.y}
-            blocks={current.blocks}
-            dropped={current.dropped}
-          />
-        </Group>
-      </svg>
+      <Interface
+        queue={queue}
+        grid={grid}
+        current={current}
+        scanLine={scanLine}
+      />
     );
   }
 }

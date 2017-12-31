@@ -7,7 +7,7 @@ class Queue extends Component {
     return (
       <g>
         {this.props.queue.map((blocks, i) => (
-          <Piece key={i} blocks={blocks} x={0} y={i * dimensions.SQUARE_SIZE * 2.5} />
+          <Piece key={i} blocks={blocks} x={0} y={i * dimensions.SQUARE_SIZE * 3} />
         ))}
       </g>
     );
