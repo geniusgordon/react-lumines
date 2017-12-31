@@ -25,7 +25,10 @@ class Interface extends Component {
           <Floor grid={grid} />
           <Piece
             x={current.x}
-            y={current.y}
+            y={Math.min(
+              current.y,
+              dimensions.GRID_HEIGHT - dimensions.SQUARE_SIZE * 2,
+            )}
             blocks={current.blocks}
             dropped={current.dropped}
           />

@@ -4,6 +4,7 @@ import {
   generateRandomPiece,
   nextScanLineX,
   nextCurrentY,
+  lockCurrent,
 } from '../utils';
 import { dimensions, speeds } from '../constants';
 
@@ -35,10 +36,7 @@ const reducer = (state = initialState, action) => {
         },
         current: {
           ...state.current,
-          y: Math.min(
-            nextCurrentY(state.current, action.elapsed),
-            dimensions.GRID_HEIGHT - dimensions.SQUARE_SIZE * 2,
-          ),
+          y: nextCurrentY(state.current, action.elapsed),
         },
       };
     case LOCK:
@@ -50,6 +48,7 @@ const reducer = (state = initialState, action) => {
           blocks: state.queue[0],
           dropped: false,
         },
+        grid: lockCurrent(state.current, state.grid),
         queue: [state.queue[1], state.queue[2], action.next],
       };
     default:

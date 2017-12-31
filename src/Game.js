@@ -11,7 +11,6 @@ class Game extends Component {
   }
   start = () => {
     window.addEventListener('keydown', this.handleKeyDown);
-    this.time = performance.now();
     this.requestId = requestAnimationFrame(this.loop);
   };
   stop = () => {
@@ -19,6 +18,9 @@ class Game extends Component {
     cancelAnimationFrame(this.requestId);
   };
   loop = now => {
+    if (!this.time) {
+      this.time = now;
+    }
     const elapsed = (now - this.time) / 1000;
     this.time = now;
 
