@@ -13,14 +13,15 @@ export const yToRow = y => Math.floor(y / dimensions.SQUARE_SIZE);
 export const colToX = col => col * dimensions.SQUARE_SIZE;
 export const rowToY = row => row * dimensions.SQUARE_SIZE;
 
-export const normalizeX = x => colToX(xToCol(x));
-export const normalizeY = y => rowToY(yToRow(y));
-
 export const nextScanLineX = (scanLine, elapsed) =>
   (scanLine.x + elapsed * scanLine.speed) % dimensions.GRID_WIDTH;
 
 export const nextCurrentY = (current, elapsed) =>
-  current.y + elapsed * (current.dropped ? speeds.DROP_FAST : speeds.DROP_SLOW);
+  current.y +
+  Math.min(
+    elapsed * (current.dropped ? speeds.DROP_FAST : speeds.DROP_SLOW),
+    dimensions.SQUARE_SIZE,
+  );
 
 const willEnterNextRow = (current, elapsed) =>
   yToRow(current.y) !== yToRow(nextCurrentY(current, elapsed));
@@ -31,14 +32,22 @@ const willCollide = (current, grid) => {
   return grid[col][row + 2] !== null || grid[col + 1][row + 2] !== null;
 };
 
-export const willLock = (current, grid, elapsed) =>
-  willEnterNextRow(current, elapsed) && willCollide(current, grid);
+export const willLock = (current, grid, elapsed) => {
+  if (current.dropped) {
+    const next = {
+      x: current.x,
+      y: nextCurrentY(current, elapsed),
+    };
+    return willCollide(next, grid);
+  }
+  return willEnterNextRow(current, elapsed) && willCollide(current, grid);
+};
 
 export const lockCurrent = (current, grid) => {
   const col = xToCol(current.x);
-  const row = yToRow(current.y);
-  const x = normalizeX(current.x);
-  const y = normalizeY(current.y);
+  const row = yToRow(current.y) + (current.dropped ? 1 : 0);
+  const x = colToX(col);
+  const y = rowToY(row);
   return [
     ...grid.slice(0, col),
     [
