@@ -45,7 +45,7 @@ export const willLock = (current, grid, elapsed) => {
 
 export const lockCurrent = (current, grid) => {
   const col = xToCol(current.x);
-  const row = yToRow(current.y) + (current.dropped ? 1 : 0);
+  const row = yToRow(current.y) + (willCollide(current, grid) ? 0 : 1);
   const x = colToX(col);
   const y = rowToY(row);
   return [

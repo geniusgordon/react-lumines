@@ -30,7 +30,7 @@ export const speeds = {
   SCAN_LINE_MEDIUM: 4 * SQUARE_SIZE,
   SCAN_LINE_FAST: 10 * SQUARE_SIZE,
   DROP_SLOW: 0.5 * SQUARE_SIZE,
-  DROP_FAST: 18 * SQUARE_SIZE,
+  DROP_FAST: 25 * SQUARE_SIZE,
 };
 
 export const keys = {
