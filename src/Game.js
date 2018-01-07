@@ -50,7 +50,7 @@ class Game extends Component {
     }
   };
   render() {
-    const { queue, grid, current, scanLine, detached } = this.props;
+    const { queue, grid, current, scanLine, detached, matched } = this.props;
     return (
       <Interface
         queue={queue}
@@ -58,6 +58,7 @@ class Game extends Component {
         current={current}
         scanLine={scanLine}
         detached={detached}
+        matched={matched}
       />
     );
   }

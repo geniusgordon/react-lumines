@@ -1,31 +1,29 @@
 import React, { Component } from 'react';
 import Block from './Block';
 import MatchedBlock from './MatchedBlock';
-import createColumn from './Column';
-
-const BlockColumn = createColumn(
-  blocks => blocks.filter(block => block && !block.matched && !block.scanned),
-  Block,
-);
-
-const MatchedColumn = createColumn(
-  blocks => blocks.filter(block => block && block.matched),
-  MatchedBlock,
-);
-
-const ScannedColumn = createColumn(
-  blocks => blocks.filter(block => block && block.scanned),
-  Block,
-);
 
 class Floor extends Component {
   render() {
-    const { grid } = this.props;
+    const { grid, matched } = this.props;
     return (
       <g>
-        {grid.map((blocks, i) => <BlockColumn key={i} blocks={blocks} />)}
-        {grid.map((blocks, i) => <MatchedColumn key={i} blocks={blocks} />)}
-        {grid.map((blocks, i) => <ScannedColumn key={i} blocks={blocks} />)}
+        <g>
+        {grid.map((blocks, i) => (
+          <g key={i}>
+            {blocks.map(
+              (block, j) =>
+                block ? (
+                  <Block key={j} color={block.color} x={block.x} y={block.y} />
+                ) : null,
+            )}
+          </g>
+        ))}
+        </g>
+        <g>
+        {matched.map((block, i) => (
+          <MatchedBlock key={i} color={block.color} x={block.x} y={block.y} />
+        ))}
+        </g>
       </g>
     );
   }

@@ -4,7 +4,7 @@ export const range = n => [...new Array(n)].map((_, i) => i);
 
 export const generateRandomPiece = () => {
   const n = Math.floor(Math.random() * 16);
-  return [n & 8, n & 4, n & 2, n & 1];
+  return [!!(n & 8), !!(n & 4), !!(n & 2), !!(n & 1)];
 };
 
 export const xToCol = x => Math.floor(x / dimensions.SQUARE_SIZE);

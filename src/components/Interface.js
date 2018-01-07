@@ -15,7 +15,7 @@ class Interface extends Component {
     const width =
       PADDING + QUEUE_WIDTH + PADDING + dimensions.GRID_WIDTH + PADDING;
     const height = PADDING + dimensions.GRID_HEIGHT + PADDING;
-    const { queue, grid, current, scanLine, detached } = this.props;
+    const { queue, grid, current, scanLine, detached, matched } = this.props;
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
         <Group x={PADDING} y={dimensions.SQUARE_SIZE * 2}>
@@ -23,7 +23,7 @@ class Interface extends Component {
         </Group>
         <Group x={PADDING + QUEUE_WIDTH + PADDING}>
           <Grid />
-          <Floor grid={grid} />
+          <Floor grid={grid} matched={matched} />
           <Piece
             x={current.x}
             y={Math.min(
