@@ -1,5 +1,5 @@
 import { ROTATE, MOVE, DROP } from '../actions';
-import { dimensions } from '../constants';
+import { dimensions, speeds } from '../constants';
 
 const moveCurrentX = (current, direction) =>
   Math.max(
@@ -37,6 +37,7 @@ const reducer = (state, action) => {
         current: {
           ...state.current,
           dropped: true,
+          speed: speeds.DROP_FAST,
         },
       };
     default:

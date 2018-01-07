@@ -1,10 +1,11 @@
-import { LOOP, LOCK } from '../actions';
+import { LOOP, NEXT, DECOMPOSE, UPDATE_DETACHED } from '../actions';
 import {
   range,
   generateRandomPiece,
   nextScanLineX,
-  nextCurrentY,
-  lockCurrent,
+  nextBlockY,
+  addToGrid,
+  decomposePiece,
 } from '../utils';
 import { dimensions, speeds } from '../constants';
 
@@ -22,7 +23,9 @@ const initialState = {
     y: 0,
     blocks: generateRandomPiece(),
     dropped: false,
+    speed: speeds.DROP_SLOW,
   },
+  detached: [],
 };
 
 const reducer = (state = initialState, action) => {
@@ -36,10 +39,14 @@ const reducer = (state = initialState, action) => {
         },
         current: {
           ...state.current,
-          y: nextCurrentY(state.current, action.elapsed),
+          y: nextBlockY(state.current, action.elapsed),
         },
+        detached: state.detached.map(block => ({
+          ...block,
+          y: nextBlockY(block, action.elapsed),
+        })),
       };
-    case LOCK:
+    case NEXT:
       return {
         ...state,
         current: {
@@ -47,10 +54,26 @@ const reducer = (state = initialState, action) => {
           y: 0,
           blocks: state.queue[0],
           dropped: false,
+          speed: speeds.DROP_SLOW,
         },
-        grid: lockCurrent(state.current, state.grid),
-        queue: [state.queue[1], state.queue[2], action.next],
+        queue: [state.queue[1], state.queue[2], action.colors],
       };
+    case DECOMPOSE:
+      const { decomposed, locked } = decomposePiece(action.blocks, state.grid);
+      const grid = locked.reduce((g, b) => addToGrid(b, g), state.grid);
+      return {
+        ...state,
+        grid,
+        detached: [
+          ...state.detached,
+          ...decomposed.map(block => ({
+            ...block,
+            speed: speeds.DROP_DETACHED,
+          })),
+        ],
+      };
+    case UPDATE_DETACHED:
+      return { ...state, grid: action.grid, detached: action.detached };
     default:
       return state;
   }

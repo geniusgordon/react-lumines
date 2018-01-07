@@ -1,9 +1,23 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import Interface from './components/Interface';
-import { loop, rotate, move, drop, lock } from './actions';
+import {
+  loop,
+  rotate,
+  move,
+  drop,
+  next,
+  decompose,
+  updateDetached,
+} from './actions';
 import { keys } from './constants';
-import { willLock } from './utils';
+import {
+  nextBlockY,
+  isFreeBelow,
+  addToGrid,
+  willCollide,
+  willEnterNextRow,
+} from './utils';
 
 class Game extends Component {
   componentDidMount() {
@@ -24,13 +38,39 @@ class Game extends Component {
     const elapsed = (now - this.time) / 1000;
     this.time = now;
 
-    const { current, grid, dispatch } = this.props;
-    if (willLock(current, grid, elapsed)) {
-      dispatch(lock());
-    }
+    this.checkCurrent(elapsed);
+    this.checkDetached(elapsed);
 
-    dispatch(loop(elapsed));
+    this.props.dispatch(loop(elapsed));
     this.requestId = requestAnimationFrame(this.loop);
+  };
+  checkCurrent = elapsed => {
+    const { current, grid, dispatch } = this.props;
+    const nextY = { ...current, y: nextBlockY(current, elapsed) };
+    if (current.dropped && willCollide(nextY, grid)) {
+      dispatch(decompose(nextY));
+      dispatch(next());
+    } else if (
+      willEnterNextRow(current, elapsed) &&
+      willCollide(current, grid)
+    ) {
+      dispatch(decompose(current));
+      dispatch(next());
+    }
+  };
+  checkDetached = elapsed => {
+    const { detached, dispatch } = this.props;
+    let grid = this.props.grid;
+    const newDetached = [];
+    for (let i = 0; i < detached.length; i++) {
+      const nextY = { ...detached[i], y: nextBlockY(detached[i], elapsed) };
+      if (isFreeBelow(nextY, grid)) {
+        newDetached.push(nextY);
+      } else {
+        grid = addToGrid(nextY, grid);
+      }
+    }
+    dispatch(updateDetached(grid, newDetached));
   };
   handleKeyDown = e => {
     const { dispatch } = this.props;
@@ -57,13 +97,14 @@ class Game extends Component {
     }
   };
   render() {
-    const { queue, grid, current, scanLine } = this.props;
+    const { queue, grid, current, scanLine, detached } = this.props;
     return (
       <Interface
         queue={queue}
         grid={grid}
         current={current}
         scanLine={scanLine}
+        detached={detached}
       />
     );
   }

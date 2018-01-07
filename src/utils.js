@@ -1,4 +1,4 @@
-import { dimensions, speeds } from './constants';
+import { dimensions } from './constants';
 
 export const range = n => [...new Array(n)].map((_, i) => i);
 
@@ -13,67 +13,64 @@ export const yToRow = y => Math.floor(y / dimensions.SQUARE_SIZE);
 export const colToX = col => col * dimensions.SQUARE_SIZE;
 export const rowToY = row => row * dimensions.SQUARE_SIZE;
 
+export const normalize = x => colToX(xToCol(x));
+
 export const nextScanLineX = (scanLine, elapsed) =>
   (scanLine.x + elapsed * scanLine.speed) % dimensions.GRID_WIDTH;
 
-export const nextCurrentY = (current, elapsed) =>
-  current.y +
-  Math.min(
-    elapsed * (current.dropped ? speeds.DROP_FAST : speeds.DROP_SLOW),
-    dimensions.SQUARE_SIZE,
+export const nextBlockY = (block, elapsed) =>
+  block.y + Math.min(elapsed * block.speed, dimensions.SQUARE_SIZE);
+
+export const willEnterNextRow = (block, elapsed) =>
+  yToRow(block.y) !== yToRow(nextBlockY(block, elapsed));
+
+export const isFreeBelow = (block, grid) => {
+  const col = xToCol(block.x);
+  const row = yToRow(block.y);
+  return grid[col][row + 1] === null;
+};
+
+export const willCollide = (piece, grid) => {
+  const col = xToCol(piece.x);
+  const row = yToRow(piece.y);
+  return (
+    !isFreeBelow({ x: colToX(col), y: rowToY(row + 1) }, grid) ||
+    !isFreeBelow({ x: colToX(col + 1), y: rowToY(row + 1) }, grid)
   );
-
-const willEnterNextRow = (current, elapsed) =>
-  yToRow(current.y) !== yToRow(nextCurrentY(current, elapsed));
-
-const willCollide = (current, grid) => {
-  const col = xToCol(current.x);
-  const row = yToRow(current.y);
-  return grid[col][row + 2] !== null || grid[col + 1][row + 2] !== null;
 };
 
-export const willLock = (current, grid, elapsed) => {
-  if (current.dropped) {
-    const next = {
-      x: current.x,
-      y: nextCurrentY(current, elapsed),
-    };
-    return willCollide(next, grid);
-  }
-  return willEnterNextRow(current, elapsed) && willCollide(current, grid);
-};
-
-export const lockCurrent = (current, grid) => {
-  const col = xToCol(current.x);
-  const row = yToRow(current.y) + (willCollide(current, grid) ? 0 : 1);
-  const x = colToX(col);
-  const y = rowToY(row);
+export const addToGrid = (block, grid) => {
+  const col = xToCol(block.x);
+  const row = yToRow(block.y);
+  const x = normalize(block.x);
+  const y = normalize(block.y);
   return [
     ...grid.slice(0, col),
     [
       ...grid[col].slice(0, row),
-      { x, y, color: current.blocks[0] },
-      {
-        x,
-        y: y + dimensions.SQUARE_SIZE,
-        color: current.blocks[3],
-      },
-      ...grid[col].slice(row + 2),
+      { x, y, color: block.color },
+      ...grid[col].slice(row + 1),
     ],
-    [
-      ...grid[col + 1].slice(0, row),
-      {
-        x: x + dimensions.SQUARE_SIZE,
-        y,
-        color: current.blocks[1],
-      },
-      {
-        x: x + dimensions.SQUARE_SIZE,
-        y: y + dimensions.SQUARE_SIZE,
-        color: current.blocks[2],
-      },
-      ...grid[col + 1].slice(row + 2),
-    ],
-    ...grid.slice(col + 2),
+    ...grid.slice(col + 1),
   ];
+};
+
+export const decomposePiece = (blocks, grid) => {
+  const left = isFreeBelow(blocks[3], grid);
+  const right = isFreeBelow(blocks[2], grid);
+  if (!left && !right) {
+    return { decomposed: [], locked: blocks };
+  }
+  if (left) {
+    return {
+      decomposed: [blocks[3], blocks[0]],
+      locked: [blocks[2], blocks[1]],
+    };
+  }
+  if (right) {
+    return {
+      decomposed: [blocks[2], blocks[1]],
+      locked: [blocks[3], blocks[0]],
+    };
+  }
 };

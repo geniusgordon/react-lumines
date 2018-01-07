@@ -5,6 +5,7 @@ import Group from './Group';
 import Piece from './Piece';
 import ScanLine from './ScanLine';
 import Queue from './Queue';
+import DetachedBlocks from './DetachedBlocks';
 import { dimensions } from '../constants';
 
 class Interface extends Component {
@@ -14,7 +15,7 @@ class Interface extends Component {
     const width =
       PADDING + QUEUE_WIDTH + PADDING + dimensions.GRID_WIDTH + PADDING;
     const height = PADDING + dimensions.GRID_HEIGHT + PADDING;
-    const { queue, grid, current, scanLine } = this.props;
+    const { queue, grid, current, scanLine, detached } = this.props;
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
         <Group x={PADDING} y={dimensions.SQUARE_SIZE * 2}>
@@ -32,6 +33,7 @@ class Interface extends Component {
             blocks={current.blocks}
             dropped={current.dropped}
           />
+          <DetachedBlocks blocks={detached} />
         </Group>
       </svg>
     );
