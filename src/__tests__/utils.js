@@ -2,11 +2,67 @@ import {
   range,
   colToX,
   rowToY,
+  rotateBlocks,
+  canMove,
   isFreeBelow,
   pieceToBlocks,
   decomposePiece,
 } from '../utils';
 import { dimensions } from '../constants';
+
+describe('rotateBlocks', () => {
+  test('clockwise', () => {
+    const blocks = [0, 1, 2, 3];
+    expect(rotateBlocks(blocks, 1)).toEqual([3, 0, 1, 2]);
+  });
+  test('anit-clockwise', () => {
+    const blocks = [0, 1, 2, 3];
+    expect(rotateBlocks(blocks, -1)).toEqual([1, 2, 3, 0]);
+  });
+});
+
+describe('canMove', () => {
+  test('can move', () => {
+    const grid = range(dimensions.GRID_COLUMNS).map(() =>
+      range(dimensions.GRID_ROWS).map(() => null),
+    );
+    const current = { x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) };
+    expect(canMove(current, 1, grid)).toBeTruthy();
+  });
+  test('left block', () => {
+    const grid = range(dimensions.GRID_COLUMNS).map(() =>
+      range(dimensions.GRID_ROWS).map(() => null),
+    );
+    const current = { x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) };
+    grid[0][dimensions.GRID_ROWS - 1] = true;
+    expect(canMove(current, -1, grid)).toBeFalsy();
+  });
+  test('right block', () => {
+    const grid = range(dimensions.GRID_COLUMNS).map(() =>
+      range(dimensions.GRID_ROWS).map(() => null),
+    );
+    const current = { x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) };
+    grid[3][dimensions.GRID_ROWS - 1] = true;
+    expect(canMove(current, 1, grid)).toBeFalsy();
+  });
+  test('left border', () => {
+    const grid = range(dimensions.GRID_COLUMNS).map(() =>
+      range(dimensions.GRID_ROWS).map(() => null),
+    );
+    const current = { x: colToX(0), y: rowToY(dimensions.GRID_ROWS - 2) };
+    expect(canMove(current, -1, grid)).toBeFalsy();
+  });
+  test('right border', () => {
+    const grid = range(dimensions.GRID_COLUMNS).map(() =>
+      range(dimensions.GRID_ROWS).map(() => null),
+    );
+    const current = {
+      x: colToX(dimensions.GRID_COLUMNS - 2),
+      y: rowToY(dimensions.GRID_ROWS - 2),
+    };
+    expect(canMove(current, 1, grid)).toBeFalsy();
+  });
+});
 
 describe('isFreeBelow', () => {
   test('block reach bottom', () => {
@@ -21,18 +77,16 @@ describe('isFreeBelow', () => {
     const grid = range(dimensions.GRID_COLUMNS).map(() =>
       range(dimensions.GRID_ROWS).map(() => null),
     );
-    expect(
-      isFreeBelow({ x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) }, grid),
-    ).toBeTruthy();
+    const current = { x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) };
+    expect(isFreeBelow(current, grid)).toBeTruthy();
   });
   test('has block below', () => {
     const grid = range(dimensions.GRID_COLUMNS).map(() =>
       range(dimensions.GRID_ROWS).map(() => null),
     );
+    const current = { x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) };
     grid[1][dimensions.GRID_ROWS - 1] = true;
-    expect(
-      isFreeBelow({ x: colToX(1), y: rowToY(dimensions.GRID_ROWS - 2) }, grid),
-    ).toBeFalsy();
+    expect(isFreeBelow(current, grid)).toBeFalsy();
   });
 });
 

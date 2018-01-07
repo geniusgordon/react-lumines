@@ -21,6 +21,32 @@ export const nextScanLineX = (scanLine, elapsed) =>
 export const nextBlockY = (block, elapsed) =>
   block.y + Math.min(elapsed * block.speed, dimensions.SQUARE_SIZE);
 
+export const moveCurrentX = (current, direction) =>
+  Math.max(
+    Math.min(
+      current.x + direction * dimensions.SQUARE_SIZE,
+      dimensions.GRID_WIDTH - dimensions.SQUARE_SIZE * 2,
+    ),
+    0,
+  );
+
+export const canMove = (piece, direction, grid) => {
+  const col = xToCol(piece.x);
+  const row = yToRow(piece.y);
+  if (col + direction < 0 || col + direction + 1 >= dimensions.GRID_COLUMNS) {
+    return false;
+  }
+  if (direction === 1) {
+    return grid[col + 2][row] === null && grid[col + 2][row + 1] === null;
+  } else if (direction === -1) {
+    return grid[col - 1][row] === null && grid[col - 1][row + 1] === null;
+  }
+  return true;
+};
+
+export const rotateBlocks = (blocks, direction) =>
+  blocks.map((_, i) => blocks[(4 + i - direction) % 4]);
+
 export const willEnterNextRow = (block, elapsed) =>
   yToRow(block.y) !== yToRow(nextBlockY(block, elapsed));
 

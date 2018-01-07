@@ -1,17 +1,6 @@
 import { ROTATE, MOVE, DROP } from '../actions';
-import { dimensions, speeds } from '../constants';
-
-const moveCurrentX = (current, direction) =>
-  Math.max(
-    Math.min(
-      current.x + direction * dimensions.SQUARE_SIZE,
-      dimensions.GRID_WIDTH - dimensions.SQUARE_SIZE * 2,
-    ),
-    0,
-  );
-
-const rotateBlocks = (blocks, direction) =>
-  blocks.map((_, i) => blocks[(4 + i - direction) % 4]);
+import { rotateBlocks, canMove, moveCurrentX } from '../utils';
+import { speeds } from '../constants';
 
 const reducer = (state, action) => {
   switch (action.type) {
@@ -24,13 +13,16 @@ const reducer = (state, action) => {
         },
       };
     case MOVE:
-      return {
-        ...state,
-        current: {
-          ...state.current,
-          x: moveCurrentX(state.current, action.direction),
-        },
-      };
+      if (canMove(state.current, action.direction, state.grid)) {
+        return {
+          ...state,
+          current: {
+            ...state.current,
+            x: moveCurrentX(state.current, action.direction),
+          },
+        };
+      }
+      return state;
     case DROP:
       return {
         ...state,
