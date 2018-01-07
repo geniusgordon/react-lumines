@@ -55,7 +55,31 @@ export const addToGrid = (block, grid) => {
   ];
 };
 
-export const decomposePiece = (blocks, grid) => {
+export const pieceToBlocks = piece => {
+  const x = normalize(piece.x);
+  const y = normalize(piece.y);
+  return [
+    { x, y, color: piece.blocks[0] },
+    {
+      x: x + dimensions.SQUARE_SIZE,
+      y,
+      color: piece.blocks[1],
+    },
+    {
+      x: x + dimensions.SQUARE_SIZE,
+      y: y + dimensions.SQUARE_SIZE,
+      color: piece.blocks[2],
+    },
+    {
+      x,
+      y: y + dimensions.SQUARE_SIZE,
+      color: piece.blocks[3],
+    },
+  ];
+};
+
+export const decomposePiece = (piece, grid) => {
+  const blocks = pieceToBlocks(piece);
   const left = isFreeBelow(blocks[3], grid);
   const right = isFreeBelow(blocks[2], grid);
   if (!left && !right) {

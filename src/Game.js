@@ -1,23 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import Interface from './components/Interface';
-import {
-  loop,
-  rotate,
-  move,
-  drop,
-  next,
-  decompose,
-  updateDetached,
-} from './actions';
+import { loop, rotate, move, drop } from './actions';
 import { keys } from './constants';
-import {
-  nextBlockY,
-  isFreeBelow,
-  addToGrid,
-  willCollide,
-  willEnterNextRow,
-} from './utils';
 
 class Game extends Component {
   componentDidMount() {
@@ -37,40 +22,8 @@ class Game extends Component {
     }
     const elapsed = (now - this.time) / 1000;
     this.time = now;
-
-    this.checkCurrent(elapsed);
-    this.checkDetached(elapsed);
-
     this.props.dispatch(loop(elapsed));
     this.requestId = requestAnimationFrame(this.loop);
-  };
-  checkCurrent = elapsed => {
-    const { current, grid, dispatch } = this.props;
-    const nextY = { ...current, y: nextBlockY(current, elapsed) };
-    if (current.dropped && willCollide(nextY, grid)) {
-      dispatch(decompose(nextY));
-      dispatch(next());
-    } else if (
-      willEnterNextRow(current, elapsed) &&
-      willCollide(current, grid)
-    ) {
-      dispatch(decompose(current));
-      dispatch(next());
-    }
-  };
-  checkDetached = elapsed => {
-    const { detached, dispatch } = this.props;
-    let grid = this.props.grid;
-    const newDetached = [];
-    for (let i = 0; i < detached.length; i++) {
-      const nextY = { ...detached[i], y: nextBlockY(detached[i], elapsed) };
-      if (isFreeBelow(nextY, grid)) {
-        newDetached.push(nextY);
-      } else {
-        grid = addToGrid(nextY, grid);
-      }
-    }
-    dispatch(updateDetached(grid, newDetached));
   };
   handleKeyDown = e => {
     const { dispatch } = this.props;

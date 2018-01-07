@@ -34,6 +34,7 @@ class Interface extends Component {
             dropped={current.dropped}
           />
           <DetachedBlocks blocks={detached} />
+          <ScanLine x={scanLine.x} />
         </Group>
       </svg>
     );
