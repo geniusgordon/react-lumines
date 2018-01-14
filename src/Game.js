@@ -1,8 +1,31 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import Interface from './components/Interface';
-import { loop, rotate, move, drop } from './actions';
-import { keys } from './constants';
+import {
+  loop,
+  rotate,
+  move,
+  drop,
+  next,
+  updateDetached,
+  updateGrid,
+  updateScanned,
+  removeScanned,
+} from './actions';
+import {
+  xToCol,
+  nextScanLineX,
+  nextBlockY,
+  isFreeBelow,
+  addToGrid,
+  removeFromGrid,
+  willCollide,
+  willEnterNextRow,
+  willEnterNextColumn,
+  decomposePiece,
+  getMatchedBlocks,
+} from './utils';
+import { dimensions, keys, speeds } from './constants';
 
 class Game extends Component {
   componentDidMount() {
@@ -17,13 +40,103 @@ class Game extends Component {
     cancelAnimationFrame(this.requestId);
   };
   loop = now => {
-    if (!this.time) {
-      this.time = now;
+    const elapsed = (now - this.props.now) / 1000;
+    let dirty = false;
+
+    const curResult = this.updateCurrent(elapsed);
+    if (curResult) {
+      dirty = true;
     }
-    const elapsed = (now - this.time) / 1000;
-    this.time = now;
-    this.props.dispatch(loop(elapsed));
+
+    const detResult = this.updateDetached(elapsed, curResult.decomposed);
+    if (detResult) {
+      dirty = true;
+    }
+
+    let grid = detResult.grid || this.props.grid;
+    if (dirty) {
+      const locked = curResult.locked || [];
+      grid = locked.reduce((g, b) => addToGrid(b, g), grid);
+      const matched = getMatchedBlocks(grid);
+      this.props.dispatch(updateGrid(grid, matched));
+    }
+
+    const scanned = this.scan(elapsed, grid);
+
+    if (scanned && scanned.length === 0 && this.props.scanned.length > 0) {
+      grid = this.props.scanned.reduce((g, b) => removeFromGrid(b, g), grid);
+      const detached = [];
+      for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
+        for (let j = dimensions.GRID_ROWS - 2; j >= 0; j--) {
+          if (grid[i][j] && grid[i][j + 1] === null) {
+            detached.push({ ...grid[i][j], speed: speeds.DROP_DETACHED });
+            grid = removeFromGrid(grid[i][j], grid);
+          }
+        }
+      }
+      this.props.dispatch(removeScanned(grid, detached));
+    }
+
+    this.props.dispatch(loop(now, elapsed));
     this.requestId = requestAnimationFrame(this.loop);
+  };
+  updateCurrent = elapsed => {
+    const { current, grid, dispatch } = this.props;
+    const cur = {
+      ...current,
+      y: nextBlockY(current, elapsed),
+    };
+    if (
+      (cur.dropped && willCollide(cur, grid)) ||
+      (willEnterNextRow(cur, elapsed) && willCollide(cur, grid))
+    ) {
+      dispatch(next());
+      return decomposePiece(cur, grid);
+    }
+    return false;
+  };
+  updateDetached = (elapsed, decomposed = []) => {
+    const { dispatch } = this.props;
+    let { grid } = this.props;
+    const detached = this.props.detached.map(block => ({
+      ...block,
+      y: nextBlockY(block, elapsed),
+    }));
+    const nextDetached = decomposed.map(block => ({
+      ...block,
+      speed: speeds.DROP_DETACHED,
+    }));
+    let dirty = false;
+    detached.forEach(d => {
+      if (isFreeBelow(d, grid)) {
+        nextDetached.push(d);
+      } else {
+        grid = addToGrid(d, grid);
+        dirty = true;
+      }
+    });
+    if (decomposed.length > 0 || dirty) {
+      dispatch(updateDetached(nextDetached));
+    }
+    return dirty ? { grid } : false;
+  };
+  scan = elapsed => {
+    const { scanLine, matched, dispatch } = this.props;
+    const nextMatched = [];
+    const scanned = [];
+    if (willEnterNextColumn(scanLine, elapsed)) {
+      matched.forEach(m => {
+        if (!m.scanned && xToCol(m.x) === xToCol(scanLine.x) + 1) {
+          scanned.push(m);
+          scanned.push({ ...m, y: m.y + dimensions.SQUARE_SIZE });
+        } else {
+          nextMatched.push(m);
+        }
+      });
+      dispatch(updateScanned(scanned, nextMatched));
+      return scanned;
+    }
+    return false;
   };
   handleKeyDown = e => {
     const { dispatch } = this.props;
@@ -50,7 +163,15 @@ class Game extends Component {
     }
   };
   render() {
-    const { queue, grid, current, scanLine, detached, matched } = this.props;
+    const {
+      queue,
+      grid,
+      current,
+      scanLine,
+      detached,
+      matched,
+      scanned,
+    } = this.props;
     return (
       <Interface
         queue={queue}
@@ -59,6 +180,7 @@ class Game extends Component {
         scanLine={scanLine}
         detached={detached}
         matched={matched}
+        scanned={scanned}
       />
     );
   }

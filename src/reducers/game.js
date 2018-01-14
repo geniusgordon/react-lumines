@@ -1,6 +1,14 @@
-import { LOOP } from '../actions';
+import {
+  LOOP,
+  NEXT,
+  UPDATE_DETACHED,
+  UPDATE_GRID,
+  UPDATE_SCANNED,
+  REMOVE_SCANNED,
+} from '../actions';
 import {
   range,
+  xToCol,
   generateRandomPiece,
   nextScanLineX,
   nextBlockY,
@@ -8,11 +16,13 @@ import {
   addToGrid,
   willCollide,
   willEnterNextRow,
+  willEnterNextColumn,
   decomposePiece,
 } from '../utils';
 import { dimensions, speeds } from '../constants';
 
 const initialState = {
+  now: performance.now(),
   scanLine: {
     x: 0,
     speed: speeds.SCAN_LINE_MEDIUM,
@@ -30,94 +40,61 @@ const initialState = {
   },
   detached: [],
   matched: [],
-};
-
-const checkMatchedBlocks = grid => {
-  const matched = [];
-  for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
-    for (let j = 0; j < dimensions.GRID_ROWS; j++) {
-      if (
-        grid[i][j] &&
-        grid[i + 1][j] &&
-        grid[i][j + 1] &&
-        grid[i + 1][j + 1] &&
-        grid[i][j].color === grid[i + 1][j].color &&
-        grid[i][j].color === grid[i][j + 1].color &&
-        grid[i][j + 1].color === grid[i + 1][j + 1].color
-      ) {
-        matched.push(grid[i][j]);
-      }
-    }
-  }
-  return matched;
+  scanned: [],
 };
 
 const reducer = (state = initialState, action) => {
-  if (action.type === LOOP) {
-    const { elapsed } = action;
-    let { grid, queue, matched } = state;
-    const scanLine = {
-      ...state.scanLine,
-      x: nextScanLineX(state.scanLine, elapsed),
-    };
-    let current = {
-      ...state.current,
-      y: nextBlockY(state.current, elapsed),
-    };
-    let detached = state.detached.map(block => ({
-      ...block,
-      y: nextBlockY(block, elapsed),
-    }));
-    let dirty = false;
-    if (
-      (current.dropped && willCollide(current, grid)) ||
-      (willEnterNextRow(current, elapsed) && willCollide(current, grid))
-    ) {
-      const { decomposed, locked } = decomposePiece(current, grid);
-      grid = locked.reduce((g, b) => addToGrid(b, g), grid);
-      detached = [
-        ...detached,
-        ...decomposed.map(block => ({
+  switch (action.type) {
+    case LOOP:
+      return {
+        ...state,
+        now: action.now,
+        scanLine: {
+          ...state.scanLine,
+          x: nextScanLineX(state.scanLine, action.elapsed),
+        },
+        current: {
+          ...state.current,
+          y: nextBlockY(state.current, action.elapsed),
+        },
+        detached: state.detached.map(block => ({
           ...block,
-          speed: speeds.DROP_DETACHED,
+          y: nextBlockY(block, action.elapsed),
         })),
-      ];
-      current = {
-        x: dimensions.SQUARE_SIZE * 7,
-        y: 0,
-        blocks: queue[0],
-        dropped: false,
-        speed: speeds.DROP_SLOW,
       };
-      queue = [queue[1], queue[2], generateRandomPiece()];
-      dirty = true;
-    }
-
-    const nextDetached = [];
-    for (let i = 0; i < detached.length; i++) {
-      if (isFreeBelow(detached[i], grid)) {
-        nextDetached.push(detached[i]);
-      } else {
-        grid = addToGrid(detached[i], grid);
-        dirty = true;
-      }
-    }
-    detached = nextDetached;
-
-    if (dirty) {
-      matched = checkMatchedBlocks(grid);
-    }
-    return {
-      ...state,
-      scanLine,
-      grid,
-      queue,
-      current,
-      detached,
-      matched,
-    };
+    case NEXT:
+      const { queue } = state;
+      return {
+        ...state,
+        current: {
+          x: dimensions.SQUARE_SIZE * 7,
+          y: 0,
+          blocks: queue[0],
+          dropped: false,
+          speed: speeds.DROP_SLOW,
+        },
+        queue: [queue[1], queue[2], action.next],
+      };
+    case UPDATE_DETACHED:
+      return { ...state, detached: action.detached };
+    case UPDATE_GRID:
+      return { ...state, grid: action.grid, matched: action.matched };
+    case UPDATE_SCANNED:
+      return {
+        ...state,
+        scanned: [...state.scanned, ...action.scanned],
+        matched: action.matched,
+      };
+    case REMOVE_SCANNED:
+      return {
+        ...state,
+        grid: action.grid,
+        detached: [...state.detached, ...action.detached],
+        scanned: [],
+      };
+    default:
+      return state;
   }
-  return state;
 };
 
 export default reducer;

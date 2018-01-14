@@ -9,6 +9,7 @@
     "react-scripts": "1.0.17",
     "reduce-reducers": "^0.1.2",
     "redux": "^3.7.2",
+    "redux-devtools-extension": "^2.13.2",
     "styled-components": "^2.4.0"
   },
   "scripts": {

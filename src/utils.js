@@ -16,7 +16,8 @@ export const rowToY = row => row * dimensions.SQUARE_SIZE;
 export const normalize = x => colToX(xToCol(x));
 
 export const nextScanLineX = (scanLine, elapsed) =>
-  (scanLine.x + elapsed * scanLine.speed) % dimensions.GRID_WIDTH;
+  (scanLine.x + Math.min(elapsed * scanLine.speed, dimensions.SQUARE_SIZE)) %
+  dimensions.GRID_WIDTH;
 
 export const nextBlockY = (block, elapsed) =>
   block.y + Math.min(elapsed * block.speed, dimensions.SQUARE_SIZE);
@@ -50,6 +51,9 @@ export const rotateBlocks = (blocks, direction) =>
 export const willEnterNextRow = (block, elapsed) =>
   yToRow(block.y) !== yToRow(nextBlockY(block, elapsed));
 
+export const willEnterNextColumn = (scanLine, elapsed) =>
+  xToCol(scanLine.x) !== xToCol(nextScanLineX(scanLine, elapsed));
+
 export const isFreeBelow = (block, grid) => {
   const col = xToCol(block.x);
   const row = yToRow(block.y);
@@ -77,6 +81,18 @@ export const addToGrid = (block, grid) => {
       { x, y, color: block.color },
       ...grid[col].slice(row + 1),
     ],
+    ...grid.slice(col + 1),
+  ];
+};
+
+export const removeFromGrid = (block, grid) => {
+  const col = xToCol(block.x);
+  const row = yToRow(block.y);
+  const x = normalize(block.x);
+  const y = normalize(block.y);
+  return [
+    ...grid.slice(0, col),
+    [...grid[col].slice(0, row), null, ...grid[col].slice(row + 1)],
     ...grid.slice(col + 1),
   ];
 };
@@ -123,4 +139,25 @@ export const decomposePiece = (piece, grid) => {
       locked: [blocks[3], blocks[0]],
     };
   }
+};
+
+export const getMatchedBlocks = grid => {
+  const matched = [];
+  for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
+    for (let j = 0; j < dimensions.GRID_ROWS; j++) {
+      if (
+        grid[i][j] &&
+        grid[i + 1][j] &&
+        grid[i][j + 1] &&
+        grid[i + 1][j + 1] &&
+        grid[i][j].color === grid[i + 1][j].color &&
+        grid[i][j].color === grid[i][j + 1].color &&
+        grid[i][j + 1].color === grid[i + 1][j + 1].color
+      ) {
+        matched.push({ ...grid[i][j], left: true });
+        matched.push(grid[i + 1][j]);
+      }
+    }
+  }
+  return matched;
 };
