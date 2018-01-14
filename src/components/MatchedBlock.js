@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { dimensions, colors } from '../constants';
 
-class MatchedBlock extends Component {
+class MatchedBlock extends PureComponent {
   render() {
     const color = this.props.color
       ? colors.SQUARE_DARK_MATCHED

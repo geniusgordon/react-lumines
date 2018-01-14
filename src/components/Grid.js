@@ -1,8 +1,8 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { range } from '../utils';
 import { dimensions, colors } from '../constants';
 
-class Grid extends Component {
+class Grid extends PureComponent {
   render() {
     return (
       <g>

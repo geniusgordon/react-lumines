@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { dimensions, colors } from '../constants';
 
-class Block extends Component {
+class Block extends PureComponent {
   render() {
     const color = this.props.scanned
       ? colors.SQUARE_SCANNED

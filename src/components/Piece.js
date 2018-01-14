@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import Block from './Block';
 import { dimensions } from '../constants';
 
@@ -11,7 +11,7 @@ const getBlockX = i => (i < 2 ? i % 2 : 1 - i % 2) * dimensions.SQUARE_SIZE;
 
 const getBlockY = i => Math.floor(i / 2) * dimensions.SQUARE_SIZE;
 
-class Piece extends Component {
+class Piece extends PureComponent {
   render() {
     const { x, blocks, dropped } = this.props;
     const y = dropped

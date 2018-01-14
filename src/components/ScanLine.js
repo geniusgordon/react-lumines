@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { dimensions } from '../constants';
 
-class ScanLine extends Component {
+class ScanLine extends PureComponent {
   render() {
     return (
       <g className="lumines-scanline">

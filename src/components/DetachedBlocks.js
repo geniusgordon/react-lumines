@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import Block from './Block';
 
-class DetachedBlocks extends Component {
+class DetachedBlocks extends PureComponent {
   render() {
     return (
       <g>

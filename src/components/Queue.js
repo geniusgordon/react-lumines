@@ -1,8 +1,8 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import Piece from './Piece';
 import { dimensions } from '../constants';
 
-class Queue extends Component {
+class Queue extends PureComponent {
   render() {
     return (
       <g>
