@@ -143,8 +143,8 @@ export const decomposePiece = (piece, grid) => {
 };
 
 export const updateMatchedBlocks = grid => {
-  for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
-    for (let j = 0; j < dimensions.GRID_ROWS; j++) {
+  for (let i = 0; i < dimensions.GRID_COLUMNS - 1; i++) {
+    for (let j = 0; j < dimensions.GRID_ROWS - 1; j++) {
       if (
         grid[i][j] &&
         grid[i + 1][j] &&

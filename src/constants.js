@@ -2,6 +2,13 @@ const SQUARE_SIZE = 10;
 const GRID_COLUMNS = 16;
 const GRID_ROWS = 12;
 
+export const gameStates = {
+  COUNTDOWN: 'COUNTDOWN',
+  PLAYING: 'PLAYING',
+  PAUSED: 'PAUSED',
+  OVER: 'OVER',
+};
+
 export const dimensions = {
   SQUARE_SIZE,
   GRID_COLUMNS,
@@ -27,6 +34,8 @@ export const colors = {
   GRID_STROKE: '#616161',
   SCAN_LINE: '#FFFFFF',
   SCANNED: '#212121',
+  LABEL: '#000000',
+  INFO: '#FAFAFA',
 };
 
 export const speeds = {

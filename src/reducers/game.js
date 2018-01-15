@@ -13,11 +13,14 @@ import {
   nextScanLineX,
   nextBlockY,
 } from '../utils';
-import { dimensions, speeds } from '../constants';
+import { gameStates, dimensions, speeds } from '../constants';
 
 const getInitialState = () => ({
-  paused: false,
   now: performance.now(),
+  gameState: gameStates.PLAYING,
+  gameTime: 0,
+  score: 0,
+  scanned: 0,
   scanLine: {
     x: 0,
     speed: speeds.SCAN_LINE_MEDIUM,
@@ -34,7 +37,6 @@ const getInitialState = () => ({
     speed: speeds.DROP_SLOW,
   },
   detached: [],
-  scanned: 0,
 });
 
 const reducer = (state = getInitialState(), action) => {
@@ -44,22 +46,26 @@ const reducer = (state = getInitialState(), action) => {
     case PAUSE:
       return { ...state, paused: !state.paused };
     case LOOP:
-      return {
-        ...state,
-        now: action.now,
-        scanLine: {
-          ...state.scanLine,
-          x: nextScanLineX(state.scanLine, action.elapsed),
-        },
-        current: {
-          ...state.current,
-          y: nextBlockY(state.current, action.elapsed),
-        },
-        detached: state.detached.map(block => ({
-          ...block,
-          y: nextBlockY(block, action.elapsed),
-        })),
-      };
+      if (state.gameState === gameStates.PLAYING) {
+        return {
+          ...state,
+          now: action.now,
+          gameTime: state.gameTime + action.elapsed,
+          scanLine: {
+            ...state.scanLine,
+            x: nextScanLineX(state.scanLine, action.elapsed),
+          },
+          current: {
+            ...state.current,
+            y: nextBlockY(state.current, action.elapsed),
+          },
+          detached: state.detached.map(block => ({
+            ...block,
+            y: nextBlockY(block, action.elapsed),
+          })),
+        };
+      }
+      return state;
     case NEXT:
       const { queue } = state;
       return {
@@ -78,6 +84,7 @@ const reducer = (state = getInitialState(), action) => {
       return {
         ...state,
         scanned: action.end ? 0 : state.scanned + count,
+        score: action.end ? state.score + state.scanned : state.score,
       };
     case UPDATE_DETACHED:
       return { ...state, detached: action.detached };

@@ -1,10 +1,11 @@
 import React, { PureComponent } from 'react';
 import { dimensions as d, colors } from '../constants';
 
+const S = d.SQUARE_SIZE;
+
 class ScanLine extends PureComponent {
   render() {
     const { x, scanned } = this.props;
-    const S = d.SQUARE_SIZE;
     return (
       <g>
         <defs>

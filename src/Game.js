@@ -123,7 +123,7 @@ class Game extends Component {
           }
         }
       }
-      dispatch(scan(scanned, col === 0));
+      dispatch(scan(scanned, col === dimensions.GRID_COLUMNS - 1));
       dispatch(updateGrid(grid));
       return scanned;
     }
@@ -170,7 +170,16 @@ class Game extends Component {
     }
   };
   render() {
-    const { queue, grid, current, scanLine, detached, scanned } = this.props;
+    const {
+      queue,
+      grid,
+      current,
+      scanLine,
+      detached,
+      scanned,
+      gameTime,
+      score,
+    } = this.props;
     return (
       <Interface
         queue={queue}
@@ -179,6 +188,8 @@ class Game extends Component {
         scanLine={scanLine}
         detached={detached}
         scanned={scanned}
+        gameTime={gameTime}
+        score={score}
       />
     );
   }

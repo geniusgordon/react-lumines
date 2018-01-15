@@ -6,35 +6,46 @@ import Piece from './Piece';
 import ScanLine from './ScanLine';
 import Queue from './Queue';
 import DetachedBlocks from './DetachedBlocks';
-import { dimensions } from '../constants';
+import InfoPanel from './InfoPanel';
+import { dimensions as d } from '../constants';
 
 class Interface extends Component {
   render() {
-    const PADDING = dimensions.SQUARE_SIZE / 2;
-    const QUEUE_WIDTH = dimensions.SQUARE_SIZE * 2;
+    const PADDING = d.SQUARE_SIZE / 2;
+    const QUEUE_WIDTH = d.SQUARE_SIZE * 2;
+    const INFO_PANEL_WIDTH = d.SQUARE_SIZE * 3;
     const width =
-      PADDING + QUEUE_WIDTH + PADDING + dimensions.GRID_WIDTH + PADDING;
-    const height = PADDING + dimensions.GRID_HEIGHT + PADDING;
-    const { queue, grid, current, scanLine, detached, scanned } = this.props;
+      PADDING +
+      QUEUE_WIDTH +
+      PADDING +
+      d.GRID_WIDTH +
+      PADDING +
+      INFO_PANEL_WIDTH +
+      PADDING;
+    const height = PADDING + d.GRID_HEIGHT + PADDING;
+    const { queue, grid, current, scanLine, detached, scanned, gameTime, score } = this.props;
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
-        <Group x={PADDING} y={dimensions.SQUARE_SIZE * 2}>
+        <Group x={PADDING} y={PADDING + d.SQUARE_SIZE * 2}>
           <Queue queue={queue} />
         </Group>
-        <Group x={PADDING + QUEUE_WIDTH + PADDING}>
+        <Group x={PADDING + QUEUE_WIDTH + PADDING} y={PADDING}>
           <Grid />
           <Floor grid={grid} />
           <Piece
             x={current.x}
-            y={Math.min(
-              current.y,
-              dimensions.GRID_HEIGHT - dimensions.SQUARE_SIZE * 2,
-            )}
+            y={Math.min(current.y, d.GRID_HEIGHT - d.SQUARE_SIZE * 2)}
             blocks={current.blocks}
             dropped={current.dropped}
           />
           <DetachedBlocks blocks={detached} />
           <ScanLine x={scanLine.x} scanned={scanned} />
+        </Group>
+        <Group
+          x={PADDING + QUEUE_WIDTH + PADDING + d.GRID_WIDTH + PADDING}
+          y={PADDING + d.SQUARE_SIZE * 2}
+        >
+          <InfoPanel time={gameTime} score={score} />
         </Group>
       </svg>
     );
