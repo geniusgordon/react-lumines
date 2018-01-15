@@ -3,10 +3,10 @@ const GRID_COLUMNS = 16;
 const GRID_ROWS = 12;
 
 export const gameStates = {
-  COUNTDOWN: 'COUNTDOWN',
   PLAYING: 'PLAYING',
   PAUSED: 'PAUSED',
-  OVER: 'OVER',
+  FINISHED: 'FINISHED',
+  GAMEOVER: 'GAMEOVER',
 };
 
 export const dimensions = {

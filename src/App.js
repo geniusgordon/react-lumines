@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import Game from './containers/Game';
-import PausedMenu from './components/PausedMenu';
+import GameMenu from './components/GameMenu';
 import { pause, restart, quit } from './actions';
 import { gameStates, keys } from './constants';
 
@@ -44,17 +44,17 @@ class App extends Component {
     this.props.dispatch(quit());
   };
   render() {
-    const { gameState } = this.props;
+    const { gameState, score } = this.props;
     return (
       <Container>
         <Game />
-        {gameState === gameStates.PAUSED ? (
-          <PausedMenu
-            resume={this.resume}
-            restart={this.restart}
-            quit={this.quit}
-          />
-        ) : null}
+        <GameMenu
+          gameState={gameState}
+          score={score}
+          resume={this.resume}
+          restart={this.restart}
+          quit={this.quit}
+        />
       </Container>
     );
   }

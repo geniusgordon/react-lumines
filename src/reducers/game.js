@@ -1,6 +1,7 @@
 import {
   RESTART,
   PAUSE,
+  FINISH,
   LOOP,
   NEXT,
   SCAN,
@@ -51,6 +52,12 @@ const reducer = (state = getInitialState(), action) => {
             ? gameStates.PAUSED
             : gameStates.PLAYING,
       };
+    case FINISH:
+      return {
+        ...state,
+        gameState: gameStates.FINISHED,
+        score: state.score + state.scanned,
+      };
     case LOOP:
       if (state.gameState === gameStates.PLAYING) {
         if (state.gameTime < 0) {
@@ -63,7 +70,7 @@ const reducer = (state = getInitialState(), action) => {
         return {
           ...state,
           now: action.now,
-          gameTime: state.gameTime + action.elapsed,
+          gameTime: Math.min(state.gameTime + action.elapsed, 90),
           scanLine: {
             ...state.scanLine,
             x: nextScanLineX(state.scanLine, action.elapsed),

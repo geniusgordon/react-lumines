@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import Interface from '../components/Interface';
 import {
   loop,
+  finish,
   rotate,
   move,
   drop,
@@ -38,6 +39,11 @@ class Game extends Component {
     const elapsed = Math.max(0, (now - this.props.now) / 1000);
     let dirty = false;
 
+    const { gameState, gameTime, dispatch } = this.props;
+    if (gameState === gameStates.PLAYING && gameTime >= 90) {
+      dispatch(finish());
+    }
+
     const curResult = this.updateCurrent(elapsed);
     if (curResult) {
       dirty = true;
@@ -54,7 +60,7 @@ class Game extends Component {
       const locked = curResult.locked || [];
       grid = locked.reduce((g, b) => addToGrid(b, g), grid);
       grid = updateMatchedBlocks(grid);
-      this.props.dispatch(updateGrid(grid));
+      dispatch(updateGrid(grid));
     }
 
     const scanned = this.scan(elapsed, grid);
@@ -63,7 +69,7 @@ class Game extends Component {
       this.removeScanned(grid, detached);
     }
 
-    this.props.dispatch(loop(now, elapsed));
+    dispatch(loop(now, elapsed));
     this.requestId = requestAnimationFrame(this.loop);
   };
   updateCurrent = elapsed => {
