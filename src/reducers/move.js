@@ -1,8 +1,11 @@
 import { ROTATE, MOVE, DROP } from '../actions';
 import { rotateBlocks, canMove, moveCurrentX } from '../utils';
-import { speeds } from '../constants';
+import { gameStates, speeds } from '../constants';
 
 const reducer = (state, action) => {
+  if (state.gameState !== gameStates.PLAYING || state.gameTime < 0) {
+    return state;
+  }
   switch (action.type) {
     case ROTATE:
       return {

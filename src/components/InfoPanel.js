@@ -5,7 +5,7 @@ import { dimensions } from '../constants';
 
 class InfoPanel extends PureComponent {
   render() {
-    const time = 90 - Math.floor(this.props.time);
+    const time = Math.min(90, 90 - Math.floor(this.props.time));
     const { score } = this.props;
     return (
       <g>

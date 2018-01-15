@@ -48,12 +48,13 @@ export const speeds = {
 };
 
 export const keys = {
-  KEY_Z: 90,
-  KEY_X: 88,
-  KEY_UP: 38,
-  KEY_DOWN: 40,
-  KEY_LEFT: 37,
-  KEY_RIGHT: 39,
-  KEY_ESC: 27,
-  KEY_SPACE: 32,
+  R: 82,
+  Z: 90,
+  X: 88,
+  UP: 38,
+  DOWN: 40,
+  LEFT: 37,
+  RIGHT: 39,
+  ESC: 27,
+  SPACE: 32,
 };

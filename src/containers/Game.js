@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import Interface from './components/Interface';
+import Interface from '../components/Interface';
 import {
   loop,
   rotate,
@@ -10,7 +10,7 @@ import {
   scan,
   updateDetached,
   updateGrid,
-} from './actions';
+} from '../actions';
 import {
   xToCol,
   nextBlockY,
@@ -22,23 +22,20 @@ import {
   willEnterNextColumn,
   decomposePiece,
   updateMatchedBlocks,
-} from './utils';
-import { dimensions, keys, speeds } from './constants';
+} from '../utils';
+import { gameStates, dimensions, keys, speeds } from '../constants';
 
 class Game extends Component {
   componentDidMount() {
-    this.start();
-  }
-  start = () => {
     window.addEventListener('keydown', this.handleKeyDown);
     this.requestId = requestAnimationFrame(this.loop);
-  };
-  stop = () => {
+  }
+  componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
     cancelAnimationFrame(this.requestId);
-  };
+  }
   loop = now => {
-    const elapsed = (now - this.props.now) / 1000;
+    const elapsed = Math.max(0, (now - this.props.now) / 1000);
     let dirty = false;
 
     const curResult = this.updateCurrent(elapsed);
@@ -146,27 +143,29 @@ class Game extends Component {
     this.props.dispatch(updateDetached(nextDetached));
   };
   handleKeyDown = e => {
-    const { dispatch } = this.props;
-    switch (e.keyCode) {
-      case keys.KEY_Z:
-        dispatch(rotate(-1));
-        break;
-      case keys.KEY_X:
-      case keys.KEY_UP:
-        dispatch(rotate(1));
-        break;
-      case keys.KEY_LEFT:
-        dispatch(move(-1));
-        break;
-      case keys.KEY_RIGHT:
-        dispatch(move(1));
-        break;
-      case keys.KEY_DOWN:
-      case keys.KEY_SPACE:
-        dispatch(drop());
-        break;
-      default:
-        break;
+    const { gameState, dispatch } = this.props;
+    if (gameState === gameStates.PLAYING) {
+      switch (e.keyCode) {
+        case keys.Z:
+          dispatch(rotate(-1));
+          break;
+        case keys.X:
+        case keys.UP:
+          dispatch(rotate(1));
+          break;
+        case keys.LEFT:
+          dispatch(move(-1));
+          break;
+        case keys.RIGHT:
+          dispatch(move(1));
+          break;
+        case keys.DOWN:
+        case keys.SPACE:
+          dispatch(drop());
+          break;
+        default:
+          break;
+      }
     }
   };
   render() {

@@ -18,7 +18,7 @@ import { gameStates, dimensions, speeds } from '../constants';
 const getInitialState = () => ({
   now: performance.now(),
   gameState: gameStates.PLAYING,
-  gameTime: 0,
+  gameTime: -2.4,
   score: 0,
   scanned: 0,
   scanLine: {
@@ -44,9 +44,22 @@ const reducer = (state = getInitialState(), action) => {
     case RESTART:
       return getInitialState();
     case PAUSE:
-      return { ...state, paused: !state.paused };
+      return {
+        ...state,
+        gameState:
+          state.gameState === gameStates.PLAYING
+            ? gameStates.PAUSED
+            : gameStates.PLAYING,
+      };
     case LOOP:
       if (state.gameState === gameStates.PLAYING) {
+        if (state.gameTime < 0) {
+          return {
+            ...state,
+            now: action.now,
+            gameTime: state.gameTime + action.elapsed,
+          };
+        }
         return {
           ...state,
           now: action.now,
@@ -65,7 +78,7 @@ const reducer = (state = getInitialState(), action) => {
           })),
         };
       }
-      return state;
+      return { ...state, now: action.now };
     case NEXT:
       const { queue } = state;
       return {

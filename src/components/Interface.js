@@ -6,6 +6,7 @@ import Piece from './Piece';
 import ScanLine from './ScanLine';
 import Queue from './Queue';
 import DetachedBlocks from './DetachedBlocks';
+import Countdown from './Countdown';
 import InfoPanel from './InfoPanel';
 import { dimensions as d } from '../constants';
 
@@ -56,6 +57,11 @@ class Interface extends Component {
         >
           <InfoPanel time={gameTime} score={score} />
         </Group>
+        <Countdown
+          x={width / 2 - d.SQUARE_SIZE * 1.5}
+          y={d.SQUARE_SIZE * 7}
+          time={gameTime}
+        />
       </svg>
     );
   }

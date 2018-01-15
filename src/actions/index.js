@@ -1,7 +1,8 @@
 import { generateRandomPiece } from '../utils';
 
-export const RESTART = 'RESTART';
 export const PAUSE = 'PAUSE';
+export const RESTART = 'RESTART';
+export const QUIT = 'QUIT';
 
 export const LOOP = 'LOOP';
 export const NEXT = 'NEXT';
@@ -13,8 +14,9 @@ export const ROTATE = 'ROTATE';
 export const MOVE = 'MOVE';
 export const DROP = 'DROP';
 
-export const restart = () => ({ type: RESTART });
 export const pause = () => ({ type: PAUSE });
+export const restart = () => ({ type: RESTART });
+export const quit = () => ({ type: QUIT });
 
 export const rotate = direction => ({ type: ROTATE, direction });
 export const move = direction => ({ type: MOVE, direction });
