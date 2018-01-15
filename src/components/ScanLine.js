@@ -4,7 +4,7 @@ import { dimensions } from '../constants';
 class ScanLine extends PureComponent {
   render() {
     return (
-      <g className="lumines-scanline">
+      <g>
         <defs>
           <linearGradient
             id="scanLineGradient"

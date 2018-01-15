@@ -1,23 +1,9 @@
-import {
-  LOOP,
-  NEXT,
-  UPDATE_DETACHED,
-  UPDATE_GRID,
-  UPDATE_SCANNED,
-  REMOVE_SCANNED,
-} from '../actions';
+import { LOOP, NEXT, UPDATE_DETACHED, UPDATE_GRID } from '../actions';
 import {
   range,
-  xToCol,
   generateRandomPiece,
   nextScanLineX,
   nextBlockY,
-  isFreeBelow,
-  addToGrid,
-  willCollide,
-  willEnterNextRow,
-  willEnterNextColumn,
-  decomposePiece,
 } from '../utils';
 import { dimensions, speeds } from '../constants';
 
@@ -39,8 +25,6 @@ const initialState = {
     speed: speeds.DROP_SLOW,
   },
   detached: [],
-  matched: [],
-  scanned: [],
 };
 
 const reducer = (state = initialState, action) => {
@@ -78,20 +62,7 @@ const reducer = (state = initialState, action) => {
     case UPDATE_DETACHED:
       return { ...state, detached: action.detached };
     case UPDATE_GRID:
-      return { ...state, grid: action.grid, matched: action.matched };
-    case UPDATE_SCANNED:
-      return {
-        ...state,
-        scanned: [...state.scanned, ...action.scanned],
-        matched: action.matched,
-      };
-    case REMOVE_SCANNED:
-      return {
-        ...state,
-        grid: action.grid,
-        detached: [...state.detached, ...action.detached],
-        scanned: [],
-      };
+      return { ...state, grid: action.grid };
     default:
       return state;
   }

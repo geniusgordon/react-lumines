@@ -9,12 +9,9 @@ import {
   next,
   updateDetached,
   updateGrid,
-  updateScanned,
-  removeScanned,
 } from './actions';
 import {
   xToCol,
-  nextScanLineX,
   nextBlockY,
   isFreeBelow,
   addToGrid,
@@ -23,7 +20,7 @@ import {
   willEnterNextRow,
   willEnterNextColumn,
   decomposePiece,
-  getMatchedBlocks,
+  updateMatchedBlocks,
 } from './utils';
 import { dimensions, keys, speeds } from './constants';
 
@@ -54,27 +51,18 @@ class Game extends Component {
     }
 
     let grid = detResult.grid || this.props.grid;
+    const detached = detResult.detached || this.props.detached;
     if (dirty) {
       const locked = curResult.locked || [];
       grid = locked.reduce((g, b) => addToGrid(b, g), grid);
-      const matched = getMatchedBlocks(grid);
-      this.props.dispatch(updateGrid(grid, matched));
+      grid = updateMatchedBlocks(grid);
+      this.props.dispatch(updateGrid(grid));
     }
 
     const scanned = this.scan(elapsed, grid);
 
-    if (scanned && scanned.length === 0 && this.props.scanned.length > 0) {
-      grid = this.props.scanned.reduce((g, b) => removeFromGrid(b, g), grid);
-      const detached = [];
-      for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
-        for (let j = dimensions.GRID_ROWS - 2; j >= 0; j--) {
-          if (grid[i][j] && grid[i][j + 1] === null) {
-            detached.push({ ...grid[i][j], speed: speeds.DROP_DETACHED });
-            grid = removeFromGrid(grid[i][j], grid);
-          }
-        }
-      }
-      this.props.dispatch(removeScanned(grid, detached));
+    if (scanned && scanned.length === 0) {
+      this.removeScanned(grid, detached);
     }
 
     this.props.dispatch(loop(now, elapsed));
@@ -118,25 +106,46 @@ class Game extends Component {
     if (decomposed.length > 0 || dirty) {
       dispatch(updateDetached(nextDetached));
     }
-    return dirty ? { grid } : false;
+    return dirty ? { grid, detached: nextDetached } : false;
   };
-  scan = elapsed => {
-    const { scanLine, matched, dispatch } = this.props;
-    const nextMatched = [];
+  scan = (elapsed, grid) => {
+    const { scanLine, dispatch } = this.props;
     const scanned = [];
     if (willEnterNextColumn(scanLine, elapsed)) {
-      matched.forEach(m => {
-        if (!m.scanned && xToCol(m.x) === xToCol(scanLine.x) + 1) {
-          scanned.push(m);
-          scanned.push({ ...m, y: m.y + dimensions.SQUARE_SIZE });
-        } else {
-          nextMatched.push(m);
+      for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
+        for (let j = 0; j < dimensions.GRID_ROWS; j++) {
+          const b = grid[i][j];
+          if (
+            b &&
+            b.matched &&
+            !b.scanned &&
+            xToCol(b.x) === xToCol(scanLine.x) + 1
+          ) {
+            grid = addToGrid({ ...b, scanned: true }, grid);
+            scanned.push(b);
+          }
         }
-      });
-      dispatch(updateScanned(scanned, nextMatched));
+      }
+      dispatch(updateGrid(grid));
       return scanned;
     }
     return false;
+  };
+  removeScanned = (grid, detached) => {
+    const nextDetached = [...detached];
+    for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
+      for (let j = dimensions.GRID_ROWS - 1; j >= 0; j--) {
+        if (grid[i][j] && grid[i][j].scanned) {
+          grid = removeFromGrid(grid[i][j], grid);
+        }
+        if (grid[i][j] && grid[i][j + 1] === null) {
+          nextDetached.push({ ...grid[i][j], speed: speeds.DROP_DETACHED });
+          grid = removeFromGrid(grid[i][j], grid);
+        }
+      }
+    }
+    this.props.dispatch(updateGrid(grid));
+    this.props.dispatch(updateDetached(nextDetached));
   };
   handleKeyDown = e => {
     const { dispatch } = this.props;
@@ -163,15 +172,7 @@ class Game extends Component {
     }
   };
   render() {
-    const {
-      queue,
-      grid,
-      current,
-      scanLine,
-      detached,
-      matched,
-      scanned,
-    } = this.props;
+    const { queue, grid, current, scanLine, detached } = this.props;
     return (
       <Interface
         queue={queue}
@@ -179,8 +180,6 @@ class Game extends Component {
         current={current}
         scanLine={scanLine}
         detached={detached}
-        matched={matched}
-        scanned={scanned}
       />
     );
   }
