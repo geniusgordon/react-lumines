@@ -23,7 +23,16 @@ class Interface extends Component {
       INFO_PANEL_WIDTH +
       PADDING;
     const height = PADDING + d.GRID_HEIGHT + PADDING;
-    const { queue, grid, current, scanLine, detached, scanned, gameTime, score } = this.props;
+    const {
+      queue,
+      grid,
+      current,
+      scanLine,
+      detached,
+      scanned,
+      gameTime,
+      score,
+    } = this.props;
     return (
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
         <Group x={PADDING} y={PADDING + d.SQUARE_SIZE * 2}>

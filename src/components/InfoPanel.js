@@ -6,7 +6,7 @@ import { dimensions } from '../constants';
 class InfoPanel extends PureComponent {
   render() {
     const time = 90 - Math.floor(this.props.time);
-    const { score } = this.props
+    const { score } = this.props;
     return (
       <g>
         <Info label="Time" value={time} />
