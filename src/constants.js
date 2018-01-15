@@ -12,9 +12,11 @@ export const dimensions = {
   SQUARE_STROKE_WIDTH_MATCHED: 0.5,
   GRID_STROKE_WIDTH: 0.1,
   SCAN_LINE_WIDTH: SQUARE_SIZE * 2,
+  SCAN_LINE_STROKE_WIDTH: 0.3,
 };
 
 export const colors = {
+  BACKGROUND: '#424242',
   SQUARE_STROKE: '#212121',
   SQUARE_STROKE_MATCHED: '#FFFFFF',
   SQUARE_DARK: '#FF9800',
@@ -23,6 +25,8 @@ export const colors = {
   SQUARE_LIGHT_MATCHED: '#E0E0E0',
   SQUARE_SCANNED: '#757575',
   GRID_STROKE: '#616161',
+  SCAN_LINE: '#FFFFFF',
+  SCANNED: '#212121',
 };
 
 export const speeds = {
@@ -31,7 +35,7 @@ export const speeds = {
   SCAN_LINE_FAST: 10 * SQUARE_SIZE,
   DROP_SLOW: 0.5 * SQUARE_SIZE,
   DROP_FAST: 25 * SQUARE_SIZE,
-  DROP_DETACHED: 10 * SQUARE_SIZE,
+  DROP_DETACHED: 15 * SQUARE_SIZE,
 };
 
 export const keys = {

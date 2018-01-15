@@ -7,6 +7,7 @@ import {
   move,
   drop,
   next,
+  scan,
   updateDetached,
   updateGrid,
 } from './actions';
@@ -112,20 +113,17 @@ class Game extends Component {
     const { scanLine, dispatch } = this.props;
     const scanned = [];
     if (willEnterNextColumn(scanLine, elapsed)) {
+      const col = (xToCol(scanLine.x) + 1) % dimensions.GRID_COLUMNS;
       for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
         for (let j = 0; j < dimensions.GRID_ROWS; j++) {
           const b = grid[i][j];
-          if (
-            b &&
-            b.matched &&
-            !b.scanned &&
-            xToCol(b.x) === xToCol(scanLine.x) + 1
-          ) {
+          if (b && b.matched && !b.scanned && xToCol(b.x) === col) {
             grid = addToGrid({ ...b, scanned: true }, grid);
             scanned.push(b);
           }
         }
       }
+      dispatch(scan(scanned, col === 0));
       dispatch(updateGrid(grid));
       return scanned;
     }
@@ -172,7 +170,7 @@ class Game extends Component {
     }
   };
   render() {
-    const { queue, grid, current, scanLine, detached } = this.props;
+    const { queue, grid, current, scanLine, detached, scanned } = this.props;
     return (
       <Interface
         queue={queue}
@@ -180,6 +178,7 @@ class Game extends Component {
         current={current}
         scanLine={scanLine}
         detached={detached}
+        scanned={scanned}
       />
     );
   }

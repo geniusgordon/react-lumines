@@ -74,6 +74,9 @@ export const addToGrid = (block, grid) => {
   const row = yToRow(block.y);
   const x = normalize(block.x);
   const y = normalize(block.y);
+  if (row < 2) {
+    return grid;
+  }
   return [
     ...grid.slice(0, col),
     [

@@ -1,6 +1,5 @@
 import React, { PureComponent } from 'react';
 import Block from './Block';
-import { dimensions, colors } from '../constants';
 
 class Column extends PureComponent {
   render() {

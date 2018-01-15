@@ -1,4 +1,12 @@
-import { LOOP, NEXT, UPDATE_DETACHED, UPDATE_GRID } from '../actions';
+import {
+  RESTART,
+  PAUSE,
+  LOOP,
+  NEXT,
+  SCAN,
+  UPDATE_DETACHED,
+  UPDATE_GRID,
+} from '../actions';
 import {
   range,
   generateRandomPiece,
@@ -7,7 +15,8 @@ import {
 } from '../utils';
 import { dimensions, speeds } from '../constants';
 
-const initialState = {
+const getInitialState = () => ({
+  paused: false,
   now: performance.now(),
   scanLine: {
     x: 0,
@@ -25,10 +34,15 @@ const initialState = {
     speed: speeds.DROP_SLOW,
   },
   detached: [],
-};
+  scanned: 0,
+});
 
-const reducer = (state = initialState, action) => {
+const reducer = (state = getInitialState(), action) => {
   switch (action.type) {
+    case RESTART:
+      return getInitialState();
+    case PAUSE:
+      return { ...state, paused: !state.paused };
     case LOOP:
       return {
         ...state,
@@ -58,6 +72,12 @@ const reducer = (state = initialState, action) => {
           speed: speeds.DROP_SLOW,
         },
         queue: [queue[1], queue[2], action.next],
+      };
+    case SCAN:
+      const count = action.scanned.filter(block => block.head).length;
+      return {
+        ...state,
+        scanned: action.end ? 0 : state.scanned + count,
       };
     case UPDATE_DETACHED:
       return { ...state, detached: action.detached };

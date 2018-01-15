@@ -1,8 +1,10 @@
 import React, { PureComponent } from 'react';
-import { dimensions } from '../constants';
+import { dimensions as d, colors } from '../constants';
 
 class ScanLine extends PureComponent {
   render() {
+    const { x, scanned } = this.props;
+    const S = d.SQUARE_SIZE;
     return (
       <g>
         <defs>
@@ -14,16 +16,56 @@ class ScanLine extends PureComponent {
             y2="0%"
           >
             <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-            <stop offset="97%" stopColor="rgba(255,255,255,0.1)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,1)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.1)" />
           </linearGradient>
         </defs>
         <rect
-          x={this.props.x - dimensions.SCAN_LINE_WIDTH}
-          y={2 * dimensions.SQUARE_SIZE}
-          width={dimensions.SCAN_LINE_WIDTH}
-          height={dimensions.GRID_HEIGHT - 2 * dimensions.SQUARE_SIZE}
+          x={x - d.SCAN_LINE_WIDTH}
+          y={0}
+          width={d.SCAN_LINE_WIDTH}
+          height={d.GRID_HEIGHT}
           fill="url(#scanLineGradient)"
+        />
+        <rect
+          x={x - d.SCAN_LINE_WIDTH}
+          y={0}
+          width={d.SCAN_LINE_WIDTH}
+          height={d.SQUARE_SIZE}
+          fill={colors.SCANNED}
+          stroke={colors.SCAN_LINE}
+          strokeWidth={d.SCAN_LINE_STROKE_WIDTH}
+        />
+        <svg
+          x={x - d.SCAN_LINE_WIDTH}
+          y={0}
+          width={d.SCAN_LINE_WIDTH}
+          height={d.SQUARE_SIZE}
+        >
+          <text
+            x="90%"
+            y="50%"
+            alignmentBaseline="middle"
+            textAnchor="end"
+            fill={colors.SCAN_LINE}
+            fontSize={S}
+            fontFamily="monospace"
+          >
+            {scanned}
+          </text>
+        </svg>
+        <polygon
+          points={`${x},0 ${x},${S} ${x + S / 2},${S / 2}`}
+          fill={colors.SCANNED}
+          stroke={colors.SCAN_LINE}
+          strokeWidth={d.SCAN_LINE_STROKE_WIDTH}
+        />
+        <line
+          x1={x}
+          y1={0}
+          x2={x}
+          y2={d.GRID_HEIGHT}
+          stroke={colors.SCAN_LINE}
+          strokeWidth={d.SCAN_LINE_STROKE_WIDTH}
         />
       </g>
     );
