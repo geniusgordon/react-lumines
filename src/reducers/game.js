@@ -100,7 +100,7 @@ const reducer = (state = getInitialState(), action) => {
         queue: [queue[1], queue[2], action.next],
       };
     case SCAN:
-      const count = action.scanned.filter(block => block.head).length;
+      const count = action.scanned.filter(block => block.index === 0).length;
       return {
         ...state,
         scanned: action.end ? 0 : state.scanned + count,

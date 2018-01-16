@@ -127,26 +127,34 @@ class Game extends Component {
         }
       }
       dispatch(scan(scanned, col === dimensions.GRID_COLUMNS - 1));
-      dispatch(updateGrid(grid));
+      if (scanned.length > 0) {
+        dispatch(updateGrid(grid));
+      }
       return scanned;
     }
     return false;
   };
   removeScanned = (grid, detached) => {
     const nextDetached = [...detached];
+    let dirty = false;
     for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
       for (let j = dimensions.GRID_ROWS - 1; j >= 0; j--) {
         if (grid[i][j] && grid[i][j].scanned) {
           grid = removeFromGrid(grid[i][j], grid);
+          dirty = true;
         }
         if (grid[i][j] && grid[i][j + 1] === null) {
           nextDetached.push({ ...grid[i][j], speed: speeds.DROP_DETACHED });
           grid = removeFromGrid(grid[i][j], grid);
+          dirty = true;
         }
       }
     }
-    this.props.dispatch(updateGrid(grid));
-    this.props.dispatch(updateDetached(nextDetached));
+    if (dirty) {
+      grid = updateMatchedBlocks(grid);
+      this.props.dispatch(updateGrid(grid));
+      this.props.dispatch(updateDetached(nextDetached));
+    }
   };
   handleKeyDown = e => {
     const { gameState, dispatch } = this.props;

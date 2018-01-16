@@ -14,7 +14,7 @@ class Floor extends Component {
           <Column
             key={i}
             blocks={blocks.filter(
-              block => block && block.matched && block.head,
+              block => block && block.matched && block.index === 0,
             )}
             BlockComponent={MatchedBlock}
           />

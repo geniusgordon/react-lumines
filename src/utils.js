@@ -155,11 +155,13 @@ export const updateMatchedBlocks = grid => {
         grid[i][j + 1].color === grid[i + 1][j + 1].color
       ) {
         grid = [
-          { ...grid[i][j], matched: true, head: true },
-          { ...grid[i + 1][j], matched: true },
-          { ...grid[i][j + 1], matched: true },
-          { ...grid[i + 1][j + 1], matched: true },
+          { ...grid[i][j], matched: true, index: 0 },
+          { ...grid[i + 1][j], matched: true, index: 1 },
+          { ...grid[i + 1][j + 1], matched: true, index: 2 },
+          { ...grid[i][j + 1], matched: true, index: 3 },
         ].reduce((g, b) => addToGrid(b, g), grid);
+      } else if (grid[i][j] && grid[i][j].matched && grid[i][j].index === 0) {
+        grid = addToGrid({ ...grid[i][j], matched: false }, grid);
       }
     }
   }
