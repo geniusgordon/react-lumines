@@ -144,7 +144,11 @@ class Game extends Component {
           dirty = true;
         }
         if (grid[i][j] && grid[i][j + 1] === null) {
-          nextDetached.push({ ...grid[i][j], speed: speeds.DROP_DETACHED });
+          nextDetached.push({
+            ...grid[i][j],
+            matched: false,
+            speed: speeds.DROP_DETACHED,
+          });
           grid = removeFromGrid(grid[i][j], grid);
           dirty = true;
         }
