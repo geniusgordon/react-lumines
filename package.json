@@ -1,8 +1,9 @@
 {
   "name": "lumines",
   "version": "0.1.0",
-  "private": true,
+  "homepage": "https://geniusgordon.github.io/react-lumines",
   "dependencies": {
+    "gh-pages": "^1.1.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.6",
@@ -17,6 +18,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "format": "prettier --single-quote --trailing-comma all --write \"src/**/*.js\""
+    "format": "prettier --single-quote --trailing-comma all --write \"src/**/*.js\"",
+    "predeploy": "yarn run build",
+    "deploy": "gh-pages -d build"
   }
 }
