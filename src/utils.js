@@ -74,7 +74,13 @@ export const addToGrid = (block, grid) => {
   const row = yToRow(block.y);
   const x = normalize(block.x);
   const y = normalize(block.y);
-  if (row < 2) {
+  if (
+    row < 2 ||
+    col < 0 ||
+    col >= dimensions.GRID_COLUMNS ||
+    row < 0 ||
+    row >= dimensions.GRID_ROWS
+  ) {
     return grid;
   }
   return [
