@@ -7,9 +7,11 @@ export const FINISH = 'FINISH';
 
 export const LOOP = 'LOOP';
 export const NEXT = 'NEXT';
+export const DECOMPOSE = 'DECOMPOSE';
+export const LOCK_DETACHED = 'LOCK_DETACHED';
 export const SCAN = 'SCAN';
-export const UPDATE_DETACHED = 'UPDATE_DETACHED';
-export const UPDATE_GRID = 'UPDATE_GRID';
+export const UPDATE_MATCHED = 'UPDATE_MATCHED';
+export const REMOVE_SCANNED = 'REMOVE_SCANNED';
 
 export const ROTATE = 'ROTATE';
 export const MOVE = 'MOVE';
@@ -25,7 +27,14 @@ export const move = direction => ({ type: MOVE, direction });
 export const drop = () => ({ type: DROP });
 
 export const loop = (now, elapsed) => ({ type: LOOP, now, elapsed });
+
+export const decompose = ({ decomposed, locked }) => ({
+  type: DECOMPOSE,
+  decomposed,
+  locked,
+});
 export const next = () => ({ type: NEXT, next: generateRandomPiece() });
+export const lockDetached = indexes => ({ type: LOCK_DETACHED, indexes });
 export const scan = (scanned, end) => ({ type: SCAN, scanned, end });
-export const updateDetached = detached => ({ type: UPDATE_DETACHED, detached });
-export const updateGrid = grid => ({ type: UPDATE_GRID, grid });
+export const updateMatched = () => ({ type: UPDATE_MATCHED });
+export const removeScanned = () => ({ type: REMOVE_SCANNED });

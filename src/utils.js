@@ -148,7 +148,8 @@ export const decomposePiece = (piece, grid) => {
   }
 };
 
-export const updateMatchedBlocks = grid => {
+export const getMatchedBlocks = grid => {
+  const matched = [];
   for (let i = 0; i < dimensions.GRID_COLUMNS - 1; i++) {
     for (let j = 0; j < dimensions.GRID_ROWS - 1; j++) {
       if (
@@ -160,16 +161,14 @@ export const updateMatchedBlocks = grid => {
         grid[i][j].color === grid[i][j + 1].color &&
         grid[i][j + 1].color === grid[i + 1][j + 1].color
       ) {
-        grid = [
-          { ...grid[i][j], matched: true, index: 0 },
-          { ...grid[i + 1][j], matched: true, index: 1 },
-          { ...grid[i + 1][j + 1], matched: true, index: 2 },
-          { ...grid[i][j + 1], matched: true, index: 3 },
-        ].reduce((g, b) => addToGrid(b, g), grid);
+        matched.push({ ...grid[i][j], matched: true, index: 0 });
+        matched.push({ ...grid[i + 1][j], matched: true, index: 1 });
+        matched.push({ ...grid[i + 1][j + 1], matched: true, index: 2 });
+        matched.push({ ...grid[i][j + 1], matched: true, index: 3 });
       } else if (grid[i][j] && grid[i][j].matched && grid[i][j].index === 0) {
-        grid = addToGrid({ ...grid[i][j], matched: false }, grid);
+        matched.push({ ...grid[i][j], matched: false });
       }
     }
   }
-  return grid;
+  return matched;
 };

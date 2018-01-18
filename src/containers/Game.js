@@ -7,10 +7,12 @@ import {
   rotate,
   move,
   drop,
+  decompose,
   next,
+  lockDetached,
   scan,
-  updateDetached,
-  updateGrid,
+  updateMatched,
+  removeScanned,
 } from '../actions';
 import {
   xToCol,
@@ -22,7 +24,6 @@ import {
   willEnterNextRow,
   willEnterNextColumn,
   decomposePiece,
-  updateMatchedBlocks,
 } from '../utils';
 import { gameStates, dimensions, keys, speeds } from '../constants';
 
@@ -37,42 +38,46 @@ class Game extends Component {
   }
   loop = now => {
     const elapsed = Math.max(0, (now - this.props.now) / 1000);
-    let dirty = false;
 
-    const { gameState, gameTime, dispatch } = this.props;
+    const { gameState, gameTime, scanLine, dispatch } = this.props;
     if (gameState === gameStates.PLAYING && gameTime >= 90) {
       dispatch(finish());
     }
 
-    const curResult = this.updateCurrent(elapsed);
-    if (curResult) {
+    let dirty = false;
+    const decomposedCurrent = this.checkCurrent(elapsed);
+    if (decomposedCurrent) {
+      dispatch(decompose(decomposedCurrent));
+      dispatch(next());
       dirty = true;
     }
 
-    const detResult = this.updateDetached(elapsed, curResult.decomposed);
-    if (detResult) {
+    let { lockedIndexes, grid } = this.checkDetached(elapsed);
+    if (lockedIndexes.length > 0) {
+      dispatch(lockDetached(lockedIndexes));
       dirty = true;
     }
 
-    let grid = detResult.grid || this.props.grid;
-    const detached = detResult.detached || this.props.detached;
     if (dirty) {
-      const locked = curResult.locked || [];
-      grid = locked.reduce((g, b) => addToGrid(b, g), grid);
-      grid = updateMatchedBlocks(grid);
-      dispatch(updateGrid(grid));
+      dispatch(updateMatched());
     }
 
     const scanned = this.scan(elapsed, grid);
-
-    if (scanned && scanned.length === 0) {
-      this.removeScanned(grid, detached);
+    if (scanned) {
+      const col = (xToCol(scanLine.x) + 1) % dimensions.GRID_COLUMNS;
+      const end = col === dimensions.GRID_COLUMNS - 1;
+      if (scanned.length > 0 || end) {
+        dispatch(scan(scanned, end));
+      }
+      if ((scanned.length === 0 || end) && this.props.scannedGroup > 0) {
+        dispatch(removeScanned());
+      }
     }
 
     dispatch(loop(now, elapsed));
     this.requestId = requestAnimationFrame(this.loop);
   };
-  updateCurrent = elapsed => {
+  checkCurrent = elapsed => {
     const { current, grid, dispatch } = this.props;
     const cur = {
       ...current,
@@ -82,35 +87,25 @@ class Game extends Component {
       (cur.dropped && willCollide(cur, grid)) ||
       (willEnterNextRow(cur, elapsed) && willCollide(cur, grid))
     ) {
-      dispatch(next());
       return decomposePiece(cur, grid);
     }
     return false;
   };
-  updateDetached = (elapsed, decomposed = []) => {
-    const { dispatch } = this.props;
+  checkDetached = elapsed => {
     let { grid } = this.props;
-    const detached = this.props.detached.map(block => ({
-      ...block,
-      y: nextBlockY(block, elapsed),
-    }));
-    const nextDetached = decomposed.map(block => ({
-      ...block,
-      speed: speeds.DROP_DETACHED,
-    }));
-    let dirty = false;
-    detached.forEach(d => {
-      if (isFreeBelow(d, grid)) {
-        nextDetached.push(d);
-      } else {
-        grid = addToGrid(d, grid);
-        dirty = true;
-      }
-    });
-    if (decomposed.length > 0 || dirty) {
-      dispatch(updateDetached(nextDetached));
-    }
-    return dirty ? { grid, detached: nextDetached } : false;
+    const lockedIndexes = [];
+    this.props.detached
+      .map(block => ({
+        ...block,
+        y: nextBlockY(block, elapsed),
+      }))
+      .forEach((d, i) => {
+        if (!isFreeBelow(d, grid)) {
+          lockedIndexes.push(i);
+          grid = addToGrid(d, grid);
+        }
+      });
+    return { lockedIndexes, grid };
   };
   scan = (elapsed, grid) => {
     const { scanLine, dispatch } = this.props;
@@ -121,44 +116,13 @@ class Game extends Component {
         for (let j = 0; j < dimensions.GRID_ROWS; j++) {
           const b = grid[i][j];
           if (b && b.matched && !b.scanned && xToCol(b.x) === col) {
-            grid = addToGrid({ ...b, scanned: true }, grid);
             scanned.push(b);
           }
         }
       }
-      dispatch(scan(scanned, col === dimensions.GRID_COLUMNS - 1));
-      if (scanned.length > 0) {
-        dispatch(updateGrid(grid));
-      }
       return scanned;
     }
     return false;
-  };
-  removeScanned = (grid, detached) => {
-    const nextDetached = [...detached];
-    let dirty = false;
-    for (let i = 0; i < dimensions.GRID_COLUMNS; i++) {
-      for (let j = dimensions.GRID_ROWS - 1; j >= 0; j--) {
-        if (grid[i][j] && grid[i][j].scanned) {
-          grid = removeFromGrid(grid[i][j], grid);
-          dirty = true;
-        }
-        if (grid[i][j] && grid[i][j + 1] === null) {
-          nextDetached.push({
-            ...grid[i][j],
-            matched: false,
-            speed: speeds.DROP_DETACHED,
-          });
-          grid = removeFromGrid(grid[i][j], grid);
-          dirty = true;
-        }
-      }
-    }
-    if (dirty) {
-      grid = updateMatchedBlocks(grid);
-      this.props.dispatch(updateGrid(grid));
-      this.props.dispatch(updateDetached(nextDetached));
-    }
   };
   handleKeyDown = e => {
     const { gameState, dispatch } = this.props;
@@ -193,7 +157,7 @@ class Game extends Component {
       current,
       scanLine,
       detached,
-      scanned,
+      scannedUtilNow,
       gameTime,
       score,
     } = this.props;
@@ -204,7 +168,7 @@ class Game extends Component {
         current={current}
         scanLine={scanLine}
         detached={detached}
-        scanned={scanned}
+        scanned={scannedUtilNow}
         gameTime={gameTime}
         score={score}
       />
