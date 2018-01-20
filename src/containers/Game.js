@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import Interface from '../components/Interface';
 import {
   loop,
+  restart,
   finish,
   rotate,
   move,
@@ -19,18 +20,18 @@ import {
   nextBlockY,
   isFreeBelow,
   addToGrid,
-  removeFromGrid,
   willCollide,
   willEnterNextRow,
   willEnterNextColumn,
   decomposePiece,
 } from '../utils';
-import { gameStates, dimensions, keys, speeds } from '../constants';
+import { gameStates, dimensions, keys } from '../constants';
 
 class Game extends Component {
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);
     this.requestId = requestAnimationFrame(this.loop);
+    this.props.dispatch(restart());
   }
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
@@ -78,7 +79,7 @@ class Game extends Component {
     this.requestId = requestAnimationFrame(this.loop);
   };
   checkCurrent = elapsed => {
-    const { current, grid, dispatch } = this.props;
+    const { current, grid } = this.props;
     const cur = {
       ...current,
       y: nextBlockY(current, elapsed),
@@ -108,7 +109,7 @@ class Game extends Component {
     return { lockedIndexes, grid };
   };
   scan = (elapsed, grid) => {
-    const { scanLine, dispatch } = this.props;
+    const { scanLine } = this.props;
     const scanned = [];
     if (willEnterNextColumn(scanLine, elapsed)) {
       const col = (xToCol(scanLine.x) + 1) % dimensions.GRID_COLUMNS;

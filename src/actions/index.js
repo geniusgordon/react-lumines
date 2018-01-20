@@ -1,9 +1,9 @@
-import { generateRandomPiece } from '../utils';
+import { range, generateRandomPiece } from '../utils';
 
 export const LOOP = 'LOOP';
 
-export const NEXT = 'GAME.NEXT';
 export const DECOMPOSE = 'GAME.DECOMPOSE';
+export const NEXT = 'GAME.NEXT';
 export const LOCK_DETACHED = 'GAME.LOCK_DETACHED';
 export const SCAN = 'GAME.SCAN';
 export const UPDATE_MATCHED = 'GAME.UPDATE_MATCHED';
@@ -15,17 +15,16 @@ export const DROP = 'MOVE.DROP';
 
 export const PAUSE = 'STATE.PAUSE';
 export const RESTART = 'STATE.RESTART';
-export const QUIT = 'STATE.QUIT';
 export const FINISH = 'STATE.FINISH';
 
 export const loop = (now, elapsed) => ({ type: LOOP, now, elapsed });
 
-export const next = () => ({ type: NEXT, next: generateRandomPiece() });
 export const decompose = ({ decomposed, locked }) => ({
   type: DECOMPOSE,
   decomposed,
   locked,
 });
+export const next = () => ({ type: NEXT, next: generateRandomPiece() });
 export const lockDetached = indexes => ({ type: LOCK_DETACHED, indexes });
 export const scan = (scanned, end) => ({ type: SCAN, scanned, end });
 export const updateMatched = () => ({ type: UPDATE_MATCHED });
@@ -36,6 +35,8 @@ export const move = direction => ({ type: MOVE, direction });
 export const drop = () => ({ type: DROP });
 
 export const pause = () => ({ type: PAUSE });
-export const restart = () => ({ type: RESTART });
-export const quit = () => ({ type: QUIT });
+export const restart = () => ({
+  type: RESTART,
+  queue: range(3).map(() => generateRandomPiece()),
+});
 export const finish = () => ({ type: FINISH });

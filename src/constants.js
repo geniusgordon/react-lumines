@@ -7,6 +7,7 @@ export const gameStates = {
   PAUSED: 'PAUSED',
   FINISHED: 'FINISHED',
   GAMEOVER: 'GAMEOVER',
+  MAIN: 'MAIN',
 };
 
 export const dimensions = {

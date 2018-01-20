@@ -5,10 +5,11 @@ const Modal = styled.div`
   top: 30%;
   left: 0;
   right: 0;
-  width: 30%;
+  width: ${props => props.width || '30%'};
   margin: auto;
   background-color: #212121;
   padding: 8px;
+  transition: width .1s
 `;
 
 export default Modal;

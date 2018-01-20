@@ -1,7 +1,7 @@
 import { colToX, rowToY } from '../utils';
 import {
-  NEXT,
   DECOMPOSE,
+  NEXT,
   LOCK_DETACHED,
   SCAN,
   UPDATE_MATCHED,
@@ -9,6 +9,7 @@ import {
   ROTATE,
   MOVE,
   DROP,
+  RESTART,
 } from './index';
 
 export const decodeBlock = tokens => {
@@ -35,10 +36,6 @@ export const decodeArray = (tokens, index, count = 1) => {
 };
 
 const decodeMap = [
-  tokens => ({
-    type: NEXT,
-    next: tokens[1].split('').map(s => Boolean(Number(s))),
-  }),
   tokens => {
     const decomposed = decodeArray(tokens, 1, 3).map(decodeBlock);
     const locked = decodeArray(tokens, 2 + (decomposed.length || 1), 3).map(
@@ -50,6 +47,10 @@ const decodeMap = [
       locked,
     };
   },
+  tokens => ({
+    type: NEXT,
+    next: tokens[1].split('').map(s => Boolean(Number(s))),
+  }),
   tokens => ({
     type: LOCK_DETACHED,
     indexes: decodeArray(tokens, 1).map(Number),
@@ -67,6 +68,14 @@ const decodeMap = [
   tokens => ({ type: ROTATE, direction: Number(tokens[1]) === 1 ? 1 : -1 }),
   tokens => ({ type: MOVE, direction: Number(tokens[1]) === 1 ? 1 : -1 }),
   tokens => ({ type: DROP }),
+  tokens => ({
+    type: RESTART,
+    queue: [
+      tokens[1].split('').map(s => Boolean(Number(s))),
+      tokens[2].split('').map(s => Boolean(Number(s))),
+      tokens[3].split('').map(s => Boolean(Number(s))),
+    ],
+  }),
 ];
 
 const decode = raw =>

@@ -23,7 +23,7 @@ import {
 } from '../utils';
 import { gameStates, dimensions, speeds } from '../constants';
 
-const getInitialState = () => ({
+const getInitialState = (queue = []) => ({
   now: performance.now(),
   gameState: gameStates.PLAYING,
   gameTime: -2.4,
@@ -34,7 +34,7 @@ const getInitialState = () => ({
     x: 0,
     speed: speeds.SCAN_LINE_MEDIUM,
   },
-  queue: range(3).map(() => generateRandomPiece()),
+  queue,
   grid: range(dimensions.GRID_COLUMNS).map(() =>
     range(dimensions.GRID_ROWS).map(() => null),
   ),
@@ -48,7 +48,7 @@ const getInitialState = () => ({
   detached: [],
 });
 
-const pause = (state, action) => ({
+const pause = state => ({
   ...state,
   gameState:
     state.gameState === gameStates.PLAYING
@@ -56,10 +56,11 @@ const pause = (state, action) => ({
       : gameStates.PLAYING,
 });
 
-const finish = (state, action) => ({
+const finish = state => ({
   ...state,
   gameState: gameStates.FINISHED,
   score: state.score + state.scannedUtilNow,
+  scannedUtilNow: 0,
 });
 
 const loop = (state, action) => {
@@ -184,7 +185,7 @@ const removeScanned = (state, action) => {
 const reducer = (state = getInitialState(), action) => {
   switch (action.type) {
     case RESTART:
-      return getInitialState();
+      return getInitialState(action.queue);
     case PAUSE:
       return pause(state, action);
     case FINISH:

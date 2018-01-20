@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { createStore, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import App from './App';
 import reducer from './reducers';
@@ -21,7 +22,9 @@ const store = createStore(
 
 ReactDOM.render(
   <Provider store={store}>
-    <App />
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>
   </Provider>,
   document.getElementById('root'),
 );

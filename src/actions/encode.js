@@ -1,7 +1,7 @@
 import { xToCol, yToRow } from '../utils';
 import {
-  NEXT,
   DECOMPOSE,
+  NEXT,
   LOCK_DETACHED,
   SCAN,
   UPDATE_MATCHED,
@@ -9,6 +9,7 @@ import {
   ROTATE,
   MOVE,
   DROP,
+  RESTART,
 } from './index';
 
 export const encodeBlock = block => {
@@ -18,13 +19,13 @@ export const encodeBlock = block => {
 };
 
 const encodeMap = {
-  [NEXT]: action => `0,${action.next.map(b => Number(b)).join('')}`,
   [DECOMPOSE]: action => {
     const { decomposed, locked } = action;
     const d = decomposed.map(encodeBlock).join(',');
     const l = locked.map(encodeBlock).join(',');
-    return `1,${decomposed.length},${d},${locked.length},${l}`;
+    return `0,${decomposed.length},${d},${locked.length},${l}`;
   },
+  [NEXT]: action => `1,${action.next.map(b => Number(b)).join('')}`,
   [LOCK_DETACHED]: action => {
     const { indexes } = action;
     return `2,${indexes.length},${indexes.join(',')}`;
@@ -39,6 +40,8 @@ const encodeMap = {
   [ROTATE]: action => `6,${action.direction === 1 ? 1 : 0}`,
   [MOVE]: action => `7,${action.direction === 1 ? 1 : 0}`,
   [DROP]: () => '8',
+  [RESTART]: action =>
+    `9,${action.queue.map(p => p.map(b => Number(b)).join('')).join(',')}`,
 };
 
 const encode = action => encodeMap[action.type](action);

@@ -8,7 +8,7 @@ export const gameRecoder = store => next => {
       actions.push(action);
     }
     if (action.type === FINISH) {
-      console.log(JSON.stringify(actions.map(encode)).length);
+      console.log(actions.map(encode).join(' ').length);
     }
     next(action);
   };

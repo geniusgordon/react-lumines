@@ -1,9 +1,13 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router';
+import { Route } from 'react-router-dom';
 import styled from 'styled-components';
 import Game from './containers/Game';
+import Replay from './containers/Replay';
+import MainMenu from './components/MainMenu';
 import GameMenu from './components/GameMenu';
-import { pause, restart, quit } from './actions';
+import { pause, restart } from './actions';
 import { gameStates, keys } from './constants';
 
 const Container = styled.div`
@@ -31,6 +35,9 @@ class App extends Component {
         break;
     }
   };
+  start = () => {
+    this.props.history.push('/game');
+  };
   resume = () => {
     const { gameState, dispatch } = this.props;
     if (gameState === gameStates.PAUSED) {
@@ -41,19 +48,29 @@ class App extends Component {
     this.props.dispatch(restart());
   };
   quit = () => {
-    this.props.dispatch(quit());
+    this.props.history.goBack();
   };
   render() {
-    const { gameState, score } = this.props;
+    const { gameState, score, match } = this.props;
     return (
       <Container>
-        <Game />
-        <GameMenu
-          gameState={gameState}
-          score={score}
-          resume={this.resume}
-          restart={this.restart}
-          quit={this.quit}
+        <Route path="/game" component={Game} />
+        <Route path="/replay" component={Replay} />
+        <Route
+          path="/"
+          render={({ location }) =>
+            location.pathname === '/' ? (
+              <MainMenu start={this.start} />
+            ) : (
+              <GameMenu
+                gameState={gameState}
+                score={score}
+                resume={this.resume}
+                restart={this.restart}
+                quit={this.quit}
+              />
+            )
+          }
         />
       </Container>
     );
@@ -62,4 +79,4 @@ class App extends Component {
 
 const mapStateToProps = state => state;
 
-export default connect(mapStateToProps)(App);
+export default withRouter(connect(mapStateToProps)(App));

@@ -1,4 +1,5 @@
 import {
+  RESTART,
   NEXT,
   DECOMPOSE,
   LOCK_DETACHED,
@@ -49,17 +50,6 @@ describe('decodeArray', () => {
   });
 });
 
-describe('next', () => {
-  test('encode', () => {
-    const action = { type: NEXT, next: [true, false, true, false] };
-    expect(encode(action)).toEqual('0,1010');
-  });
-  test('decode', () => {
-    const action = { type: NEXT, next: [true, false, true, false] };
-    expect(decode('0,1010')[0]).toEqual(action);
-  });
-});
-
 describe('decompose', () => {
   test('encode', () => {
     const block = {
@@ -75,7 +65,7 @@ describe('decompose', () => {
       decomposed: [],
       locked: [block, block],
     };
-    expect(encode(action)).toEqual('1,0,,2,1,2,1010,1,2,1010');
+    expect(encode(action)).toEqual('0,0,,2,1,2,1010,1,2,1010');
   });
   test('decode', () => {
     const block = {
@@ -91,7 +81,18 @@ describe('decompose', () => {
       decomposed: [],
       locked: [block, block],
     };
-    expect(decode('1,0,,2,1,2,1010,1,2,1010')[0]).toEqual(action);
+    expect(decode('0,0,,2,1,2,1010,1,2,1010')[0]).toEqual(action);
+  });
+});
+
+describe('next', () => {
+  test('encode', () => {
+    const action = { type: NEXT, next: [true, false, true, false] };
+    expect(encode(action)).toEqual('1,1010');
+  });
+  test('decode', () => {
+    const action = { type: NEXT, next: [true, false, true, false] };
+    expect(decode('1,1010')[0]).toEqual(action);
   });
 });
 
@@ -144,5 +145,24 @@ describe('scan', () => {
       end: true,
     };
     expect(decode('3,2,1,2,1010,1,2,1010,1')[0]).toEqual(action);
+  });
+});
+
+describe('restart', () => {
+  test('encode', () => {
+    const piece = [true, true, false, false];
+    const action = {
+      type: RESTART,
+      queue: [piece, piece, piece],
+    };
+    expect(encode(action)).toEqual('9,1100,1100,1100');
+  });
+  test('decode', () => {
+    const piece = [true, true, false, false];
+    const action = {
+      type: RESTART,
+      queue: [piece, piece, piece],
+    };
+    expect(decode('9,1100,1100,1100')[0]).toEqual(action);
   });
 });
