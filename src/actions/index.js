@@ -18,22 +18,22 @@ export const RESTART = 'STATE.RESTART';
 export const QUIT = 'STATE.QUIT';
 export const FINISH = 'STATE.FINISH';
 
-export const rotate = direction => ({ type: ROTATE, direction });
-export const move = direction => ({ type: MOVE, direction });
-export const drop = () => ({ type: DROP });
-
 export const loop = (now, elapsed) => ({ type: LOOP, now, elapsed });
 
+export const next = () => ({ type: NEXT, next: generateRandomPiece() });
 export const decompose = ({ decomposed, locked }) => ({
   type: DECOMPOSE,
   decomposed,
   locked,
 });
-export const next = () => ({ type: NEXT, next: generateRandomPiece() });
 export const lockDetached = indexes => ({ type: LOCK_DETACHED, indexes });
 export const scan = (scanned, end) => ({ type: SCAN, scanned, end });
 export const updateMatched = () => ({ type: UPDATE_MATCHED });
 export const removeScanned = () => ({ type: REMOVE_SCANNED });
+
+export const rotate = direction => ({ type: ROTATE, direction });
+export const move = direction => ({ type: MOVE, direction });
+export const drop = () => ({ type: DROP });
 
 export const pause = () => ({ type: PAUSE });
 export const restart = () => ({ type: RESTART });

@@ -1,4 +1,5 @@
 import { FINISH } from './actions';
+import encode from './actions/encode';
 
 export const gameRecoder = store => next => {
   const actions = [];
@@ -7,7 +8,7 @@ export const gameRecoder = store => next => {
       actions.push(action);
     }
     if (action.type === FINISH) {
-      console.log(actions);
+      console.log(JSON.stringify(actions.map(encode)).length);
     }
     next(action);
   };
