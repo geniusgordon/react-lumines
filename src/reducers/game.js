@@ -182,7 +182,6 @@ const removeScanned = (state, action) => {
 };
 
 const reducer = (state = getInitialState(), action) => {
-  if (action.type !== LOOP) console.log(action);
   switch (action.type) {
     case RESTART:
       return getInitialState();

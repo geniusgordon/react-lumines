@@ -1,17 +1,22 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { createStore } from 'redux';
+import { createStore, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
-import { devToolsEnhancer } from 'redux-devtools-extension';
+import { composeWithDevTools } from 'redux-devtools-extension';
 import App from './App';
 import reducer from './reducers';
 import { LOOP } from './actions';
+import { gameRecoder } from './middlewares';
 import registerServiceWorker from './registerServiceWorker';
 import './index.css';
 
+const composeEnhancers = composeWithDevTools({
+  actionsBlacklist: [LOOP],
+});
+
 const store = createStore(
   reducer,
-  devToolsEnhancer({ actionsBlacklist: [LOOP] }),
+  composeEnhancers(applyMiddleware(gameRecoder)),
 );
 
 ReactDOM.render(
