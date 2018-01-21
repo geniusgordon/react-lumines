@@ -17,6 +17,8 @@ export const PAUSE = 'STATE.PAUSE';
 export const RESTART = 'STATE.RESTART';
 export const FINISH = 'STATE.FINISH';
 
+export const RECORD = 'RECORD';
+
 export const loop = (now, elapsed) => ({ type: LOOP, now, elapsed });
 
 export const decompose = ({ decomposed, locked }) => ({
@@ -25,7 +27,11 @@ export const decompose = ({ decomposed, locked }) => ({
   locked,
 });
 export const next = () => ({ type: NEXT, next: generateRandomPiece() });
-export const lockDetached = indexes => ({ type: LOCK_DETACHED, indexes });
+export const lockDetached = (indexes, locked) => ({
+  type: LOCK_DETACHED,
+  indexes,
+  locked,
+});
 export const scan = (scanned, end) => ({ type: SCAN, scanned, end });
 export const updateMatched = () => ({ type: UPDATE_MATCHED });
 export const removeScanned = () => ({ type: REMOVE_SCANNED });
@@ -35,8 +41,14 @@ export const move = direction => ({ type: MOVE, direction });
 export const drop = () => ({ type: DROP });
 
 export const pause = () => ({ type: PAUSE });
-export const restart = () => ({
+export const restart = (
+  first = generateRandomPiece(),
+  queue = range(3).map(() => generateRandomPiece()),
+) => ({
   type: RESTART,
-  queue: range(3).map(() => generateRandomPiece()),
+  first,
+  queue,
 });
 export const finish = () => ({ type: FINISH });
+
+export const record = log => ({ type: RECORD, log });

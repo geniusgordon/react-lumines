@@ -1,14 +1,17 @@
-import { FINISH } from './actions';
+import { RESTART, FINISH, record } from './actions';
 import encode from './actions/encode';
 
 export const gameRecoder = store => next => {
-  const actions = [];
+  let actions = [];
   return action => {
+    if (action.type === RESTART) {
+      actions = [action];
+    }
     if (action.type.startsWith('GAME.') || action.type.startsWith('MOVE.')) {
-      actions.push(action);
+      actions.push({ ...action, time: store.getState().gameTime });
     }
     if (action.type === FINISH) {
-      console.log(actions.map(encode).join(' ').length);
+      store.dispatch(record(actions.map(encode).join(' ')));
     }
     next(action);
   };

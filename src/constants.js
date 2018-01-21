@@ -2,6 +2,8 @@ const SQUARE_SIZE = 10;
 const GRID_COLUMNS = 16;
 const GRID_ROWS = 12;
 
+export const TIME_LIMIT = 20;
+
 export const gameStates = {
   PLAYING: 'PLAYING',
   PAUSED: 'PAUSED',

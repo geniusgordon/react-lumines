@@ -1,11 +1,11 @@
 import React, { PureComponent } from 'react';
 import Group from './Group';
 import Info from './Info';
-import { dimensions } from '../constants';
+import { TIME_LIMIT, dimensions } from '../constants';
 
 class InfoPanel extends PureComponent {
   render() {
-    const time = Math.min(90, 90 - Math.floor(this.props.time));
+    const time = Math.min(TIME_LIMIT, TIME_LIMIT - Math.floor(this.props.time));
     const { score } = this.props;
     return (
       <g>

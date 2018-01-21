@@ -9,21 +9,19 @@ import {
   SCAN,
   UPDATE_MATCHED,
   REMOVE_SCANNED,
+  RECORD,
 } from '../actions';
 import {
   range,
-  yToRow,
-  rowToY,
-  generateRandomPiece,
   nextScanLineX,
   nextBlockY,
   addToGrid,
   removeFromGrid,
   getMatchedBlocks,
 } from '../utils';
-import { gameStates, dimensions, speeds } from '../constants';
+import { TIME_LIMIT, gameStates, dimensions, speeds } from '../constants';
 
-const getInitialState = (queue = []) => ({
+const getInitialState = (first = [], queue = []) => ({
   now: performance.now(),
   gameState: gameStates.PLAYING,
   gameTime: -2.4,
@@ -41,11 +39,12 @@ const getInitialState = (queue = []) => ({
   current: {
     x: dimensions.SQUARE_SIZE * 7,
     y: 0,
-    blocks: generateRandomPiece(),
+    blocks: first,
     dropped: false,
     speed: speeds.DROP_SLOW,
   },
   detached: [],
+  log: '',
 });
 
 const pause = state => ({
@@ -75,7 +74,7 @@ const loop = (state, action) => {
     return {
       ...state,
       now: action.now,
-      gameTime: Math.min(state.gameTime + action.elapsed, 90),
+      gameTime: Math.min(state.gameTime + action.elapsed, TIME_LIMIT),
       scanLine: {
         ...state.scanLine,
         x: nextScanLineX(state.scanLine, action.elapsed),
@@ -120,19 +119,11 @@ const next = (state, action) => {
   };
 };
 
-const lockDetached = (state, action) => {
-  const detached = state.detached.filter((_, i) => !action.indexes.includes(i));
-  const locked = action.indexes.map(i => ({
-    ...state.detached[i],
-    y: rowToY(yToRow(state.detached[i].y) + 1),
-  }));
-
-  return {
-    ...state,
-    grid: locked.reduce((g, b) => addToGrid(b, g), state.grid),
-    detached,
-  };
-};
+const lockDetached = (state, action) => ({
+  ...state,
+  grid: action.locked.reduce((g, b) => addToGrid(b, g), state.grid),
+  detached: state.detached.filter((_, i) => !action.indexes.includes(i)),
+});
 
 const updateMatched = (state, action) => ({
   ...state,
@@ -182,10 +173,12 @@ const removeScanned = (state, action) => {
   };
 };
 
+const record = (state, action) => ({ ...state, log: action.log });
+
 const reducer = (state = getInitialState(), action) => {
   switch (action.type) {
     case RESTART:
-      return getInitialState(action.queue);
+      return getInitialState(action.first, action.queue);
     case PAUSE:
       return pause(state, action);
     case FINISH:
@@ -204,6 +197,8 @@ const reducer = (state = getInitialState(), action) => {
       return scan(state, action);
     case REMOVE_SCANNED:
       return removeScanned(state, action);
+    case RECORD:
+      return record(state, action);
     default:
       return state;
   }

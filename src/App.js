@@ -5,9 +5,9 @@ import { Route } from 'react-router-dom';
 import styled from 'styled-components';
 import Game from './containers/Game';
 import Replay from './containers/Replay';
-import MainMenu from './components/MainMenu';
 import GameMenu from './components/GameMenu';
-import { pause, restart } from './actions';
+import Refresh from './components/Refresh';
+import { pause } from './actions';
 import { gameStates, keys } from './constants';
 
 const Container = styled.div`
@@ -23,20 +23,17 @@ class App extends Component {
     window.removeEventListener('keydown', this.handleKeyDown);
   }
   handleKeyDown = e => {
-    const { dispatch } = this.props;
+    const { history, location, dispatch } = this.props;
     switch (e.keyCode) {
       case keys.ESC:
         dispatch(pause());
         break;
       case keys.R:
-        dispatch(restart());
+        history.push(`/refresh${location.pathname}`);
         break;
       default:
         break;
     }
-  };
-  start = () => {
-    this.props.history.push('/game');
   };
   resume = () => {
     const { gameState, dispatch } = this.props;
@@ -44,33 +41,24 @@ class App extends Component {
       dispatch(pause());
     }
   };
-  restart = () => {
-    this.props.dispatch(restart());
-  };
   quit = () => {
-    this.props.history.goBack();
+    this.props.history.push('/');
   };
   render() {
-    const { gameState, score, match } = this.props;
+    const { gameState, score, location } = this.props;
     return (
       <Container>
         <Route path="/game" component={Game} />
         <Route path="/replay" component={Replay} />
+        <GameMenu
+          gameState={gameState}
+          score={score}
+          resume={this.resume}
+          quit={this.quit}
+        />
         <Route
-          path="/"
-          render={({ location }) =>
-            location.pathname === '/' ? (
-              <MainMenu start={this.start} />
-            ) : (
-              <GameMenu
-                gameState={gameState}
-                score={score}
-                resume={this.resume}
-                restart={this.restart}
-                quit={this.quit}
-              />
-            )
-          }
+          path="/refresh"
+          render={() => <Refresh path={location.pathname} />}
         />
       </Container>
     );

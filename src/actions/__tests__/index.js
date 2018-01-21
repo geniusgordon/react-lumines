@@ -14,27 +14,21 @@ import encode, { encodeBlock } from '../encode';
 import decode, { decodeBlock, decodeArray } from '../decode';
 
 describe('block', () => {
+  const block = {
+    x: 10,
+    y: 20,
+    color: true,
+    matched: false,
+    scanned: true,
+    index: 0,
+  };
+  const encoded = '1,2,1010';
+
   test('encode', () => {
-    const block = {
-      x: 10,
-      y: 20,
-      color: true,
-      matched: false,
-      scanned: true,
-      index: 0,
-    };
-    expect(encodeBlock(block)).toEqual('1,2,1010');
+    expect(encodeBlock(block)).toEqual(encoded);
   });
   test('decode', () => {
-    const block = {
-      x: 10,
-      y: 20,
-      color: true,
-      matched: false,
-      scanned: true,
-      index: 0,
-    };
-    expect(decodeBlock('1,2,1010'.split(','))).toEqual(block);
+    expect(decodeBlock(encoded.split(','))).toEqual(block);
   });
 });
 
@@ -51,118 +45,125 @@ describe('decodeArray', () => {
 });
 
 describe('decompose', () => {
-  test('encode', () => {
-    const block = {
-      x: 10,
-      y: 20,
-      color: true,
-      matched: false,
-      scanned: true,
-      index: 0,
-    };
+  const block = {
+    x: 10,
+    y: 20,
+    color: true,
+    matched: false,
+    scanned: true,
+    index: 0,
+  };
+
+  describe('decompose empty', () => {
     const action = {
       type: DECOMPOSE,
       decomposed: [],
       locked: [block, block],
+      time: 0,
     };
-    expect(encode(action)).toEqual('0,0,,2,1,2,1010,1,2,1010');
+    const encoded = '0,0,,2,1,2,1010,1,2,1010,0';
+
+    test('encode', () => {
+      expect(encode(action)).toEqual(encoded);
+    });
+    test('decode', () => {
+      expect(decode(encoded)[0]).toEqual(action);
+    });
   });
-  test('decode', () => {
-    const block = {
-      x: 10,
-      y: 20,
-      color: true,
-      matched: false,
-      scanned: true,
-      index: 0,
-    };
+
+  describe('decomposed not empty', () => {
     const action = {
       type: DECOMPOSE,
-      decomposed: [],
+      decomposed: [block, block],
       locked: [block, block],
+      time: 0,
     };
-    expect(decode('0,0,,2,1,2,1010,1,2,1010')[0]).toEqual(action);
+    const encoded = '0,2,1,2,1010,1,2,1010,2,1,2,1010,1,2,1010,0';
+
+    test('encode', () => {
+      expect(encode(action)).toEqual(encoded);
+    });
+    test('decode', () => {
+      expect(decode(encoded)[0]).toEqual(action);
+    });
   });
 });
 
 describe('next', () => {
   test('encode', () => {
-    const action = { type: NEXT, next: [true, false, true, false] };
-    expect(encode(action)).toEqual('1,1010');
+    const action = { type: NEXT, next: [true, false, true, false], time: 0 };
+    expect(encode(action)).toEqual('1,1010,0');
   });
   test('decode', () => {
-    const action = { type: NEXT, next: [true, false, true, false] };
-    expect(decode('1,1010')[0]).toEqual(action);
+    const action = { type: NEXT, next: [true, false, true, false], time: 0 };
+    expect(decode('1,1010,0')[0]).toEqual(action);
   });
 });
 
 describe('lockDetached', () => {
+  const block = {
+    x: 10,
+    y: 20,
+    color: true,
+    matched: false,
+    scanned: true,
+    index: 0,
+  };
+  const action = {
+    type: LOCK_DETACHED,
+    indexes: [1, 2, 3, 4],
+    locked: [block, block, block, block],
+    time: 0,
+  };
+  const encoded = '2,4,1,2,3,4,4,1,2,1010,1,2,1010,1,2,1010,1,2,1010,0';
+
   test('encode', () => {
-    const action = {
-      type: LOCK_DETACHED,
-      indexes: [1, 2, 3, 4],
-    };
-    expect(encode(action)).toEqual('2,4,1,2,3,4');
+    expect(encode(action)).toEqual(encoded);
   });
   test('decode', () => {
-    const action = {
-      type: LOCK_DETACHED,
-      indexes: [1, 2, 3, 4],
-    };
-    expect(decode('2,4,1,2,3,4')[0]).toEqual(action);
+    expect(decode(encoded)[0]).toEqual(action);
   });
 });
 
 describe('scan', () => {
+  const block = {
+    x: 10,
+    y: 20,
+    color: true,
+    matched: false,
+    scanned: true,
+    index: 0,
+  };
+  const action = {
+    type: SCAN,
+    scanned: [block, block],
+    end: true,
+    time: 0,
+  };
+  const encoded = '3,2,1,2,1010,1,2,1010,1,0';
+
   test('encode', () => {
-    const block = {
-      x: 10,
-      y: 20,
-      color: true,
-      matched: false,
-      scanned: true,
-      index: 0,
-    };
-    const action = {
-      type: SCAN,
-      scanned: [block, block],
-      end: true,
-    };
-    expect(encode(action)).toEqual('3,2,1,2,1010,1,2,1010,1');
+    expect(encode(action)).toEqual(encoded);
   });
   test('decode', () => {
-    const block = {
-      x: 10,
-      y: 20,
-      color: true,
-      matched: false,
-      scanned: true,
-      index: 0,
-    };
-    const action = {
-      type: SCAN,
-      scanned: [block, block],
-      end: true,
-    };
-    expect(decode('3,2,1,2,1010,1,2,1010,1')[0]).toEqual(action);
+    expect(decode(encoded)[0]).toEqual(action);
   });
 });
 
 describe('restart', () => {
+  const piece = [true, true, false, false];
+  const action = {
+    type: RESTART,
+    first: piece,
+    queue: [piece, piece, piece],
+    time: 0,
+  };
+  const encoded = '9,1100,1100,1100,1100,0';
+
   test('encode', () => {
-    const piece = [true, true, false, false];
-    const action = {
-      type: RESTART,
-      queue: [piece, piece, piece],
-    };
-    expect(encode(action)).toEqual('9,1100,1100,1100');
+    expect(encode(action)).toEqual(encoded);
   });
   test('decode', () => {
-    const piece = [true, true, false, false];
-    const action = {
-      type: RESTART,
-      queue: [piece, piece, piece],
-    };
-    expect(decode('9,1100,1100,1100')[0]).toEqual(action);
+    expect(decode(encoded)[0]).toEqual(action);
   });
 });

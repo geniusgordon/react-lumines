@@ -25,7 +25,7 @@ import {
   willEnterNextColumn,
   decomposePiece,
 } from '../utils';
-import { gameStates, dimensions, keys } from '../constants';
+import { TIME_LIMIT, gameStates, dimensions, keys } from '../constants';
 
 class Game extends Component {
   componentDidMount() {
@@ -41,7 +41,7 @@ class Game extends Component {
     const elapsed = Math.max(0, (now - this.props.now) / 1000);
 
     const { gameState, gameTime, scanLine, dispatch } = this.props;
-    if (gameState === gameStates.PLAYING && gameTime >= 90) {
+    if (gameState === gameStates.PLAYING && gameTime >= TIME_LIMIT) {
       dispatch(finish());
     }
 
@@ -53,9 +53,9 @@ class Game extends Component {
       dirty = true;
     }
 
-    let { lockedIndexes, grid } = this.checkDetached(elapsed);
+    let { lockedIndexes, lockedBlockes, grid } = this.checkDetached(elapsed);
     if (lockedIndexes.length > 0) {
-      dispatch(lockDetached(lockedIndexes));
+      dispatch(lockDetached(lockedIndexes, lockedBlockes));
       dirty = true;
     }
 
@@ -95,18 +95,20 @@ class Game extends Component {
   checkDetached = elapsed => {
     let { grid } = this.props;
     const lockedIndexes = [];
+    const lockedBlockes = [];
     this.props.detached
       .map(block => ({
         ...block,
         y: nextBlockY(block, elapsed),
       }))
-      .forEach((d, i) => {
-        if (!isFreeBelow(d, grid)) {
+      .forEach((b, i) => {
+        if (!isFreeBelow(b, grid)) {
           lockedIndexes.push(i);
-          grid = addToGrid(d, grid);
+          lockedBlockes.push(b);
+          grid = addToGrid(b, grid);
         }
       });
-    return { lockedIndexes, grid };
+    return { lockedIndexes, lockedBlockes, grid };
   };
   scan = (elapsed, grid) => {
     const { scanLine } = this.props;

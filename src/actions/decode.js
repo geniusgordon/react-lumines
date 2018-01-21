@@ -38,9 +38,11 @@ export const decodeArray = (tokens, index, count = 1) => {
 const decodeMap = [
   tokens => {
     const decomposed = decodeArray(tokens, 1, 3).map(decodeBlock);
-    const locked = decodeArray(tokens, 2 + (decomposed.length || 1), 3).map(
-      decodeBlock,
-    );
+    const locked = decodeArray(
+      tokens,
+      decomposed.length ? 2 + decomposed.length * 3 : 3,
+      3,
+    ).map(decodeBlock);
     return {
       type: DECOMPOSE,
       decomposed,
@@ -51,10 +53,14 @@ const decodeMap = [
     type: NEXT,
     next: tokens[1].split('').map(s => Boolean(Number(s))),
   }),
-  tokens => ({
-    type: LOCK_DETACHED,
-    indexes: decodeArray(tokens, 1).map(Number),
-  }),
+  tokens => {
+    const indexes = decodeArray(tokens, 1).map(Number);
+    return {
+      type: LOCK_DETACHED,
+      indexes,
+      locked: decodeArray(tokens, 2 + indexes.length, 3).map(decodeBlock),
+    };
+  },
   tokens => {
     const scanned = decodeArray(tokens, 1, 3).map(decodeBlock);
     return {
@@ -70,10 +76,11 @@ const decodeMap = [
   tokens => ({ type: DROP }),
   tokens => ({
     type: RESTART,
+    first: tokens[1].split('').map(s => Boolean(Number(s))),
     queue: [
-      tokens[1].split('').map(s => Boolean(Number(s))),
       tokens[2].split('').map(s => Boolean(Number(s))),
       tokens[3].split('').map(s => Boolean(Number(s))),
+      tokens[4].split('').map(s => Boolean(Number(s))),
     ],
   }),
 ];
@@ -81,7 +88,10 @@ const decodeMap = [
 const decode = raw =>
   raw.split(' ').map(action => {
     const tokens = action.split(',');
-    return decodeMap[Number(tokens[0])](tokens);
+    return {
+      ...decodeMap[Number(tokens[0])](tokens),
+      time: Number(tokens[tokens.length - 1]),
+    };
   });
 
 export default decode;

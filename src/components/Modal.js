@@ -9,7 +9,7 @@ const Modal = styled.div`
   margin: auto;
   background-color: #212121;
   padding: 8px;
-  transition: width .1s
+  transition: width 0.2s;
 `;
 
 export default Modal;

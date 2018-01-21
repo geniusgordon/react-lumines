@@ -27,8 +27,9 @@ const encodeMap = {
   },
   [NEXT]: action => `1,${action.next.map(b => Number(b)).join('')}`,
   [LOCK_DETACHED]: action => {
-    const { indexes } = action;
-    return `2,${indexes.length},${indexes.join(',')}`;
+    const { indexes, locked } = action;
+    const l = locked.map(encodeBlock).join(',');
+    return `2,${indexes.length},${indexes.join(',')},${locked.length},${l}`;
   },
   [SCAN]: action => {
     const { scanned, end } = action;
@@ -40,9 +41,12 @@ const encodeMap = {
   [ROTATE]: action => `6,${action.direction === 1 ? 1 : 0}`,
   [MOVE]: action => `7,${action.direction === 1 ? 1 : 0}`,
   [DROP]: () => '8',
-  [RESTART]: action =>
-    `9,${action.queue.map(p => p.map(b => Number(b)).join('')).join(',')}`,
+  [RESTART]: action => {
+    const f = action.first.map(b => Number(b)).join('');
+    const q = action.queue.map(p => p.map(b => Number(b)).join('')).join(',');
+    return `9,${f},${q}`;
+  },
 };
 
-const encode = action => encodeMap[action.type](action);
+const encode = action => `${encodeMap[action.type](action)},${action.time}`;
 export default encode;
