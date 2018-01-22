@@ -5,6 +5,7 @@ import gql from 'graphql-tag';
 import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import Modal from './Modal';
+import Keyboard from './Keyboard';
 import { gameStates } from '../constants';
 
 const Title = styled.div`
@@ -145,6 +146,7 @@ class GameMenu extends Component {
           <Title>LUMINES</Title>
           <LinkItem to="/game">START</LinkItem>
           <LinkItem to="/rank">RANK</LinkItem>
+          <Keyboard />
         </Modal>
       );
     }
