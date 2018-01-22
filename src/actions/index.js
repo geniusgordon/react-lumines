@@ -51,4 +51,4 @@ export const restart = (
 });
 export const finish = () => ({ type: FINISH });
 
-export const record = log => ({ type: RECORD, log });
+export const record = replay => ({ type: RECORD, replay });

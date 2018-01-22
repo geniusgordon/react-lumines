@@ -14,6 +14,9 @@ import {
   scan,
   updateMatched,
   removeScanned,
+  record,
+  RESTART,
+  FINISH,
 } from '../actions';
 import {
   xToCol,
@@ -25,22 +28,44 @@ import {
   willEnterNextColumn,
   decomposePiece,
 } from '../utils';
+import encode from '../actions/encode';
 import { TIME_LIMIT, gameStates, dimensions, keys } from '../constants';
 
 class Game extends Component {
+  actions = [];
+
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);
     this.requestId = requestAnimationFrame(this.loop);
-    this.props.dispatch(restart());
+    this.dispatch(restart());
   }
+
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
     cancelAnimationFrame(this.requestId);
   }
+
+  dispatch = action => {
+    const { gameTime, dispatch } = this.props;
+    if (
+      action.type === RESTART ||
+      action.type.startsWith('GAME.') ||
+      action.type.startsWith('MOVE.')
+    ) {
+      this.actions.push({ ...action, time: Math.round(gameTime * 1e6) / 1e6 });
+    }
+    if (action.type === FINISH) {
+      dispatch(record(this.actions.map(encode).join(' ')));
+    }
+    dispatch(action);
+  };
+
   loop = now => {
     const elapsed = Math.max(0, (now - this.props.now) / 1000);
 
-    const { gameState, gameTime, scanLine, dispatch } = this.props;
+    const { gameState, gameTime, scanLine } = this.props;
+    const { dispatch } = this;
+
     if (gameState === gameStates.PLAYING && gameTime >= TIME_LIMIT) {
       dispatch(finish());
     }
@@ -78,6 +103,7 @@ class Game extends Component {
     dispatch(loop(now, elapsed));
     this.requestId = requestAnimationFrame(this.loop);
   };
+
   checkCurrent = elapsed => {
     const { current, grid } = this.props;
     const cur = {
@@ -92,6 +118,7 @@ class Game extends Component {
     }
     return false;
   };
+
   checkDetached = elapsed => {
     let { grid } = this.props;
     const lockedIndexes = [];
@@ -110,6 +137,7 @@ class Game extends Component {
       });
     return { lockedIndexes, lockedBlockes, grid };
   };
+
   scan = (elapsed, grid) => {
     const { scanLine } = this.props;
     const scanned = [];
@@ -127,8 +155,10 @@ class Game extends Component {
     }
     return false;
   };
+
   handleKeyDown = e => {
-    const { gameState, dispatch } = this.props;
+    const { gameState } = this.props;
+    const { dispatch } = this;
     if (gameState === gameStates.PLAYING) {
       switch (e.keyCode) {
         case keys.Z:
@@ -153,6 +183,7 @@ class Game extends Component {
       }
     }
   };
+
   render() {
     const {
       queue,

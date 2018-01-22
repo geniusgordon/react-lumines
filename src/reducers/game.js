@@ -44,7 +44,7 @@ const getInitialState = (first = [], queue = []) => ({
     speed: speeds.DROP_SLOW,
   },
   detached: [],
-  log: '',
+  replay: '',
 });
 
 const pause = state => ({
@@ -173,7 +173,7 @@ const removeScanned = (state, action) => {
   };
 };
 
-const record = (state, action) => ({ ...state, log: action.log });
+const record = (state, action) => ({ ...state, replay: action.replay });
 
 const reducer = (state = getInitialState(), action) => {
   switch (action.type) {
