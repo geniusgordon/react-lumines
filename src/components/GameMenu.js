@@ -7,6 +7,7 @@ import styled, { css } from 'styled-components';
 import Modal from './Modal';
 import Keyboard from './Keyboard';
 import { gameStates } from '../constants';
+import githubLogo from '../assets/GitHub-Mark-64px.png';
 
 const Title = styled.div`
   padding: 16px;
@@ -102,6 +103,22 @@ const Score = styled.div`
   text-align: right;
 `;
 
+const Source = styled.a`
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  height: 30px;
+  line-height: 30px;
+  color: white;
+  text-decoration: none;
+`;
+
+const GithubLogo = styled.img`
+  width: 30px;
+  height: 30px;
+  filter: invert(100%);
+`;
+
 class GameMenu extends Component {
   state = { name: '', error: false };
 
@@ -147,6 +164,9 @@ class GameMenu extends Component {
           <LinkItem to="/game">START</LinkItem>
           <LinkItem to="/rank">RANK</LinkItem>
           <Keyboard />
+          <Source href="https://github.com/geniusgordon/react-lumines">
+            open sourced in <GithubLogo src={githubLogo} />
+          </Source>
         </Modal>
       );
     }
