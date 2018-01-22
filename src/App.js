@@ -17,6 +17,12 @@ const Container = styled.div`
   height: 100%;
 `;
 
+const Blur = styled.div`
+  width: 100%;
+  height: 100%;
+  filter: blur(3px);
+`;
+
 class App extends Component {
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);
@@ -53,11 +59,23 @@ class App extends Component {
   };
 
   render() {
-    const { gameState, score, location } = this.props;
+    const { gameState, score, location, data } = this.props;
     return (
       <Container>
         <Route path="/game" component={Game} />
         <Route path="/replay/:id" component={Replay} />
+        <Route
+          path="/"
+          children={({ location }) =>
+            data &&
+            !data.loading &&
+            (location.pathname === '/' || location.pathname === '/rank') ? (
+              <Blur>
+                <Replay match={{ params: { id: data.allRanks[0].id } }} />
+              </Blur>
+            ) : null
+          }
+        />
         <GameMenu
           gameState={gameState}
           score={score}
@@ -76,6 +94,17 @@ class App extends Component {
 
 const mapStateToProps = state => state;
 
+const rankOneReplayQuery = gql`
+  query rankOneReplay {
+    allRanks(orderBy: score_DESC, first: 1) {
+      id
+      name
+      replay
+      score
+    }
+  }
+`;
+
 const submitRankMutation = gql`
   mutation submitRank($name: String!, $replay: String!, $score: Int!) {
     createRank(name: $name, replay: $replay, score: $score) {
@@ -87,6 +116,7 @@ const submitRankMutation = gql`
 export default compose(
   withRouter,
   connect(mapStateToProps),
+  graphql(rankOneReplayQuery),
   graphql(submitRankMutation, {
     props: ({ mutate }) => ({
       submitRank: ({ name, replay, score }) =>
