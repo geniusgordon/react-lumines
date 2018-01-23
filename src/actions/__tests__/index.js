@@ -134,19 +134,39 @@ describe('scan', () => {
     scanned: true,
     index: 0,
   };
-  const action = {
-    type: SCAN,
-    scanned: [block, block],
-    end: true,
-    time: 0,
-  };
-  const encoded = '3,2,1,2,1010,1,2,1010,1,0';
 
-  test('encode', () => {
-    expect(encode(action)).toEqual(encoded);
+  describe('empty', () => {
+    const action = {
+      type: SCAN,
+      scanned: [],
+      end: true,
+      time: 0,
+    };
+    const encoded = '3,0,,1,0';
+
+    test('encode', () => {
+      expect(encode(action)).toEqual(encoded);
+    });
+    test('decode', () => {
+      expect(decode(encoded)[0]).toEqual(action);
+    });
   });
-  test('decode', () => {
-    expect(decode(encoded)[0]).toEqual(action);
+
+  describe('not empty', () => {
+    const action = {
+      type: SCAN,
+      scanned: [block, block],
+      end: true,
+      time: 0,
+    };
+    const encoded = '3,2,1,2,1010,1,2,1010,1,0';
+
+    test('encode', () => {
+      expect(encode(action)).toEqual(encoded);
+    });
+    test('decode', () => {
+      expect(decode(encoded)[0]).toEqual(action);
+    });
   });
 });
 

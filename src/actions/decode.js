@@ -66,7 +66,7 @@ const decodeMap = [
     return {
       type: SCAN,
       scanned,
-      end: Boolean(Number(tokens[scanned.length + 2])),
+      end: Boolean(Number(tokens[scanned.length ? 2 + scanned.length * 3 : 3])),
     };
   },
   tokens => ({ type: UPDATE_MATCHED }),
