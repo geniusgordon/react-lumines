@@ -10,7 +10,7 @@ import GameOverMenu from './GameOverMenu';
 import RankMenu from './RankMenu';
 import { gameStates } from '../../constants';
 
-class GameMenu extends Component {
+class Menu extends Component {
   state = {
     name: '',
     error: false,
@@ -61,7 +61,11 @@ class GameMenu extends Component {
   };
 
   queryRankPosition = async score => {
-    const res = await this.props.client.query({ query: RankPositionQuery });
+    this.setState({ rankPosition: -1 });
+    const res = await this.props.client.query({
+      query: RankPositionQuery,
+      variables: { score },
+    });
     this.setState({ rankPosition: res.data._allRanksMeta.count + 1 });
   };
 
@@ -154,4 +158,4 @@ export default compose(
   withRouter,
   withApollo,
   graphql(TopRanksQuery, { name: 'ranks' }),
-)(GameMenu);
+)(Menu);
