@@ -7,7 +7,7 @@ import { Route } from 'react-router-dom';
 import styled from 'styled-components';
 import Game from './containers/Game';
 import Replay from './containers/Replay';
-import GameMenu from './components/GameMenu';
+import Menu from './components/Menu';
 import Refresh from './components/Refresh';
 import { pause } from './actions';
 import { gameStates, keys } from './constants';
@@ -48,14 +48,18 @@ class App extends Component {
     }
   };
 
+  restart = () => {
+    const { location: { pathname }, history } = this.props;
+    history.replace(`/refresh${pathname}`);
+  };
+
   quit = () => {
     this.props.history.goBack();
   };
 
   submit = name => {
-    const { score, replay, history, submitRank } = this.props;
+    const { score, replay, submitRank } = this.props;
     submitRank({ name, replay, score });
-    history.goBack();
   };
 
   render() {
@@ -76,10 +80,11 @@ class App extends Component {
             ) : null
           }
         />
-        <GameMenu
+        <Menu
           gameState={gameState}
           score={score}
           resume={this.resume}
+          restart={this.restart}
           quit={this.quit}
           submit={this.submit}
         />
