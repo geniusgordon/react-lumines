@@ -120,10 +120,10 @@ const GithubLogo = styled.img`
 `;
 
 class GameMenu extends Component {
-  state = { name: '', error: false };
+  state = { name: '', error: false, canSubmit: false };
 
   componentWillReceiveProps(nextProps) {
-    const { data, location: { pathname } } = nextProps;
+    const { gameState, data, location: { pathname } } = nextProps;
     if (
       data &&
       this.props.location.pathname !== '/rank' &&
@@ -131,13 +131,27 @@ class GameMenu extends Component {
     ) {
       data.refetch();
     }
+
+    if (
+      this.props.gameState !== gameStates.FINISHED &&
+      gameState === gameStates.FINISHED
+    ) {
+      this.setState({
+        canSubmit: true,
+      });
+    }
   }
 
   submit = () => {
-    const { name } = this.state;
+    const { name, canSubmit } = this.state;
+    if (!canSubmit) {
+      return;
+    }
+
     if (name === '') {
       this.setState({ error: true });
     } else {
+      this.setState({ canSubmit: false });
       this.props.submit(name);
     }
   };
@@ -146,92 +160,108 @@ class GameMenu extends Component {
     this.setState({ name: event.target.value });
   };
 
+  renderMainMenu = () => (
+    <Modal width="50%">
+      <Title>LUMINES</Title>
+      <LinkItem to="/game">START</LinkItem>
+      <LinkItem to="/rank">RANK</LinkItem>
+      <Keyboard />
+      <Source href="https://github.com/geniusgordon/react-lumines">
+        open sourced in <GithubLogo src={githubLogo} />
+      </Source>
+    </Modal>
+  );
+
+  renderPausedMenu = () => {
+    const { resume, quit, location: { pathname } } = this.props;
+    return (
+      <Modal>
+        <Title>PAUSED</Title>
+        <Item onClick={resume}>RESUME</Item>
+        <LinkItem to={`/refresh${pathname}`}>RESTART</LinkItem>
+        <Item onClick={quit}>QUIT</Item>
+      </Modal>
+    );
+  };
+
+  renderGameoverMenu = () => {
+    const { quit, location: { pathname } } = this.props;
+    return (
+      <Modal>
+        <Title>GAME OVER</Title>
+        <LinkItem to={`/refresh${pathname}`}>RESTART</LinkItem>
+        <Item onClick={quit}>QUIT</Item>
+      </Modal>
+    );
+  };
+
+  renderFinishedMenu = () => {
+    const { score, quit, location: { pathname } } = this.props;
+    const { name, error, canSubmit } = this.state;
+    return (
+      <Modal>
+        <Title>Score: {score}</Title>
+        {pathname === '/game' &&
+          canSubmit && (
+            <InputGroup>
+              <Input
+                value={name}
+                error={error}
+                placeholder="Enter Your Name"
+                onChange={this.handleNameChange}
+              />
+              <Item onClick={this.submit}>Submit</Item>
+            </InputGroup>
+          )}
+        <LinkItem to={`/refresh${pathname}`}>RESTART</LinkItem>
+        <Item onClick={quit}>QUIT</Item>
+      </Modal>
+    );
+  };
+
+  renderRank = () => {
+    const { quit, data } = this.props;
+    return (
+      <Modal>
+        <RankHeader>
+          <Rank>Rank</Rank>
+          <Name>Name</Name>
+          <Score>Score</Score>
+        </RankHeader>
+        {data.loading && <Loading>Loading</Loading>}
+        {data &&
+          data.allRanks.map((rank, index) => (
+            <RankItem key={rank.id} to={`/replay/${rank.id}`}>
+              <Rank>{index + 1}</Rank>
+              <Name>{rank.name}</Name>
+              <Score>{rank.score}</Score>
+            </RankItem>
+          ))}
+        <Padding />
+        <Item onClick={quit}>BACK</Item>
+      </Modal>
+    );
+  };
+
   render() {
-    const {
-      gameState,
-      score,
-      resume,
-      quit,
-      location: { pathname },
-      data,
-    } = this.props;
-    const { name, error } = this.state;
+    const { gameState, location: { pathname } } = this.props;
 
     if (pathname === '/') {
-      return (
-        <Modal width="50%">
-          <Title>LUMINES</Title>
-          <LinkItem to="/game">START</LinkItem>
-          <LinkItem to="/rank">RANK</LinkItem>
-          <Keyboard />
-          <Source href="https://github.com/geniusgordon/react-lumines">
-            open sourced in <GithubLogo src={githubLogo} />
-          </Source>
-        </Modal>
-      );
+      return this.renderMainMenu();
     }
     if (pathname === '/game' || pathname.startsWith('/replay')) {
       if (gameState === gameStates.PAUSED) {
-        return (
-          <Modal>
-            <Title>PAUSED</Title>
-            <Item onClick={resume}>RESUME</Item>
-            <LinkItem to={`/refresh${pathname}`}>RESTART</LinkItem>
-            <Item onClick={quit}>QUIT</Item>
-          </Modal>
-        );
+        return this.renderPausedMenu();
       }
       if (gameState === gameStates.GAMEOVER) {
-        return (
-          <Modal>
-            <Title>GAME OVER</Title>
-            <LinkItem to={`/refresh${pathname}`}>RESTART</LinkItem>
-            <Item onClick={quit}>QUIT</Item>
-          </Modal>
-        );
+        return this.renderGameoverMenu();
       }
       if (gameState === gameStates.FINISHED) {
-        return (
-          <Modal>
-            <Title>Score: {score}</Title>
-            {pathname === '/game' && (
-              <InputGroup>
-                <Input
-                  value={name}
-                  error={error}
-                  placeholder="Enter Your Name"
-                  onChange={this.handleNameChange}
-                />
-                <Item onClick={this.submit}>Submit</Item>
-              </InputGroup>
-            )}
-            <LinkItem to={`/refresh${pathname}`}>RESTART</LinkItem>
-            <Item onClick={quit}>QUIT</Item>
-          </Modal>
-        );
+        return this.renderFinishedMenu();
       }
     }
     if (pathname === '/rank') {
-      return (
-        <Modal>
-          <RankHeader>
-            <Rank>Rank</Rank>
-            <Name>Name</Name>
-            <Score>Score</Score>
-          </RankHeader>
-          {data.loading && <Loading>Loading</Loading>}
-          {data &&
-            data.allRanks.map((rank, index) => (
-              <RankItem key={rank.id} to={`/replay/${rank.id}`}>
-                <Rank>{index + 1}</Rank>
-                <Name>{rank.name}</Name>
-                <Score>{rank.score}</Score>
-              </RankItem>
-            ))}
-          <Padding />
-          <Item onClick={quit}>BACK</Item>
-        </Modal>
-      );
+      return this.renderRank();
     }
     return null;
   }
