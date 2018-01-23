@@ -7,7 +7,7 @@ import Padding from './Padding';
 const RankMenu = ({ ranks, quit }) => (
   <Fragment>
     <RankHeader />
-    {ranks.loading && <Loading>Loading</Loading>}
+    {ranks.loading && ranks.allRanks.length === 0 && <Loading>Loading</Loading>}
     {ranks &&
       ranks.allRanks.map((rank, index) => (
         <RankItem
