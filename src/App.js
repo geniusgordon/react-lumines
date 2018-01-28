@@ -36,8 +36,10 @@ class App extends Component {
     const { gameState, history, location, dispatch } = this.props;
     if (e.keyCode === keys.ESC) {
       dispatch(pause());
-    } else if (e.keyCode === keys.R && gameState === gameStates.PLAYING) {
-      history.push(`/refresh${location.pathname}`);
+    } else if (e.keyCode === keys.R) {
+      if (gameState !== gameStates.FINISHED) {
+        this.restart();
+      }
     }
   };
 
