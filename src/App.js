@@ -33,7 +33,7 @@ class App extends Component {
   }
 
   handleKeyDown = e => {
-    const { gameState, history, location, dispatch } = this.props;
+    const { gameState, dispatch } = this.props;
     if (e.keyCode === keys.ESC) {
       dispatch(pause());
     } else if (e.keyCode === keys.R) {
