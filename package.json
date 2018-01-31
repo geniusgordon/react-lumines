@@ -1,7 +1,18 @@
 {
   "name": "lumines",
-  "version": "0.1.0",
   "homepage": "https://geniusgordon.github.io/react-lumines",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "react-scripts build",
+    "precommit": "lint-staged",
+    "predeploy": "yarn run build",
+    "deploy": "gh-pages -d build",
+    "eject": "react-scripts eject",
+    "lint": "eslint src",
+    "lint:fix": "npm run lint -- --fix",
+    "start": "react-scripts start",
+    "test": "react-scripts test --env=jsdom"
+  },
   "dependencies": {
     "apollo-client-preset": "^1.0.6",
     "gh-pages": "^1.1.0",
@@ -19,23 +30,20 @@
     "redux-devtools-extension": "^2.13.2",
     "styled-components": "^2.4.0"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
-    "lint": "eslint src",
-    "lint:fix": "npm run lint -- --fix",
-    "predeploy": "yarn run build",
-    "deploy": "gh-pages -d build"
-  },
   "devDependencies": {
     "eslint": "^4.16.0",
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-prettier": "^2.5.0",
-    "prettier": "^1.10.2"
+    "husky": "^0.14.3",
+    "lint-staged": "^6.1.0",
+    "prettier": "^1.10.2",
+    "prettier-package-json": "^1.4.0"
   },
   "lint-staged": {
+    "package.json": [
+      "prettier-package-json --write",
+      "git add"
+    ],
     "*.js": [
       "eslint --fix",
       "git add"
