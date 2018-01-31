@@ -1,6 +1,12 @@
 import { dimensions } from './constants';
 
-export const range = n => [...new Array(n)].map((_, i) => i);
+export const range = n => {
+  const arr = [];
+  for (let i = 0; i < n; i++) {
+    arr.push(i);
+  }
+  return arr;
+}
 
 export const generateRandomPiece = () => {
   const n = Math.floor(Math.random() * 16);

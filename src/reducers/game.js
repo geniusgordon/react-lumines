@@ -22,7 +22,7 @@ import {
 import { TIME_LIMIT, gameStates, dimensions, speeds } from '../constants';
 
 const getInitialState = (first = [], queue = []) => ({
-  now: performance.now(),
+  now: 0,
   gameState: gameStates.PLAYING,
   gameTime: -2.4,
   score: 0,

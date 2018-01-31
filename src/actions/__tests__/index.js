@@ -1,3 +1,5 @@
+import { createStore } from 'redux';
+import reducer from '../../reducers';
 import {
   RESTART,
   NEXT,
@@ -12,6 +14,7 @@ import {
 } from '../index';
 import encode, { encodeBlock } from '../encode';
 import decode, { decodeBlock, decodeArray } from '../decode';
+import error from './error';
 
 describe('block', () => {
   const block = {
@@ -186,4 +189,15 @@ describe('restart', () => {
   test('decode', () => {
     expect(decode(encoded)[0]).toEqual(action);
   });
+});
+
+test.only('Error', () => {
+  const { data } = JSON.parse(error.event);
+  const actions = decode(data.replay);
+  const store = createStore(reducer);
+  actions.forEach(action => {
+    store.dispatch(action);
+  });
+  console.log(data.score);
+  console.log(store.getState().score);
 });
