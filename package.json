@@ -24,8 +24,21 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "format": "prettier --single-quote --trailing-comma all --write \"src/**/*.js\"",
+    "lint": "eslint src",
+    "lint:fix": "npm run lint -- --fix",
     "predeploy": "yarn run build",
     "deploy": "gh-pages -d build"
+  },
+  "devDependencies": {
+    "eslint": "^4.16.0",
+    "eslint-plugin-babel": "^4.1.2",
+    "eslint-plugin-prettier": "^2.5.0",
+    "prettier": "^1.10.2"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
   }
 }
