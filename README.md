@@ -3,3 +3,5 @@
 # react-lumines
 
 The classic game - Lumines written in react
+
+![Imgur](https://i.imgur.com/fL93suV.png)
