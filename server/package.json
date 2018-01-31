@@ -1,5 +1,8 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "My Graphcool Service"
+  "description": "Lumines Backend",
+  "dependencies": {
+    "redux": "^3.7.2"
+  }
 }

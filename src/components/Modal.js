@@ -8,7 +8,7 @@ const Modal = styled.div`
   right: 0;
   width: ${props => props.width || '30%'};
   margin: auto;
-  background-color: #212121;
+  background-color: ${props => props.backgroundColor || '#212121'};
   padding: 8px;
   transition: width 0.2s;
 `;

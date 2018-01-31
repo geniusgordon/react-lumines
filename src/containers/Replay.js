@@ -1,22 +1,33 @@
 import React, { Component } from 'react';
+import { createStore } from 'redux';
 import { connect } from 'react-redux';
 import { compose, graphql } from 'react-apollo';
 import gql from 'graphql-tag';
+import styled from 'styled-components';
 import Interface from '../components/Interface';
+import Modal from '../components/Modal';
 import { loop, finish } from '../actions';
 import { TIME_LIMIT, gameStates } from '../constants';
 import decode from '../actions/decode.js';
+import reducer from '../reducers';
+
+const Container = styled.div`
+  height: 100%;
+  width: 100%;
+`;
 
 class Replay extends Component {
+  state = { scoreError: false };
+
   componentDidMount() {
     if (!this.props.data.loading) {
-      this.start(this.props.data.Rank.replay);
+      this.start(this.props.data.Rank);
     }
   }
 
   componentWillReceiveProps(nextProps) {
     if (this.props.data.loading && !nextProps.data.loading) {
-      this.start(nextProps.data.Rank.replay);
+      this.start(nextProps.data.Rank);
     }
   }
 
@@ -24,11 +35,19 @@ class Replay extends Component {
     cancelAnimationFrame(this.requestId);
   }
 
-  start = replay => {
+  start = Rank => {
+    const { dispatch } = this.props;
     this.requestId = requestAnimationFrame(this.loop);
-    this.replay = decode(replay);
+    this.replay = decode(Rank.replay);
     this.index = 1;
-    this.props.dispatch(this.replay[0]);
+    dispatch(this.replay[0]);
+    const store = createStore(reducer);
+    this.replay.forEach(action => {
+      store.dispatch(action);
+    });
+    if (Rank.score > store.getState().score + 30) {
+      this.setState({ scoreError: true });
+    }
   };
 
   loop = now => {
@@ -54,6 +73,7 @@ class Replay extends Component {
     dispatch(loop(now, elapsed));
     this.requestId = requestAnimationFrame(this.loop);
   };
+
   render() {
     const {
       queue,
@@ -66,17 +86,21 @@ class Replay extends Component {
       score,
       data,
     } = this.props;
+    const { scoreError } = this.state;
     return data.loading ? null : (
-      <Interface
-        queue={queue}
-        grid={grid}
-        current={current}
-        scanLine={scanLine}
-        detached={detached}
-        scanned={scannedUtilNow}
-        gameTime={gameTime}
-        score={score}
-      />
+      <Container>
+        <Interface
+          queue={queue}
+          grid={grid}
+          current={current}
+          scanLine={scanLine}
+          detached={detached}
+          scanned={scannedUtilNow}
+          gameTime={gameTime}
+          score={score}
+        />
+        {scoreError ? <Modal backgroundColor="#F44336" /> : null}
+      </Container>
     );
   }
 }

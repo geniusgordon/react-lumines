@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { compose, graphql, withApollo } from 'react-apollo';
 import gql from 'graphql-tag';
-import Modal from './Modal';
+import Modal from '../Modal';
 import MainMenu from './MainMenu';
 import PauseMenu from './PauseMenu';
 import FinishedMenu from './FinishedMenu';

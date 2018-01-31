@@ -3,4 +3,5 @@ type Rank @model {
   name: String!
   score: Int!
   replay: String!
+  fake: Boolean @defaultValue(value: "false")
 }
