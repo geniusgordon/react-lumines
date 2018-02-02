@@ -11,10 +11,10 @@
 
 ## How I made It
 
-- React for UI rendering
+- **React** for UI rendering
 - The blocks are drawn in **SVG**, react + SVG = 👍
-- Redux for managing game state 
-- The action/reducer pattern made it really easy to replay game plays
+- **Redux** for managing game state 
+- *Time travel* with redux for replaying games
 
 ## Wanna try it out?
 
