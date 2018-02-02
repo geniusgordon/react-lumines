@@ -9,6 +9,8 @@
 
 > A classic block-dropping game rewritten in react
 
+Play it on my [github page](https://geniusgordon.github.io/react-lumines)!
+
 ## How I made It
 
 - **React** for UI rendering
