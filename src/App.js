@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
-import { compose, graphql } from 'react-apollo';
-import gql from 'graphql-tag';
+import { compose } from 'react-apollo';
 import { Route } from 'react-router-dom';
 import styled from 'styled-components';
 import Game from './containers/Game';
@@ -59,29 +58,11 @@ class App extends Component {
     this.props.history.goBack();
   };
 
-  submit = name => {
-    const { score, replay, submitRank } = this.props;
-    submitRank({ name, replay, score });
-  };
-
   render() {
     const { gameState, score, location, data } = this.props;
     return (
       <Container>
         <Route path="/game" component={Game} />
-        <Route path="/replay/:id" component={Replay} />
-        <Route
-          path="/"
-          children={({ location }) =>
-            data &&
-            !data.loading &&
-            (location.pathname === '/' || location.pathname === '/rank') ? (
-              <Blur>
-                <Replay match={{ params: { id: data.allRanks[0].id } }} />
-              </Blur>
-            ) : null
-          }
-        />
         <Menu
           gameState={gameState}
           score={score}
@@ -101,33 +82,4 @@ class App extends Component {
 
 const mapStateToProps = state => state;
 
-const rankOneReplayQuery = gql`
-  query rankOneReplay {
-    allRanks(orderBy: score_DESC, first: 1) {
-      id
-      name
-      replay
-      score
-    }
-  }
-`;
-
-const submitRankMutation = gql`
-  mutation submitRank($name: String!, $replay: String!, $score: Int!) {
-    createRank(name: $name, replay: $replay, score: $score) {
-      id
-    }
-  }
-`;
-
-export default compose(
-  withRouter,
-  connect(mapStateToProps),
-  graphql(rankOneReplayQuery),
-  graphql(submitRankMutation, {
-    props: ({ mutate }) => ({
-      submitRank: ({ name, replay, score }) =>
-        mutate({ variables: { name, replay, score } }),
-    }),
-  }),
-)(App);
+export default compose(withRouter, connect(mapStateToProps))(App);

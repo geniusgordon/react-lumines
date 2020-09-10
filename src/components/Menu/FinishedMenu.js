@@ -20,18 +20,6 @@ const FinishedMenu = ({
       title={`Score: ${score}`}
       subtitle={isGame && rankPosition !== -1 && `rank ${rankPosition}`}
     />
-    {isGame &&
-      canSubmit && (
-        <InputGroup>
-          <Input
-            value={name}
-            error={error}
-            placeholder="Enter Your Name"
-            onChange={handleNameChange}
-          />
-          <Item onClick={submit}>Submit</Item>
-        </InputGroup>
-      )}
     <Item onClick={restart}>RESTART</Item>
     <Item onClick={quit}>QUIT</Item>
   </Fragment>
