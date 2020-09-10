@@ -25,7 +25,6 @@ const MainMenu = () => (
   <Fragment>
     <Title title="LUMINES" />
     <LinkItem to="/game">START</LinkItem>
-    <LinkItem to="/rank">RANK</LinkItem>
     <Keyboard />
     <Source href="https://github.com/geniusgordon/react-lumines">
       open sourced in <GithubLogo src={githubLogo} />

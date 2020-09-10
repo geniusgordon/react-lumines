@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter } from 'react-router';
-import { compose, graphql, withApollo } from 'react-apollo';
-import gql from 'graphql-tag';
+import { compose, withApollo } from 'react-apollo';
 import Modal from '../Modal';
 import MainMenu from './MainMenu';
 import PauseMenu from './PauseMenu';
@@ -18,55 +17,9 @@ class Menu extends Component {
     rankPosition: -1,
   };
 
-  componentDidMount() {
-    this.queryRankPosition(100);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    const { gameState, score, ranks, location: { pathname } } = nextProps;
-    if (
-      ranks &&
-      this.props.location.pathname !== '/rank' &&
-      pathname === '/rank'
-    ) {
-      ranks.refetch();
-    }
-
-    if (
-      this.props.gameState !== gameStates.FINISHED &&
-      gameState === gameStates.FINISHED
-    ) {
-      this.setState({ canSubmit: true });
-      this.queryRankPosition(score);
-    }
-  }
-
-  submit = () => {
-    const { name, canSubmit } = this.state;
-    if (!canSubmit) {
-      return;
-    }
-
-    if (name === '') {
-      this.setState({ error: true });
-    } else {
-      this.setState({ canSubmit: false });
-      this.props.submit(name);
-    }
-  };
-
   quit = () => {
     this.setState({ rankPosition: -1 });
     this.props.quit();
-  };
-
-  queryRankPosition = async score => {
-    this.setState({ rankPosition: -1 });
-    const res = await this.props.client.query({
-      query: RankPositionQuery,
-      variables: { score },
-    });
-    this.setState({ rankPosition: res.data._allRanksMeta.count + 1 });
   };
 
   handleNameChange = event => {
@@ -136,26 +89,4 @@ class Menu extends Component {
   }
 }
 
-const TopRanksQuery = gql`
-  query TopRanks {
-    allRanks(orderBy: score_DESC, first: 10) {
-      id
-      name
-      score
-    }
-  }
-`;
-
-const RankPositionQuery = gql`
-  query RankPosition($score: Int) {
-    _allRanksMeta(filter: { score_gte: $score }) {
-      count
-    }
-  }
-`;
-
-export default compose(
-  withRouter,
-  withApollo,
-  graphql(TopRanksQuery, { name: 'ranks' }),
-)(Menu);
+export default compose(withRouter)(Menu);
