@@ -1,52 +1,32 @@
 {
-  "name": "lumines",
-  "homepage": "https://geniusgordon.github.io/react-lumines",
+  "name": "react-lumines",
   "version": "0.1.0",
-  "scripts": {
-    "build": "react-scripts build",
-    "precommit": "lint-staged",
-    "predeploy": "yarn run build",
-    "deploy": "gh-pages -d build",
-    "eject": "react-scripts eject",
-    "lint": "eslint src",
-    "lint:fix": "npm run lint -- --fix",
-    "start": "react-scripts start",
-    "test": "react-scripts test --env=jsdom"
-  },
+  "private": true,
   "dependencies": {
-    "apollo-client-preset": "^1.0.6",
-    "gh-pages": "^1.1.0",
-    "graphql": "^0.12.3",
-    "graphql-tag": "^2.6.1",
-    "react": "^16.2.0",
-    "react-apollo": "^2.0.4",
-    "react-dom": "^16.2.0",
-    "react-ga": "^2.4.1",
-    "react-redux": "^5.0.6",
-    "react-router-dom": "^4.2.2",
-    "react-scripts": "1.0.17",
-    "reduce-reducers": "^0.1.2",
-    "redux": "^3.7.2",
-    "redux-devtools-extension": "^2.13.2",
-    "styled-components": "^2.4.0"
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-scripts": "4.0.3",
+    "web-vitals": "^1.0.1"
   },
-  "devDependencies": {
-    "eslint": "^4.16.0",
-    "eslint-plugin-babel": "^4.1.2",
-    "eslint-plugin-prettier": "^2.5.0",
-    "husky": "^0.14.3",
-    "lint-staged": "^6.1.0",
-    "prettier": "^1.10.2",
-    "prettier-package-json": "^1.4.0"
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
-  "lint-staged": {
-    "package.json": [
-      "prettier-package-json --write",
-      "git add"
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
     ],
-    "*.js": [
-      "eslint --fix",
-      "git add"
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
     ]
   }
 }

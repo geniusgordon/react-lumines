@@ -1,8 +1,0 @@
-{
-  "name": "server",
-  "version": "1.0.0",
-  "description": "Lumines Backend",
-  "dependencies": {
-    "redux": "^3.7.2"
-  }
-}
