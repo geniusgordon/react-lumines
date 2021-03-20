@@ -1,13 +1,18 @@
 export enum Color {
-  LIGHT,
-  DARK,
+  LIGHT = 1,
+  DARK = 2,
 }
 
 export type Block = Color[][];
-export type Cell = Color | null;
+
+export type Cell = {
+  color: Color;
+  matched: Boolean;
+  scanned: Boolean;
+} | null;
+
 export type Column = Cell[];
-export type Row = Cell[];
-export type Grid = Cell[][];
+export type Grid = Column[];
 
 export enum RotateDirection {
   CW = 1,
@@ -16,4 +21,6 @@ export enum RotateDirection {
 
 export type ActiveBlock = {
   block: Block;
+  x: Number;
+  y: Number;
 };
