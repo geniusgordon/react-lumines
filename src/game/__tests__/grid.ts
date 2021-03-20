@@ -1,4 +1,5 @@
-import { addToColumn } from '../grid';
+import { xyToColRow, colRowToXY, addToColumn } from '../grid';
+import { SQUARE_SIZE } from '../../constants';
 import { Color, Cell, Column } from '../types';
 
 function createCellByColor(color: Color): Cell {
@@ -14,6 +15,22 @@ function createColumByColors(colors: Array<Color | null>): Column {
     color === null ? null : createCellByColor(color),
   );
 }
+
+test.each([
+  [5 * SQUARE_SIZE + 0.5 * SQUARE_SIZE, 5],
+  [5 * SQUARE_SIZE - 0.5 * SQUARE_SIZE, 4],
+])('xyToColRow', (input, output) => {
+  const result = xyToColRow(input);
+  expect(result).toEqual(output);
+});
+
+test.each([
+  [4, 4 * SQUARE_SIZE],
+  [5, 5 * SQUARE_SIZE],
+])('colRowToXY', (input, output) => {
+  const result = colRowToXY(input);
+  expect(result).toEqual(output);
+});
 
 test.each([
   [

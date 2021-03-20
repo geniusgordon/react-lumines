@@ -1,3 +1,8 @@
+export type Cord = {
+  x: number;
+  y: number;
+};
+
 export enum Color {
   LIGHT = 1,
   DARK = 2,

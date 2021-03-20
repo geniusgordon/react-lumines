@@ -1,4 +1,12 @@
-import { Color, Column } from './types';
+import { Cord, Color, Column, Grid } from './types';
+import { dimensions } from '../constants';
+
+export function xyToColRow(x: number): number {
+  return Math.floor(x / dimensions.SQUARE_SIZE);
+}
+export function colRowToXY(col: number): number {
+  return col * dimensions.SQUARE_SIZE;
+}
 
 export function addToColumn(colors: Color[], column: Column): Column {
   const result = [...column];
@@ -22,4 +30,14 @@ export function addToColumn(colors: Color[], column: Column): Column {
   }
 
   return result;
+}
+
+export function isFreeBelowCord(grid: Grid, cord: Cord): Boolean {
+  const col = xyToColRow(cord.x);
+  const row = xyToColRow(cord.y);
+  const column = grid[col];
+  if (row + 1 < column.length) {
+    return column[row + 1] === null;
+  }
+  return false;
 }
