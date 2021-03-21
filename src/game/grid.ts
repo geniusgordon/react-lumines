@@ -41,3 +41,30 @@ export function isFreeBelowCord(grid: Grid, cord: Cord): Boolean {
   }
   return false;
 }
+
+export function isMatch(grid: Grid, col: number, row: number): Boolean {
+  const blocks = [
+    grid[col][row],
+    grid[col+1][row],
+    grid[col][row+1],
+    grid[col+1][row+1],
+  ].filter(b => !!b);
+
+  if (blocks.length !== 4) {
+    return false;
+  }
+
+  const first = blocks[0];
+
+  if (!first) {
+    return false;
+  }
+
+  for (let i = 1; i < blocks.length; i++) {
+    if (first.color !== blocks[i]?.color) {
+      return false;
+    }
+  }
+
+  return true;
+}
