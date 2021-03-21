@@ -1,5 +1,5 @@
 import { xyToColRow, colRowToXY, addToColumn } from '../grid';
-import { SQUARE_SIZE } from '../../constants';
+import { Dimension } from '../../constants';
 import { Color, Cell, Column } from '../types';
 
 function createCellByColor(color: Color): Cell {
@@ -17,16 +17,16 @@ function createColumByColors(colors: Array<Color | null>): Column {
 }
 
 test.each([
-  [5 * SQUARE_SIZE + 0.5 * SQUARE_SIZE, 5],
-  [5 * SQUARE_SIZE - 0.5 * SQUARE_SIZE, 4],
+  [5 * Dimension.SQUARE_SIZE + 0.5 * Dimension.SQUARE_SIZE, 5],
+  [5 * Dimension.SQUARE_SIZE - 0.5 * Dimension.SQUARE_SIZE, 4],
 ])('xyToColRow', (input, output) => {
   const result = xyToColRow(input);
   expect(result).toEqual(output);
 });
 
 test.each([
-  [4, 4 * SQUARE_SIZE],
-  [5, 5 * SQUARE_SIZE],
+  [4, 4 * Dimension.SQUARE_SIZE],
+  [5, 5 * Dimension.SQUARE_SIZE],
 ])('colRowToXY', (input, output) => {
   const result = colRowToXY(input);
   expect(result).toEqual(output);

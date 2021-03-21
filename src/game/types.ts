@@ -24,8 +24,10 @@ export enum RotateDirection {
   CCW = -1,
 }
 
-export type ActiveBlock = {
+export interface ActiveBlock extends Cord {
   block: Block;
-  x: Number;
-  y: Number;
-};
+}
+
+export interface DetachedBlock extends Cord {
+  color: Color;
+}

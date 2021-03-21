@@ -1,8 +1,8 @@
-export const SQUARE_SIZE = 10;
-export const GRID_COLUMNS = 16;
-export const GRID_ROWS = 12;
+const SQUARE_SIZE = 10;
+const GRID_COLUMNS = 16;
+const GRID_ROWS = 12;
 
-export const dimensions = {
+export const Dimension = {
   SQUARE_SIZE,
   GRID_COLUMNS,
   GRID_ROWS,
@@ -15,7 +15,7 @@ export const dimensions = {
   SCAN_LINE_STROKE_WIDTH: 0.3,
 };
 
-export const colors = {
+export const Palette = {
   BACKGROUND: '#424242',
   SQUARE_STROKE: '#212121',
   SQUARE_STROKE_MATCHED: '#FFFFFF',
@@ -31,16 +31,16 @@ export const colors = {
   INFO: '#FAFAFA',
 };
 
-export const speeds = {
+export const Speed = {
   SCAN_LINE_SLOW: 2 * SQUARE_SIZE,
   SCAN_LINE_MEDIUM: 4 * SQUARE_SIZE,
   SCAN_LINE_FAST: 10 * SQUARE_SIZE,
   DROP_SLOW: 0.5 * SQUARE_SIZE,
-  DROP_FAST: 30 * SQUARE_SIZE,
-  DROP_DETACHED: 20 * SQUARE_SIZE,
+  DROP_FAST: 25 * SQUARE_SIZE,
+  DROP_DETACHED: 30 * SQUARE_SIZE,
 };
 
-export const keys = {
+export const Key = {
   R: 82,
   Z: 90,
   X: 88,

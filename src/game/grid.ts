@@ -1,11 +1,11 @@
 import { Cord, Color, Column, Grid } from './types';
-import { dimensions } from '../constants';
+import { Dimension } from '../constants';
 
 export function xyToColRow(x: number): number {
-  return Math.floor(x / dimensions.SQUARE_SIZE);
+  return Math.floor(x / Dimension.SQUARE_SIZE);
 }
 export function colRowToXY(col: number): number {
-  return col * dimensions.SQUARE_SIZE;
+  return col * Dimension.SQUARE_SIZE;
 }
 
 export function addToColumn(colors: Color[], column: Column): Column {
