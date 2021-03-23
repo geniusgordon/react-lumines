@@ -1,12 +1,12 @@
 import React from 'react';
 import Cell from '../Cell';
-import { Color } from '../../game/types';
+import { Block as BlockType } from '../../game/types';
 import { Dimension } from '../../constants';
 
 export type BlockProps = {
   x: number;
   y: number;
-  block: Color[][];
+  block: BlockType;
   dropped?: Boolean;
 };
 
