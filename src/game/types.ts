@@ -12,8 +12,8 @@ export type Block = Color[][];
 
 export type Cell = {
   color: Color;
-  matched: Boolean;
-  scanned: Boolean;
+  matched?: Boolean;
+  scanned?: Boolean;
 } | null;
 
 export type Column = Cell[];

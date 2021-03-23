@@ -32,22 +32,26 @@ export function addToColumn(colors: Color[], column: Column): Column {
   return result;
 }
 
-export function isFreeBelowCord(grid: Grid, cord: Cord): Boolean {
+export function isFree(grid: Grid, cord: Cord): Boolean {
   const col = xyToColRow(cord.x);
   const row = xyToColRow(cord.y);
   const column = grid[col];
-  if (row + 1 < column.length) {
-    return column[row + 1] === null;
+  if (row < column.length) {
+    return column[row] === null;
   }
   return false;
+}
+
+export function isFreeBelow(grid: Grid, cord: Cord): Boolean {
+  return isFree(grid, { x: cord.x, y: cord.y + Dimension.SQUARE_SIZE });
 }
 
 export function isMatch(grid: Grid, col: number, row: number): Boolean {
   const blocks = [
     grid[col][row],
-    grid[col+1][row],
-    grid[col][row+1],
-    grid[col+1][row+1],
+    grid[col + 1][row],
+    grid[col][row + 1],
+    grid[col + 1][row + 1],
   ].filter(b => !!b);
 
   if (blocks.length !== 4) {
