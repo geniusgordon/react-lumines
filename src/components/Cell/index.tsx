@@ -6,7 +6,7 @@ export type CellProps = {
   x: number;
   y: number;
   color: Color;
-  scanned: Boolean;
+  scanned?: Boolean;
 };
 
 const Cell: React.FC<CellProps> = ({ x, y, color, scanned }) => {
