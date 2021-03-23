@@ -36,6 +36,9 @@ export function isFree(grid: Grid, cord: Cord): Boolean {
   const col = xyToColRow(cord.x);
   const row = xyToColRow(cord.y);
   const column = grid[col];
+  if (!column) {
+    return false;
+  }
   if (row < column.length) {
     return column[row] === null;
   }

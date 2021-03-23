@@ -11,7 +11,25 @@ test.each([
     false,
   ],
   [
-    'out of bound',
+    'out of left bound',
+    [[null, null]],
+    { x: -Dimension.SQUARE_SIZE, y: 0 },
+    false,
+  ],
+  [
+    'out of right bound',
+    [[null, null]],
+    { x: Dimension.SQUARE_SIZE, y: 0 },
+    false,
+  ],
+  [
+    'out of top bound',
+    [[null, null]],
+    { x: 0, y: -Dimension.SQUARE_SIZE },
+    false,
+  ],
+  [
+    'out of bottom bound',
     [[null, null]],
     { x: 0, y: 2 * Dimension.SQUARE_SIZE + 0.5 * Dimension.SQUARE_SIZE },
     false,

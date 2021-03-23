@@ -1,4 +1,11 @@
-import { Block, RotateDirection, ActiveBlock, DetachedBlock } from './types';
+import { isFree } from './grid';
+import {
+  Block,
+  Grid,
+  RotateDirection,
+  ActiveBlock,
+  DetachedBlock,
+} from './types';
 import { Dimension } from '../constants';
 
 export function rotate(block: Block, direction: RotateDirection): Block {
@@ -26,4 +33,29 @@ export function decompse(block: ActiveBlock): DetachedBlock[] {
     });
   });
   return result;
+}
+
+export function move(
+  block: ActiveBlock,
+  distance: number,
+  grid: Grid,
+): ActiveBlock {
+  const x = block.x + distance;
+  if (x < 0 || x > Dimension.GRID_WIDTH) {
+    return block;
+  }
+  if (
+    isFree(grid, { x, y: block.y + Dimension.SQUARE_SIZE }) &&
+    isFree(grid, {
+      x: x + Dimension.SQUARE_SIZE,
+      y: block.y + Dimension.SQUARE_SIZE,
+    })
+  ) {
+    return {
+      block: block.block,
+      x,
+      y: block.y,
+    };
+  }
+  return block;
 }
