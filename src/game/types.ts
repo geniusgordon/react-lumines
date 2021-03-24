@@ -14,9 +14,14 @@ export enum Color {
 
 export type Block = Color[][];
 
+export type GridIndex = {
+  col: number;
+  row: number;
+};
+
 export type Cell = {
   color: Color;
-  matched?: Boolean;
+  matchedBlock?: GridIndex;
   scanned?: Boolean;
 } | null;
 
