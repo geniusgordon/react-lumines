@@ -3,6 +3,10 @@ export type Cord = {
   y: number;
 };
 
+export type MovingObject = {
+  speed: number;
+};
+
 export enum Color {
   LIGHT = 1,
   DARK = 2,
@@ -24,10 +28,12 @@ export enum RotateDirection {
   CCW = -1,
 }
 
-export interface ActiveBlock extends Cord {
+export interface ActiveBlock extends Cord, MovingObject {
   block: Block;
 }
 
-export interface DetachedBlock extends Cord {
+export interface DetachedBlock extends Cord, MovingObject {
   color: Color;
 }
+
+export interface ScanLine extends Cord, MovingObject {}

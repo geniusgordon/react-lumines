@@ -5,8 +5,9 @@ import {
   RotateDirection,
   ActiveBlock,
   DetachedBlock,
+  ScanLine,
 } from './types';
-import { Dimension } from '../constants';
+import { Dimension, Speed } from '../constants';
 
 export function rotate(block: Block, direction: RotateDirection): Block {
   if (direction === RotateDirection.CW) {
@@ -29,6 +30,7 @@ export function decompse(block: ActiveBlock): DetachedBlock[] {
         color: c,
         x: block.x + Dimension.SQUARE_SIZE * i,
         y: block.y + Dimension.SQUARE_SIZE * (col.length - j - 1),
+        speed: Speed.DROP_DETACHED,
       });
     });
   });
@@ -52,10 +54,17 @@ export function move(
     })
   ) {
     return {
-      block: block.block,
+      ...block,
       x,
-      y: block.y,
     };
   }
   return block;
+}
+
+export function nextBlockY(block: ActiveBlock, time: number): number {
+  return block.y + Math.min(time * block.speed, Dimension.SQUARE_SIZE);
+}
+
+export function nextScanLineX(scanLine: ScanLine, time: number): number {
+  return scanLine.x + time * scanLine.speed;
 }

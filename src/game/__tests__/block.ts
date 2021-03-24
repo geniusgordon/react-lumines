@@ -1,6 +1,6 @@
-import { rotate, decompse } from '../block';
+import { rotate, decompse, nextBlockY } from '../block';
 import { Color, RotateDirection } from '../types';
-import { Dimension } from '../../constants';
+import { Dimension, Speed } from '../../constants';
 
 test.each([
   [
@@ -65,14 +65,30 @@ test.each([
       y: 0,
     },
     [
-      { color: Color.DARK, x: 0, y: Dimension.SQUARE_SIZE },
-      { color: Color.LIGHT, x: 0, y: 0 },
+      {
+        color: Color.DARK,
+        x: 0,
+        y: Dimension.SQUARE_SIZE,
+        speed: Speed.DROP_DETACHED,
+      },
+      {
+        color: Color.LIGHT,
+        x: 0,
+        y: 0,
+        speed: Speed.DROP_DETACHED,
+      },
       {
         color: Color.DARK,
         x: Dimension.SQUARE_SIZE,
         y: Dimension.SQUARE_SIZE,
+        speed: Speed.DROP_DETACHED,
       },
-      { color: Color.LIGHT, x: Dimension.SQUARE_SIZE, y: 0 },
+      {
+        color: Color.LIGHT,
+        x: Dimension.SQUARE_SIZE,
+        y: 0,
+        speed: Speed.DROP_DETACHED,
+      },
     ],
   ],
   [
@@ -89,25 +105,57 @@ test.each([
         color: Color.LIGHT,
         x: 0.5 * Dimension.SQUARE_SIZE,
         y: 1.5 * Dimension.SQUARE_SIZE,
+        speed: Speed.DROP_DETACHED,
       },
       {
         color: Color.DARK,
         x: 0.5 * Dimension.SQUARE_SIZE,
         y: 0.5 * Dimension.SQUARE_SIZE,
+        speed: Speed.DROP_DETACHED,
       },
       {
         color: Color.DARK,
         x: 1.5 * Dimension.SQUARE_SIZE,
         y: 1.5 * Dimension.SQUARE_SIZE,
+        speed: Speed.DROP_DETACHED,
       },
       {
         color: Color.LIGHT,
         x: 1.5 * Dimension.SQUARE_SIZE,
         y: 0.5 * Dimension.SQUARE_SIZE,
+        speed: Speed.DROP_DETACHED,
       },
     ],
   ],
 ])('decompse active block', (input, output) => {
   const result = decompse(input);
   expect(result).toEqual(output);
+});
+
+test.each([
+  [
+    'next',
+    {
+      block: [],
+      x: 0,
+      y: 0,
+      speed: Speed.DROP_SLOW,
+    },
+    0.1,
+    Speed.DROP_SLOW * 0.1,
+  ],
+  [
+    'move over one block',
+    {
+      block: [],
+      x: 0,
+      y: 0,
+      speed: Speed.DROP_FAST,
+    },
+    Dimension.SQUARE_SIZE / Speed.DROP_FAST + 1,
+    Dimension.SQUARE_SIZE,
+  ],
+])('nextBlockY, %s', (_, block, time, output) => {
+  const result = nextBlockY(block, time);
+  expect(result).toBe(output);
 });
