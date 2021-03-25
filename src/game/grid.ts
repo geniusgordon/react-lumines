@@ -131,3 +131,16 @@ export function updateMatchedBlocks(grid: Grid): Grid {
   }
   return result;
 }
+
+export function scanColumn(grid: Grid): Grid {
+  return grid.map(column =>
+    column.map(cell =>
+      cell?.matchedBlock
+        ? {
+            ...cell,
+            scanned: true,
+          }
+        : cell,
+    ),
+  );
+}
