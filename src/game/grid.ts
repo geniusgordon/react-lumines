@@ -132,15 +132,24 @@ export function updateMatchedBlocks(grid: Grid): Grid {
   return result;
 }
 
-export function scanColumn(grid: Grid): Grid {
-  return grid.map(column =>
-    column.map(cell =>
-      cell?.matchedBlock
-        ? {
-            ...cell,
-            scanned: true,
-          }
-        : cell,
-    ),
-  );
+export function scanColumn(
+  grid: Grid,
+  col: number,
+): { grid: Grid; count: number } {
+  if (col < 0 || col >= grid.length) {
+    return { grid, count: 0 };
+  }
+  return {
+    grid: [
+      ...grid.slice(0, col),
+      grid[col].map(cell =>
+        cell?.matchedBlock ? { ...cell, scanned: true } : cell,
+      ),
+      ...grid.slice(col + 1),
+    ],
+    count: grid[col].filter(
+      (cell, i) =>
+        cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === i,
+    ).length,
+  };
 }
