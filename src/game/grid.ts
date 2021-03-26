@@ -1,5 +1,13 @@
-import { Cord, Color, Cell, Column, Grid, GridIndex } from './types';
-import { Dimension } from '../constants';
+import {
+  Cord,
+  Color,
+  Cell,
+  Column,
+  Grid,
+  GridIndex,
+  DetachedBlock,
+} from './types';
+import { Dimension, Speed } from '../constants';
 
 export function xyToColRow(x: number): number {
   return Math.floor(x / Dimension.SQUARE_SIZE);
@@ -152,4 +160,37 @@ export function scanColumn(
         cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === i,
     ).length,
   };
+}
+
+export function removeScanned(
+  grid: Grid,
+): { grid: Grid; detachedBlocks: DetachedBlock[] } {
+  const result: Grid = [];
+  const detachedBlocks: DetachedBlock[] = [];
+
+  for (let i = 0; i < grid.length; i++) {
+    const column: Column = grid[i].map(() => null);
+    let hasMatched = false;
+    for (let j = grid[i].length - 1; j >= 0; j--) {
+      const cell = grid[i][j];
+      if (cell === null) {
+        continue;
+      }
+      if (cell.scanned) {
+        hasMatched = true;
+      } else if (hasMatched) {
+        detachedBlocks.push({
+          color: cell.color,
+          x: i * Dimension.SQUARE_SIZE,
+          y: j * Dimension.SQUARE_SIZE,
+          speed: Speed.DROP_DETACHED,
+        });
+      } else {
+        column[j] = cell;
+      }
+    }
+    result.push(column);
+  }
+
+  return { grid: result, detachedBlocks };
 }
