@@ -42,3 +42,11 @@ export interface DetachedBlock extends Cord, MovingObject {
 }
 
 export interface ScanLine extends Cord, MovingObject {}
+
+export type Game = {
+  queue: Block[];
+  activeBlock: ActiveBlock;
+  grid: Grid;
+  detachedBlocks: DetachedBlock[];
+  scanLine: ScanLine;
+};

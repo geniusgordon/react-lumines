@@ -1,5 +1,6 @@
 import { isFree } from './grid';
 import {
+  Color,
   Block,
   Grid,
   RotateDirection,
@@ -8,6 +9,14 @@ import {
   ScanLine,
 } from './types';
 import { Dimension, Speed } from '../constants';
+
+export function getRandomBlock(): Block {
+  const n = Math.floor(Math.random() * 16);
+  return [
+    [n & 8 ? Color.LIGHT : Color.DARK, n & 4 ? Color.LIGHT : Color.DARK],
+    [n & 2 ? Color.LIGHT : Color.DARK, n & 1 ? Color.LIGHT : Color.DARK],
+  ];
+}
 
 export function rotate(block: Block, direction: RotateDirection): Block {
   if (direction === RotateDirection.CW) {
@@ -66,5 +75,8 @@ export function nextBlockY(block: ActiveBlock, time: number): number {
 }
 
 export function nextScanLineX(scanLine: ScanLine, time: number): number {
-  return scanLine.x + time * scanLine.speed;
+  return (
+    (scanLine.x + Math.min(time * scanLine.speed, Dimension.SQUARE_SIZE)) %
+    Dimension.GRID_WIDTH
+  );
 }
