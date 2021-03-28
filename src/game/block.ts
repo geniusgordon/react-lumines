@@ -70,13 +70,13 @@ export function move(
   return block;
 }
 
-export function nextBlockY(block: ActiveBlock, time: number): number {
-  return block.y + Math.min(time * block.speed, Dimension.SQUARE_SIZE);
+export function nextBlockY(block: ActiveBlock, elapsed: number): number {
+  return block.y + Math.min(elapsed * block.speed, Dimension.SQUARE_SIZE);
 }
 
-export function nextScanLineX(scanLine: ScanLine, time: number): number {
+export function nextScanLineX(scanLine: ScanLine, elapsed: number): number {
   return (
-    (scanLine.x + Math.min(time * scanLine.speed, Dimension.SQUARE_SIZE)) %
+    (scanLine.x + Math.min(elapsed * scanLine.speed, Dimension.SQUARE_SIZE)) %
     Dimension.GRID_WIDTH
   );
 }

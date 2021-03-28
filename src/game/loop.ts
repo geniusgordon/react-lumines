@@ -49,5 +49,11 @@ export function checkDetachedBlocks(
 }
 
 export function loop(game: Game, elapsed: number): Game {
-  return game;
+  return {
+    ...game,
+    activeBlock: {
+      ...game.activeBlock,
+      y: nextBlockY(game.activeBlock, elapsed),
+    },
+  };
 }

@@ -9,21 +9,9 @@ const Template: Story<ColumnProps> = args => <Column {...args} />;
 export const DemoColumn = Template.bind({});
 DemoColumn.args = {
   column: [
-    {
-      color: Color.DARK,
-      matched: false,
-      scanned: false,
-    },
-    {
-      color: Color.LIGHT,
-      matched: false,
-      scanned: false,
-    },
-    {
-      color: Color.LIGHT,
-      matched: false,
-      scanned: true,
-    },
+    { color: Color.DARK },
+    { color: Color.LIGHT },
+    { color: Color.LIGHT },
   ],
   x: 0,
 };
