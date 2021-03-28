@@ -82,6 +82,10 @@ export function isMatch(grid: Grid, col: number, row: number): Boolean {
   return true;
 }
 
+export function isMatchedBlock(cell: Cell, col: number, row: number): Boolean {
+  return cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === row;
+}
+
 export function updateCell(
   grid: Grid,
   cell: Cell,

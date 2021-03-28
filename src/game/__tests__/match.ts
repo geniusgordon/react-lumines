@@ -1,4 +1,4 @@
-import { isMatch, updateMatchedBlocks } from '../grid';
+import { isMatch, isMatchedBlock, updateMatchedBlocks } from '../grid';
 import { Color } from '../types';
 
 test('isMatch', () => {
@@ -8,6 +8,26 @@ test('isMatch', () => {
   ];
   const result = isMatch(grid, 0, 0);
   expect(result).toBeTruthy();
+});
+
+test.each([
+  [
+    'is matched',
+    { color: Color.LIGHT, matchedBlock: { col: 0, row: 0 } },
+    0,
+    0,
+    true,
+  ],
+  [
+    'not is matched',
+    { color: Color.LIGHT, matchedBlock: { col: 1, row: 0 } },
+    0,
+    0,
+    false,
+  ],
+])('isMatchedBlock, %s', (_, cell, col, row, output) => {
+  const result = isMatchedBlock(cell, col, row);
+  expect(result).toBe(output);
 });
 
 test.each([

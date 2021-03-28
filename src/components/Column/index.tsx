@@ -1,28 +1,14 @@
 import React from 'react';
-import Cell from '../Cell';
-import { Column as ColumnType } from '../../game/types';
-import { Dimension } from '../../constants';
+import Cell, { CellProps } from '../Cell';
 
 export type ColumnProps = {
-  column: ColumnType;
+  column: Array<CellProps | null>;
   x: number;
 };
 
-const Column: React.FC<ColumnProps> = ({ column, x }) => {
+const Column: React.FC<ColumnProps> = ({ column }) => {
   return (
-    <g>
-      {column.map((cell, i) =>
-        cell ? (
-          <Cell
-            key={i}
-            x={x}
-            y={i * Dimension.SQUARE_SIZE}
-            color={cell.color}
-            scanned={cell.scanned}
-          />
-        ) : null,
-      )}
-    </g>
+    <g>{column.map((cell, i) => (cell ? <Cell key={i} {...cell} /> : null))}</g>
   );
 };
 

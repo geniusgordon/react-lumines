@@ -4,16 +4,11 @@ import { Palette } from '../constants';
 
 const SvgDecorator: Meta['decorators'] = [
   Story => (
-    <div
-    style={{
-        padding: 20,
-        backgroundColor: Palette.BACKGROUND,
-      }}
-    >
-      <svg>
+    <svg style={{ backgroundColor: Palette.BACKGROUND }}>
+      <g transform="translate(20, 20)">
         <Story />
-      </svg>
-    </div>
+      </g>
+    </svg>
   ),
 ];
 
