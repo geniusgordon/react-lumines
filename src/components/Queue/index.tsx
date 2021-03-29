@@ -11,7 +11,7 @@ const Queue: React.FC<QueueProps> = ({ queue }) => {
   return (
     <g>
       {queue.map((block, i) => (
-        <Block key={i} x={i * Dimension.SQUARE_SIZE * 3} y={0} block={block} />
+        <Block key={i} x={0} y={i * Dimension.SQUARE_SIZE * 3} block={block} />
       ))}
     </g>
   );
