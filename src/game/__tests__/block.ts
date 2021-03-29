@@ -63,6 +63,7 @@ test.each([
       ],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     [
       {
@@ -99,6 +100,7 @@ test.each([
       ],
       x: 0.5 * Dimension.SQUARE_SIZE,
       y: 0.5 * Dimension.SQUARE_SIZE,
+      speed: Speed.DROP_SLOW,
     },
     [
       {

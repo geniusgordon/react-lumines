@@ -5,10 +5,10 @@ import SvgDecorator from '../SvgDecorator';
 
 const Template: Story<ScanLineProps> = args => <ScanLine {...args} />;
 
-export const DemoColumn = Template.bind({});
-DemoColumn.args = {
+export const DemoScanLine = Template.bind({});
+DemoScanLine.args = {
   x: 0,
-  matchedCount: 10,
+  scannedCount: 10,
 };
 
 export default {

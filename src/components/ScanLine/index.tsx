@@ -3,12 +3,12 @@ import { Dimension, Palette } from '../../constants';
 
 export type ScanLineProps = {
   x: number;
-  matchedCount: number;
+  scannedCount: number;
 };
 
 const S = Dimension.SQUARE_SIZE;
 
-const ScanLine: React.FC<ScanLineProps> = ({ x, matchedCount }) => {
+const ScanLine: React.FC<ScanLineProps> = ({ x, scannedCount }) => {
   return (
     <g>
       <defs>
@@ -40,7 +40,7 @@ const ScanLine: React.FC<ScanLineProps> = ({ x, matchedCount }) => {
         fill={Palette.SCAN_LINE}
         fontSize={S * 0.8}
       >
-        {matchedCount}
+        {scannedCount}
       </text>
       <polygon
         points={`${x},${S * 0.75} ${x},${S * 1.75} ${x + S / 2},${S * 1.25}`}

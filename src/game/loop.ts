@@ -1,6 +1,15 @@
-import { nextBlockY, nextScanLineX } from './block';
-import { xyToColRow, colRowToXY, isFreeBelow, updateCell } from './grid';
+import { nextBlockY, nextScanLineX, decompse, getRandomBlock } from './block';
+import {
+  xyToColRow,
+  colRowToXY,
+  isFreeBelow,
+  updateCell,
+  updateMatchedBlocks,
+  scanColumn,
+  removeScanned,
+} from './grid';
 import { Game, ActiveBlock, DetachedBlock, Grid, ScanLine } from './types';
+import { Dimension, Speed } from '../constants';
 
 export function willEnterNextRow(block: ActiveBlock, elapsed: number): Boolean {
   return xyToColRow(block.y) !== xyToColRow(nextBlockY(block, elapsed));
@@ -48,12 +57,65 @@ export function checkDetachedBlocks(
   return { grid: newGrid, detachedBlocks: newDetachedBlocks };
 }
 
+export function scan(grid: Grid, column: number): Grid {
+  return grid;
+}
+
 export function loop(game: Game, elapsed: number): Game {
+  let {
+    queue,
+    activeBlock,
+    grid,
+    detachedBlocks,
+    scanLine,
+    scannedCount,
+  } = game;
+
+  if (
+    activeBlockWillCollide(activeBlock, grid) &&
+    (activeBlock.speed > Speed.DROP_SLOW ||
+      willEnterNextRow(activeBlock, elapsed))
+  ) {
+    detachedBlocks = [...detachedBlocks, ...decompse(activeBlock)];
+    activeBlock = {
+      block: queue[0],
+      x: Dimension.SQUARE_SIZE * Math.floor(Dimension.GRID_COLUMNS / 2),
+      y: 0,
+      speed: Speed.DROP_SLOW,
+    };
+    queue = [...queue.slice(1), getRandomBlock()];
+  }
+
+  ({ grid, detachedBlocks } = checkDetachedBlocks(grid, detachedBlocks));
+
+  grid = updateMatchedBlocks(grid);
+
+  if (willEnterNextColum(scanLine, elapsed)) {
+    const column = (xyToColRow(scanLine.x) + 1) % Dimension.GRID_COLUMNS;
+    const isEnd = column === Dimension.GRID_COLUMNS - 1;
+    let count = 0;
+    ({ grid, count } = scanColumn(grid, column));
+    scannedCount += count;
+
+    if ((count === 0 || isEnd) && scannedCount > 0) {
+      const removeResult = removeScanned(grid);
+      grid = removeResult.grid;
+      detachedBlocks = [...detachedBlocks, ...removeResult.detachedBlocks];
+    }
+  }
+
   return {
-    ...game,
+    queue,
     activeBlock: {
       ...game.activeBlock,
-      y: nextBlockY(game.activeBlock, elapsed),
+      y: nextBlockY(activeBlock, elapsed),
     },
+    grid,
+    detachedBlocks,
+    scanLine: {
+      ...scanLine,
+      x: nextScanLineX(scanLine, elapsed),
+    },
+    scannedCount,
   };
 }

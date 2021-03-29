@@ -35,9 +35,9 @@ DemoGame.args = {
     detachedBlocks: [],
     scanLine: {
       x: 60,
-      y: 0,
-      speed: Speed.SCAN_LINE_MEDIUM,
+      speed: Speed.SCAN_LINE,
     },
+    scannedCount: 0,
     grid: [
       [
         null,
@@ -109,6 +109,13 @@ DemoGame.args = {
         { color: Color.DARK, matchedBlock: { col: 3, row: 10 } },
         { color: Color.DARK, matchedBlock: { col: 3, row: 10 } },
       ],
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
+      [...new Array(Dimension.GRID_ROWS)].map(() => null),
     ],
   },
 };
