@@ -27,6 +27,7 @@ const height = PADDING + d.GRID_HEIGHT + PADDING;
 
 const Game: React.FC<GameProps> = ({ game }) => {
   const { queue, grid, activeBlock, scanLine } = game;
+
   return (
     <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
       <Group x={PADDING} y={PADDING + d.SQUARE_SIZE * 2}>
