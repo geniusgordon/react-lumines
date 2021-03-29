@@ -4,6 +4,7 @@ import Block from '../Block';
 import Queue from '../Queue';
 import Field from '../Field';
 import Grid from '../Grid';
+import ScanLine from '../ScanLine';
 import { Game as GameType } from '../../game/types';
 import { Dimension as d } from '../../constants';
 
@@ -25,7 +26,7 @@ const width =
 const height = PADDING + d.GRID_HEIGHT + PADDING;
 
 const Game: React.FC<GameProps> = ({ game }) => {
-  const { queue, grid, activeBlock } = game;
+  const { queue, grid, activeBlock, scanLine } = game;
   return (
     <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
       <Group x={PADDING} y={PADDING + d.SQUARE_SIZE * 2}>
@@ -35,6 +36,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
         <Grid />
         <Field grid={grid} />
         <Block {...activeBlock} />
+        <ScanLine {...scanLine} matchedCount={10} />
       </Group>
     </svg>
   );

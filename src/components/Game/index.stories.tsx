@@ -34,7 +34,7 @@ DemoGame.args = {
     },
     detachedBlocks: [],
     scanLine: {
-      x: 0,
+      x: 60,
       y: 0,
       speed: Speed.SCAN_LINE_MEDIUM,
     },
