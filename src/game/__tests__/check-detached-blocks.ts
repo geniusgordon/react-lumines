@@ -1,4 +1,4 @@
-import { checkDetachedBlocks } from '../loop';
+import { checkDetachedBlocks } from '../tick';
 import { Color } from '../types';
 import { Dimension, Speed } from '../../constants';
 

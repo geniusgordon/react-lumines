@@ -1,4 +1,4 @@
-import { activeBlockWillCollide } from '../loop';
+import { activeBlockWillCollide } from '../tick';
 import { Color } from '../types';
 import { Dimension, Speed } from '../../constants';
 

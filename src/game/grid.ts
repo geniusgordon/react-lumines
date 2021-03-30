@@ -16,6 +16,12 @@ export function colRowToXY(col: number): number {
   return col * Dimension.SQUARE_SIZE;
 }
 
+export function getEmptyGrid(): Grid {
+  return [...new Array(Dimension.GRID_COLUMNS)].map(() =>
+    [...new Array(Dimension.GRID_ROWS)].map(() => null),
+  );
+}
+
 export function addToColumn(colors: Color[], column: Column): Column {
   const result = [...column];
 

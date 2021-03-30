@@ -61,7 +61,7 @@ export function scan(grid: Grid, column: number): Grid {
   return grid;
 }
 
-export function loop(game: Game, elapsed: number): Game {
+export function tick(game: Game, elapsed: number): Game {
   let {
     queue,
     activeBlock,
@@ -79,7 +79,7 @@ export function loop(game: Game, elapsed: number): Game {
     detachedBlocks = [...detachedBlocks, ...decompse(activeBlock)];
     activeBlock = {
       block: queue[0],
-      x: Dimension.SQUARE_SIZE * Math.floor(Dimension.GRID_COLUMNS / 2),
+      x: Dimension.GRID_MID_X,
       y: 0,
       speed: Speed.DROP_SLOW,
     };
@@ -107,7 +107,7 @@ export function loop(game: Game, elapsed: number): Game {
   return {
     queue,
     activeBlock: {
-      ...game.activeBlock,
+      ...activeBlock,
       y: nextBlockY(activeBlock, elapsed),
     },
     grid,
