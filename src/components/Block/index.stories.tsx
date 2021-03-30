@@ -11,7 +11,7 @@ DemoBlock.args = {
   x: 0,
   y: 0,
   block: [
-    [Color.LIGHT, Color.DARK],
+    [Color.LIGHT, Color.LIGHT],
     [Color.DARK, Color.LIGHT],
   ],
 };

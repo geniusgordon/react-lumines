@@ -1,15 +1,17 @@
 import React from 'react';
 import Grid from '../Grid';
 import Column from '../Column';
+import Cell from '../Cell';
 import { isMatchedBlock } from '../../game/grid';
-import { Grid as GridType } from '../../game/types';
+import { Grid as GridType, DetachedBlock } from '../../game/types';
 import { Dimension } from '../../constants';
 
 export type FieldProps = {
   grid: GridType;
+  detachedBlocks: DetachedBlock[];
 };
 
-const Field: React.FC<FieldProps> = ({ grid }) => {
+const Field: React.FC<FieldProps> = ({ grid, detachedBlocks }) => {
   return (
     <g>
       <Grid />
@@ -59,6 +61,9 @@ const Field: React.FC<FieldProps> = ({ grid }) => {
           )}
           x={i * Dimension.SQUARE_SIZE}
         />
+      ))}
+      {detachedBlocks.map(b => (
+        <Cell key={`${b.x}-${b.y}-${b.color}`} {...b} />
       ))}
     </g>
   );

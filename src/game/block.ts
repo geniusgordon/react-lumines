@@ -31,7 +31,7 @@ export function rotate(block: Block, direction: RotateDirection): Block {
   ];
 }
 
-export function decompse(block: ActiveBlock): DetachedBlock[] {
+export function decompose(block: ActiveBlock): DetachedBlock[] {
   const result: DetachedBlock[] = [];
   block.block.forEach((col, i) => {
     col.reverse().forEach((c, j) => {

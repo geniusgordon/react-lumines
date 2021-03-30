@@ -1,4 +1,4 @@
-import { rotate, decompse, nextBlockY } from '../block';
+import { rotate, decompose, nextBlockY } from '../block';
 import { Color, RotateDirection } from '../types';
 import { Dimension, Speed } from '../../constants';
 
@@ -130,7 +130,7 @@ test.each([
     ],
   ],
 ])('decompse active block', (input, output) => {
-  const result = decompse(input);
+  const result = decompose(input);
   expect(result).toEqual(output);
 });
 

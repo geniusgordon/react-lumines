@@ -1,7 +1,8 @@
-import { nextBlockY, nextScanLineX, decompse, getRandomBlock } from './block';
+import { nextBlockY, nextScanLineX, decompose, getRandomBlock } from './block';
 import {
   xyToColRow,
   colRowToXY,
+  getEmptyGrid,
   isFreeBelow,
   updateCell,
   updateMatchedBlocks,
@@ -10,6 +11,25 @@ import {
 } from './grid';
 import { Game, ActiveBlock, DetachedBlock, Grid, ScanLine } from './types';
 import { Dimension, Speed } from '../constants';
+
+export function getInitGame(): Game {
+  return {
+    queue: [...new Array(3)].map(() => getRandomBlock()),
+    activeBlock: {
+      block: getRandomBlock(),
+      x: Dimension.GRID_MID_X,
+      y: 0,
+      speed: Speed.DROP_SLOW,
+    },
+    grid: getEmptyGrid(),
+    detachedBlocks: [],
+    scanLine: {
+      x: 0,
+      speed: Speed.SCAN_LINE,
+    },
+    scannedCount: 0,
+  };
+}
 
 export function willEnterNextRow(block: ActiveBlock, elapsed: number): Boolean {
   return xyToColRow(block.y) !== xyToColRow(nextBlockY(block, elapsed));
@@ -76,7 +96,7 @@ export function tick(game: Game, elapsed: number): Game {
     (activeBlock.speed > Speed.DROP_SLOW ||
       willEnterNextRow(activeBlock, elapsed))
   ) {
-    detachedBlocks = [...detachedBlocks, ...decompse(activeBlock)];
+    detachedBlocks = [...detachedBlocks, ...decompose(activeBlock)];
     activeBlock = {
       block: queue[0],
       x: Dimension.GRID_MID_X,

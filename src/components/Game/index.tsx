@@ -33,7 +33,14 @@ const width =
 const height = PADDING + d.GRID_HEIGHT + PADDING;
 
 const Game: React.FC<GameProps> = ({ game }) => {
-  const { queue, grid, activeBlock, scanLine, scannedCount } = game;
+  const {
+    queue,
+    grid,
+    activeBlock,
+    detachedBlocks,
+    scanLine,
+    scannedCount,
+  } = game;
 
   return (
     <Container>
@@ -43,7 +50,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
         </Group>
         <Group x={PADDING + QUEUE_WIDTH + PADDING} y={PADDING}>
           <Grid />
-          <Field grid={grid} />
+          <Field grid={grid} detachedBlocks={detachedBlocks} />
           <Block {...activeBlock} />
           <ScanLine {...scanLine} scannedCount={scannedCount} />
         </Group>
