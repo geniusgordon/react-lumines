@@ -2,7 +2,7 @@ import React from 'react';
 
 type CallbackFn = (time: number) => void;
 
-const useAnimationFrame = (callback: CallbackFn, enabled: Boolean) => {
+function useAnimationFrame(callback: CallbackFn, enabled: Boolean) {
   const callbackRef = React.useRef<CallbackFn>(callback);
   const requestRef = React.useRef<number>();
   const previousTimeRef = React.useRef<number>();
@@ -34,6 +34,6 @@ const useAnimationFrame = (callback: CallbackFn, enabled: Boolean) => {
       }
     };
   }, [enabled]);
-};
+}
 
 export default useAnimationFrame;
