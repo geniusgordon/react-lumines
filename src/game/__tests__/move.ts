@@ -1,6 +1,6 @@
 import { move } from '../block';
 import { Color } from '../types';
-import { Dimension } from '../../constants';
+import { Dimension, Speed } from '../../constants';
 
 test.each([
   [
@@ -9,6 +9,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
     [
@@ -20,6 +21,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
   [
@@ -28,6 +30,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
     [
@@ -39,6 +42,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
   [
@@ -47,6 +51,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
     [
@@ -58,6 +63,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
   [
@@ -66,6 +72,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
     [
@@ -77,6 +84,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
 ])('move left, %s', (_, block, distance, grid, output) => {
@@ -91,6 +99,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
     [
@@ -102,6 +111,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
   [
@@ -110,6 +120,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
     [
@@ -121,6 +132,7 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
   [
@@ -129,6 +141,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
     [
@@ -140,6 +153,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
   [
@@ -148,6 +162,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
     [
@@ -159,6 +174,7 @@ test.each([
       block: [],
       x: 0,
       y: 0,
+      speed: Speed.DROP_SLOW,
     },
   ],
 ])('move right, %s', (_, block, distance, grid, output) => {
