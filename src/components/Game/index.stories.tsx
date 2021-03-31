@@ -37,7 +37,7 @@ DemoGame.args = {
       x: 60,
       speed: Speed.SCAN_LINE,
     },
-    scannedCount: 0,
+    matchedCount: 0,
     grid: [
       [
         null,

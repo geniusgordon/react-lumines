@@ -9,7 +9,14 @@ import {
   scanColumn,
   removeScanned,
 } from './grid';
-import { Game, ActiveBlock, DetachedBlock, Grid, ScanLine } from './types';
+import {
+  Color,
+  Game,
+  ActiveBlock,
+  DetachedBlock,
+  Grid,
+  ScanLine,
+} from './types';
 import { Dimension, Speed } from '../constants';
 
 export function getInitGame(): Game {
@@ -27,7 +34,7 @@ export function getInitGame(): Game {
       x: 0,
       speed: Speed.SCAN_LINE,
     },
-    scannedCount: 0,
+    matchedCount: 0,
   };
 }
 
@@ -88,7 +95,7 @@ export function tick(game: Game, elapsed: number): Game {
     grid,
     detachedBlocks,
     scanLine,
-    scannedCount,
+    matchedCount,
   } = game;
 
   activeBlock = {
@@ -122,13 +129,13 @@ export function tick(game: Game, elapsed: number): Game {
   if (willEnterNextColum(scanLine, elapsed)) {
     const column = (xyToColRow(scanLine.x) + 1) % Dimension.GRID_COLUMNS;
     const isEnd = column === Dimension.GRID_COLUMNS - 1;
-    let count = 0;
-    ({ grid, count } = scanColumn(grid, column));
-    scannedCount += count;
+    const scanResult = scanColumn(grid, column);
+    grid = scanResult.grid;
+    matchedCount += scanResult.matchedCount;
 
-    if ((count === 0 || isEnd) && scannedCount > 0) {
+    if ((scanResult.scannedCount === 0 || isEnd) && matchedCount > 0) {
       const removeResult = removeScanned(grid);
-      grid = removeResult.grid;
+      grid = updateMatchedBlocks(removeResult.grid);
       detachedBlocks = [...detachedBlocks, ...removeResult.detachedBlocks];
     }
   }
@@ -142,6 +149,6 @@ export function tick(game: Game, elapsed: number): Game {
       ...scanLine,
       x: nextScanLineX(scanLine, elapsed),
     },
-    scannedCount,
+    matchedCount,
   };
 }

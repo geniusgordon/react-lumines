@@ -40,7 +40,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
     activeBlock,
     detachedBlocks,
     scanLine,
-    scannedCount,
+    matchedCount,
   } = game;
 
   return (
@@ -54,7 +54,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
           <Shadow x={activeBlock.x} />
           <Field grid={grid} detachedBlocks={detachedBlocks} />
           <Block {...activeBlock} />
-          <ScanLine {...scanLine} scannedCount={scannedCount} />
+          <ScanLine {...scanLine} matchedCount={matchedCount} />
         </Group>
       </svg>
     </Container>

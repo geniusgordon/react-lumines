@@ -52,5 +52,5 @@ export type Game = {
   grid: Grid;
   detachedBlocks: DetachedBlock[];
   scanLine: ScanLine;
-  scannedCount: number;
+  matchedCount: number;
 };

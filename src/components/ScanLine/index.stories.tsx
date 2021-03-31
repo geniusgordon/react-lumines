@@ -8,7 +8,7 @@ const Template: Story<ScanLineProps> = args => <ScanLine {...args} />;
 export const DemoScanLine = Template.bind({});
 DemoScanLine.args = {
   x: 0,
-  scannedCount: 10,
+  matchedCount: 10,
 };
 
 export default {

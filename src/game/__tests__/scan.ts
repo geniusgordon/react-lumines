@@ -43,7 +43,8 @@ test.each([
           { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
         ],
       ],
-      count: 1,
+      matchedCount: 1,
+      scannedCount: 2,
     },
   ],
 ])('scanColumn, %s', (_, grid, column, output) => {

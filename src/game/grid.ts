@@ -153,9 +153,9 @@ export function updateMatchedBlocks(grid: Grid): Grid {
 export function scanColumn(
   grid: Grid,
   col: number,
-): { grid: Grid; count: number } {
+): { grid: Grid; matchedCount: number; scannedCount: number } {
   if (col < 0 || col >= grid.length) {
-    return { grid, count: 0 };
+    return { grid, matchedCount: 0, scannedCount: 0 };
   }
   return {
     grid: [
@@ -165,10 +165,11 @@ export function scanColumn(
       ),
       ...grid.slice(col + 1),
     ],
-    count: grid[col].filter(
+    matchedCount: grid[col].filter(
       (cell, i) =>
         cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === i,
     ).length,
+    scannedCount: grid[col].filter((cell, i) => !!cell?.matchedBlock).length,
   };
 }
 
