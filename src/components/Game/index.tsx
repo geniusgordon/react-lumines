@@ -5,6 +5,7 @@ import Block from '../Block';
 import Queue from '../Queue';
 import Field from '../Field';
 import Grid from '../Grid';
+import Shadow from '../Shadow';
 import ScanLine from '../ScanLine';
 import { Game as GameType } from '../../game/types';
 import { Dimension as d, Palette } from '../../constants';
@@ -50,6 +51,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
         </Group>
         <Group x={PADDING + QUEUE_WIDTH + PADDING} y={PADDING}>
           <Grid />
+          <Shadow x={activeBlock.x} />
           <Field grid={grid} detachedBlocks={detachedBlocks} />
           <Block {...activeBlock} />
           <ScanLine {...scanLine} scannedCount={scannedCount} />

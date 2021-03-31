@@ -30,6 +30,7 @@ export const Palette = {
   SCANNED: '#212121',
   LABEL: '#000000',
   INFO: '#FAFAFA',
+  SHADOW: '#03a9f4',
 };
 
 export const Speed = {
