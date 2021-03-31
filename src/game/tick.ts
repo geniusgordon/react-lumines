@@ -91,6 +91,15 @@ export function tick(game: Game, elapsed: number): Game {
     scannedCount,
   } = game;
 
+  activeBlock = {
+    ...activeBlock,
+    y: nextBlockY(activeBlock, elapsed),
+  };
+  detachedBlocks = detachedBlocks.map(d => ({
+    ...d,
+    y: nextBlockY(d, elapsed),
+  }));
+
   if (
     activeBlockWillCollide(activeBlock, grid) &&
     (activeBlock.speed > Speed.DROP_SLOW ||
@@ -126,10 +135,7 @@ export function tick(game: Game, elapsed: number): Game {
 
   return {
     queue,
-    activeBlock: {
-      ...activeBlock,
-      y: nextBlockY(activeBlock, elapsed),
-    },
+    activeBlock,
     grid,
     detachedBlocks,
     scanLine: {

@@ -61,6 +61,7 @@ test('decompose active block', () => {
   };
   input.grid[0][Dimension.GRID_ROWS - 1] = { color: Color.DARK };
 
+  const elapse = 0.2;
   const grid = getEmptyGrid();
   grid[0][Dimension.GRID_ROWS - 1] = { color: Color.DARK };
   grid[0][Dimension.GRID_ROWS - 2] = { color: Color.DARK };
@@ -69,18 +70,22 @@ test('decompose active block', () => {
     {
       color: Color.LIGHT,
       x: Dimension.SQUARE_SIZE,
-      y: (Dimension.GRID_ROWS - 1.5) * Dimension.SQUARE_SIZE,
+      y:
+        (Dimension.GRID_ROWS - 1.5) * Dimension.SQUARE_SIZE +
+        Speed.DROP_DETACHED * elapse,
       speed: Speed.DROP_DETACHED,
     },
     {
       color: Color.DARK,
       x: Dimension.SQUARE_SIZE,
-      y: (Dimension.GRID_ROWS - 2.5) * Dimension.SQUARE_SIZE,
+      y:
+        (Dimension.GRID_ROWS - 2.5) * Dimension.SQUARE_SIZE +
+        Speed.DROP_DETACHED * elapse,
       speed: Speed.DROP_DETACHED,
     },
   ];
 
-  const result = tick(input, 0.2);
+  const result = tick(input, elapse);
   expect(result.detachedBlocks).toEqual(detachedBlocks);
   expect(result.grid).toEqual(grid);
 });

@@ -6,6 +6,7 @@ import {
   RotateDirection,
   ActiveBlock,
   DetachedBlock,
+  MovingObject,
   ScanLine,
 } from './types';
 import { Dimension, Speed } from '../constants';
@@ -70,7 +71,7 @@ export function move(
   return block;
 }
 
-export function nextBlockY(block: ActiveBlock, elapsed: number): number {
+export function nextBlockY(block: MovingObject, elapsed: number): number {
   return block.y + Math.min(elapsed * block.speed, Dimension.SQUARE_SIZE);
 }
 
