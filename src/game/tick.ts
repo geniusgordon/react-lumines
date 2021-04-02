@@ -9,13 +9,7 @@ import {
   scanColumn,
   removeScanned,
 } from './grid';
-import {
-  Game,
-  ActiveBlock,
-  DetachedBlock,
-  Grid,
-  ScanLine,
-} from './types';
+import { Game, ActiveBlock, DetachedBlock, Grid, ScanLine } from './types';
 import { Dimension, Speed } from '../constants';
 
 export function getInitGame(): Game {
@@ -35,6 +29,8 @@ export function getInitGame(): Game {
     },
     matchedCount: 0,
     scannedCount: 0,
+    score: 0,
+    time: 0,
   };
 }
 
@@ -99,6 +95,8 @@ export function tick(game: Game, elapsed: number): Game {
     scanLine,
     matchedCount,
     scannedCount,
+    score,
+    time,
   } = game;
 
   activeBlock = {
@@ -142,6 +140,10 @@ export function tick(game: Game, elapsed: number): Game {
       grid = updateMatchedBlocks(removeResult.grid);
       detachedBlocks = [...detachedBlocks, ...removeResult.detachedBlocks];
     }
+    if (isEnd) {
+      score += matchedCount;
+      matchedCount = 0;
+    }
   }
 
   return {
@@ -155,5 +157,7 @@ export function tick(game: Game, elapsed: number): Game {
     },
     matchedCount,
     scannedCount,
+    score,
+    time: time + elapsed,
   };
 }

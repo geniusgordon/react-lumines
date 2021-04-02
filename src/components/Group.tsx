@@ -1,8 +1,8 @@
 import React from 'react';
 
 export type GroupProps = {
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   children: React.ReactNode;
 };
 

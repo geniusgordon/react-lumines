@@ -7,6 +7,7 @@ import Field from '../Field';
 import Grid from '../Grid';
 import Shadow from '../Shadow';
 import ScanLine from '../ScanLine';
+import Info from '../Info';
 import { Game as GameType } from '../../game/types';
 import { Dimension as d, Palette } from '../../constants';
 
@@ -41,6 +42,8 @@ const Game: React.FC<GameProps> = ({ game }) => {
     detachedBlocks,
     scanLine,
     matchedCount,
+    score,
+    time,
   } = game;
 
   return (
@@ -55,6 +58,12 @@ const Game: React.FC<GameProps> = ({ game }) => {
           <Field grid={grid} detachedBlocks={detachedBlocks} />
           <Block {...activeBlock} />
           <ScanLine {...scanLine} matchedCount={matchedCount} />
+        </Group>
+        <Group
+          x={PADDING + QUEUE_WIDTH + PADDING + d.GRID_WIDTH + PADDING}
+          y={PADDING + d.SQUARE_SIZE * 2 + PADDING}
+        >
+          <Info time={Math.floor(time / 1000)} score={score} />
         </Group>
       </svg>
     </Container>

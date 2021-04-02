@@ -28,7 +28,7 @@ export const Palette = {
   GRID_STROKE: '#616161',
   SCAN_LINE: '#FFFFFF',
   SCANNED: '#212121',
-  LABEL: '#000000',
+  LABEL: '#FFFFFF',
   INFO: '#FAFAFA',
   SHADOW: '#03a9f4',
 };

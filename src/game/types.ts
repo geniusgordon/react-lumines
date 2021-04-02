@@ -56,4 +56,6 @@ export type Game = {
   scanLine: ScanLine;
   matchedCount: number;
   scannedCount: number;
+  score: number;
+  time: number;
 };

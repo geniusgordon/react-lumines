@@ -25,6 +25,8 @@ test('active block touch bottom', () => {
     scanLine: { x: 0, speed: Speed.SCAN_LINE },
     matchedCount: 0,
     scannedCount: 0,
+    score: 0,
+    time: 0,
   };
   const grid = createEmptyGrid();
   const cells = [
@@ -65,6 +67,8 @@ test('decompose active block', () => {
     scanLine: { x: 0, speed: Speed.SCAN_LINE },
     matchedCount: 0,
     scannedCount: 0,
+    score: 0,
+    time: 0,
   };
   input.grid[0][Dimension.GRID_ROWS - 1] = {
     color: Color.DARK,

@@ -38,8 +38,6 @@ DemoGame.args = {
       x: 60,
       speed: Speed.SCAN_LINE,
     },
-    matchedCount: 0,
-    scannedCount: 0,
     grid: createGridWithCells(Dimension.GRID_COLUMNS, Dimension.GRID_ROWS, [
       [0, 8, Color.LIGHT, { col: 0, row: 8 }, true],
       [0, 9, Color.LIGHT, { col: 0, row: 8 }, true],
@@ -62,6 +60,10 @@ DemoGame.args = {
       [4, 10, Color.DARK, { col: 3, row: 10 }],
       [4, 11, Color.DARK, { col: 3, row: 10 }],
     ]),
+    matchedCount: 0,
+    scannedCount: 0,
+    score: 0,
+    time: 0,
   },
 };
 
