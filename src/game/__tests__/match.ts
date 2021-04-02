@@ -74,8 +74,6 @@ test.each([
       row: 0,
       matchedBlock: { col: 0, row: 0 },
     },
-    0,
-    0,
     true,
   ],
   [
@@ -86,12 +84,10 @@ test.each([
       row: 0,
       matchedBlock: { col: 1, row: 0 },
     },
-    0,
-    0,
     false,
   ],
-])('isMatchedBlock, %s', (_, cell, col, row, output) => {
-  const result = isMatchedBlock(cell, col, row);
+])('isMatchedBlock, %s', (_, cell, output) => {
+  const result = isMatchedBlock(cell);
   expect(result).toBe(output);
 });
 

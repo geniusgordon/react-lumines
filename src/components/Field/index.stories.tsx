@@ -4,7 +4,7 @@ import Field, { FieldProps } from '.';
 import SvgDecorator from '../SvgDecorator';
 import { Color } from '../../game/types';
 import { createGridWithCells } from '../../game/test-helpers';
-import { Dimension } from '../../constants';
+import { Dimension, Speed } from '../../constants';
 
 const Template: Story<FieldProps> = args => <Field {...args} />;
 
@@ -32,6 +32,20 @@ DemoField.args = {
     [4, 10, Color.DARK, { col: 3, row: 10 }],
     [4, 11, Color.DARK, { col: 3, row: 10 }],
   ]),
+  detachedBlocks: [
+    {
+      color: Color.LIGHT,
+      x: 5 * Dimension.SQUARE_SIZE,
+      y: 10.5 * Dimension.SQUARE_SIZE,
+      speed: Speed.DROP_DETACHED,
+    },
+    {
+      color: Color.LIGHT,
+      x: 5 * Dimension.SQUARE_SIZE,
+      y: 9.5 * Dimension.SQUARE_SIZE,
+      speed: Speed.DROP_DETACHED,
+    },
+  ],
 };
 
 export default {

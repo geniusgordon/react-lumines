@@ -54,8 +54,11 @@ export function isSameColor(cells: Cell[]): Boolean {
   return true;
 }
 
-export function isMatchedBlock(cell: Cell, col: number, row: number): Boolean {
-  return cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === row;
+export function isMatchedBlock(cell: Cell): Boolean {
+  return (
+    cell?.matchedBlock?.col === cell?.col &&
+    cell?.matchedBlock?.row === cell?.row
+  );
 }
 
 export function isSameMatchedBlock(a?: Cell, b?: Cell): Boolean {
