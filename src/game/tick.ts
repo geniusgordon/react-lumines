@@ -2,7 +2,7 @@ import { nextBlockY, nextScanLineX, decompose, getRandomBlock } from './block';
 import {
   xyToColRow,
   colRowToXY,
-  getEmptyGrid,
+  createEmptyGrid,
   isFreeBelow,
   updateCell,
   updateMatchedBlocks,
@@ -10,7 +10,6 @@ import {
   removeScanned,
 } from './grid';
 import {
-  Color,
   Game,
   ActiveBlock,
   DetachedBlock,
@@ -28,13 +27,14 @@ export function getInitGame(): Game {
       y: 0,
       speed: Speed.DROP_SLOW,
     },
-    grid: getEmptyGrid(),
+    grid: createEmptyGrid(),
     detachedBlocks: [],
     scanLine: {
       x: 0,
       speed: Speed.SCAN_LINE,
     },
     matchedCount: 0,
+    scannedCount: 0,
   };
 }
 
@@ -77,6 +77,8 @@ export function checkDetachedBlocks(
       const row = xyToColRow(b.y);
       const cell = {
         color: b.color,
+        col,
+        row,
       };
       newGrid = updateCell(newGrid, cell, col, row);
     }
@@ -96,6 +98,7 @@ export function tick(game: Game, elapsed: number): Game {
     detachedBlocks,
     scanLine,
     matchedCount,
+    scannedCount,
   } = game;
 
   activeBlock = {
@@ -132,8 +135,9 @@ export function tick(game: Game, elapsed: number): Game {
     const scanResult = scanColumn(grid, column);
     grid = scanResult.grid;
     matchedCount += scanResult.matchedCount;
+    scannedCount += scanResult.scannedCount;
 
-    if ((scanResult.scannedCount === 0 || isEnd) && matchedCount > 0) {
+    if ((scanResult.scannedCount === 0 || isEnd) && scannedCount > 0) {
       const removeResult = removeScanned(grid);
       grid = updateMatchedBlocks(removeResult.grid);
       detachedBlocks = [...detachedBlocks, ...removeResult.detachedBlocks];
@@ -150,5 +154,6 @@ export function tick(game: Game, elapsed: number): Game {
       x: nextScanLineX(scanLine, elapsed),
     },
     matchedCount,
+    scannedCount,
   };
 }

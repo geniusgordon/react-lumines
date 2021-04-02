@@ -1,12 +1,4 @@
-import {
-  Cord,
-  Color,
-  Cell,
-  Column,
-  Grid,
-  GridIndex,
-  DetachedBlock,
-} from './types';
+import { Cord, Cell, Column, Grid, GridIndex, DetachedBlock } from './types';
 import { Dimension, Speed } from '../constants';
 
 export function xyToColRow(x: number): number {
@@ -16,32 +8,11 @@ export function colRowToXY(col: number): number {
   return col * Dimension.SQUARE_SIZE;
 }
 
-export function getEmptyGrid(): Grid {
-  return [...new Array(Dimension.GRID_COLUMNS)].map(() =>
-    [...new Array(Dimension.GRID_ROWS)].map(() => null),
-  );
-}
-
-export function addToColumn(colors: Color[], column: Column): Column {
-  const result = [...column];
-
-  let i = column.length - 1;
-  while (i >= 0) {
-    if (column[i] === null) {
-      break;
-    }
-    i--;
-  }
-  let j = colors.length - 1;
-  while (i >= 0 && j >= 0) {
-    result[i] = {
-      color: colors[j],
-    };
-    i--;
-    j--;
-  }
-
-  return result;
+export function createEmptyGrid(
+  col: number = Dimension.GRID_COLUMNS,
+  row: number = Dimension.GRID_ROWS,
+): Grid {
+  return [...new Array(col)].map(() => [...new Array(row)].map(() => null));
 }
 
 export function isFree(grid: Grid, cord: Cord): Boolean {
@@ -61,35 +32,40 @@ export function isFreeBelow(grid: Grid, cord: Cord): Boolean {
   return isFree(grid, { x: cord.x, y: cord.y + Dimension.SQUARE_SIZE });
 }
 
-export function isMatch(grid: Grid, col: number, row: number): Boolean {
-  const blocks = [
-    grid[col][row],
-    grid[col + 1][row],
-    grid[col][row + 1],
-    grid[col + 1][row + 1],
+export function getCellsInSquare(grid: Grid, col: number, row: number): Cell[] {
+  return [
+    grid[col]?.[row],
+    grid[col]?.[row + 1],
+    grid[col + 1]?.[row],
+    grid[col + 1]?.[row + 1],
   ].filter(b => !!b);
+}
 
-  if (blocks.length !== 4) {
-    return false;
-  }
-
-  const first = blocks[0];
-
+export function isSameColor(cells: Cell[]): Boolean {
+  const first = cells[0];
   if (!first) {
     return false;
   }
-
-  for (let i = 1; i < blocks.length; i++) {
-    if (first.color !== blocks[i]?.color) {
+  for (let i = 1; i < cells.length; i++) {
+    if (first.color !== cells[i]?.color) {
       return false;
     }
   }
-
   return true;
 }
 
 export function isMatchedBlock(cell: Cell, col: number, row: number): Boolean {
   return cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === row;
+}
+
+export function isSameMatchedBlock(a?: Cell, b?: Cell): Boolean {
+  if (!a || !a.matchedBlock || !b || !b.matchedBlock) {
+    return false;
+  }
+  return (
+    a.matchedBlock.col === b.matchedBlock.col &&
+    a.matchedBlock.row === b.matchedBlock.row
+  );
 }
 
 export function updateCell(
@@ -126,10 +102,11 @@ export function updateCellMatchedBlock(
 
 export function updateMatchedBlocks(grid: Grid): Grid {
   let result = grid;
-  for (let i = 0; i < grid.length - 1; i++) {
+  for (let i = 0; i < grid.length; i++) {
     const column = grid[i];
-    for (let j = 0; j < column.length - 1; j++) {
-      if (isMatch(grid, i, j)) {
+    for (let j = 0; j < column.length; j++) {
+      const cells = getCellsInSquare(result, i, j);
+      if (cells.length === 4 && isSameColor(cells)) {
         result = updateCellMatchedBlock(result, { col: i, row: j }, i, j);
         result = updateCellMatchedBlock(result, { col: i, row: j }, i + 1, j);
         result = updateCellMatchedBlock(result, { col: i, row: j }, i, j + 1);
@@ -140,9 +117,13 @@ export function updateMatchedBlocks(grid: Grid): Grid {
           j + 1,
         );
       } else {
-        const cell = result?.[i]?.[j];
-        if (cell?.matchedBlock?.col === i && cell?.matchedBlock?.row === j) {
-          result = updateCellMatchedBlock(result, undefined, i, j);
+        for (let i = 0; i < cells.length; i++) {
+          if (isSameMatchedBlock(grid[i][j], cells[i])) {
+            const c = cells[i];
+            if (c) {
+              result = updateCellMatchedBlock(result, undefined, c.col, c.row);
+            }
+          }
         }
       }
     }

@@ -1,5 +1,6 @@
 import { activeBlockWillCollide } from '../tick';
 import { Color } from '../types';
+import { createGridWithCells } from '../test-helpers';
 import { Dimension, Speed } from '../../constants';
 
 test.each([
@@ -11,10 +12,7 @@ test.each([
       block: [],
       speed: Speed.DROP_SLOW,
     },
-    [
-      [null, null, null],
-      [null, null, null],
-    ],
+    createGridWithCells(2, 3, []),
     false,
   ],
   [
@@ -25,10 +23,7 @@ test.each([
       block: [],
       speed: Speed.DROP_SLOW,
     },
-    [
-      [null, null, { color: Color.LIGHT }],
-      [null, null, null],
-    ],
+    createGridWithCells(2, 3, [[0, 2, Color.LIGHT]]),
     true,
   ],
   [
@@ -39,10 +34,7 @@ test.each([
       block: [],
       speed: Speed.DROP_SLOW,
     },
-    [
-      [null, null, null],
-      [null, null, { color: Color.LIGHT }],
-    ],
+    createGridWithCells(2, 3, [[1, 2, Color.LIGHT]]),
     true,
   ],
   [
@@ -53,10 +45,7 @@ test.each([
       block: [],
       speed: Speed.DROP_SLOW,
     },
-    [
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(2, 2, []),
     true,
   ],
 ])('activeBlockWillCollide, %s', (_, block, grid, output) => {

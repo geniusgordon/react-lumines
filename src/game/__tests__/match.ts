@@ -1,26 +1,91 @@
-import { isMatch, isMatchedBlock, updateMatchedBlocks } from '../grid';
+import {
+  getCellsInSquare,
+  isSameColor,
+  isMatchedBlock,
+  isSameMatchedBlock,
+  updateMatchedBlocks,
+} from '../grid';
+import { createGridWithCells } from '../test-helpers';
 import { Color } from '../types';
 
-test('isMatch', () => {
-  const grid = [
-    [{ color: Color.LIGHT }, { color: Color.LIGHT }],
-    [{ color: Color.LIGHT }, { color: Color.LIGHT }],
-  ];
-  const result = isMatch(grid, 0, 0);
-  expect(result).toBeTruthy();
+test.each([
+  [
+    '4 cells',
+    createGridWithCells(2, 2, [
+      [0, 0, Color.LIGHT],
+      [0, 1, Color.LIGHT],
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.LIGHT],
+    ]),
+    [
+      { color: Color.LIGHT, col: 0, row: 0 },
+      { color: Color.LIGHT, col: 0, row: 1 },
+      { color: Color.LIGHT, col: 1, row: 0 },
+      { color: Color.LIGHT, col: 1, row: 1 },
+    ],
+  ],
+  [
+    'has empty colors',
+    createGridWithCells(2, 2, [
+      [0, 1, Color.LIGHT],
+      [1, 0, Color.LIGHT],
+    ]),
+    [
+      { color: Color.LIGHT, col: 0, row: 1 },
+      { color: Color.LIGHT, col: 1, row: 0 },
+    ],
+  ],
+])('getCellsInSquare', (_, grid, output) => {
+  const result = getCellsInSquare(grid, 0, 0);
+  expect(result).toEqual(output);
+});
+
+test.each([
+  [
+    'is same',
+    [
+      { color: Color.LIGHT, col: 0, row: 0 },
+      { color: Color.LIGHT, col: 0, row: 1 },
+      { color: Color.LIGHT, col: 1, row: 0 },
+      { color: Color.LIGHT, col: 1, row: 1 },
+    ],
+    true,
+  ],
+  [
+    'not same',
+    [
+      { color: Color.DARK, col: 0, row: 0 },
+      { color: Color.LIGHT, col: 0, row: 1 },
+    ],
+    false,
+  ],
+  ['empty', [], false],
+])('getCellsInSquare', (_, cells, output) => {
+  const result = isSameColor(cells);
+  expect(result).toEqual(output);
 });
 
 test.each([
   [
     'is matched',
-    { color: Color.LIGHT, matchedBlock: { col: 0, row: 0 } },
+    {
+      color: Color.LIGHT,
+      col: 0,
+      row: 0,
+      matchedBlock: { col: 0, row: 0 },
+    },
     0,
     0,
     true,
   ],
   [
     'not is matched',
-    { color: Color.LIGHT, matchedBlock: { col: 1, row: 0 } },
+    {
+      color: Color.LIGHT,
+      col: 0,
+      row: 0,
+      matchedBlock: { col: 1, row: 0 },
+    },
     0,
     0,
     false,
@@ -32,97 +97,75 @@ test.each([
 
 test.each([
   [
-    'different colors',
-    [
-      [{ color: Color.DARK }, { color: Color.LIGHT }],
-      [{ color: Color.DARK }, { color: Color.LIGHT }],
-    ],
-    0,
-    0,
+    'same',
+    { color: Color.LIGHT, col: 0, row: 0, matchedBlock: { col: 0, row: 0 } },
+    { color: Color.LIGHT, col: 0, row: 0, matchedBlock: { col: 0, row: 0 } },
+    true,
   ],
   [
-    'has empty colors',
-    [
-      [{ color: Color.DARK }, null],
-      [null, { color: Color.LIGHT }],
-    ],
-    0,
-    0,
+    '1 matchedBlock undefined',
+    { color: Color.LIGHT, col: 0, row: 0 },
+    { color: Color.LIGHT, col: 0, row: 0, matchedBlock: { col: 0, row: 0 } },
+    false,
   ],
-])('not isMatch, %s', (_, grid, col, row) => {
-  const result = isMatch(grid, col, row);
-  expect(result).toBeFalsy();
+  [
+    '1 undefined',
+    undefined,
+    { color: Color.LIGHT, col: 0, row: 0, matchedBlock: { col: 0, row: 0 } },
+    false,
+  ],
+])('isSameMatchedBlock, %s', (_, a, b, output) => {
+  const resultA = isSameMatchedBlock(a, b);
+  const resultB = isSameMatchedBlock(b, a);
+  expect(resultA).toBe(output);
+  expect(resultB).toBe(output);
 });
 
 test.each([
   [
     'match 1 block',
-    [
-      [null, { color: Color.LIGHT }, { color: Color.LIGHT }],
-      [null, { color: Color.LIGHT }, { color: Color.LIGHT }],
-    ],
-    [
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-      ],
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-      ],
-    ],
+    createGridWithCells(2, 3, [
+      [0, 1, Color.LIGHT],
+      [0, 2, Color.LIGHT],
+      [1, 1, Color.LIGHT],
+      [1, 2, Color.LIGHT],
+    ]),
+    createGridWithCells(2, 3, [
+      [0, 1, Color.LIGHT, { col: 0, row: 1 }],
+      [0, 2, Color.LIGHT, { col: 0, row: 1 }],
+      [1, 1, Color.LIGHT, { col: 0, row: 1 }],
+      [1, 2, Color.LIGHT, { col: 0, row: 1 }],
+    ]),
   ],
   [
     'match 2 blocks',
-    [
-      [null, { color: Color.LIGHT }, { color: Color.LIGHT }],
-      [null, { color: Color.LIGHT }, { color: Color.LIGHT }],
-      [null, { color: Color.LIGHT }, { color: Color.LIGHT }],
-    ],
-    [
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-      ],
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 1, row: 1 } },
-        { color: Color.LIGHT, matchedBlock: { col: 1, row: 1 } },
-      ],
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 1, row: 1 } },
-        { color: Color.LIGHT, matchedBlock: { col: 1, row: 1 } },
-      ],
-    ],
+    createGridWithCells(3, 3, [
+      [0, 1, Color.LIGHT],
+      [0, 2, Color.LIGHT],
+      [1, 1, Color.LIGHT],
+      [1, 2, Color.LIGHT],
+      [2, 1, Color.LIGHT],
+      [2, 2, Color.LIGHT],
+    ]),
+    createGridWithCells(3, 3, [
+      [0, 1, Color.LIGHT, { col: 0, row: 1 }],
+      [0, 2, Color.LIGHT, { col: 0, row: 1 }],
+      [1, 1, Color.LIGHT, { col: 1, row: 1 }],
+      [1, 2, Color.LIGHT, { col: 1, row: 1 }],
+      [2, 1, Color.LIGHT, { col: 1, row: 1 }],
+      [2, 2, Color.LIGHT, { col: 1, row: 1 }],
+    ]),
   ],
   [
     'clear not matched',
-    [
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 1 } },
-        { color: Color.LIGHT },
-      ],
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: { col: 1, row: 1 } },
-        { color: Color.DARK },
-      ],
-      [null, null],
-    ],
-    [
-      [
-        null,
-        { color: Color.LIGHT, matchedBlock: undefined },
-        { color: Color.LIGHT },
-      ],
-      [null, { color: Color.LIGHT }, { color: Color.DARK }],
-      [null, null],
-    ],
+    createGridWithCells(2, 3, [
+      [0, 1, Color.LIGHT, { col: 0, row: 1 }],
+      [0, 2, Color.LIGHT, { col: 0, row: 1 }],
+    ]),
+    createGridWithCells(2, 3, [
+      [0, 1, Color.LIGHT],
+      [0, 2, Color.LIGHT],
+    ]),
   ],
 ])('updateMatchedBlocks, %s', (_, input, output) => {
   const result = updateMatchedBlocks(input);

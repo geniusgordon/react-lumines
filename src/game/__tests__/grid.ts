@@ -1,16 +1,12 @@
 import {
   xyToColRow,
   colRowToXY,
-  addToColumn,
   updateCell,
   updateCellMatchedBlock,
 } from '../grid';
+import { createGridWithCells } from '../test-helpers';
 import { Dimension } from '../../constants';
-import { Color, Column } from '../types';
-
-function createColumByColors(colors: Array<Color | null>): Column {
-  return colors.map(color => (color === null ? null : { color }));
-}
+import { Color } from '../types';
 
 test.each([
   [5 * Dimension.SQUARE_SIZE + 0.5 * Dimension.SQUARE_SIZE, 5],
@@ -30,76 +26,47 @@ test.each([
 
 test.each([
   [
-    'column empty',
-    [Color.LIGHT, Color.DARK],
-    createColumByColors([null, null, null, null, null]),
-    createColumByColors([null, null, null, Color.LIGHT, Color.DARK]),
-  ],
-  [
-    'column not empty',
-    [Color.LIGHT, Color.DARK],
-    createColumByColors([null, null, null, null, Color.DARK]),
-    createColumByColors([null, null, Color.LIGHT, Color.DARK, Color.DARK]),
-  ],
-  [
-    'column nearly full',
-    [Color.LIGHT, Color.DARK],
-    createColumByColors([null, Color.DARK]),
-    createColumByColors([Color.DARK, Color.DARK]),
-  ],
-])('add blocks to column, %s', (_, colors, column, output) => {
-  const result = addToColumn(colors, column);
-  expect(result).toEqual(output);
-});
-
-test.each([
-  [
     'update',
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
-    {
-      color: Color.DARK,
-    },
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
+    { color: Color.DARK, col: 0, row: 1 },
     0,
     1,
-    [
-      [null, { color: Color.DARK }],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [0, 1, Color.DARK],
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
   ],
   [
     'col out of bound',
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
-    {
-      color: Color.DARK,
-    },
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
+    { color: Color.DARK, col: 5, row: 0 },
     5,
     0,
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
   ],
   [
     'row out of bound',
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
-    {
-      color: Color.DARK,
-    },
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
+    { color: Color.DARK, col: 0, row: 5 },
     0,
     5,
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
   ],
 ])('updateCell, %s', (_, grid, cell, col, row, output) => {
   const result = updateCell(grid, cell, col, row);
@@ -109,62 +76,59 @@ test.each([
 test.each([
   [
     'update',
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
     { col: 1, row: 0 },
     1,
     0,
-    [
-      [null, null],
-      [
-        { color: Color.LIGHT, matchedBlock: { col: 1, row: 0 } },
-        { color: Color.DARK },
-      ],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT, { col: 1, row: 0 }],
+      [1, 1, Color.DARK],
+    ]),
   ],
   [
     "don't update null",
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
     { col: 1, row: 0 },
     0,
     0,
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
   ],
   [
     'col out of bound',
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
     { col: 1, row: 0 },
     5,
     0,
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
   ],
   [
     'row out of bound',
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
     { col: 1, row: 0 },
     0,
     5,
-    [
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.DARK }],
-    ],
+    createGridWithCells(2, 2, [
+      [1, 0, Color.LIGHT],
+      [1, 1, Color.DARK],
+    ]),
   ],
 ])('updateCellMatchedBlock, %s', (_, grid, matchedBlock, col, row, output) => {
   const result = updateCellMatchedBlock(grid, matchedBlock, col, row);

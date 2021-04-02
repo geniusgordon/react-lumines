@@ -23,6 +23,8 @@ export type Cell = {
   color: Color;
   matchedBlock?: GridIndex;
   scanned?: Boolean;
+  col: number;
+  row: number;
 } | null;
 
 export type Column = Cell[];
@@ -53,4 +55,5 @@ export type Game = {
   detachedBlocks: DetachedBlock[];
   scanLine: ScanLine;
   matchedCount: number;
+  scannedCount: number;
 };

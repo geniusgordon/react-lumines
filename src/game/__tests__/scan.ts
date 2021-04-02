@@ -1,48 +1,29 @@
 import { scanColumn, removeScanned } from '../grid';
 import { Color } from '../types';
+import { createGridWithCells } from '../test-helpers';
 import { Dimension, Speed } from '../../constants';
 
 test.each([
   [
     'scan',
-    [
-      [
-        null,
-        { color: Color.DARK },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
-      ],
-      [
-        null,
-        { color: Color.DARK },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
-      ],
-    ],
+    createGridWithCells(2, 4, [
+      [0, 1, Color.DARK],
+      [0, 2, Color.LIGHT, { col: 0, row: 2 }],
+      [0, 3, Color.LIGHT, { col: 0, row: 2 }],
+      [1, 1, Color.DARK],
+      [1, 2, Color.LIGHT, { col: 0, row: 2 }],
+      [1, 3, Color.LIGHT, { col: 0, row: 2 }],
+    ]),
     0,
     {
-      grid: [
-        [
-          null,
-          { color: Color.DARK },
-          {
-            color: Color.LIGHT,
-            matchedBlock: { col: 0, row: 2 },
-            scanned: true,
-          },
-          {
-            color: Color.LIGHT,
-            matchedBlock: { col: 0, row: 2 },
-            scanned: true,
-          },
-        ],
-        [
-          null,
-          { color: Color.DARK },
-          { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
-          { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 } },
-        ],
-      ],
+      grid: createGridWithCells(2, 4, [
+        [0, 1, Color.DARK],
+        [0, 2, Color.LIGHT, { col: 0, row: 2 }, true],
+        [0, 3, Color.LIGHT, { col: 0, row: 2 }, true],
+        [1, 1, Color.DARK],
+        [1, 2, Color.LIGHT, { col: 0, row: 2 }],
+        [1, 3, Color.LIGHT, { col: 0, row: 2 }],
+      ]),
       matchedCount: 1,
       scannedCount: 2,
     },
@@ -55,29 +36,23 @@ test.each([
 test.each([
   [
     'remove',
-    [
-      [
-        null,
-        { color: Color.DARK },
-        { color: Color.LIGHT },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 }, scanned: true },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 }, scanned: true },
-        { color: Color.DARK },
-      ],
-      [
-        null,
-        { color: Color.LIGHT },
-        { color: Color.DARK },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 }, scanned: true },
-        { color: Color.LIGHT, matchedBlock: { col: 0, row: 2 }, scanned: true },
-        { color: Color.DARK },
-      ],
-    ],
+    createGridWithCells(2, 6, [
+      [0, 1, Color.DARK],
+      [0, 2, Color.LIGHT],
+      [0, 3, Color.LIGHT, { col: 0, row: 3 }, true],
+      [0, 4, Color.LIGHT, { col: 0, row: 3 }, true],
+      [0, 5, Color.DARK],
+      [1, 1, Color.LIGHT],
+      [1, 2, Color.DARK],
+      [1, 3, Color.LIGHT, { col: 0, row: 3 }, true],
+      [1, 4, Color.LIGHT, { col: 0, row: 3 }, true],
+      [1, 5, Color.DARK],
+    ]),
     {
-      grid: [
-        [null, null, null, null, null, { color: Color.DARK }],
-        [null, null, null, null, null, { color: Color.DARK }],
-      ],
+      grid: createGridWithCells(2, 6, [
+        [0, 5, Color.DARK],
+        [1, 5, Color.DARK],
+      ]),
       detachedBlocks: [
         {
           color: Color.LIGHT,

@@ -1,5 +1,5 @@
 import { tick } from '../tick';
-import { getEmptyGrid } from '../grid';
+import { createEmptyGrid } from '../grid';
 import { Color, DetachedBlock, Game } from '../types';
 import { Dimension, Speed } from '../../constants';
 
@@ -21,15 +21,21 @@ test('active block touch bottom', () => {
       speed: Speed.DROP_FAST,
     },
     detachedBlocks: [],
-    grid: getEmptyGrid(),
+    grid: createEmptyGrid(),
     scanLine: { x: 0, speed: Speed.SCAN_LINE },
     matchedCount: 0,
+    scannedCount: 0,
   };
-  const grid = getEmptyGrid();
-  grid[0][Dimension.GRID_ROWS - 1] = { color: Color.DARK };
-  grid[0][Dimension.GRID_ROWS - 2] = { color: Color.LIGHT };
-  grid[1][Dimension.GRID_ROWS - 1] = { color: Color.LIGHT };
-  grid[1][Dimension.GRID_ROWS - 2] = { color: Color.DARK };
+  const grid = createEmptyGrid();
+  const cells = [
+    [0, Dimension.GRID_ROWS - 1, Color.DARK],
+    [0, Dimension.GRID_ROWS - 2, Color.LIGHT],
+    [1, Dimension.GRID_ROWS - 1, Color.LIGHT],
+    [1, Dimension.GRID_ROWS - 2, Color.DARK],
+  ];
+  cells.forEach(([col, row, color]) => {
+    grid[col][row] = { color, col, row };
+  });
   const detachedBlocks: DetachedBlock[] = [];
 
   const result = tick(input, 0.2);
@@ -55,17 +61,27 @@ test('decompose active block', () => {
       speed: Speed.DROP_FAST,
     },
     detachedBlocks: [],
-    grid: getEmptyGrid(),
+    grid: createEmptyGrid(),
     scanLine: { x: 0, speed: Speed.SCAN_LINE },
     matchedCount: 0,
+    scannedCount: 0,
   };
-  input.grid[0][Dimension.GRID_ROWS - 1] = { color: Color.DARK };
+  input.grid[0][Dimension.GRID_ROWS - 1] = {
+    color: Color.DARK,
+    col: 0,
+    row: Dimension.GRID_ROWS - 1,
+  };
 
   const elapse = 0.2;
-  const grid = getEmptyGrid();
-  grid[0][Dimension.GRID_ROWS - 1] = { color: Color.DARK };
-  grid[0][Dimension.GRID_ROWS - 2] = { color: Color.DARK };
-  grid[0][Dimension.GRID_ROWS - 3] = { color: Color.LIGHT };
+  const grid = createEmptyGrid();
+  const cells = [
+    [0, Dimension.GRID_ROWS - 1, Color.DARK],
+    [0, Dimension.GRID_ROWS - 2, Color.DARK],
+    [0, Dimension.GRID_ROWS - 3, Color.LIGHT],
+  ];
+  cells.forEach(([col, row, color]) => {
+    grid[col][row] = { color, col, row };
+  });
   const detachedBlocks: DetachedBlock[] = [
     {
       color: Color.LIGHT,

@@ -1,5 +1,6 @@
 import { move } from '../block';
 import { Color } from '../types';
+import { createGridWithCells } from '../test-helpers';
 import { Dimension, Speed } from '../../constants';
 
 test.each([
@@ -12,11 +13,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
-    [
-      [null, null],
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(3, 2, []),
     {
       block: [],
       x: 0,
@@ -33,11 +30,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
-    [
-      [null, null],
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(3, 2, []),
     {
       block: [],
       x: 0,
@@ -54,11 +47,10 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
-    [
-      [{ color: Color.LIGHT }, { color: Color.LIGHT }],
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(3, 2, [
+      [0, 0, Color.LIGHT],
+      [0, 1, Color.LIGHT],
+    ]),
     {
       block: [],
       x: Dimension.SQUARE_SIZE,
@@ -75,11 +67,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     -Dimension.SQUARE_SIZE,
-    [
-      [null, { color: Color.LIGHT }],
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(3, 2, [[0, 1, Color.LIGHT]]),
     {
       block: [],
       x: Dimension.SQUARE_SIZE,
@@ -102,11 +90,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
-    [
-      [null, null],
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(3, 2, []),
     {
       block: [],
       x: Dimension.SQUARE_SIZE,
@@ -123,11 +107,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
-    [
-      [null, null],
-      [null, null],
-      [null, null],
-    ],
+    createGridWithCells(3, 2, []),
     {
       block: [],
       x: Dimension.SQUARE_SIZE,
@@ -144,11 +124,10 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
-    [
-      [null, null],
-      [null, null],
-      [{ color: Color.LIGHT }, { color: Color.LIGHT }],
-    ],
+    createGridWithCells(3, 2, [
+      [2, 0, Color.LIGHT],
+      [2, 1, Color.LIGHT],
+    ]),
     {
       block: [],
       x: 0,
@@ -165,11 +144,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     Dimension.SQUARE_SIZE,
-    [
-      [null, null],
-      [null, null],
-      [null, { color: Color.LIGHT }],
-    ],
+    createGridWithCells(3, 2, [[2, 1, Color.LIGHT]]),
     {
       block: [],
       x: 0,

@@ -1,5 +1,6 @@
 import { checkDetachedBlocks } from '../tick';
 import { Color } from '../types';
+import { createGridWithCells, printGrid } from '../test-helpers';
 import { Dimension, Speed } from '../../constants';
 
 test.each([
@@ -28,7 +29,7 @@ test.each([
   ],
   [
     'one collide',
-    [[null, { color: Color.LIGHT }]],
+    createGridWithCells(1, 2, [[0, 1, Color.LIGHT]]),
     [
       {
         color: Color.LIGHT,
@@ -38,13 +39,16 @@ test.each([
       },
     ],
     {
-      grid: [[{ color: Color.LIGHT }, { color: Color.LIGHT }]],
+      grid: createGridWithCells(1, 2, [
+        [0, 0, Color.LIGHT],
+        [0, 1, Color.LIGHT],
+      ]),
       detachedBlocks: [],
     },
   ],
   [
     'two collide',
-    [[null, null, { color: Color.LIGHT }]],
+    createGridWithCells(1, 3, [[0, 2, Color.LIGHT]]),
     [
       {
         color: Color.DARK,
@@ -60,15 +64,17 @@ test.each([
       },
     ],
     {
-      grid: [
-        [{ color: Color.LIGHT }, { color: Color.DARK }, { color: Color.LIGHT }],
-      ],
+      grid: createGridWithCells(1, 3, [
+        [0, 0, Color.LIGHT],
+        [0, 1, Color.DARK],
+        [0, 2, Color.LIGHT],
+      ]),
       detachedBlocks: [],
     },
   ],
   [
     'two collide bottom',
-    [[null, null]],
+    createGridWithCells(1, 2, []),
     [
       {
         color: Color.DARK,
@@ -84,7 +90,10 @@ test.each([
       },
     ],
     {
-      grid: [[{ color: Color.LIGHT }, { color: Color.DARK }]],
+      grid: createGridWithCells(1, 2, [
+        [0, 0, Color.LIGHT],
+        [0, 1, Color.DARK],
+      ]),
       detachedBlocks: [],
     },
   ],

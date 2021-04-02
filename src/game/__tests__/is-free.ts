@@ -6,7 +6,7 @@ test.each([
   ['is free', [[null, null]], { x: 0, y: 0.5 * Dimension.SQUARE_SIZE }, true],
   [
     'has color',
-    [[{ color: Color.LIGHT }]],
+    [[{ color: Color.LIGHT, col: 0, row: 0 }]],
     { x: 0, y: 0.5 * Dimension.SQUARE_SIZE },
     false,
   ],
@@ -48,7 +48,7 @@ test.each([
   ],
   [
     'has color below',
-    [[null, { color: Color.LIGHT }]],
+    [[null, { color: Color.LIGHT, col: 0, row: 0 }]],
     { x: 0, y: 0.5 * Dimension.SQUARE_SIZE },
     false,
   ],
