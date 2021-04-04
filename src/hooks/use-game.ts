@@ -2,6 +2,7 @@ import React from 'react';
 import { Reducer } from './types';
 import { move, rotate } from '../game/block';
 import { getInitGame, tick } from '../game/tick';
+import { GameState } from '../game/types';
 import useAnimationFrame from '../hooks/use-animation-frame';
 import { Speed } from '../constants';
 
@@ -30,6 +31,16 @@ const reducer: Reducer = (game, action) => {
           speed: Speed.DROP_FAST,
         },
       };
+    case 'pause':
+      return {
+        ...game,
+        state:
+          game.state === GameState.PAUSE
+            ? GameState.PLAY
+            : GameState.PLAY
+            ? GameState.PAUSE
+            : game.state,
+      };
   }
   return game;
 };
@@ -39,7 +50,7 @@ function useGame() {
 
   useAnimationFrame(elapsed => {
     dispatch({ type: 'tick', payload: elapsed });
-  }, true);
+  }, game.state === GameState.PLAY);
 
   return { game, dispatch };
 }

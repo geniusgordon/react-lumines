@@ -2,7 +2,7 @@ import React from 'react';
 import { Story, Meta } from '@storybook/react';
 import Game, { GameProps } from '.';
 import { getInitGame } from '../../game/tick';
-import { Color } from '../../game/types';
+import { Color, GameState } from '../../game/types';
 import { createGridWithCells } from '../../game/test-helpers';
 import { Dimension, Palette, Speed } from '../../constants';
 
@@ -11,6 +11,7 @@ const Template: Story<GameProps> = args => <Game {...args} />;
 export const DemoGame = Template.bind({});
 DemoGame.args = {
   game: {
+    state: GameState.PLAY,
     queue: [
       [
         [Color.LIGHT, Color.LIGHT],

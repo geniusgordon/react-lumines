@@ -2,7 +2,7 @@ import React from 'react';
 import Game from '../components/Game';
 import useGame from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
-import { RotateDirection } from '../game/types';
+import { RotateDirection, GameState } from '../game/types';
 import { Dimension, Key } from '../constants';
 
 const Play: React.FC = () => {
@@ -10,6 +10,12 @@ const Play: React.FC = () => {
 
   const handleKeyDown = React.useCallback(
     keyCode => {
+      if (keyCode === Key.ESC) {
+        return dispatch({ type: 'pause' });
+      }
+      if (game.state !== GameState.PLAY) {
+        return;
+      }
       switch (keyCode) {
         case Key.LEFT:
           return dispatch({ type: 'move', payload: -Dimension.SQUARE_SIZE });
@@ -24,7 +30,7 @@ const Play: React.FC = () => {
           return dispatch({ type: 'drop' });
       }
     },
-    [dispatch],
+    [dispatch, game],
   );
 
   useKeyDown(handleKeyDown);

@@ -9,11 +9,19 @@ import {
   scanColumn,
   removeScanned,
 } from './grid';
-import { Game, ActiveBlock, DetachedBlock, Grid, ScanLine } from './types';
+import {
+  GameState,
+  Game,
+  ActiveBlock,
+  DetachedBlock,
+  Grid,
+  ScanLine,
+} from './types';
 import { Dimension, Speed } from '../constants';
 
 export function getInitGame(): Game {
   return {
+    state: GameState.PLAY,
     queue: [...new Array(3)].map(() => getRandomBlock()),
     activeBlock: {
       block: getRandomBlock(),
@@ -30,7 +38,7 @@ export function getInitGame(): Game {
     matchedCount: 0,
     scannedCount: 0,
     score: 0,
-    time: -3000,
+    time: -2400,
   };
 }
 
@@ -88,6 +96,7 @@ export function scan(grid: Grid, column: number): Grid {
 
 export function tick(game: Game, elapsed: number): Game {
   let {
+    state,
     queue,
     activeBlock,
     grid,
@@ -154,6 +163,7 @@ export function tick(game: Game, elapsed: number): Game {
   }
 
   return {
+    state,
     queue,
     activeBlock,
     grid,

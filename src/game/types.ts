@@ -48,7 +48,14 @@ export interface ScanLine {
   speed: number;
 }
 
+export enum GameState {
+  PAUSE,
+  PLAY,
+  OVER,
+}
+
 export type Game = {
+  state: GameState,
   queue: Block[];
   activeBlock: ActiveBlock;
   grid: Grid;

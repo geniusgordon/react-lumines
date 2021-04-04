@@ -5,7 +5,7 @@ type CallbackFn = (keyCode: number) => void;
 function useKeyDown(callback: CallbackFn) {
   const callbackRef = React.useRef<CallbackFn>(callback);
 
-  React.useCallback(() => {
+  React.useEffect(() => {
     callbackRef.current = callback;
   }, [callback]);
 

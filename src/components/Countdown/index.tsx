@@ -23,7 +23,7 @@ const Countdown: React.FC<CountdownProps> = ({ time }) => {
         alignmentBaseline="middle"
         textAnchor="middle"
       >
-        {time}
+        {time || 'GO'}
       </text>
     </g>
   );
