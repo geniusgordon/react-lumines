@@ -1,6 +1,7 @@
 import React from 'react';
 import { Story, Meta } from '@storybook/react';
 import Game, { GameProps } from '.';
+import { getInitGame } from '../../game/tick';
 import { Color } from '../../game/types';
 import { createGridWithCells } from '../../game/test-helpers';
 import { Dimension, Palette, Speed } from '../../constants';
@@ -65,6 +66,11 @@ DemoGame.args = {
     score: 0,
     time: 0,
   },
+};
+
+export const InitGame = Template.bind({});
+InitGame.args = {
+  game: getInitGame(),
 };
 
 export default {

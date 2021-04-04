@@ -30,7 +30,7 @@ export function getInitGame(): Game {
     matchedCount: 0,
     scannedCount: 0,
     score: 0,
-    time: 0,
+    time: -3000,
   };
 }
 
@@ -98,6 +98,13 @@ export function tick(game: Game, elapsed: number): Game {
     score,
     time,
   } = game;
+
+  if (time < 0) {
+    return {
+      ...game,
+      time: time + elapsed,
+    };
+  }
 
   activeBlock = {
     ...activeBlock,

@@ -20,8 +20,8 @@ const Item: React.FC<ItemProps> = ({ label, value }) => {
       </text>
       <text
         fill={Palette.INFO}
-        y={Dimension.SQUARE_SIZE}
-        fontSize={Dimension.SQUARE_SIZE}
+        y={Dimension.SQUARE_SIZE * 1.25}
+        fontSize={Dimension.SQUARE_SIZE * 1.25}
         fontFamily="monospace"
       >
         {value}
@@ -34,7 +34,7 @@ const Info: React.FC<InfoProps> = ({ time, score }) => {
   return (
     <g>
       <Item label="Time" value={time} />
-      <Group x={0} y={Dimension.SQUARE_SIZE * 2}>
+      <Group x={0} y={Dimension.SQUARE_SIZE * 3}>
         <Item label="Score" value={score} />
       </Group>
     </g>

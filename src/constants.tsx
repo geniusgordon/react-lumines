@@ -1,3 +1,5 @@
+import * as polished from 'polished';
+
 const SQUARE_SIZE = 10;
 const GRID_COLUMNS = 16;
 const GRID_ROWS = 12;
@@ -18,6 +20,7 @@ export const Dimension = {
 
 export const Palette = {
   BACKGROUND: '#424242',
+  COUNTDOWN_BACKGROUND: polished.rgba('#424242', 0.5),
   SQUARE_STROKE: '#212121',
   SQUARE_STROKE_MATCHED: '#FFFFFF',
   SQUARE_DARK: '#FF9800',
