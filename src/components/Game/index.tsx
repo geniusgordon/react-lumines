@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import { styled } from '@mui/system';
 import Group from '../Group';
 import Block from '../Block';
 import Queue from '../Queue';
@@ -12,12 +12,12 @@ import Countdown from '../Countdown';
 import { Game as GameType } from '../../game/types';
 import { Dimension as d, Palette } from '../../constants';
 
-const Container = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background-color: ${Palette.BACKGROUND};
-`;
+const Container = styled('div')({
+  position: 'relative',
+  width: '100%',
+  height: '100%',
+  backgroundColor: Palette.BACKGROUND,
+});
 
 export type GameProps = {
   game: GameType;
