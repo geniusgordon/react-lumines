@@ -21,8 +21,8 @@ import {
 } from '../utils';
 import { TIME_LIMIT, gameStates, dimensions, speeds } from '../constants';
 
-const getInitialState = (first = [], queue = []) => ({
-  now: 0,
+const getInitialState = (first = [], queue = [], now = 0) => ({
+  now,
   gameState: gameStates.PLAYING,
   gameTime: -2.4,
   score: 0,
@@ -63,6 +63,7 @@ const finish = state => ({
 });
 
 const loop = (state, action) => {
+  console.log('loop:', state.now, action.now);
   if (state.gameState === gameStates.PLAYING) {
     if (state.gameTime < 0) {
       return {
@@ -178,7 +179,7 @@ const record = (state, action) => ({ ...state, replay: action.replay });
 const reducer = (state = getInitialState(), action) => {
   switch (action.type) {
     case RESTART:
-      return getInitialState(action.first, action.queue);
+      return getInitialState(action.first, action.queue, action.now);
     case PAUSE:
       return pause(state, action);
     case FINISH:

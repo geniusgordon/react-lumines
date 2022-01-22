@@ -44,10 +44,12 @@ export const pause = () => ({ type: PAUSE });
 export const restart = (
   first = generateRandomPiece(),
   queue = range(3).map(() => generateRandomPiece()),
+  now = new Date(),
 ) => ({
   type: RESTART,
   first,
   queue,
+  now,
 });
 export const finish = () => ({ type: FINISH });
 
