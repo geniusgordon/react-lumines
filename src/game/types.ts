@@ -55,7 +55,7 @@ export enum GameState {
 }
 
 export type Game = {
-  state: GameState,
+  state: GameState;
   queue: Block[];
   activeBlock: ActiveBlock;
   grid: Grid;

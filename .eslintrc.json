@@ -1,3 +1,10 @@
 {
-  "extends": ["react-app", "react-app/jest"]
+  "extends": [
+    "react-app",
+    "react-app/jest",
+    "prettier"
+  ],
+  "rules": {
+    "prettier/prettier": "warning"
+  }
 }

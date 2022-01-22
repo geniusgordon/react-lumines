@@ -13,8 +13,9 @@ const Shadow: React.FC<ShadowProps> = ({ x }) => {
   return (
     <g>
       <path
-        d={`M${x},${y} L${x},${y + height} L${x + width},${y + height}, L${x +
-          width},${y}`}
+        d={`M${x},${y} L${x},${y + height} L${x + width},${y + height}, L${
+          x + width
+        },${y}`}
         stroke={Palette.SHADOW}
         strokeWidth={Dimension.GRID_STROKE_WIDTH * 3}
       />

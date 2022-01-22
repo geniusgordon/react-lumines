@@ -157,9 +157,10 @@ export function scanColumn(
   };
 }
 
-export function removeScanned(
-  grid: Grid,
-): { grid: Grid; detachedBlocks: DetachedBlock[] } {
+export function removeScanned(grid: Grid): {
+  grid: Grid;
+  detachedBlocks: DetachedBlock[];
+} {
   const result: Grid = [];
   const detachedBlocks: DetachedBlock[] = [];
 

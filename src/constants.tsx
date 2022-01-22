@@ -39,7 +39,7 @@ export const Palette = {
 export const Speed = {
   SCAN_LINE: (15 * GRID_COLUMNS * SQUARE_SIZE) / (60 * 1000),
   DROP_SLOW: (1 * SQUARE_SIZE) / 1000,
-  DROP_FAST: (25 * SQUARE_SIZE) / 1000,
+  DROP_FAST: (45 * SQUARE_SIZE) / 1000,
   DROP_DETACHED: (25 * SQUARE_SIZE) / 1000,
 };
 
