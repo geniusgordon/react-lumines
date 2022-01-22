@@ -69,7 +69,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
         </Group>
         {time < 0 && (
           <svg x="0" y="0" viewBox={`0 0 ${width} ${height}`}>
-            <Countdown time={Math.floor(Math.abs(time / 800))} />
+            <Countdown time={Math.floor(Math.abs(time / 600))} />
           </svg>
         )}
       </svg>

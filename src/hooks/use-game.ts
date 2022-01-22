@@ -1,5 +1,5 @@
 import React from 'react';
-import { Reducer } from './types';
+import { ActionType, Reducer } from './types';
 import { move, rotate } from '../game/block';
 import { getInitGame, tick } from '../game/tick';
 import { GameState } from '../game/types';
@@ -8,14 +8,14 @@ import { Speed } from '../constants';
 
 const reducer: Reducer = (game, action) => {
   switch (action.type) {
-    case 'tick':
+    case ActionType.TICK:
       return tick(game, action.payload);
-    case 'move':
+    case ActionType.MOVE:
       return {
         ...game,
         activeBlock: move(game.activeBlock, action.payload, game.grid),
       };
-    case 'rotate':
+    case ActionType.ROTATE:
       return {
         ...game,
         activeBlock: {
@@ -23,7 +23,7 @@ const reducer: Reducer = (game, action) => {
           block: rotate(game.activeBlock.block, action.payload),
         },
       };
-    case 'drop':
+    case ActionType.DROP:
       return {
         ...game,
         activeBlock: {
@@ -31,25 +31,26 @@ const reducer: Reducer = (game, action) => {
           speed: Speed.DROP_FAST,
         },
       };
-    case 'pause':
+    case ActionType.PAUSE:
       return {
         ...game,
-        state:
-          game.state === GameState.PAUSE
-            ? GameState.PLAY
-            : GameState.PLAY
-            ? GameState.PAUSE
-            : game.state,
+        state: game.state === GameState.PLAY ? GameState.PAUSE : game.state,
       };
+    case ActionType.RESUME:
+      return {
+        ...game,
+        state: game.state === GameState.PAUSE ? GameState.PLAY : game.state,
+      };
+    case ActionType.RESTART:
+      return getInitGame();
   }
-  return game;
 };
 
 function useGame() {
   const [game, dispatch] = React.useReducer(reducer, {}, getInitGame);
 
   useAnimationFrame(elapsed => {
-    dispatch({ type: 'tick', payload: elapsed });
+    dispatch({ type: ActionType.TICK, payload: elapsed });
   }, game.state === GameState.PLAY);
 
   return { game, dispatch };
