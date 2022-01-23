@@ -66,6 +66,7 @@ DemoGame.args = {
     scannedCount: 0,
     score: 0,
     time: 0,
+    totalTime: 60000,
   },
 };
 

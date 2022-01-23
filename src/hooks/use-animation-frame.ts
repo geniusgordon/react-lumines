@@ -2,14 +2,19 @@ import React from 'react';
 
 type CallbackFn = (time: number) => void;
 
-function useAnimationFrame(callback: CallbackFn, enabled: Boolean) {
+function useAnimationFrame(callback: CallbackFn, enabled: boolean) {
   const callbackRef = React.useRef<CallbackFn>(callback);
   const requestRef = React.useRef<number>();
   const previousTimeRef = React.useRef<number>();
+  const enabledRef = React.useRef<boolean>();
 
-  React.useCallback(() => {
+  React.useEffect(() => {
     callbackRef.current = callback;
   }, [callback]);
+
+  React.useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   React.useEffect(() => {
     function tick(time: number) {
@@ -18,7 +23,7 @@ function useAnimationFrame(callback: CallbackFn, enabled: Boolean) {
         callbackRef.current(deltaTime);
       }
       previousTimeRef.current = time;
-      if (enabled) {
+      if (enabledRef.current) {
         requestRef.current = requestAnimationFrame(tick);
       }
     }

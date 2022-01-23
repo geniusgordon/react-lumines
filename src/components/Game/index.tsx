@@ -46,7 +46,10 @@ const Game: React.FC<GameProps> = ({ game }) => {
     matchedCount,
     score,
     time,
+    totalTime,
   } = game;
+
+  const curTime = Math.max(0, Math.min(totalTime - time, totalTime));
 
   return (
     <Container>
@@ -65,7 +68,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
           x={PADDING + QUEUE_WIDTH + PADDING + d.GRID_WIDTH + PADDING}
           y={PADDING + d.SQUARE_SIZE * 2 + PADDING}
         >
-          <Info time={Math.max(Math.floor(time / 1000), 0)} score={score} />
+          <Info time={Math.floor(curTime / 1000)} score={score} />
         </Group>
         {time < 0 && (
           <svg x="0" y="0" viewBox={`0 0 ${width} ${height}`}>

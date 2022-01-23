@@ -4,7 +4,10 @@
     "react-app/jest",
     "prettier"
   ],
+  "plugins": [
+    "prettier"
+  ],
   "rules": {
-    "prettier/prettier": "warning"
+    "prettier/prettier": "warn"
   }
 }

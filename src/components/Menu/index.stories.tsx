@@ -1,6 +1,6 @@
 import React from 'react';
 import { Story, Meta } from '@storybook/react';
-import { PauseMenu, PauseMenuProps } from '.';
+import PauseMenu, { PauseMenuProps } from './PauseMenu';
 import Decorator from '../Decorator';
 
 const PauseMenuTemplate: Story<PauseMenuProps> = args => (

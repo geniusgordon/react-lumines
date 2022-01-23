@@ -4,12 +4,12 @@ import useGame from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
 import { RotateDirection, GameState } from '../game/types';
 import { Dimension, Key } from '../constants';
-import { PauseMenu } from '../components/Menu';
+import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 import { ActionType } from '../hooks/types';
 
 const Play: React.FC = () => {
-  const { game, dispatch } = useGame();
+  const { game, dispatch } = useGame({ totalTime: 3000 });
   const { open, onOpen, onClose } = useDisclosure();
 
   const handleQuit = React.useCallback(() => {}, []);
@@ -48,7 +48,7 @@ const Play: React.FC = () => {
         onClose();
         return;
       }
-      if (game.state !== GameState.PLAY) {
+      if (game.state !== GameState.PLAY || game.time < 0) {
         return;
       }
       switch (keyCode) {
@@ -91,6 +91,13 @@ const Play: React.FC = () => {
         onQuit={handleQuit}
         onRestart={handleRestart}
         onResume={handleResume}
+      />
+      <GameOverMenu
+        open={game.state === GameState.OVER}
+        score={game.score}
+        onClose={handleClose}
+        onQuit={handleQuit}
+        onRestart={handleRestart}
       />
     </React.StrictMode>
   );

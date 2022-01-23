@@ -2,7 +2,7 @@ import React from 'react';
 import { ActionType, Reducer } from './types';
 import { move, rotate } from '../game/block';
 import { getInitGame, tick } from '../game/tick';
-import { GameState } from '../game/types';
+import { GameState, GameArgs } from '../game/types';
 import useAnimationFrame from '../hooks/use-animation-frame';
 import { Speed } from '../constants';
 
@@ -42,12 +42,12 @@ const reducer: Reducer = (game, action) => {
         state: game.state === GameState.PAUSE ? GameState.PLAY : game.state,
       };
     case ActionType.RESTART:
-      return getInitGame();
+      return getInitGame({ totalTime: game.totalTime });
   }
 };
 
-function useGame() {
-  const [game, dispatch] = React.useReducer(reducer, {}, getInitGame);
+function useGame(args?: GameArgs) {
+  const [game, dispatch] = React.useReducer(reducer, args, getInitGame);
 
   useAnimationFrame(elapsed => {
     dispatch({ type: ActionType.TICK, payload: elapsed });

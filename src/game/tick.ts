@@ -12,6 +12,7 @@ import {
 import {
   GameState,
   Game,
+  GameArgs,
   ActiveBlock,
   DetachedBlock,
   Grid,
@@ -19,7 +20,7 @@ import {
 } from './types';
 import { Dimension, Speed } from '../constants';
 
-export function getInitGame(): Game {
+export function getInitGame(args?: GameArgs): Game {
   return {
     state: GameState.PLAY,
     queue: [...new Array(3)].map(() => getRandomBlock()),
@@ -39,6 +40,7 @@ export function getInitGame(): Game {
     scannedCount: 0,
     score: 0,
     time: -2400,
+    totalTime: args?.totalTime || 60000,
   };
 }
 
@@ -106,6 +108,7 @@ export function tick(game: Game, elapsed: number): Game {
     scannedCount,
     score,
     time,
+    totalTime,
   } = game;
 
   if (time < 0) {
@@ -162,8 +165,14 @@ export function tick(game: Game, elapsed: number): Game {
     }
   }
 
+  const isOver = time >= totalTime;
+  if (isOver) {
+    score += matchedCount;
+    matchedCount = 0;
+  }
+
   return {
-    state,
+    state: isOver ? GameState.OVER : state,
     queue,
     activeBlock,
     grid,
@@ -176,5 +185,6 @@ export function tick(game: Game, elapsed: number): Game {
     scannedCount,
     score,
     time: time + elapsed,
+    totalTime,
   };
 }

@@ -49,9 +49,9 @@ export interface ScanLine {
 }
 
 export enum GameState {
-  PAUSE,
-  PLAY,
-  OVER,
+  PAUSE = 'PAUSE',
+  PLAY = 'PLAY',
+  OVER = 'OVER',
 }
 
 export type Game = {
@@ -65,4 +65,9 @@ export type Game = {
   scannedCount: number;
   score: number;
   time: number;
+  totalTime: number;
+};
+
+export type GameArgs = {
+  totalTime: number;
 };
