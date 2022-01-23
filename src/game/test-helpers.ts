@@ -15,10 +15,10 @@ export function createGridWithCells(
       col,
       row,
     };
-    if (matchedBlock !== undefined) {
+    if (typeof matchedBlock !== 'undefined') {
       c.matchedBlock = matchedBlock;
     }
-    if (matchedBlock !== undefined) {
+    if (typeof scanned !== 'undefined') {
       c.scanned = scanned;
     }
     grid[col][row] = c;

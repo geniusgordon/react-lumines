@@ -9,7 +9,7 @@ import useDisclosure from '../hooks/use-disclosure';
 import { ActionType } from '../hooks/types';
 
 const Play: React.FC = () => {
-  const { game, dispatch } = useGame({ totalTime: 3000 });
+  const { game, dispatch } = useGame();
   const { open, onOpen, onClose } = useDisclosure();
 
   const handleQuit = React.useCallback(() => {}, []);
@@ -77,7 +77,7 @@ const Play: React.FC = () => {
           return dispatch({ type: ActionType.DROP });
       }
     },
-    [dispatch, game, open, onOpen],
+    [dispatch, game, open, onOpen, onClose],
   );
 
   useKeyDown(handleKeyDown);

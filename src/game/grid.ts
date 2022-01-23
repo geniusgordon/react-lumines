@@ -43,11 +43,11 @@ export function getCellsInSquare(grid: Grid, col: number, row: number): Cell[] {
 
 export function isSameColor(cells: Cell[]): Boolean {
   const first = cells[0];
-  if (!first) {
+  if (!first || first.scanned) {
     return false;
   }
   for (let i = 1; i < cells.length; i++) {
-    if (first.color !== cells[i]?.color) {
+    if (first.color !== cells[i]?.color || cells[i]?.scanned) {
       return false;
     }
   }
@@ -119,15 +119,6 @@ export function updateMatchedBlocks(grid: Grid): Grid {
           i + 1,
           j + 1,
         );
-      } else {
-        for (let i = 0; i < cells.length; i++) {
-          if (isSameMatchedBlock(grid[i][j], cells[i])) {
-            const c = cells[i];
-            if (c) {
-              result = updateCellMatchedBlock(result, undefined, c.col, c.row);
-            }
-          }
-        }
       }
     }
   }

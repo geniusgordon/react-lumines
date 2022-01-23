@@ -1,6 +1,6 @@
 import { checkDetachedBlocks } from '../tick';
 import { Color } from '../types';
-import { createGridWithCells, printGrid } from '../test-helpers';
+import { createGridWithCells } from '../test-helpers';
 import { Dimension, Speed } from '../../constants';
 
 test.each([

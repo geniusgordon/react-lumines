@@ -1,10 +1,11 @@
 import { tick } from '../tick';
 import { createEmptyGrid } from '../grid';
-import { Color, DetachedBlock, Game } from '../types';
+import { Color, DetachedBlock, Game, GameState } from '../types';
 import { Dimension, Speed } from '../../constants';
 
 test('active block touch bottom', () => {
   const input: Game = {
+    state: GameState.PLAY,
     queue: [
       [
         [Color.LIGHT, Color.LIGHT],
@@ -27,6 +28,7 @@ test('active block touch bottom', () => {
     scannedCount: 0,
     score: 0,
     time: 0,
+    totalTime: 3000,
   };
   const grid = createEmptyGrid();
   const cells = [
@@ -47,6 +49,7 @@ test('active block touch bottom', () => {
 
 test('decompose active block', () => {
   const input: Game = {
+    state: GameState.PLAY,
     queue: [
       [
         [Color.LIGHT, Color.LIGHT],
@@ -69,6 +72,7 @@ test('decompose active block', () => {
     scannedCount: 0,
     score: 0,
     time: 0,
+    totalTime: 3000,
   };
   input.grid[0][Dimension.GRID_ROWS - 1] = {
     color: Color.DARK,
@@ -92,7 +96,7 @@ test('decompose active block', () => {
       x: Dimension.SQUARE_SIZE,
       y:
         (Dimension.GRID_ROWS - 1.5) * Dimension.SQUARE_SIZE +
-        Speed.DROP_DETACHED * elapse,
+        Speed.DROP_FAST * elapse,
       speed: Speed.DROP_DETACHED,
     },
     {
@@ -100,7 +104,7 @@ test('decompose active block', () => {
       x: Dimension.SQUARE_SIZE,
       y:
         (Dimension.GRID_ROWS - 2.5) * Dimension.SQUARE_SIZE +
-        Speed.DROP_DETACHED * elapse,
+        Speed.DROP_FAST * elapse,
       speed: Speed.DROP_DETACHED,
     },
   ];
