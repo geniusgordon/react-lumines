@@ -12,8 +12,7 @@ import {
 import { Dimension, Speed } from '../constants';
 
 export function getRandomBlock(): Block {
-  // const n = Math.floor(Math.random() * 16);
-  const n = 5;
+  const n = Math.floor(Math.random() * 16);
   return [
     [n & 8 ? Color.LIGHT : Color.DARK, n & 4 ? Color.LIGHT : Color.DARK],
     [n & 2 ? Color.LIGHT : Color.DARK, n & 1 ? Color.LIGHT : Color.DARK],
