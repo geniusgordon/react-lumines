@@ -1,5 +1,6 @@
 import React from 'react';
-import { styled } from '@mui/system';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
 import Group from '../Group';
 import Block from '../Block';
 import Queue from '../Queue';
@@ -11,13 +12,6 @@ import Info from '../Info';
 import Countdown from '../Countdown';
 import { Game as GameType } from '../../game/types';
 import { Dimension as d, Palette } from '../../constants';
-
-const Container = styled('div')({
-  position: 'relative',
-  width: '100%',
-  height: '100%',
-  backgroundColor: Palette.BACKGROUND,
-});
 
 export type GameProps = {
   game: GameType;
@@ -52,31 +46,33 @@ const Game: React.FC<GameProps> = ({ game }) => {
   const curTime = Math.max(0, Math.min(totalTime - time, totalTime));
 
   return (
-    <Container>
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
-        <Group x={PADDING + d.SQUARE_SIZE} y={PADDING + d.SQUARE_SIZE * 2}>
-          <Queue queue={queue} />
-        </Group>
-        <Group x={PADDING + QUEUE_WIDTH + PADDING} y={PADDING}>
-          <Grid />
-          <Shadow x={activeBlock.x} />
-          <Field grid={grid} detachedBlocks={detachedBlocks} />
-          <Block {...activeBlock} />
-          <ScanLine {...scanLine} matchedCount={matchedCount} />
-        </Group>
-        <Group
-          x={PADDING + QUEUE_WIDTH + PADDING + d.GRID_WIDTH + PADDING}
-          y={PADDING + d.SQUARE_SIZE * 2 + PADDING}
-        >
-          <Info time={Math.floor(curTime / 1000)} score={score} />
-        </Group>
-        {time < 0 && (
-          <svg x="0" y="0" viewBox={`0 0 ${width} ${height}`}>
-            <Countdown time={Math.floor(Math.abs(time / 600))} />
-          </svg>
-        )}
-      </svg>
-    </Container>
+    <Box sx={{ bgcolor: Palette.BACKGROUND, width: '100%', height: '100%' }}>
+      <Container maxWidth="lg">
+        <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
+          <Group x={PADDING + d.SQUARE_SIZE} y={PADDING + d.SQUARE_SIZE * 2}>
+            <Queue queue={queue} />
+          </Group>
+          <Group x={PADDING + QUEUE_WIDTH + PADDING} y={PADDING}>
+            <Grid />
+            <Shadow x={activeBlock.x} />
+            <Field grid={grid} detachedBlocks={detachedBlocks} />
+            <Block {...activeBlock} />
+            <ScanLine {...scanLine} matchedCount={matchedCount} />
+          </Group>
+          <Group
+            x={PADDING + QUEUE_WIDTH + PADDING + d.GRID_WIDTH + PADDING}
+            y={PADDING + d.SQUARE_SIZE * 2 + PADDING}
+          >
+            <Info time={Math.floor(curTime / 1000)} score={score} />
+          </Group>
+          {time < 0 && (
+            <svg x="0" y="0" viewBox={`0 0 ${width} ${height}`}>
+              <Countdown time={Math.floor(Math.abs(time / 600))} />
+            </svg>
+          )}
+        </svg>
+      </Container>
+    </Box>
   );
 };
 

@@ -13,6 +13,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     createGridWithCells(2, 3, []),
+    [],
     false,
   ],
   [
@@ -24,6 +25,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     createGridWithCells(2, 3, [[0, 2, Color.LIGHT]]),
+    [],
     true,
   ],
   [
@@ -35,6 +37,7 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     createGridWithCells(2, 3, [[1, 2, Color.LIGHT]]),
+    [],
     true,
   ],
   [
@@ -46,9 +49,67 @@ test.each([
       speed: Speed.DROP_SLOW,
     },
     createGridWithCells(2, 2, []),
+    [],
     true,
   ],
-])('activeBlockWillCollide, %s', (_, block, grid, output) => {
-  const result = activeBlockWillCollide(block, grid);
+  [
+    'not collide detached block',
+    {
+      x: 0,
+      y: 0.5 * Dimension.SQUARE_SIZE,
+      block: [],
+      speed: Speed.DROP_SLOW,
+    },
+    createGridWithCells(3, 3, []),
+    [
+      {
+        x: 2 * Dimension.SQUARE_SIZE,
+        y: 2 * Dimension.SQUARE_SIZE,
+        color: Color.LIGHT,
+        speed: Speed.DROP_SLOW,
+      },
+    ],
+    false,
+  ],
+  [
+    'left will collide detached block',
+    {
+      x: 0,
+      y: 0.5 * Dimension.SQUARE_SIZE,
+      block: [],
+      speed: Speed.DROP_SLOW,
+    },
+    createGridWithCells(3, 3, []),
+    [
+      {
+        x: 0,
+        y: 2 * Dimension.SQUARE_SIZE,
+        color: Color.LIGHT,
+        speed: Speed.DROP_SLOW,
+      },
+    ],
+    true,
+  ],
+  [
+    'right will collide detached block',
+    {
+      x: 0,
+      y: 0.5 * Dimension.SQUARE_SIZE,
+      block: [],
+      speed: Speed.DROP_SLOW,
+    },
+    createGridWithCells(3, 3, []),
+    [
+      {
+        x: 1 * Dimension.SQUARE_SIZE,
+        y: 2 * Dimension.SQUARE_SIZE,
+        color: Color.LIGHT,
+        speed: Speed.DROP_SLOW,
+      },
+    ],
+    true,
+  ],
+])('activeBlockWillCollide, %s', (_, block, grid, detachedBlocks, output) => {
+  const result = activeBlockWillCollide(block, grid, detachedBlocks);
   expect(result).toBe(output);
 });

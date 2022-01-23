@@ -60,9 +60,21 @@ export function willEnterNextColum(
 export function activeBlockWillCollide(
   block: ActiveBlock,
   grid: Grid,
+  detachedBlocks: DetachedBlock[],
 ): Boolean {
   const col = xyToColRow(block.x);
   const row = xyToColRow(block.y);
+
+  for (let i = detachedBlocks.length - 1; i >= 0; i--) {
+    const d = detachedBlocks[i];
+    if (block.x !== d.x && block.x + Dimension.SQUARE_SIZE !== d.x) {
+      continue;
+    }
+    if (block.y + Dimension.SQUARE_SIZE * 2 >= d.y) {
+      return true;
+    }
+  }
+
   return (
     !isFreeBelow(grid, { x: colRowToXY(col), y: colRowToXY(row + 1) }) ||
     !isFreeBelow(grid, { x: colRowToXY(col + 1), y: colRowToXY(row + 1) })
@@ -128,7 +140,7 @@ export function tick(game: Game, elapsed: number): Game {
   }));
 
   if (
-    activeBlockWillCollide(activeBlock, grid) &&
+    activeBlockWillCollide(activeBlock, grid, detachedBlocks) &&
     (activeBlock.speed > Speed.DROP_SLOW ||
       willEnterNextRow(activeBlock, elapsed))
   ) {
