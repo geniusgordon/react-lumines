@@ -104,10 +104,6 @@ export function checkDetachedBlocks(
   return { grid: newGrid, detachedBlocks: newDetachedBlocks };
 }
 
-export function scan(grid: Grid, column: number): Grid {
-  return grid;
-}
-
 export function tick(game: Game, elapsed: number): Game {
   let {
     state,
@@ -156,12 +152,16 @@ export function tick(game: Game, elapsed: number): Game {
 
   ({ grid, detachedBlocks } = checkDetachedBlocks(grid, detachedBlocks));
 
-  grid = updateMatchedBlocks(grid);
+  const scanLineWillEnterNextColum = willEnterNextColum(scanLine, elapsed);
+  const scanLineColumn = (xyToColRow(scanLine.x) + 1) % Dimension.GRID_COLUMNS;
+  grid = updateMatchedBlocks(
+    grid,
+    scanLineWillEnterNextColum ? scanLineColumn : undefined,
+  );
 
-  if (willEnterNextColum(scanLine, elapsed)) {
-    const column = (xyToColRow(scanLine.x) + 1) % Dimension.GRID_COLUMNS;
-    const isEnd = column === Dimension.GRID_COLUMNS - 1;
-    const scanResult = scanColumn(grid, column);
+  if (scanLineWillEnterNextColum) {
+    const isEnd = scanLineColumn === Dimension.GRID_COLUMNS - 1;
+    const scanResult = scanColumn(grid, scanLineColumn);
     grid = scanResult.grid;
     matchedCount += scanResult.matchedCount;
     scannedCount += scanResult.scannedCount;

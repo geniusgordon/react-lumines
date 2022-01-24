@@ -103,22 +103,28 @@ export function updateCellMatchedBlock(
   return updateCell(grid, { ...cell, matchedBlock }, col, row);
 }
 
-export function updateMatchedBlocks(grid: Grid): Grid {
+export function updateMatchedBlocks(grid: Grid, scannedCol?: number): Grid {
   let result = grid;
   for (let i = 0; i < grid.length; i++) {
     const column = grid[i];
     for (let j = 0; j < column.length; j++) {
-      const cells = getCellsInSquare(result, i, j);
-      if (cells.length === 4 && isSameColor(cells)) {
-        result = updateCellMatchedBlock(result, { col: i, row: j }, i, j);
-        result = updateCellMatchedBlock(result, { col: i, row: j }, i + 1, j);
-        result = updateCellMatchedBlock(result, { col: i, row: j }, i, j + 1);
-        result = updateCellMatchedBlock(
-          result,
-          { col: i, row: j },
-          i + 1,
-          j + 1,
-        );
+      if (i + 1 === scannedCol) {
+        if (result[i][j]?.matchedBlock?.col === i) {
+          result = updateCellMatchedBlock(result, undefined, i, j);
+        }
+      } else {
+        const cells = getCellsInSquare(result, i, j);
+        if (cells.length === 4 && isSameColor(cells)) {
+          result = updateCellMatchedBlock(result, { col: i, row: j }, i, j);
+          result = updateCellMatchedBlock(result, { col: i, row: j }, i + 1, j);
+          result = updateCellMatchedBlock(result, { col: i, row: j }, i, j + 1);
+          result = updateCellMatchedBlock(
+            result,
+            { col: i, row: j },
+            i + 1,
+            j + 1,
+          );
+        }
       }
     }
   }

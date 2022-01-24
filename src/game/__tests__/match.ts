@@ -136,6 +136,7 @@ test.each([
       [1, 1, Color.LIGHT],
       [1, 2, Color.LIGHT],
     ]),
+    undefined,
     createGridWithCells(2, 3, [
       [0, 1, Color.LIGHT, { col: 0, row: 1 }],
       [0, 2, Color.LIGHT, { col: 0, row: 1 }],
@@ -153,6 +154,7 @@ test.each([
       [2, 1, Color.LIGHT],
       [2, 2, Color.LIGHT],
     ]),
+    undefined,
     createGridWithCells(3, 3, [
       [0, 1, Color.LIGHT, { col: 0, row: 1 }],
       [0, 2, Color.LIGHT, { col: 0, row: 1 }],
@@ -172,6 +174,7 @@ test.each([
       [2, 1, Color.LIGHT, { col: 1, row: 1 }],
       [2, 2, Color.LIGHT, { col: 1, row: 1 }],
     ]),
+    undefined,
     createGridWithCells(3, 3, [
       [0, 1, Color.LIGHT, { col: 0, row: 1 }],
       [0, 2, Color.LIGHT, { col: 0, row: 1 }],
@@ -191,6 +194,7 @@ test.each([
       [2, 1, Color.LIGHT, { col: 1, row: 1 }, true],
       [2, 2, Color.LIGHT, { col: 1, row: 1 }, true],
     ]),
+    undefined,
     createGridWithCells(3, 3, [
       [0, 1, Color.LIGHT],
       [0, 2, Color.LIGHT],
@@ -200,7 +204,27 @@ test.each([
       [2, 2, Color.LIGHT, { col: 1, row: 1 }, true],
     ]),
   ],
-])('updateMatchedBlocks, %s', (_, input, output) => {
-  const result = updateMatchedBlocks(input);
+  [
+    'clear match after scanned',
+    createGridWithCells(3, 3, [
+      [0, 1, Color.LIGHT, { col: 0, row: 1 }],
+      [0, 2, Color.LIGHT, { col: 0, row: 1 }],
+      [1, 1, Color.LIGHT, { col: 1, row: 1 }, true],
+      [1, 2, Color.LIGHT, { col: 1, row: 1 }, true],
+      [2, 1, Color.LIGHT, { col: 1, row: 1 }, true],
+      [2, 2, Color.LIGHT, { col: 1, row: 1 }, true],
+    ]),
+    1,
+    createGridWithCells(3, 3, [
+      [0, 1, Color.LIGHT],
+      [0, 2, Color.LIGHT],
+      [1, 1, Color.LIGHT, { col: 1, row: 1 }, true],
+      [1, 2, Color.LIGHT, { col: 1, row: 1 }, true],
+      [2, 1, Color.LIGHT, { col: 1, row: 1 }, true],
+      [2, 2, Color.LIGHT, { col: 1, row: 1 }, true],
+    ]),
+  ],
+])('updateMatchedBlocks, %s', (_, input, scannedCol, output) => {
+  const result = updateMatchedBlocks(input, scannedCol);
   expect(result).toEqual(output);
 });
