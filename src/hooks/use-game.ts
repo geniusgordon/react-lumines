@@ -3,7 +3,6 @@ import { ActionType, Reducer } from './types';
 import { move, rotate } from '../game/block';
 import { getInitGame, tick } from '../game/tick';
 import { GameState, GameArgs } from '../game/types';
-import useAnimationFrame from '../hooks/use-animation-frame';
 import { Speed } from '../constants';
 
 const reducer: Reducer = (game, action) => {
@@ -48,10 +47,6 @@ const reducer: Reducer = (game, action) => {
 
 function useGame(args?: GameArgs) {
   const [game, dispatch] = React.useReducer(reducer, args, getInitGame);
-
-  useAnimationFrame(elapsed => {
-    dispatch({ type: ActionType.TICK, payload: elapsed });
-  }, game.state === GameState.PLAY);
 
   return { game, dispatch };
 }

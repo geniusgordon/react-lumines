@@ -19,4 +19,9 @@ export type Action =
   | { type: ActionType.RESUME }
   | { type: ActionType.RESTART };
 
+export type ActionLog = {
+  timestamp: number;
+  action: Action;
+}
+
 export type Reducer = (prevState: Game, action: Action) => Game;
