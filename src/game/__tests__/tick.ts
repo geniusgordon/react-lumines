@@ -19,11 +19,21 @@ test('active block touch bottom', () => {
       ],
       x: 0,
       y: (Dimension.GRID_ROWS - 1.5) * Dimension.SQUARE_SIZE,
-      speed: Speed.DROP_FAST,
+      speed: {
+        x: 0,
+        y: Speed.DROP_FAST,
+      },
     },
     detachedBlocks: [],
     grid: createEmptyGrid(),
-    scanLine: { x: 0, speed: Speed.SCAN_LINE },
+    scanLine: {
+      x: 0,
+      y: 0,
+      speed: {
+        x: Speed.SCAN_LINE,
+        y: 0,
+      },
+    },
     matchedCount: 0,
     scannedCount: 0,
     score: 0,
@@ -63,11 +73,21 @@ test('decompose active block', () => {
       ],
       x: 0,
       y: (Dimension.GRID_ROWS - 2.5) * Dimension.SQUARE_SIZE,
-      speed: Speed.DROP_FAST,
+      speed: {
+        x: 0,
+        y: Speed.DROP_FAST,
+      },
     },
     detachedBlocks: [],
     grid: createEmptyGrid(),
-    scanLine: { x: 0, speed: Speed.SCAN_LINE },
+    scanLine: {
+      x: 0,
+      y: 0,
+      speed: {
+        x: Speed.SCAN_LINE,
+        y: 0,
+      },
+    },
     matchedCount: 0,
     scannedCount: 0,
     score: 0,
@@ -97,7 +117,10 @@ test('decompose active block', () => {
       y:
         (Dimension.GRID_ROWS - 1.5) * Dimension.SQUARE_SIZE +
         Speed.DROP_FAST * elapse,
-      speed: Speed.DROP_DETACHED,
+      speed: {
+        x: 0,
+        y: Speed.DROP_DETACHED,
+      },
     },
     {
       color: Color.DARK,
@@ -105,7 +128,10 @@ test('decompose active block', () => {
       y:
         (Dimension.GRID_ROWS - 2.5) * Dimension.SQUARE_SIZE +
         Speed.DROP_FAST * elapse,
-      speed: Speed.DROP_DETACHED,
+      speed: {
+        x: 0,
+        y: Speed.DROP_DETACHED,
+      },
     },
   ];
 

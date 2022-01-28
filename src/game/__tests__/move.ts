@@ -10,7 +10,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     -Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, []),
@@ -18,7 +21,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
   [
@@ -27,7 +33,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     -Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, []),
@@ -35,7 +44,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
   [
@@ -44,7 +56,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     -Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, [
@@ -55,7 +70,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
   [
@@ -64,7 +82,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     -Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, [[0, 1, Color.LIGHT]]),
@@ -72,7 +93,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
 ])('move left, %s', (_, block, distance, grid, output) => {
@@ -87,7 +111,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, []),
@@ -95,7 +122,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
   [
@@ -104,7 +134,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, []),
@@ -112,7 +145,10 @@ test.each([
       block: [],
       x: Dimension.SQUARE_SIZE,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
   [
@@ -121,7 +157,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, [
@@ -132,7 +171,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
   [
@@ -141,7 +183,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     Dimension.SQUARE_SIZE,
     createGridWithCells(3, 2, [[2, 1, Color.LIGHT]]),
@@ -149,7 +194,10 @@ test.each([
       block: [],
       x: 0,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
   ],
 ])('move right, %s', (_, block, distance, grid, output) => {

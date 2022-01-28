@@ -37,13 +37,19 @@ DemoField.args = {
       color: Color.LIGHT,
       x: 5 * Dimension.SQUARE_SIZE,
       y: 10.5 * Dimension.SQUARE_SIZE,
-      speed: Speed.DROP_DETACHED,
+      speed: {
+        x: 0,
+        y: Speed.DROP_DETACHED,
+      },
     },
     {
       color: Color.LIGHT,
       x: 5 * Dimension.SQUARE_SIZE,
       y: 9.5 * Dimension.SQUARE_SIZE,
-      speed: Speed.DROP_DETACHED,
+      speed: {
+        x: 0,
+        y: Speed.DROP_DETACHED,
+      },
     },
   ],
 };

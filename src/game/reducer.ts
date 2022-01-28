@@ -1,11 +1,10 @@
-import React from 'react';
-import { ActionType, Reducer } from './types';
-import { move, rotate } from '../game/block';
-import { getInitGame, tick } from '../game/tick';
-import { GameState, GameArgs } from '../game/types';
+import { GameReducer, ActionType } from './types';
+import { move, rotate } from './block';
+import { getInitGame, tick } from './tick';
+import { GameState } from './types';
 import { Speed } from '../constants';
 
-const reducer: Reducer = (game, action) => {
+const reducer: GameReducer = (game, action) => {
   switch (action.type) {
     case ActionType.TICK:
       return tick(game, action.payload);
@@ -48,10 +47,4 @@ const reducer: Reducer = (game, action) => {
   }
 };
 
-function useGame(args?: GameArgs) {
-  const [game, dispatch] = React.useReducer(reducer, args, getInitGame);
-
-  return { game, dispatch };
-}
-
-export default useGame;
+export default reducer;

@@ -22,6 +22,6 @@ export type Action =
 export type ActionLog = {
   timestamp: number;
   action: Action;
-}
+};
 
 export type Reducer = (prevState: Game, action: Action) => Game;

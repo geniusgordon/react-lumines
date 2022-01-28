@@ -150,7 +150,7 @@ export function scanColumn(
       (cell, i) =>
         cell?.matchedBlock?.col === col && cell?.matchedBlock?.row === i,
     ).length,
-    scannedCount: grid[col].filter((cell, i) => !!cell?.matchedBlock).length,
+    scannedCount: grid[col].filter(cell => !!cell?.matchedBlock).length,
   };
 }
 
@@ -176,7 +176,10 @@ export function removeScanned(grid: Grid): {
           color: cell.color,
           x: i * Dimension.SQUARE_SIZE,
           y: j * Dimension.SQUARE_SIZE,
-          speed: Speed.DROP_DETACHED,
+          speed: {
+            x: 0,
+            y: Speed.DROP_DETACHED,
+          },
         });
       } else {
         column[j] = cell;

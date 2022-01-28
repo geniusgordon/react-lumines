@@ -12,7 +12,10 @@ test.each([
         color: Color.LIGHT,
         x: 0,
         y: 0.5 * Dimension.SQUARE_SIZE,
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       },
     ],
     {
@@ -22,7 +25,10 @@ test.each([
           color: Color.LIGHT,
           x: 0,
           y: 0.5 * Dimension.SQUARE_SIZE,
-          speed: Speed.DROP_DETACHED,
+          speed: {
+            x: 0,
+            y: Speed.DROP_DETACHED,
+          },
         },
       ],
     },
@@ -35,7 +41,10 @@ test.each([
         color: Color.LIGHT,
         x: 0,
         y: 0.5 * Dimension.SQUARE_SIZE,
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       },
     ],
     {
@@ -54,13 +63,19 @@ test.each([
         color: Color.DARK,
         x: 0,
         y: 1.5 * Dimension.SQUARE_SIZE,
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       },
       {
         color: Color.LIGHT,
         x: 0,
         y: 0.5 * Dimension.SQUARE_SIZE,
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       },
     ],
     {
@@ -80,13 +95,19 @@ test.each([
         color: Color.DARK,
         x: 0,
         y: 1.5 * Dimension.SQUARE_SIZE,
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       },
       {
         color: Color.LIGHT,
         x: 0,
         y: 0.5 * Dimension.SQUARE_SIZE,
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       },
     ],
     {

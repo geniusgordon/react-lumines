@@ -1,4 +1,3 @@
-import React from 'react';
 import { Story, Meta } from '@storybook/react';
 import Game, { GameProps } from '.';
 import { getInitGame } from '../../game/tick';
@@ -33,12 +32,19 @@ DemoGame.args = {
         [Color.LIGHT, Color.DARK],
         [Color.DARK, Color.LIGHT],
       ],
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     detachedBlocks: [],
     scanLine: {
       x: 60,
-      speed: Speed.SCAN_LINE,
+      y: 0,
+      speed: {
+        x: Speed.SCAN_LINE,
+        y: 0,
+      },
     },
     grid: createGridWithCells(Dimension.GRID_COLUMNS, Dimension.GRID_ROWS, [
       [0, 8, Color.LIGHT, { col: 0, row: 8 }, true],

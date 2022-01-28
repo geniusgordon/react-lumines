@@ -28,13 +28,20 @@ export function getInitGame(args?: GameArgs): Game {
       block: getRandomBlock(),
       x: Dimension.GRID_MID_X,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     },
     grid: createEmptyGrid(),
     detachedBlocks: [],
     scanLine: {
       x: 0,
-      speed: Speed.SCAN_LINE,
+      y: 0,
+      speed: {
+        x: Speed.SCAN_LINE,
+        y: 0,
+      },
     },
     matchedCount: 0,
     scannedCount: 0,
@@ -137,7 +144,7 @@ export function tick(game: Game, elapsed: number): Game {
 
   if (
     activeBlockWillCollide(activeBlock, grid, detachedBlocks) &&
-    (activeBlock.speed > Speed.DROP_SLOW ||
+    (activeBlock.speed.y > Speed.DROP_SLOW ||
       willEnterNextRow(activeBlock, elapsed))
   ) {
     detachedBlocks = [...detachedBlocks, ...decompose(activeBlock)];
@@ -145,7 +152,10 @@ export function tick(game: Game, elapsed: number): Game {
       block: queue[0],
       x: Dimension.GRID_MID_X,
       y: 0,
-      speed: Speed.DROP_SLOW,
+      speed: {
+        x: 0,
+        y: Speed.DROP_SLOW,
+      },
     };
     queue = [...queue.slice(1), getRandomBlock()];
   }

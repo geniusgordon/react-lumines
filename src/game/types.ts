@@ -4,7 +4,7 @@ export type Cord = {
 };
 
 export interface MovingObject extends Cord {
-  speed: number;
+  speed: Cord;
 }
 
 export enum Color {
@@ -43,10 +43,7 @@ export interface DetachedBlock extends MovingObject {
   color: Color;
 }
 
-export interface ScanLine {
-  x: number;
-  speed: number;
-}
+export interface ScanLine extends MovingObject {}
 
 export enum GameState {
   PAUSE = 'PAUSE',
@@ -71,3 +68,29 @@ export type Game = {
 export type GameArgs = {
   totalTime: number;
 };
+
+export enum ActionType {
+  TICK = 'TICK',
+  MOVE = 'MOVE',
+  ROTATE = 'ROTATE',
+  DROP = 'DROP',
+  PAUSE = 'PAUSE',
+  RESUME = 'RESUME',
+  RESTART = 'RESTART',
+}
+
+export type Action =
+  | { type: ActionType.TICK; payload: number }
+  | { type: ActionType.MOVE; payload: number }
+  | { type: ActionType.ROTATE; payload: RotateDirection }
+  | { type: ActionType.DROP }
+  | { type: ActionType.PAUSE }
+  | { type: ActionType.RESUME }
+  | { type: ActionType.RESTART };
+
+export type ActionLog = {
+  timestamp: number;
+  action: Action;
+};
+
+export type GameReducer = (prevState: Game, action: Action) => Game;

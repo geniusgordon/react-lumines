@@ -58,25 +58,37 @@ test.each([
           color: Color.LIGHT,
           x: 0,
           y: 2 * Dimension.SQUARE_SIZE,
-          speed: Speed.DROP_DETACHED,
+          speed: {
+            x: 0,
+            y: Speed.DROP_DETACHED,
+          },
         },
         {
           color: Color.DARK,
           x: 0,
           y: Dimension.SQUARE_SIZE,
-          speed: Speed.DROP_DETACHED,
+          speed: {
+            x: 0,
+            y: Speed.DROP_DETACHED,
+          },
         },
         {
           color: Color.DARK,
           x: Dimension.SQUARE_SIZE,
           y: 2 * Dimension.SQUARE_SIZE,
-          speed: Speed.DROP_DETACHED,
+          speed: {
+            x: 0,
+            y: Speed.DROP_DETACHED,
+          },
         },
         {
           color: Color.LIGHT,
           x: Dimension.SQUARE_SIZE,
           y: Dimension.SQUARE_SIZE,
-          speed: Speed.DROP_DETACHED,
+          speed: {
+            x: 0,
+            y: Speed.DROP_DETACHED,
+          },
         },
       ],
     },

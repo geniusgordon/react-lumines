@@ -1,17 +1,14 @@
 import React from 'react';
 import Cell from '../Cell';
-import { Block as BlockType } from '../../game/types';
+import { Block as BlockType, MovingObject } from '../../game/types';
 import { Dimension, Speed } from '../../constants';
 
-export type BlockProps = {
-  x: number;
-  y: number;
+export interface BlockProps extends MovingObject {
   block: BlockType;
-  speed?: number;
-};
+}
 
-const Block: React.FC<BlockProps> = ({ x, y, block, speed = 0 }) => {
-  const dropped = speed > Speed.DROP_SLOW;
+const Block: React.FC<BlockProps> = ({ x, y, block, speed }) => {
+  const dropped = speed.y > Speed.DROP_SLOW;
   const _y = dropped
     ? y
     : Math.floor(y / Dimension.SQUARE_SIZE) * Dimension.SQUARE_SIZE;

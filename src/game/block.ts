@@ -40,7 +40,10 @@ export function decompose(block: ActiveBlock): DetachedBlock[] {
         color: c,
         x: block.x + Dimension.SQUARE_SIZE * i,
         y: block.y + Dimension.SQUARE_SIZE * (col.length - j - 1),
-        speed: Speed.DROP_DETACHED,
+        speed: {
+          x: 0,
+          y: Speed.DROP_DETACHED,
+        },
       });
     });
   });
@@ -72,12 +75,12 @@ export function move(
 }
 
 export function nextBlockY(block: MovingObject, elapsed: number): number {
-  return block.y + Math.min(elapsed * block.speed, Dimension.SQUARE_SIZE);
+  return block.y + Math.min(elapsed * block.speed.y, Dimension.SQUARE_SIZE);
 }
 
 export function nextScanLineX(scanLine: ScanLine, elapsed: number): number {
   return (
-    (scanLine.x + Math.min(elapsed * scanLine.speed, Dimension.SQUARE_SIZE)) %
+    (scanLine.x + Math.min(elapsed * scanLine.speed.x, Dimension.SQUARE_SIZE)) %
     Dimension.GRID_WIDTH
   );
 }
