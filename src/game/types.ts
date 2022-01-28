@@ -1,3 +1,5 @@
+import { RandomSeed } from 'random-seed';
+
 export type Cord = {
   x: number;
   y: number;
@@ -52,6 +54,8 @@ export enum GameState {
 }
 
 export type Game = {
+  seed: string;
+  prng?: RandomSeed;
   state: GameState;
   queue: Block[];
   activeBlock: ActiveBlock;
@@ -66,7 +70,8 @@ export type Game = {
 };
 
 export type GameArgs = {
-  totalTime: number;
+  seed?: string;
+  totalTime?: number;
 };
 
 export enum ActionType {

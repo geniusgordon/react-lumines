@@ -1,5 +1,5 @@
 import React from 'react';
-import { getInitGame, tick } from '../game/tick';
+import { getInitGame } from '../game/tick';
 import {
   GameArgs,
   Game,
@@ -44,9 +44,8 @@ function useGame(args?: GameArgs) {
     onUpdate: (_, elapsed) => {
       dispatch({ type: ActionType.TICK, payload: elapsed });
     },
-    onRender: (_, elapsed) => {
-      const predictedGame = tick(gameRef.current, elapsed);
-      setGame(predictedGame);
+    onRender: () => {
+      setGame(gameRef.current);
     },
     enabled: game.state === GameState.PLAY,
   });

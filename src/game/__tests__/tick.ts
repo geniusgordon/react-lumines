@@ -5,6 +5,7 @@ import { Dimension, Speed } from '../../constants';
 
 test('active block touch bottom', () => {
   const input: Game = {
+    seed: '1',
     state: GameState.PLAY,
     queue: [
       [
@@ -59,6 +60,7 @@ test('active block touch bottom', () => {
 
 test('decompose active block', () => {
   const input: Game = {
+    seed: '1',
     state: GameState.PLAY,
     queue: [
       [

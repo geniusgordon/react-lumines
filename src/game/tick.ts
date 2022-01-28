@@ -1,3 +1,4 @@
+import Prng from 'random-seed';
 import { nextBlockY, nextScanLineX, decompose, getRandomBlock } from './block';
 import {
   xyToColRow,
@@ -21,11 +22,15 @@ import {
 import { Dimension, Speed } from '../constants';
 
 export function getInitGame(args?: GameArgs): Game {
+  const seed = args?.seed || Math.random().toString();
+  const prng = Prng.create(seed);
   return {
+    seed,
+    prng,
     state: GameState.PLAY,
-    queue: [...new Array(3)].map(() => getRandomBlock()),
+    queue: [...new Array(3)].map(() => getRandomBlock(prng)),
     activeBlock: {
-      block: getRandomBlock(),
+      block: getRandomBlock(prng),
       x: Dimension.GRID_MID_X,
       y: 0,
       speed: {
@@ -113,6 +118,8 @@ export function checkDetachedBlocks(
 
 export function tick(game: Game, elapsed: number): Game {
   let {
+    seed,
+    prng,
     state,
     queue,
     activeBlock,
@@ -157,7 +164,7 @@ export function tick(game: Game, elapsed: number): Game {
         y: Speed.DROP_SLOW,
       },
     };
-    queue = [...queue.slice(1), getRandomBlock()];
+    queue = [...queue.slice(1), getRandomBlock(prng)];
   }
 
   ({ grid, detachedBlocks } = checkDetachedBlocks(grid, detachedBlocks));
@@ -194,6 +201,8 @@ export function tick(game: Game, elapsed: number): Game {
   }
 
   return {
+    seed,
+    prng,
     state: isOver ? GameState.OVER : state,
     queue,
     activeBlock,

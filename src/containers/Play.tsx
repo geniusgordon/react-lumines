@@ -8,7 +8,7 @@ import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 
 const Play: React.FC = () => {
-  const { game, dispatch } = useGame();
+  const { game, dispatch } = useGame({ seed: '1' });
   const { open, onOpen, onClose } = useDisclosure();
 
   const handleQuit = React.useCallback(() => {}, []);
