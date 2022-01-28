@@ -18,18 +18,15 @@ function useInterval(callback: CallbackFn, interval: number) {
   React.useEffect(() => {
     function tick() {
       callbackRef.current(intervalRef.current);
-      if (intervalRef.current) {
-        requestRef.current = setTimeout(tick, intervalRef.current);
-      }
     }
 
     if (interval) {
-      requestRef.current = setTimeout(tick, interval);
+      requestRef.current = setInterval(tick, interval);
     }
 
     return () => {
       if (requestRef.current) {
-        clearTimeout(requestRef.current);
+        clearInterval(requestRef.current);
       }
     };
   }, [interval]);

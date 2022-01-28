@@ -27,7 +27,7 @@ export function createGridWithCells(
 }
 
 function transpose<T>(m: T[][]): T[][] {
-  return m[0].map((x, i) => m.map(x => x[i]));
+  return m[0].map((_, i) => m.map(x => x[i]));
 }
 
 export function printGrid(grid: Grid): void {

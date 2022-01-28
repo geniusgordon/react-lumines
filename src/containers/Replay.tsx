@@ -2,20 +2,18 @@ import React from 'react';
 import Game from '../components/Game';
 import useGame from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
-import { GameState } from '../game/types';
+import { GameState, Action, ActionType } from '../game/types';
 import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 import useAnimationFrame from '../hooks/use-animation-frame';
-import { Action, ActionType } from '../hooks/types';
 import actionLogs from './action-logs';
 import useInterval from '../hooks/use-interval';
 
 const Play: React.FC = () => {
   const replayIndexRef = React.useRef<number>(0);
-  const { gameRef, dispatch } = useGame();
+  const { game, dispatch } = useGame();
   const { open, onOpen, onClose } = useDisclosure();
-  const [game, setGame] = React.useState(gameRef.current);
 
   const handleQuit = React.useCallback(() => {}, []);
 
@@ -73,10 +71,6 @@ const Play: React.FC = () => {
     },
     game.state === GameState.PLAY ? 20 : 0,
   );
-
-  useAnimationFrame(() => {
-    setGame(gameRef.current);
-  }, game.state === GameState.PLAY);
 
   return (
     <React.StrictMode>

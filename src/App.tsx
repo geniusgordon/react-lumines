@@ -1,4 +1,3 @@
-import React from 'react';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { ThemeProvider } from '@mui/material/styles';
 import Play from './containers/Play';
