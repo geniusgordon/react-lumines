@@ -9,11 +9,13 @@ import useDisclosure from '../hooks/use-disclosure';
 import useAnimationFrame from '../hooks/use-animation-frame';
 import { Action, ActionType } from '../hooks/types';
 import actionLogs from './action-logs';
+import useInterval from '../hooks/use-interval';
 
 const Play: React.FC = () => {
   const replayIndexRef = React.useRef<number>(0);
-  const { game, dispatch } = useGame();
+  const { gameRef, dispatch } = useGame();
   const { open, onOpen, onClose } = useDisclosure();
+  const [game, setGame] = React.useState(gameRef.current);
 
   const handleQuit = React.useCallback(() => {}, []);
 
@@ -58,15 +60,22 @@ const Play: React.FC = () => {
 
   useKeyDown(handleKeyDown);
 
-  useAnimationFrame(elapsed => {
-    while (
-      replayIndexRef.current < actionLogs.length &&
-      actionLogs[replayIndexRef.current].timestamp <= game.time
-    ) {
-      dispatch(actionLogs[replayIndexRef.current].action as Action);
-      replayIndexRef.current++;
-    }
-    dispatch({ type: ActionType.TICK, payload: elapsed });
+  useInterval(
+    elapsed => {
+      while (
+        replayIndexRef.current < actionLogs.length &&
+        actionLogs[replayIndexRef.current].timestamp <= game.time
+      ) {
+        dispatch(actionLogs[replayIndexRef.current].action as Action);
+        replayIndexRef.current++;
+      }
+      dispatch({ type: ActionType.TICK, payload: elapsed });
+    },
+    game.state === GameState.PLAY ? 20 : 0,
+  );
+
+  useAnimationFrame(() => {
+    setGame(gameRef.current);
   }, game.state === GameState.PLAY);
 
   return (

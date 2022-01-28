@@ -8,12 +8,14 @@ import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 import useAnimationFrame from '../hooks/use-animation-frame';
 import { Action, ActionType, ActionLog } from '../hooks/types';
+import useInterval from '../hooks/use-interval';
 
 const Play: React.FC = () => {
   const actionLogsRef = React.useRef<ActionLog[]>([]);
   const timeRef = React.useRef<number>(0);
-  const { game, dispatch: _dispatch } = useGame();
+  const { gameRef, dispatch: _dispatch } = useGame();
   const { open, onOpen, onClose } = useDisclosure();
+  const [game, setGame] = React.useState(gameRef.current);
 
   React.useEffect(() => {
     timeRef.current = game.time;
@@ -107,8 +109,15 @@ const Play: React.FC = () => {
 
   useKeyDown(handleKeyDown);
 
-  useAnimationFrame(elapsed => {
-    dispatch({ type: ActionType.TICK, payload: elapsed });
+  useInterval(
+    elapsed => {
+      dispatch({ type: ActionType.TICK, payload: elapsed });
+    },
+    game.state === GameState.PLAY ? 20 : 0,
+  );
+
+  useAnimationFrame(() => {
+    setGame(gameRef.current);
   }, game.state === GameState.PLAY);
 
   return (
