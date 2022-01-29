@@ -11,7 +11,7 @@ import ScanLine from '../ScanLine';
 import Info from '../Info';
 import Countdown from '../Countdown';
 import { Game as GameType } from '../../game/types';
-import { Dimension as d, Palette } from '../../constants';
+import { Dimension as d } from '../../constants';
 
 export type GameProps = {
   game: GameType;
@@ -46,7 +46,7 @@ const Game: React.FC<GameProps> = ({ game }) => {
   const curTime = Math.max(0, Math.min(totalTime - time, totalTime));
 
   return (
-    <Box sx={{ bgcolor: Palette.BACKGROUND, width: '100%', height: '100%' }}>
+    <Box sx={{ width: '100%', height: '100%' }}>
       <Container maxWidth="lg">
         <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
           <Group x={PADDING + d.SQUARE_SIZE} y={PADDING + d.SQUARE_SIZE * 2}>

@@ -10,6 +10,7 @@ const Template: Story<GameProps> = args => <Game {...args} />;
 export const DemoGame = Template.bind({});
 DemoGame.args = {
   game: {
+    id: 'id',
     seed: '1',
     state: GameState.PLAY,
     queue: [

@@ -1,4 +1,6 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
+import { Typography } from '@mui/material';
 import Game from '../components/Game';
 import { useReplayGame } from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
@@ -6,8 +8,10 @@ import { GameState, ActionType, ActionLog } from '../game/types';
 import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
+import useReplayManager from '../hooks/use-replay-manager';
 
 type ReplayProps = {
+  id: string;
   seed: string;
   actionLogs: ActionLog[];
 };
@@ -79,4 +83,17 @@ const Replay: React.FC<ReplayProps> = props => {
   );
 };
 
-export default Replay;
+const ReplayContainer: React.FC = () => {
+  const { id } = useParams();
+  const { data } = useReplayManager();
+
+  if (!id || !data[id]) {
+    return <Typography>Replay not found</Typography>;
+  }
+
+  const { seed, actionLogs } = data[id];
+
+  return <Replay id={id} seed={seed} actionLogs={actionLogs} />;
+};
+
+export default ReplayContainer;

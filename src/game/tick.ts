@@ -1,4 +1,5 @@
 import Prng from 'random-seed';
+import { v4 } from 'uuid';
 import { nextBlockY, nextScanLineX, decompose, getRandomBlock } from './block';
 import {
   xyToColRow,
@@ -22,9 +23,11 @@ import {
 import { Dimension, Speed } from '../constants';
 
 export function getInitGame(args?: GameArgs): Game {
-  const seed = args?.seed || Math.random().toString();
+  const id = args?.id || v4();
+  const seed = args?.seed || v4();
   const prng = Prng.create(seed);
   return {
+    id,
     seed,
     prng,
     state: GameState.PLAY,
@@ -118,7 +121,6 @@ export function checkDetachedBlocks(
 
 export function tick(game: Game, elapsed: number): Game {
   let {
-    seed,
     prng,
     state,
     queue,
@@ -201,7 +203,7 @@ export function tick(game: Game, elapsed: number): Game {
   }
 
   return {
-    seed,
+    ...game,
     prng,
     state: isOver ? GameState.OVER : state,
     queue,

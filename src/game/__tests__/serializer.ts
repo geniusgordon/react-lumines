@@ -1,4 +1,4 @@
-import { serializeActionLogs, deserializeActionLogs } from '../action-log';
+import { serializeReplay, deserializeReplay } from '../serializer';
 import { ActionLog } from '../types';
 
 const actionLogs: ActionLog[] = [
@@ -9,8 +9,16 @@ const actionLogs: ActionLog[] = [
   { action: { type: 'ROTATE', payload: -1 }, timestamp: 1200 },
 ] as ActionLog[];
 
-test('serialize / deserialize action logs', () => {
-  const sActionLogs = serializeActionLogs(actionLogs);
-  const dActionLogs = deserializeActionLogs(sActionLogs);
-  expect(dActionLogs).toEqual(actionLogs);
+const replay = {
+  id: 'id',
+  seed: 'seed',
+  timestamp: new Date(),
+  score: 100,
+  actionLogs,
+};
+
+test('serialize / deserialize replay', () => {
+  const sReplay = serializeReplay(replay);
+  const dReplay = deserializeReplay(sReplay);
+  expect(dReplay).toEqual(replay);
 });

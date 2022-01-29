@@ -11,6 +11,7 @@ import {
 import reducer from '../game/reducer';
 import useGameLoop from './use-game-loop';
 import useActionLogger from './use-action-logger';
+import useReplayManager from './use-replay-manager';
 
 interface UseGameArgs extends GameArgs {
   onUpdate?: (curTime: number, elapsed: number) => void;
@@ -31,7 +32,10 @@ function useGame(args?: UseGameArgs) {
         args.onDispatch(gameRef.current, action);
       }
       gameRef.current = reducer(gameRef.current, action);
-      if (action.type === ActionType.RESTART) {
+      if (
+        action.type === ActionType.RESUME ||
+        action.type === ActionType.RESTART
+      ) {
         setGame(gameRef.current);
       }
     },
@@ -57,6 +61,8 @@ function useGame(args?: UseGameArgs) {
 
 export function usePlayGame(args?: UseGameArgs) {
   const { actionLogsRef, logAction } = useActionLogger();
+  const { saveReplay } = useReplayManager();
+
   const { game, dispatch } = useGame({
     ...args,
     onDispatch(game, action) {
@@ -64,11 +70,24 @@ export function usePlayGame(args?: UseGameArgs) {
     },
   });
 
+  React.useEffect(() => {
+    if (game.state === GameState.OVER) {
+      saveReplay({
+        id: game.id,
+        seed: game.seed,
+        timestamp: new Date(),
+        score: game.score,
+        actionLogs: actionLogsRef.current,
+      });
+    }
+  }, [game, actionLogsRef, saveReplay]);
+
   return { game, dispatch, actionLogsRef };
 }
 
 export function useReplayGame({ actionLogs, ...args }: UseReplayGameArgs) {
   const replayIndexRef = React.useRef<number>(0);
+
   const { game, dispatch } = useGame({
     ...args,
     onDispatch(_, action) {

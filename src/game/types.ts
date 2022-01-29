@@ -59,6 +59,7 @@ export enum GameState {
 }
 
 export type Game = {
+  id: string;
   seed: string;
   prng?: RandomSeed;
   state: GameState;
@@ -75,6 +76,7 @@ export type Game = {
 };
 
 export type GameArgs = {
+  id?: string;
   seed?: string;
   totalTime?: number;
 };
@@ -131,3 +133,30 @@ export type ActionLog = {
 };
 
 export type GameReducer = (prevState: Game, action: Action) => Game;
+
+export type SerializedAction =
+  | [typeof ActionTypeMap[ActionType.MOVE], number]
+  | [typeof ActionTypeMap[ActionType.ROTATE], number]
+  | [typeof ActionTypeMap[ActionType.DROP]];
+
+export type SerializedActionLog = [SerializedAction, number];
+
+export type SerializedReplay = [
+  string, // id
+  string, // seed
+  string, // timestamp
+  number, // score
+  SerializedActionLog[],
+];
+
+export type Replay = {
+  id: string;
+  seed: string;
+  timestamp: Date;
+  score: number;
+  actionLogs: ActionLog[];
+};
+
+export type ReplayManager = {
+  [id: string]: Replay;
+};
