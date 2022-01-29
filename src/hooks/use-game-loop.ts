@@ -1,8 +1,8 @@
 import React from 'react';
 import useAnimationFrame from './use-animation-frame';
 
-type UpdateCallbackFn = (curTime: number, elapse: number) => any;
-type RenderCallbackFn = (curTime: number, elapse: number) => any;
+type UpdateCallbackFn = (curTime: number, elapsed: number) => any;
+type RenderCallbackFn = (curTime: number, elapsed: number) => any;
 
 type args = {
   dt: number;
@@ -15,8 +15,8 @@ function useGameLoop({ dt, onUpdate, onRender, enabled }: args) {
   const accRef = React.useRef<number>(0);
   const curTimeRef = React.useRef<number>(0);
 
-  useAnimationFrame(elapse => {
-    accRef.current += elapse;
+  useAnimationFrame(elapsed => {
+    accRef.current += elapsed;
 
     while (accRef.current >= dt) {
       curTimeRef.current += dt;

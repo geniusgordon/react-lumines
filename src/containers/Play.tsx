@@ -1,6 +1,6 @@
 import React from 'react';
 import Game from '../components/Game';
-import useGame from '../hooks/use-game';
+import { usePlayGame } from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
 import { RotateDirection, GameState, ActionType } from '../game/types';
 import { Dimension, Key } from '../constants';
@@ -8,7 +8,7 @@ import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 
 const Play: React.FC = () => {
-  const { game, dispatch } = useGame({ seed: '1' });
+  const { game, dispatch } = usePlayGame({ seed: '1' });
   const { open, onOpen, onClose } = useDisclosure();
 
   const handleQuit = React.useCallback(() => {}, []);
