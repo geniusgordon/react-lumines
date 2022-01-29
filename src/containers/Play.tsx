@@ -16,8 +16,6 @@ const Play: React.FC = () => {
   const { game, dispatch } = usePlayGame();
   const { open, onOpen, onClose } = useDisclosure();
 
-  const handleQuit = React.useCallback(() => {}, []);
-
   const handleRestart = React.useCallback(() => {
     dispatch({ type: ActionType.RESTART });
     onClose();
@@ -92,7 +90,6 @@ const Play: React.FC = () => {
       <PauseMenu
         open={open}
         onClose={handleClose}
-        onQuit={handleQuit}
         onRestart={handleRestart}
         onResume={handleResume}
       />
@@ -100,7 +97,6 @@ const Play: React.FC = () => {
         open={game.state === GameState.OVER}
         score={game.score}
         onClose={handleClose}
-        onQuit={handleQuit}
         onRestart={handleRestart}
       />
     </React.StrictMode>

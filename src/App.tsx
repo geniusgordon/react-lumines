@@ -1,6 +1,7 @@
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
+import Home from './containers/Home';
 import Play from './containers/Play';
 import Replay from './containers/Replay';
 import theme from './theme';
@@ -26,6 +27,7 @@ function App() {
       />
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/play" element={<Play />} />
           <Route path="/replay/:id" element={<Replay />} />
         </Routes>

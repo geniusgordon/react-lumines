@@ -20,8 +20,6 @@ const Replay: React.FC<ReplayProps> = props => {
   const { game, dispatch } = useReplayGame(props);
   const { open, onOpen, onClose } = useDisclosure();
 
-  const handleQuit = React.useCallback(() => {}, []);
-
   const handleRestart = React.useCallback(() => {
     dispatch({ type: ActionType.RESTART });
     onClose();
@@ -68,7 +66,6 @@ const Replay: React.FC<ReplayProps> = props => {
       <PauseMenu
         open={open}
         onClose={handleClose}
-        onQuit={handleQuit}
         onRestart={handleRestart}
         onResume={handleResume}
       />
@@ -76,7 +73,6 @@ const Replay: React.FC<ReplayProps> = props => {
         open={game.state === GameState.OVER}
         score={game.score}
         onClose={handleClose}
-        onQuit={handleQuit}
         onRestart={handleRestart}
       />
     </React.StrictMode>

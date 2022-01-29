@@ -54,7 +54,7 @@ export function getInitGame(args?: GameArgs): Game {
     matchedCount: 0,
     scannedCount: 0,
     score: 0,
-    time: -2400,
+    time: -3199,
     totalTime: args?.totalTime || 60000,
   };
 }

@@ -1,15 +1,17 @@
 import React from 'react';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import DialogTitle from '@mui/material/DialogTitle';
-import Dialog from '@mui/material/Dialog';
+import { Link } from 'react-router-dom';
+import {
+  List,
+  ListItem,
+  ListItemText,
+  DialogTitle,
+  Dialog,
+} from '@mui/material';
 import { MenuProps } from './types';
 
 export type PauseMenuProps = MenuProps & {
   onResume: () => void;
   onRestart: () => void;
-  onQuit: () => void;
 };
 
 const PauseMenu: React.FC<PauseMenuProps> = ({
@@ -17,7 +19,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({
   onClose,
   onResume,
   onRestart,
-  onQuit,
 }) => {
   return (
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
@@ -29,7 +30,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({
         <ListItem button onClick={onRestart}>
           <ListItemText primary="Restart" />
         </ListItem>
-        <ListItem button onClick={onQuit}>
+        <ListItem button component={Link} to="/">
           <ListItemText primary="Quit" />
         </ListItem>
       </List>
