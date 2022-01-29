@@ -2,7 +2,7 @@ import { GameReducer, ActionType } from './types';
 import { move, rotate } from './block';
 import { getInitGame, tick } from './tick';
 import { GameState } from './types';
-import { Speed } from '../constants';
+import { Dimension, Speed } from '../constants';
 
 const reducer: GameReducer = (game, action) => {
   switch (action.type) {
@@ -11,7 +11,11 @@ const reducer: GameReducer = (game, action) => {
     case ActionType.MOVE:
       return {
         ...game,
-        activeBlock: move(game.activeBlock, action.payload, game.grid),
+        activeBlock: move(
+          game.activeBlock,
+          action.payload * Dimension.SQUARE_SIZE,
+          game.grid,
+        ),
       };
     case ActionType.ROTATE:
       return {

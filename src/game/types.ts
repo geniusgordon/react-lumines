@@ -32,6 +32,11 @@ export type Cell = {
 export type Column = Cell[];
 export type Grid = Column[];
 
+export enum MoveDirection {
+  LEFT = -1,
+  RIGHT = 1,
+}
+
 export enum RotateDirection {
   CW = 1,
   CCW = -1,
@@ -84,18 +89,45 @@ export enum ActionType {
   RESTART = 'RESTART',
 }
 
+export const ActionTypeMap = {
+  TICK: 0,
+  MOVE: 1,
+  ROTATE: 2,
+  DROP: 3,
+  PAUSE: 4,
+  RESUME: 5,
+  RESTART: 6,
+  0: ActionType.TICK,
+  1: ActionType.MOVE,
+  2: ActionType.ROTATE,
+  3: ActionType.DROP,
+  4: ActionType.PAUSE,
+  5: ActionType.RESUME,
+  6: ActionType.RESTART,
+} as const;
+
+export type MoveAction = {
+  type: ActionType.MOVE;
+  payload: MoveDirection;
+};
+export type RotateAction = {
+  type: ActionType.ROTATE;
+  payload: RotateDirection;
+};
+export type DropAction = { type: ActionType.DROP };
+
 export type Action =
   | { type: ActionType.TICK; payload: number }
-  | { type: ActionType.MOVE; payload: number }
-  | { type: ActionType.ROTATE; payload: RotateDirection }
-  | { type: ActionType.DROP }
+  | MoveAction
+  | RotateAction
+  | DropAction
   | { type: ActionType.PAUSE }
   | { type: ActionType.RESUME }
   | { type: ActionType.RESTART };
 
 export type ActionLog = {
   timestamp: number;
-  action: Action;
+  action: MoveAction | RotateAction | DropAction;
 };
 
 export type GameReducer = (prevState: Game, action: Action) => Game;

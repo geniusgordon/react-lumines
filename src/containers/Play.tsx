@@ -2,8 +2,13 @@ import React from 'react';
 import Game from '../components/Game';
 import { usePlayGame } from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
-import { RotateDirection, GameState, ActionType } from '../game/types';
-import { Dimension, Key } from '../constants';
+import {
+  MoveDirection,
+  RotateDirection,
+  GameState,
+  ActionType,
+} from '../game/types';
+import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 
@@ -54,12 +59,12 @@ const Play: React.FC = () => {
         case Key.LEFT:
           return dispatch({
             type: ActionType.MOVE,
-            payload: -Dimension.SQUARE_SIZE,
+            payload: MoveDirection.LEFT,
           });
         case Key.RIGHT:
           return dispatch({
             type: ActionType.MOVE,
-            payload: Dimension.SQUARE_SIZE,
+            payload: MoveDirection.RIGHT,
           });
         case Key.Z:
           return dispatch({

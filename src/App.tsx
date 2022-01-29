@@ -1,6 +1,6 @@
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { ThemeProvider } from '@mui/material/styles';
-import Play from './containers/Replay';
+import Play from './containers/Play';
 import theme from './theme';
 
 const styles = {

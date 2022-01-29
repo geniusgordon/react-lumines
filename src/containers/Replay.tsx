@@ -6,13 +6,14 @@ import { GameState, ActionType, ActionLog } from '../game/types';
 import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
-import actionLogs from './action-logs';
 
-const Play: React.FC = () => {
-  const { game, dispatch } = useReplayGame({
-    seed: '1',
-    actionLogs: actionLogs as ActionLog[],
-  });
+type ReplayProps = {
+  seed: string;
+  actionLogs: ActionLog[];
+};
+
+const Replay: React.FC<ReplayProps> = props => {
+  const { game, dispatch } = useReplayGame(props);
   const { open, onOpen, onClose } = useDisclosure();
 
   const handleQuit = React.useCallback(() => {}, []);
@@ -78,4 +79,4 @@ const Play: React.FC = () => {
   );
 };
 
-export default Play;
+export default Replay;
