@@ -11,7 +11,7 @@ import {
 import reducer from '../game/reducer';
 import useGameLoop from './use-game-loop';
 import useActionLogger from './use-action-logger';
-import useReplayManager from './use-replay-manager';
+import { ReplayManagerContext } from './use-replay-manager';
 
 interface UseGameArgs extends GameArgs {
   onUpdate?: (curTime: number, elapsed: number) => void;
@@ -61,7 +61,7 @@ function useGame(args?: UseGameArgs) {
 
 export function usePlayGame(args?: UseGameArgs) {
   const { actionLogsRef, logAction } = useActionLogger();
-  const { saveReplay } = useReplayManager();
+  const { saveReplay } = React.useContext(ReplayManagerContext);
 
   const { game, dispatch } = useGame({
     ...args,

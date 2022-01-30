@@ -8,7 +8,7 @@ type ReplayManagerContextValues = {
   data: ReplayManager;
   saveReplay: (replay: Replay) => void;
   deleteReplay: (id: string) => void;
-}
+};
 
 export const ReplayManagerContext =
   React.createContext<ReplayManagerContextValues>({

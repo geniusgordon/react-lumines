@@ -125,7 +125,7 @@ export type Action =
   | DropAction
   | { type: ActionType.PAUSE }
   | { type: ActionType.RESUME }
-  | { type: ActionType.RESTART };
+  | { type: ActionType.RESTART; payload?: GameArgs };
 
 export type ActionLog = {
   timestamp: number;

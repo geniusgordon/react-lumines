@@ -173,10 +173,7 @@ export function tick(game: Game, elapsed: number): Game {
 
   const scanLineWillEnterNextColum = willEnterNextColum(scanLine, elapsed);
   const scanLineColumn = (xyToColRow(scanLine.x) + 1) % Dimension.GRID_COLUMNS;
-  grid = updateMatchedBlocks(
-    grid,
-    scanLineWillEnterNextColum ? scanLineColumn : undefined,
-  );
+  grid = updateMatchedBlocks(grid);
 
   if (scanLineWillEnterNextColum) {
     const isEnd = scanLineColumn === Dimension.GRID_COLUMNS - 1;

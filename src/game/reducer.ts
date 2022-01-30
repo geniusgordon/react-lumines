@@ -47,7 +47,7 @@ const reducer: GameReducer = (game, action) => {
         state: game.state === GameState.PAUSE ? GameState.PLAY : game.state,
       };
     case ActionType.RESTART:
-      return getInitGame({ totalTime: game.totalTime });
+      return getInitGame(action.payload);
   }
 };
 

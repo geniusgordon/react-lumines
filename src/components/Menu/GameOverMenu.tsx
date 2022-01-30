@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   List,
   ListItem,
@@ -20,6 +20,11 @@ const GameOverMenu: React.FC<GameOverMenuProps> = ({
   onClose,
   onRestart,
 }) => {
+  const navigate = useNavigate();
+  const handleBack = React.useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
   return (
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>Score: {score}</DialogTitle>
@@ -27,8 +32,8 @@ const GameOverMenu: React.FC<GameOverMenuProps> = ({
         <ListItem button onClick={onRestart}>
           <ListItemText primary="Restart" />
         </ListItem>
-        <ListItem button component={Link} to="/">
-          <ListItemText primary="Quit" />
+        <ListItem button onClick={handleBack}>
+          <ListItemText primary="Back" />
         </ListItem>
       </List>
     </Dialog>
