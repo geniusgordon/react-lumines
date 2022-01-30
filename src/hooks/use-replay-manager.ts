@@ -4,6 +4,19 @@ import { Replay, ReplayManager, SerializedReplay } from '../game/types';
 
 const KEY = '@lumines/replays';
 
+type ReplayManagerContextValues = {
+  data: ReplayManager;
+  saveReplay: (replay: Replay) => void;
+  deleteReplay: (id: string) => void;
+}
+
+export const ReplayManagerContext =
+  React.createContext<ReplayManagerContextValues>({
+    data: {},
+    saveReplay() {},
+    deleteReplay() {},
+  });
+
 function useReplayManager() {
   const [data, setData] = React.useState<ReplayManager>({});
 

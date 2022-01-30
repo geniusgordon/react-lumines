@@ -8,7 +8,7 @@ import { GameState, ActionType, ActionLog } from '../game/types';
 import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
-import useReplayManager from '../hooks/use-replay-manager';
+import {ReplayManagerContext } from '../hooks/use-replay-manager';
 
 type ReplayProps = {
   id: string;
@@ -81,7 +81,7 @@ const Replay: React.FC<ReplayProps> = props => {
 
 const ReplayContainer: React.FC = () => {
   const { id } = useParams();
-  const { data } = useReplayManager();
+  const { data } = React.useContext(ReplayManagerContext);
 
   if (!id || !data[id]) {
     return <Typography>Replay not found</Typography>;

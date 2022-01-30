@@ -61,8 +61,8 @@ function Home() {
           <ListItem button component={Link} to="/play">
             <ListItemText primary="Start" />
           </ListItem>
-          <ListItem button>
-            <ListItemText primary="Replay" />
+          <ListItem button component={Link} to="/ranking">
+            <ListItemText primary="Ranking" />
           </ListItem>
         </List>
         <Box sx={{ display: 'flex' }}>
