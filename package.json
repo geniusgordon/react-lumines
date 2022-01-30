@@ -1,5 +1,6 @@
 {
   "name": "react-lumines",
+  "homepage": "https://geniusgordon.github.io/react-lumines",
   "version": "0.1.0",
   "engines": {
     "node": "16"
@@ -27,7 +28,9 @@
     "lint": "eslint --fix",
     "prettier": "prettier --write src/",
     "storybook": "start-storybook -p 6006 -s public",
-    "build-storybook": "build-storybook -s public"
+    "build-storybook": "build-storybook -s public",
+    "predeploy": "yarn run build",
+    "deploy": "gh-pages -d build"
   },
   "browserslist": {
     "production": [
@@ -62,6 +65,7 @@
     "@types/uuid": "^8.3.4",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "gh-pages": "^3.2.3",
     "prettier": "^2.5.1",
     "prettier-eslint": "^13.0.0",
     "webpack": "5"
