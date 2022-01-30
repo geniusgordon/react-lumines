@@ -1,7 +1,0 @@
-type Rank @model {
-  id: ID! @isUnique
-  name: String!
-  score: Int!
-  replay: String!
-  fake: Boolean @defaultValue(value: "false")
-}

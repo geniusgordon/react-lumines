@@ -1,52 +1,69 @@
 {
-  "name": "lumines",
-  "homepage": "https://geniusgordon.github.io/react-lumines",
+  "name": "react-lumines",
   "version": "0.1.0",
-  "scripts": {
-    "build": "react-scripts build",
-    "precommit": "lint-staged",
-    "predeploy": "yarn run build",
-    "deploy": "gh-pages -d build",
-    "eject": "react-scripts eject",
-    "lint": "eslint src",
-    "lint:fix": "npm run lint -- --fix",
-    "start": "react-scripts start",
-    "test": "react-scripts test --env=jsdom"
+  "engines": {
+    "node": "16"
   },
+  "private": true,
   "dependencies": {
-    "apollo-client-preset": "^1.0.6",
-    "gh-pages": "^1.1.0",
-    "graphql": "^0.12.3",
-    "graphql-tag": "^2.6.1",
-    "react": "^16.2.0",
-    "react-apollo": "^2.0.4",
-    "react-dom": "^16.2.0",
-    "react-ga": "^2.4.1",
-    "react-redux": "^5.0.6",
-    "react-router-dom": "^4.2.2",
-    "react-scripts": "1.0.17",
-    "reduce-reducers": "^0.1.2",
-    "redux": "^3.7.2",
-    "redux-devtools-extension": "^2.13.2",
-    "styled-components": "^2.4.0"
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@mui/material": "^5.3.0",
+    "polished": "^4.1.3",
+    "random-seed": "^0.3.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-router-dom": "^6.2.1",
+    "react-scripts": "5.0.0",
+    "typescript": "^4.5.5",
+    "uuid": "^8.3.2",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint --fix",
+    "prettier": "prettier --write src/",
+    "storybook": "start-storybook -p 6006 -s public",
+    "build-storybook": "build-storybook -s public"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
-    "eslint": "^4.16.0",
-    "eslint-plugin-babel": "^4.1.2",
-    "eslint-plugin-prettier": "^2.5.0",
-    "husky": "^0.14.3",
-    "lint-staged": "^6.1.0",
-    "prettier": "^1.10.2",
-    "prettier-package-json": "^1.4.0"
-  },
-  "lint-staged": {
-    "package.json": [
-      "prettier-package-json --write",
-      "git add"
-    ],
-    "*.js": [
-      "eslint --fix",
-      "git add"
-    ]
+    "@storybook/addon-actions": "^6.4.14",
+    "@storybook/addon-essentials": "^6.4.14",
+    "@storybook/addon-links": "^6.4.14",
+    "@storybook/builder-webpack5": "^6.4.14",
+    "@storybook/cli": "^6.4.14",
+    "@storybook/manager-webpack5": "^6.4.14",
+    "@storybook/node-logger": "^6.4.14",
+    "@storybook/preset-create-react-app": "^4.0.0",
+    "@storybook/react": "^6.4.14",
+    "@testing-library/jest-dom": "^5.16.1",
+    "@testing-library/react": "^12.1.2",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.4.0",
+    "@types/node": "^17.0.10",
+    "@types/random-seed": "^0.3.3",
+    "@types/react": "^17.0.38",
+    "@types/react-dom": "^17.0.11",
+    "@types/uuid": "^8.3.4",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.5.1",
+    "prettier-eslint": "^13.0.0",
+    "webpack": "5"
   }
 }
