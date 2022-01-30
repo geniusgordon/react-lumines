@@ -32,7 +32,7 @@ function App() {
             '#root': styles,
           }}
         />
-        <BrowserRouter basename="/react-lumines">
+        <BrowserRouter basename={process.env.PUBLIC_URL}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/play" element={<Play />} />
