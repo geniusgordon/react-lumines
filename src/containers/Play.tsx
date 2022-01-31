@@ -13,7 +13,7 @@ import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 
 const Play: React.FC = () => {
-  const { game, dispatch } = usePlayGame();
+  const { game, dispatch, replay } = usePlayGame();
   const { open, onOpen, onClose } = useDisclosure();
 
   const handleRestart = React.useCallback(() => {
@@ -93,12 +93,14 @@ const Play: React.FC = () => {
         onRestart={handleRestart}
         onResume={handleResume}
       />
-      <GameOverMenu
-        open={game.state === GameState.OVER}
-        score={game.score}
-        onClose={handleClose}
-        onRestart={handleRestart}
-      />
+      {replay && (
+        <GameOverMenu
+          open={game.state === GameState.OVER}
+          replay={replay}
+          onClose={handleClose}
+          onRestart={handleRestart}
+        />
+      )}
     </React.StrictMode>
   );
 };

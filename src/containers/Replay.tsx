@@ -4,18 +4,14 @@ import { Typography } from '@mui/material';
 import Game from '../components/Game';
 import { useReplayGame } from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
-import { GameState, ActionType, ActionLog } from '../game/types';
+import { GameState, ActionType, Replay } from '../game/types';
 import { deserializeReplay } from '../game/serializer';
 import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 import { ReplayManagerContext } from '../hooks/use-replay-manager';
 
-type ReplayProps = {
-  id: string;
-  seed: string;
-  actionLogs: ActionLog[];
-};
+type ReplayProps = Replay;
 
 const ReplayGame: React.FC<ReplayProps> = props => {
   const { game, dispatch } = useReplayGame(props);
@@ -72,7 +68,7 @@ const ReplayGame: React.FC<ReplayProps> = props => {
       />
       <GameOverMenu
         open={game.state === GameState.OVER}
-        score={game.score}
+        replay={props}
         onClose={handleClose}
         onRestart={handleRestart}
       />
@@ -100,8 +96,7 @@ export const ReplayByQueryString: React.FC = () => {
     return <Typography>Replay not found</Typography>;
   }
 
-  const { id, seed, actionLogs } = data;
-  return <ReplayGame id={id} seed={seed} actionLogs={actionLogs} />;
+  return <ReplayGame {...data} />;
 };
 
 export const ReplayById: React.FC = () => {
@@ -112,7 +107,5 @@ export const ReplayById: React.FC = () => {
     return <Typography>Replay not found</Typography>;
   }
 
-  const { seed, actionLogs } = data[id];
-
-  return <ReplayGame id={id} seed={seed} actionLogs={actionLogs} />;
+  return <ReplayGame {...data[id]} />;
 };

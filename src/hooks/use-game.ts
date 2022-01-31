@@ -7,6 +7,7 @@ import {
   ActionType,
   GameState,
   ActionLog,
+  Replay,
 } from '../game/types';
 import reducer from '../game/reducer';
 import useGameLoop from './use-game-loop';
@@ -62,6 +63,7 @@ function useGame(args?: UseGameArgs) {
 export function usePlayGame(args?: UseGameArgs) {
   const { actionLogsRef, logAction } = useActionLogger();
   const { saveReplay } = React.useContext(ReplayManagerContext);
+  const [replay, setReplay] = React.useState<Replay | null>(null);
 
   const { game, dispatch } = useGame({
     ...args,
@@ -72,17 +74,19 @@ export function usePlayGame(args?: UseGameArgs) {
 
   React.useEffect(() => {
     if (game.state === GameState.OVER) {
-      saveReplay({
+      const replay = {
         id: game.id,
         seed: game.seed,
         timestamp: new Date(),
         score: game.score,
         actionLogs: actionLogsRef.current,
-      });
+      };
+      saveReplay(replay);
+      setReplay(replay);
     }
   }, [game, actionLogsRef, saveReplay]);
 
-  return { game, dispatch, actionLogsRef };
+  return { game, dispatch, actionLogsRef, replay };
 }
 
 export function useReplayGame({ actionLogs, ...args }: UseReplayGameArgs) {
