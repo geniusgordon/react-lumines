@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { styled } from '@mui/system';
 import {
   Box,
   Container,
@@ -10,6 +11,13 @@ import {
   ListItemText,
 } from '@mui/material';
 import { Palette } from '../constants';
+import GithubLogoSrc from '../assets/github-logo.png';
+
+const GithubLogo = styled('img')({
+  width: 24,
+  height: 24,
+  filter: 'invert(100%)',
+})
 
 type DemoKeyProps = {
   keys: string[];
@@ -49,6 +57,7 @@ function Home() {
       sx={{
         height: '100%',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -78,6 +87,21 @@ function Home() {
           </Box>
         </Box>
       </Paper>
+      <Box
+        component="a"
+        href="https://github.com/geniusgordon/react-lumines"
+        sx={{
+          alignSelf: 'flex-end',
+          display: 'flex',
+          alignItems: 'center',
+          color: 'white',
+          textDecoration: 'none',
+          marginTop: 1,
+        }}
+      >
+        <Typography sx={{ marginRight: 1 }}>open sourced in</Typography>
+        <GithubLogo src={GithubLogoSrc} alt="github" />
+      </Box>
     </Container>
   );
 }
