@@ -3,7 +3,7 @@
   "homepage": "https://geniusgordon.github.io/react-lumines",
   "version": "0.1.0",
   "engines": {
-    "node": "16"
+    "node": ">=14"
   },
   "private": true,
   "dependencies": {
