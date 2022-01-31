@@ -6,7 +6,7 @@ import {
   Paper,
   Typography,
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
   Button,
 } from '@mui/material';
@@ -54,9 +54,8 @@ function Ranking() {
         >
           <List sx={{ marginBottom: 2 }}>
             {ranking.map(r => (
-              <ListItem
+              <ListItemButton
                 key={r.id}
-                button
                 component={Link}
                 to={`/replay/${r.id}`}
               >
@@ -67,7 +66,7 @@ function Ranking() {
                     .substr(0, 19)
                     .replace('T', ' ')}
                 />
-              </ListItem>
+              </ListItemButton>
             ))}
           </List>
         </Box>

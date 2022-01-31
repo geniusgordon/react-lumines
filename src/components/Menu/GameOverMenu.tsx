@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
   DialogTitle,
   Dialog,
@@ -29,12 +29,12 @@ const GameOverMenu: React.FC<GameOverMenuProps> = ({
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>Score: {score}</DialogTitle>
       <List>
-        <ListItem button onClick={onRestart}>
+        <ListItemButton onClick={onRestart}>
           <ListItemText primary="Restart" />
-        </ListItem>
-        <ListItem button onClick={handleBack}>
+        </ListItemButton>
+        <ListItemButton onClick={handleBack}>
           <ListItemText primary="Back" />
-        </ListItem>
+        </ListItemButton>
       </List>
     </Dialog>
   );

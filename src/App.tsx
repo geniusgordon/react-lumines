@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import Home from './containers/Home';
 import Play from './containers/Play';
-import Replay from './containers/Replay';
+import { ReplayById, ReplayByQueryString } from './containers/Replay';
 import Ranking from './containers/Ranking';
 import theme from './theme';
 import { Palette } from './constants';
@@ -32,12 +32,13 @@ function App() {
             '#root': styles,
           }}
         />
-        <BrowserRouter basename={process.env.PUBLIC_URL}>
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/play" element={<Play />} />
             <Route path="/ranking" element={<Ranking />} />
-            <Route path="/replay/:id" element={<Replay />} />
+            <Route path="/replay/:id" element={<ReplayById />} />
+            <Route path="/replay" element={<ReplayByQueryString />} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>

@@ -1,10 +1,11 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import Game from '../components/Game';
 import { useReplayGame } from '../hooks/use-game';
 import useKeyDown from '../hooks/use-key-down';
 import { GameState, ActionType, ActionLog } from '../game/types';
+import { deserializeReplay } from '../game/serializer';
 import { Key } from '../constants';
 import { PauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
@@ -16,7 +17,7 @@ type ReplayProps = {
   actionLogs: ActionLog[];
 };
 
-const Replay: React.FC<ReplayProps> = props => {
+const ReplayGame: React.FC<ReplayProps> = props => {
   const { game, dispatch } = useReplayGame(props);
   const { open, onOpen, onClose } = useDisclosure();
 
@@ -79,7 +80,31 @@ const Replay: React.FC<ReplayProps> = props => {
   );
 };
 
-const ReplayContainer: React.FC = () => {
+export const ReplayByQueryString: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const dataStr = searchParams.get('data');
+
+  const data = React.useMemo(() => {
+    if (!dataStr) {
+      return null;
+    }
+    try {
+      return deserializeReplay(JSON.parse(dataStr));
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }, [dataStr]);
+
+  if (!data) {
+    return <Typography>Replay not found</Typography>;
+  }
+
+  const { id, seed, actionLogs } = data;
+  return <ReplayGame id={id} seed={seed} actionLogs={actionLogs} />;
+};
+
+export const ReplayById: React.FC = () => {
   const { id } = useParams();
   const { data } = React.useContext(ReplayManagerContext);
 
@@ -89,7 +114,5 @@ const ReplayContainer: React.FC = () => {
 
   const { seed, actionLogs } = data[id];
 
-  return <Replay id={id} seed={seed} actionLogs={actionLogs} />;
+  return <ReplayGame id={id} seed={seed} actionLogs={actionLogs} />;
 };
-
-export default ReplayContainer;
