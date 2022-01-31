@@ -1,6 +1,6 @@
 {
   "name": "react-lumines",
-  "homepage": "https://geniusgordon.github.io/react-lumines",
+  "homepage": "https://lumines.vercel.app",
   "version": "0.1.0",
   "engines": {
     "node": ">=14"
