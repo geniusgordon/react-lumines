@@ -17,7 +17,7 @@ const GithubLogo = styled('img')({
   width: 24,
   height: 24,
   filter: 'invert(100%)',
-})
+});
 
 type DemoKeyProps = {
   keys: string[];
