@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   DialogTitle,
   Dialog,
@@ -29,14 +30,20 @@ const PauseMenu: React.FC<PauseMenuProps> = ({
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>Pause</DialogTitle>
       <List>
-        <ListItem button onClick={onResume}>
-          <ListItemText primary="Resume" />
+        <ListItem onClick={onResume}>
+          <ListItemButton>
+            <ListItemText primary="Resume" />
+          </ListItemButton>
         </ListItem>
-        <ListItem button onClick={onRestart}>
-          <ListItemText primary="Restart" />
+        <ListItem onClick={onRestart}>
+          <ListItemButton>
+            <ListItemText primary="Restart" />
+          </ListItemButton>
         </ListItem>
-        <ListItem button onClick={handleBack}>
-          <ListItemText primary="Back" />
+        <ListItem onClick={handleBack}>
+          <ListItemButton>
+            <ListItemText primary="Back" />
+          </ListItemButton>
         </ListItem>
       </List>
     </Dialog>

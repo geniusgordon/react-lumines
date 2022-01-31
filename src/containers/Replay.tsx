@@ -7,7 +7,7 @@ import useKeyDown from '../hooks/use-key-down';
 import { GameState, ActionType, Replay } from '../game/types';
 import { deserializeReplay } from '../game/serializer';
 import { Key } from '../constants';
-import { PauseMenu, GameOverMenu } from '../components/Menu';
+import { ReplayPauseMenu, GameOverMenu } from '../components/Menu';
 import useDisclosure from '../hooks/use-disclosure';
 import { ReplayManagerContext } from '../hooks/use-replay-manager';
 
@@ -60,7 +60,8 @@ const ReplayGame: React.FC<ReplayProps> = props => {
   return (
     <React.StrictMode>
       <Game game={game} />
-      <PauseMenu
+      <ReplayPauseMenu
+        replay={props}
         open={open}
         onClose={handleClose}
         onRestart={handleRestart}

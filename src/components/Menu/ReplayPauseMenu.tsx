@@ -15,15 +15,17 @@ import { MenuProps } from './types';
 import { Replay } from '../../game/types';
 import useShareReplay from '../../hooks/use-share-replay';
 
-export type GameOverMenuProps = MenuProps & {
+export type PauseMenuProps = MenuProps & {
   replay: Replay;
+  onResume: () => void;
   onRestart: () => void;
 };
 
-const GameOverMenu: React.FC<GameOverMenuProps> = ({
-  open,
+const ReplayPauseMenu: React.FC<PauseMenuProps> = ({
   replay,
+  open,
   onClose,
+  onResume,
   onRestart,
 }) => {
   const navigate = useNavigate();
@@ -35,15 +37,20 @@ const GameOverMenu: React.FC<GameOverMenuProps> = ({
 
   return (
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
-      <DialogTitle>Score: {replay.score}</DialogTitle>
+      <DialogTitle>Pause (Score: {replay.score})</DialogTitle>
       <List>
-        <ListItem>
-          <ListItemButton onClick={onRestart}>
+        <ListItem onClick={onResume}>
+          <ListItemButton>
+            <ListItemText primary="Resume" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem onClick={onRestart}>
+          <ListItemButton>
             <ListItemText primary="Restart" />
           </ListItemButton>
         </ListItem>
-        <ListItem>
-          <ListItemButton onClick={handleBack}>
+        <ListItem onClick={handleBack}>
+          <ListItemButton>
             <ListItemText primary="Back" />
           </ListItemButton>
         </ListItem>
@@ -67,4 +74,4 @@ const GameOverMenu: React.FC<GameOverMenuProps> = ({
   );
 };
 
-export default GameOverMenu;
+export default ReplayPauseMenu;

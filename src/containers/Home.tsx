@@ -8,6 +8,7 @@ import {
   Typography,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
 } from '@mui/material';
 import { Palette } from '../constants';
@@ -67,11 +68,15 @@ function Home() {
           Lumines
         </Typography>
         <List sx={{ marginBottom: 2 }}>
-          <ListItem button component={Link} to="/play">
-            <ListItemText primary="Start" />
+          <ListItem>
+            <ListItemButton component={Link} to="/play">
+              <ListItemText primary="Start" />
+            </ListItemButton>
           </ListItem>
-          <ListItem button component={Link} to="/ranking">
-            <ListItemText primary="Ranking" />
+          <ListItem>
+            <ListItemButton component={Link} to="/ranking">
+              <ListItemText primary="Ranking" />
+            </ListItemButton>
           </ListItem>
         </List>
         <Box sx={{ display: 'flex' }}>
