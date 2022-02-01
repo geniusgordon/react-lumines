@@ -1,12 +1,10 @@
 {
   "files": {
-    "main.js": "/react-lumines/static/js/main.75e10bcf.js",
-    "static/js/787.9abef706.chunk.js": "/react-lumines/static/js/787.9abef706.chunk.js",
-    "index.html": "/react-lumines/index.html",
-    "main.75e10bcf.js.map": "/react-lumines/static/js/main.75e10bcf.js.map",
-    "787.9abef706.chunk.js.map": "/react-lumines/static/js/787.9abef706.chunk.js.map"
+    "main.js": "/static/js/main.cc5d5c4e.js",
+    "index.html": "/index.html",
+    "main.cc5d5c4e.js.map": "/static/js/main.cc5d5c4e.js.map"
   },
   "entrypoints": [
-    "static/js/main.75e10bcf.js"
+    "static/js/main.cc5d5c4e.js"
   ]
 }
