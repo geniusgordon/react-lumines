@@ -1,8 +1,8 @@
 {
   "files": {
-    "main.js": "/static/js/main.cc5d5c4e.js",
-    "index.html": "/index.html",
-    "main.cc5d5c4e.js.map": "/static/js/main.cc5d5c4e.js.map"
+    "main.js": "/react-lumines/static/js/main.cc5d5c4e.js",
+    "index.html": "/react-lumines/index.html",
+    "main.cc5d5c4e.js.map": "/react-lumines/static/js/main.cc5d5c4e.js.map"
   },
   "entrypoints": [
     "static/js/main.cc5d5c4e.js"
