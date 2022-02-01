@@ -68,12 +68,12 @@ function Home() {
           Lumines
         </Typography>
         <List sx={{ marginBottom: 2 }}>
-          <ListItem>
+          <ListItem disablePadding>
             <ListItemButton component={Link} to="/play">
               <ListItemText primary="Start" />
             </ListItemButton>
           </ListItem>
-          <ListItem>
+          <ListItem disablePadding>
             <ListItemButton component={Link} to="/ranking">
               <ListItemText primary="Ranking" />
             </ListItemButton>

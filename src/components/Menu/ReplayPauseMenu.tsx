@@ -39,17 +39,17 @@ const ReplayPauseMenu: React.FC<PauseMenuProps> = ({
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>Pause (Score: {replay.score})</DialogTitle>
       <List>
-        <ListItem onClick={onResume}>
+        <ListItem disablePadding onClick={onResume}>
           <ListItemButton>
             <ListItemText primary="Resume" />
           </ListItemButton>
         </ListItem>
-        <ListItem onClick={onRestart}>
+        <ListItem disablePadding onClick={onRestart}>
           <ListItemButton>
             <ListItemText primary="Restart" />
           </ListItemButton>
         </ListItem>
-        <ListItem onClick={handleBack}>
+        <ListItem disablePadding onClick={handleBack}>
           <ListItemButton>
             <ListItemText primary="Back" />
           </ListItemButton>

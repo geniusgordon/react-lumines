@@ -37,12 +37,12 @@ const GameOverMenu: React.FC<GameOverMenuProps> = ({
     <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>Score: {replay.score}</DialogTitle>
       <List>
-        <ListItem>
+        <ListItem disablePadding>
           <ListItemButton onClick={onRestart}>
             <ListItemText primary="Restart" />
           </ListItemButton>
         </ListItem>
-        <ListItem>
+        <ListItem disablePadding>
           <ListItemButton onClick={handleBack}>
             <ListItemText primary="Back" />
           </ListItemButton>
