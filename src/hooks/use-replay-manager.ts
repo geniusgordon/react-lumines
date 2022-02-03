@@ -32,36 +32,44 @@ function useReplayManager() {
         });
         setData(byId);
       } catch (error) {
-        console.log('parse error');
+        console.log('parse error:', error);
       }
     }
   }, []);
 
-  const saveReplay = React.useCallback((replay: Replay) => {
-    setData(data => ({
-      ...data,
-      [replay.id]: replay,
-    }));
-  }, []);
-
-  const deleteReplay = React.useCallback((itemId: string) => {
-    setData(data => {
-      const newData: ReplayManager = {};
-      Object.keys(data).forEach(id => {
-        if (id === itemId) {
-          return;
-        }
-        newData[id] = data[id];
-      });
-      return newData;
-    });
-  }, []);
-
-  React.useEffect(() => {
+  const updateLocalStorage = React.useCallback(() => {
     const replays = Object.values(data);
     const sReplays = replays.map(serializeReplay);
     localStorage.setItem(KEY, JSON.stringify(sReplays));
   }, [data]);
+
+  const saveReplay = React.useCallback(
+    (replay: Replay) => {
+      setData(data => ({
+        ...data,
+        [replay.id]: replay,
+      }));
+      updateLocalStorage();
+    },
+    [updateLocalStorage],
+  );
+
+  const deleteReplay = React.useCallback(
+    (itemId: string) => {
+      setData(data => {
+        const newData: ReplayManager = {};
+        Object.keys(data).forEach(id => {
+          if (id === itemId) {
+            return;
+          }
+          newData[id] = data[id];
+        });
+        return newData;
+      });
+      updateLocalStorage();
+    },
+    [updateLocalStorage],
+  );
 
   return { data, saveReplay, deleteReplay };
 }

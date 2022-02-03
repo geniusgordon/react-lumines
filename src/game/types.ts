@@ -146,7 +146,7 @@ export type SerializedReplay = [
   string, // seed
   string, // timestamp
   number, // score
-  SerializedActionLog[],
+  string, // SerializedActionLog[],
 ];
 
 export type Replay = {

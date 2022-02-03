@@ -1,55 +1,61 @@
-import {
-  ActionLog,
-  ActionType,
-  ActionTypeMap,
-  Replay,
-  SerializedAction,
-  SerializedActionLog,
-  SerializedReplay,
-} from './types';
+import { ActionLog, ActionType, Replay, SerializedReplay } from './types';
 
-export function serializeAction(action: ActionLog['action']): SerializedAction {
+export function serializeAction(action: ActionLog['action']): string {
   switch (action.type) {
     case ActionType.MOVE:
+      return action.payload < 0 ? '1' : '2';
     case ActionType.ROTATE:
-      return [ActionTypeMap[action.type], action.payload];
+      return action.payload < 0 ? '3' : '4';
     case ActionType.DROP:
-      return [ActionTypeMap[action.type]];
+      return '5';
   }
 }
 
-export function deserializeAction(s: SerializedAction): ActionLog['action'] {
-  if (
-    s[0] === ActionTypeMap[ActionType.MOVE] ||
-    s[0] === ActionTypeMap[ActionType.ROTATE]
-  ) {
-    return {
-      type: ActionTypeMap[s[0]],
-      payload: s[1],
-    };
+export function deserializeAction(str: string): ActionLog['action'] {
+  const type = parseInt(str) - 1;
+  switch (Math.floor(type / 2)) {
+    case 0:
+      return {
+        type: ActionType.MOVE,
+        payload: type % 2 === 0 ? -1 : 1,
+      };
+    case 1:
+      return {
+        type: ActionType.ROTATE,
+        payload: type % 2 === 0 ? -1 : 1,
+      };
+    default:
+      return {
+        type: ActionType.DROP,
+      };
   }
-  return {
-    type: ActionTypeMap[s[0]],
-  };
 }
 
-export function serializeActionLogs(
-  actionLogs: ActionLog[],
-): SerializedActionLog[] {
-  return actionLogs.map(a => {
+export function serializeActionLogs(actionLogs: ActionLog[]): string {
+  const logs: number[] = actionLogs.map(a => {
     const sa = serializeAction(a.action);
-    return [sa, a.timestamp];
+    return parseInt([sa, Math.floor(a.timestamp / 20)].join(''));
   });
+  const arr = Array.from(new Uint8Array(new Uint16Array(logs).buffer));
+  const str = String.fromCharCode.apply(null, arr);
+  return btoa(str);
 }
 
-export function deserializeActionLogs(
-  sLogs: SerializedActionLog[],
-): ActionLog[] {
-  return sLogs.map(s => {
-    const action = deserializeAction(s[0]);
+export function deserializeActionLogs(str: string): ActionLog[] {
+  const buf = new Uint16Array(
+    new Uint8Array(
+      atob(str)
+        .split('')
+        .map(c => c.charCodeAt(0)),
+    ).buffer,
+  );
+  const sLogs = Array.from(buf);
+  return sLogs.map(a => {
+    const str = a.toString();
+    const action = deserializeAction(str.substring(0, 1));
     return {
       action,
-      timestamp: s[1],
+      timestamp: parseInt(str.substring(1)) * 20,
     };
   });
 }
