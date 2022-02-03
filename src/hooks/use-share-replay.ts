@@ -8,7 +8,10 @@ function useShareReplay(replay: Replay) {
   const handleShare = React.useCallback(() => {
     const sReplay = serializeReplay(replay);
     const dataStr = JSON.stringify([0, sReplay[1], 0, sReplay[3], sReplay[4]]);
-    const url = `${window.location.host}/replay?data=${dataStr}`;
+    const { protocol, host } = window.location;
+    const url = `${protocol}//${host}/replay?data=${encodeURIComponent(
+      dataStr,
+    )}`;
     navigator.clipboard.writeText(url);
     shareSnackBar.onOpen();
   }, [shareSnackBar, replay]);
