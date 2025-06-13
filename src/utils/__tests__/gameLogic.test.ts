@@ -1,0 +1,410 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  createEmptyBoard,
+  rotateBlockPattern,
+  getRotatedPattern,
+  isValidPosition,
+  placeBlockOnBoard,
+  findDropPosition,
+  generateRandomBlock,
+  detectRectangles,
+  clearRectanglesAndApplyGravity,
+  applyGravity,
+  calculateScore,
+  isGameOver,
+  copyBoard,
+  debugBoard
+} from '../gameLogic';
+import { SeededRNG } from '../seededRNG';
+import type { Block, GameBoard, CellValue } from '../../types/game';
+import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
+
+describe('Game Logic', () => {
+  describe('Board operations', () => {
+    it('should create empty board with correct dimensions', () => {
+      const board = createEmptyBoard();
+      expect(board).toHaveLength(BOARD_HEIGHT);
+      expect(board[0]).toHaveLength(BOARD_WIDTH);
+      
+      // All cells should be empty (0)
+      for (let y = 0; y < BOARD_HEIGHT; y++) {
+        for (let x = 0; x < BOARD_WIDTH; x++) {
+          expect(board[y][x]).toBe(0);
+        }
+      }
+    });
+
+    it('should copy board correctly', () => {
+      const board = createEmptyBoard();
+      board[1][1] = 1;
+      board[2][2] = 2;
+      
+      const copy = copyBoard(board);
+      expect(copy).toEqual(board);
+      
+      // Ensure it's a deep copy
+      copy[3][3] = 1;
+      expect(board[3][3]).toBe(0);
+    });
+
+    it('should detect game over condition', () => {
+      const board = createEmptyBoard();
+      expect(isGameOver(board)).toBe(false);
+      
+      // Place block in top row
+      board[0][5] = 1;
+      expect(isGameOver(board)).toBe(true);
+    });
+  });
+
+  describe('Block rotation', () => {
+    it('should rotate 2x2 pattern clockwise', () => {
+      const pattern: CellValue[][] = [
+        [1, 2],
+        [0, 1]
+      ];
+      
+      const rotated = rotateBlockPattern(pattern, true);
+      const expected: CellValue[][] = [
+        [0, 1],
+        [1, 2]
+      ];
+      
+      expect(rotated).toEqual(expected);
+    });
+
+    it('should rotate 2x2 pattern counter-clockwise', () => {
+      const pattern: CellValue[][] = [
+        [1, 2],
+        [0, 1]
+      ];
+      
+      const rotated = rotateBlockPattern(pattern, false);
+      const expected: CellValue[][] = [
+        [2, 1],
+        [1, 0]
+      ];
+      
+      expect(rotated).toEqual(expected);
+    });
+
+    it('should get rotated pattern for block', () => {
+      const block: Block = {
+        pattern: [[1, 2], [0, 1]] as CellValue[][],
+        rotation: 0,
+        id: 'test'
+      };
+      
+      const rotated = getRotatedPattern(block, 1);
+      const expected: CellValue[][] = [
+        [0, 1],
+        [1, 2]
+      ];
+      
+      expect(rotated).toEqual(expected);
+    });
+  });
+
+  describe('Position validation', () => {
+    let board: GameBoard;
+    let block: Block;
+
+    beforeEach(() => {
+      board = createEmptyBoard();
+      block = {
+        pattern: [[1, 1], [1, 1]],
+        rotation: 0,
+        id: 'test'
+      };
+    });
+
+    it('should validate valid positions', () => {
+      expect(isValidPosition(board, block, { x: 0, y: 0 })).toBe('valid');
+      expect(isValidPosition(board, block, { x: 7, y: 4 })).toBe('valid');
+      expect(isValidPosition(board, block, { x: 14, y: 8 })).toBe('valid');
+    });
+
+    it('should detect out of bounds positions', () => {
+      expect(isValidPosition(board, block, { x: -1, y: 0 })).toBe('out_of_bounds');
+      expect(isValidPosition(board, block, { x: 15, y: 0 })).toBe('out_of_bounds');
+      expect(isValidPosition(board, block, { x: 0, y: -1 })).toBe('out_of_bounds');
+      expect(isValidPosition(board, block, { x: 0, y: 9 })).toBe('out_of_bounds');
+    });
+
+    it('should detect collisions with existing blocks', () => {
+      board[1][1] = 2;
+      expect(isValidPosition(board, block, { x: 0, y: 0 })).toBe('collision');
+    });
+
+    it('should validate with rotation', () => {
+      const tallBlock: Block = {
+        pattern: [[1, 2], [0, 1]],
+        rotation: 0,
+        id: 'tall'
+      };
+      
+      expect(isValidPosition(board, tallBlock, { x: 0, y: 0 }, 1)).toBe('valid');
+    });
+  });
+
+  describe('Block placement', () => {
+    let board: GameBoard;
+    let block: Block;
+
+    beforeEach(() => {
+      board = createEmptyBoard();
+      block = {
+        pattern: [[1, 2], [1, 2]],
+        rotation: 0,
+        id: 'test'
+      };
+    });
+
+    it('should place block on board', () => {
+      const newBoard = placeBlockOnBoard(board, block, { x: 5, y: 3 });
+      
+      expect(newBoard[3][5]).toBe(1);
+      expect(newBoard[3][6]).toBe(2);
+      expect(newBoard[4][5]).toBe(1);
+      expect(newBoard[4][6]).toBe(2);
+      
+      // Original board should be unchanged
+      expect(board[3][5]).toBe(0);
+    });
+
+    it('should find correct drop position', () => {
+      board[8][5] = 1; // Obstacle at bottom
+      
+      const dropPos = findDropPosition(board, block, { x: 5, y: 0 });
+      expect(dropPos).toEqual({ x: 5, y: 6 }); // Should stop above obstacle
+    });
+
+    it('should drop to bottom when no obstacles', () => {
+      const dropPos = findDropPosition(board, block, { x: 5, y: 0 });
+      expect(dropPos).toEqual({ x: 5, y: 8 }); // Bottom of board
+    });
+  });
+
+  describe('Random block generation', () => {
+    it('should generate deterministic blocks', () => {
+      const rng1 = new SeededRNG(12345);
+      const rng2 = new SeededRNG(12345);
+      
+      const block1 = generateRandomBlock(rng1);
+      const block2 = generateRandomBlock(rng2);
+      
+      expect(block1.pattern).toEqual(block2.pattern);
+      expect(block1.id).toBe(block2.id);
+    });
+
+    it('should generate valid blocks', () => {
+      const rng = new SeededRNG(12345);
+      
+      for (let i = 0; i < 50; i++) {
+        const block = generateRandomBlock(rng);
+        
+        expect(block.pattern).toHaveLength(2);
+        expect(block.pattern[0]).toHaveLength(2);
+        expect(block.rotation).toBe(0);
+        expect(block.id).toHaveLength(8);
+        
+        // Pattern should contain valid cell values
+        for (let y = 0; y < 2; y++) {
+          for (let x = 0; x < 2; x++) {
+            expect([1, 2]).toContain(block.pattern[y][x]);
+          }
+        }
+      }
+    });
+  });
+
+  describe('Rectangle detection', () => {
+    let board: GameBoard;
+
+    beforeEach(() => {
+      board = createEmptyBoard();
+    });
+
+    it('should detect 2x2 rectangle', () => {
+      // Create 2x2 rectangle of light blocks
+      board[5][5] = 1;
+      board[5][6] = 1;
+      board[6][5] = 1;
+      board[6][6] = 1;
+      
+      const rectangles = detectRectangles(board);
+      expect(rectangles).toHaveLength(1);
+      expect(rectangles[0]).toEqual({
+        x: 5,
+        y: 5,
+        width: 2,
+        height: 2,
+        color: 1
+      });
+    });
+
+    it('should detect larger rectangle', () => {
+      // Create 3x2 rectangle
+      for (let y = 3; y < 5; y++) {
+        for (let x = 2; x < 5; x++) {
+          board[y][x] = 2;
+        }
+      }
+      
+      const rectangles = detectRectangles(board);
+      expect(rectangles).toHaveLength(1);
+      expect(rectangles[0]).toEqual({
+        x: 2,
+        y: 3,
+        width: 3,
+        height: 2,
+        color: 2
+      });
+    });
+
+    it('should detect multiple rectangles', () => {
+      // Rectangle 1
+      board[1][1] = 1;
+      board[1][2] = 1;
+      board[2][1] = 1;
+      board[2][2] = 1;
+      
+      // Rectangle 2
+      board[5][5] = 2;
+      board[5][6] = 2;
+      board[6][5] = 2;
+      board[6][6] = 2;
+      
+      const rectangles = detectRectangles(board);
+      expect(rectangles).toHaveLength(2);
+    });
+
+    it('should not detect non-rectangular shapes', () => {
+      // L-shape (not a rectangle)
+      board[3][3] = 1;
+      board[3][4] = 1;
+      board[4][3] = 1;
+      
+      const rectangles = detectRectangles(board);
+      expect(rectangles).toHaveLength(0);
+    });
+
+    it('should ignore rectangles smaller than 2x2', () => {
+      // Single cell
+      board[3][3] = 1;
+      
+      const rectangles = detectRectangles(board);
+      expect(rectangles).toHaveLength(0);
+    });
+  });
+
+  describe('Gravity and clearing', () => {
+    let board: GameBoard;
+
+    beforeEach(() => {
+      board = createEmptyBoard();
+    });
+
+    it('should apply gravity correctly', () => {
+      board[5][3] = 1;
+      board[7][3] = 2;
+      board[2][5] = 1;
+      
+      const newBoard = applyGravity(board);
+      
+      // Column 3: blocks should fall to bottom
+      expect(newBoard[8][3]).toBe(1); // Was at 7, now at bottom
+      expect(newBoard[9][3]).toBe(2); // Was at 5, now at bottom
+      expect(newBoard[5][3]).toBe(0); // Original position cleared
+      expect(newBoard[7][3]).toBe(0); // Original position cleared
+      
+      // Column 5: single block should fall
+      expect(newBoard[9][5]).toBe(1);
+      expect(newBoard[2][5]).toBe(0);
+    });
+
+    it('should clear rectangles and apply gravity', () => {
+      // Create floating blocks above a rectangle
+      board[2][5] = 1;
+      board[3][5] = 2;
+      
+      // Create rectangle that will be cleared
+      board[7][5] = 1;
+      board[7][6] = 1;
+      board[8][5] = 1;
+      board[8][6] = 1;
+      
+      const rectangles = [{
+         x: 5,
+         y: 7,
+         width: 2,
+         height: 2,
+         color: 1 as CellValue
+       }];
+      
+      const { newBoard, clearedCells } = clearRectanglesAndApplyGravity(board, rectangles);
+
+      expect(clearedCells).toBe(4);
+      
+      // Rectangle should be cleared
+      expect(newBoard[7][5]).toBe(0);
+      expect(newBoard[8][6]).toBe(0);
+      
+      // Floating blocks should fall
+      expect(newBoard[8][5]).toBe(1); // Was at 3, fell down
+      expect(newBoard[9][5]).toBe(2); // Was at 2, fell to bottom
+    });
+  });
+
+  describe('Scoring', () => {
+    it('should calculate score for 2x2 rectangle', () => {
+      const rectangles = [{
+        x: 0,
+        y: 0,
+        width: 2,
+        height: 2,
+        color: 1 as CellValue
+      }];
+      
+      expect(calculateScore(rectangles)).toBe(1); // (2-1) * (2-1) = 1
+    });
+
+    it('should calculate score for 3x2 rectangle', () => {
+      const rectangles = [{
+        x: 0,
+        y: 0,
+        width: 3,
+        height: 2,
+        color: 1 as CellValue
+      }];
+      
+      expect(calculateScore(rectangles)).toBe(2); // (3-1) * (2-1) = 2
+    });
+
+    it('should calculate score for 3x3 rectangle', () => {
+      const rectangles = [{
+        x: 0,
+        y: 0,
+        width: 3,
+        height: 3,
+        color: 1 as CellValue
+      }];
+      
+      expect(calculateScore(rectangles)).toBe(4); // (3-1) * (3-1) = 4
+    });
+
+    it('should calculate score for multiple rectangles', () => {
+      const rectangles = [
+        { x: 0, y: 0, width: 2, height: 2, color: 1 as CellValue }, // 1 point
+        { x: 5, y: 5, width: 4, height: 2, color: 2 as CellValue }, // 3 points
+        { x: 10, y: 3, width: 3, height: 3, color: 1 as CellValue } // 4 points
+      ];
+      
+      expect(calculateScore(rectangles)).toBe(8); // 1 + 3 + 4 = 8
+    });
+
+    it('should return 0 for no rectangles', () => {
+      expect(calculateScore([])).toBe(0);
+    });
+  });
+}); 
