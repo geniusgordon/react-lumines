@@ -12,8 +12,7 @@ import {
   applyGravity,
   calculateScore,
   isGameOver,
-  copyBoard,
-  debugBoard
+  copyBoard
 } from '../gameLogic';
 import { SeededRNG } from '../seededRNG';
 import type { Block, GameBoard, CellValue } from '../../types/game';

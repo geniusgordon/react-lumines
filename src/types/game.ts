@@ -213,15 +213,21 @@ export interface UseSeededRNGReturn {
 
 // Error types
 export class GameError extends Error {
-  constructor(message: string, public code: string) {
+  code: string;
+  
+  constructor(message: string, code: string) {
     super(message);
     this.name = 'GameError';
+    this.code = code;
   }
 }
 
 export class ReplayError extends Error {
-  constructor(message: string, public code: string) {
+  code: string;
+  
+  constructor(message: string, code: string) {
     super(message);
     this.name = 'ReplayError';
+    this.code = code;
   }
 } 
