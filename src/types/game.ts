@@ -79,7 +79,7 @@ export interface GameState {
   // Core game data
   board: GameBoard;
   currentBlock: Block;
-  nextBlock: Block;
+  queue: Block[];
   blockPosition: Position;
 
   // Game flow
@@ -163,11 +163,11 @@ export interface GameBoardProps {
   currentBlock: Block;
   blockPosition: Position;
   timeline: Timeline;
+  queue: Block[];
 }
 
 export interface BlockProps {
   block: Block;
-  position: Position;
 }
 
 export interface GridCellProps {
@@ -178,6 +178,15 @@ export interface GridCellProps {
 
 export interface TimelineProps {
   timeline: Timeline;
+}
+
+export interface QueueProps {
+  queue: Block[];
+}
+
+export interface ScoreDisplayProps {
+  score: number;
+  timeRemaining: number;
 }
 
 // Hook return types

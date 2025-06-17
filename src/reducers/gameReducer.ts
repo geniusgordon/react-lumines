@@ -27,13 +27,18 @@ export function createInitialGameState(
 ): GameState {
   const rng = new SeededRNG(seed);
   const currentBlock = generateRandomBlock(rng);
-  const nextBlock = generateRandomBlock(rng);
+  // Initialize queue with multiple blocks for preview
+  const queue = [
+    generateRandomBlock(rng),
+    generateRandomBlock(rng),
+    generateRandomBlock(rng),
+  ];
 
   return {
     // Core game data
     board: createEmptyBoard(),
     currentBlock,
-    nextBlock,
+    queue,
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
 
     // Game flow
@@ -341,8 +346,10 @@ function placeCurrentBlock(
     };
   }
 
-  // Generate next block
-  const nextNextBlock = generateRandomBlock(rng);
+  // Move first block from queue to current, add new block to end of queue
+  const [nextBlock, ...remainingQueue] = state.queue;
+  const newBlock = generateRandomBlock(rng);
+  const newQueue = [...remainingQueue, newBlock];
 
   // Check for rectangles to clear
   const rectangles = detectRectangles(newBoard);
@@ -365,8 +372,8 @@ function placeCurrentBlock(
   return {
     ...state,
     board: finalBoard,
-    currentBlock: state.nextBlock,
-    nextBlock: nextNextBlock,
+    currentBlock: nextBlock,
+    queue: newQueue,
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
     score,
     rectanglesCleared,

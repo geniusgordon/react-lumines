@@ -12,7 +12,7 @@ App
 │   │   ├── GridCell (board positions)
 │   │   └── Timeline (sweep line)
 │   ├── ScoreDisplay
-│   ├── NextBlockPreview
+│   ├── BlockQueue (preview multiple upcoming blocks)
 │   └── Controls
 ├── StartScreen
 ├── GameOverScreen
@@ -53,7 +53,7 @@ useReplay(replayData); // Playback functionality
 interface GameState {
   board: number[][]; // 2D grid (0=empty, 1=light, 2=dark)
   currentBlock: Block; // Falling piece
-  nextBlock: Block; // Preview piece
+  queue: Block[]; // Preview blocks queue
   position: { x: number; y: number }; // Current block position
   score: number; // Player score
   frame: number; // Current frame counter

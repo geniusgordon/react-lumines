@@ -6,15 +6,10 @@ import type { GridCellProps } from '../../types/game';
  * Each cell can be empty (0), light (1), or dark (2)
  * Supports timeline highlighting for sweep animation
  */
-export const GridCell: React.FC<GridCellProps> = ({
-  value,
-  x,
-  y,
-  className = '',
-}) => {
+export const GridCell: React.FC<GridCellProps> = ({ value, x, y }) => {
   const getCellClass = () => {
     const baseClasses =
-      'w-6 h-6 border border-solid border-game-grid box-border transition-all duration-100 ease-in-out relative';
+      'w-block-size h-block-size border border-solid border-game-grid box-border transition-all duration-100 ease-in-out relative';
 
     // Color classes based on cell value
     let colorClasses = '';
@@ -26,16 +21,10 @@ export const GridCell: React.FC<GridCellProps> = ({
       colorClasses = 'bg-block-orange opacity-100';
     }
 
-    const timelineClasses = className.includes('timeline')
-      ? 'animate-[timeline-pulse_0.3s_ease-in-out] z-[1]'
-      : '';
-
-    return `${baseClasses} ${colorClasses} ${timelineClasses} ${className}`.trim();
+    return `${baseClasses} ${colorClasses}`.trim();
   };
 
   return (
     <div className={getCellClass()} data-x={x} data-y={y} data-value={value} />
   );
 };
-
-export default GridCell;

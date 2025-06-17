@@ -3,6 +3,8 @@ export { GridCell } from './GridCell';
 export { Block } from './Block';
 export { GameBoard } from './GameBoard';
 export { Timeline } from './Timeline';
+export { Queue } from './Queue';
+export { ScoreDisplay } from './ScoreDisplay';
 
 // Export types
 export type {
@@ -10,4 +12,6 @@ export type {
   BlockProps,
   GameBoardProps,
   TimelineProps,
+  QueueProps,
+  ScoreDisplayProps,
 } from '../types/game';

@@ -3,6 +3,8 @@ import type { GameBoardProps } from '../../types/game';
 import { GridCell } from '../GridCell';
 import { Block } from '../Block';
 import { Timeline } from '../Timeline';
+import { Queue } from '../Queue';
+import { ScoreDisplay } from '../ScoreDisplay';
 import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
 
 /**
@@ -14,6 +16,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   currentBlock,
   blockPosition,
   timeline,
+  queue,
 }) => {
   const renderBoard = () => {
     const cells = [];
@@ -32,10 +35,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className="bg-game-background relative inline-block pt-8">
+    <div className="bg-game-background relative mt-8 inline-block">
       <div
-        className={`bg-game-background border-game-grid relative grid h-60 w-96 gap-0 border`}
+        className="absolute top-0 z-10"
+        style={{ left: 'calc(-3 * var(--spacing-block-size))' }}
+      >
+        <Queue queue={queue} />
+      </div>
+      <div
+        className={`bg-game-background border-game-grid relative grid gap-0 border`}
         style={{
+          width: `calc(${BOARD_WIDTH} * var(--spacing-block-size))`,
+          height: `calc(${BOARD_HEIGHT} * var(--spacing-block-size))`,
           gridTemplateColumns: `repeat(${BOARD_WIDTH}, var(--spacing-block-size))`,
           gridTemplateRows: `repeat(${BOARD_HEIGHT}, var(--spacing-block-size))`,
         }}
@@ -43,13 +54,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         {renderBoard()}
 
         {currentBlock && (
-          <Block block={currentBlock} position={blockPosition} />
+          <div
+            className="pointer-events-none absolute z-10"
+            style={{
+              left: `calc(${blockPosition.x} * var(--spacing-block-size))`,
+              top: `calc(${blockPosition.y} * var(--spacing-block-size))`,
+            }}
+          >
+            <Block block={currentBlock} />
+          </div>
         )}
 
         <Timeline timeline={timeline} />
       </div>
+      <div
+        className="absolute top-0 right-0 z-10"
+        style={{
+          transform: 'translateX(calc(100% + var(--spacing-block-size)))',
+        }}
+      >
+        <ScoreDisplay score={100} timeRemaining={60} />
+      </div>
     </div>
   );
 };
-
-export default GameBoard;

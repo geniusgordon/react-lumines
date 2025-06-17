@@ -1,1 +1,2 @@
-export { default as Timeline } from './Timeline'; 
+export { Timeline } from './Timeline';
+export type { TimelineProps } from '../../types/game';

@@ -44,6 +44,24 @@ function App() {
     id: 'demo-block',
   };
 
+  const demoQueue: Block[] = [
+    {
+      pattern: BLOCK_PATTERNS[0] as [[1, 2], [2, 1]], // Diagonal pattern
+      rotation: 0,
+      id: 'demo-block-1',
+    },
+    {
+      pattern: BLOCK_PATTERNS[1] as [[1, 2], [2, 1]], // Diagonal pattern
+      rotation: 0,
+      id: 'demo-block-2',
+    },
+    {
+      pattern: BLOCK_PATTERNS[2] as [[1, 2], [2, 1]], // Diagonal pattern
+      rotation: 0,
+      id: 'demo-block-3',
+    },
+  ];
+
   const demoPosition: Position = { x: 7, y: 2 };
 
   const demoTimeline: Timeline = {
@@ -66,6 +84,7 @@ function App() {
           currentBlock={demoBlock}
           blockPosition={demoPosition}
           timeline={demoTimeline}
+          queue={demoQueue}
         />
       </div>
     </div>

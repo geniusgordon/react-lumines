@@ -37,7 +37,9 @@ describe('Game Reducer', () => {
       const state2 = createInitialGameState(12345);
 
       expect(state1.currentBlock.pattern).toEqual(state2.currentBlock.pattern);
-      expect(state1.nextBlock.pattern).toEqual(state2.nextBlock.pattern);
+      expect(state1.queue[0].pattern).toEqual(state2.queue[0].pattern);
+      expect(state1.queue[1].pattern).toEqual(state2.queue[1].pattern);
+      expect(state1.queue[2].pattern).toEqual(state2.queue[2].pattern);
     });
   });
 
