@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { GridCellProps } from '../../types/game';
+import type { GridCellProps } from '@/types/game';
 
 /**
  * GridCell represents a single cell in the game board

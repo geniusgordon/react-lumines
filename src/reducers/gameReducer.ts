@@ -2,8 +2,8 @@ import {
   GAME_CONFIG,
   DEFAULT_VALUES,
   TIME_ATTACK_CONFIG,
-} from '../constants/gameConfig';
-import type { GameState, GameAction } from '../types/game';
+} from '@/constants/gameConfig';
+import type { GameState, GameAction } from '@/types/game';
 import {
   createEmptyBoard,
   generateRandomBlock,
@@ -16,8 +16,8 @@ import {
   isGameOver,
   getRotatedPattern,
   applyGravity,
-} from '../utils/gameLogic';
-import { SeededRNG } from '../utils/seededRNG';
+} from '@/utils/gameLogic';
+import { SeededRNG } from '@/utils/seededRNG';
 
 /**
  * Create initial game state

@@ -1,18 +1,22 @@
+/**
+ * Game Logic - Core game mechanics for Lumines
+ */
+
 import {
   BOARD_WIDTH,
   BOARD_HEIGHT,
   BLOCK_PATTERNS,
-} from '../constants/gameConfig';
+} from '@/constants/gameConfig';
 import type {
-  Block,
-  BlockPattern,
   GameBoard,
+  Block,
   Position,
-  Rotation,
   CellValue,
   Rectangle,
+  BlockPattern,
+  Rotation,
   ValidMove,
-} from '../types/game';
+} from '@/types/game';
 
 import { SeededRNG } from './seededRNG';
 

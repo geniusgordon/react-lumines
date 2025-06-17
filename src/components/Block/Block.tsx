@@ -1,6 +1,7 @@
 import React from 'react';
 
-import type { BlockProps } from '../../types/game';
+import type { BlockProps } from '@/types/game';
+
 import { GridCell } from '../GridCell';
 
 /**

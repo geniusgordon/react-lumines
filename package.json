@@ -30,6 +30,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.0.3",
     "@types/random-seed": "^0.3.5",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

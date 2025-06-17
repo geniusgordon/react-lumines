@@ -1,2 +1,2 @@
 export { Block } from './Block';
-export type { BlockProps } from '../../types/game';
+export type { BlockProps } from '@/types/game';

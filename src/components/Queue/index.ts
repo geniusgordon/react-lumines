@@ -1,2 +1,2 @@
 export { Queue } from './Queue';
-export type { QueueProps } from '../../types/game';
+export type { QueueProps } from '@/types/game';

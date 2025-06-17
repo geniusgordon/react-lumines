@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 
-import { gameReducer, createInitialGameState } from '../reducers/gameReducer';
-import type { GameAction, CellValue, GameActionType } from '../types/game';
-import { detectRectangles, calculateScore } from '../utils/gameLogic';
-import { SeededRNG } from '../utils/seededRNG';
+import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
+import type { GameAction, CellValue, GameActionType } from '@/types/game';
+import { detectRectangles, calculateScore } from '@/utils/gameLogic';
+import { SeededRNG } from '@/utils/seededRNG';
 
 describe('Integration Tests', () => {
   describe('End-to-end game simulation', () => {
@@ -151,7 +151,7 @@ describe('Integration Tests', () => {
       // Activate timeline
       currentState = {
         ...currentState,
-        timeline: { x: 0, speed: 2, active: true },
+        timeline: { x: 0, speed: 2, active: true, rectanglesCleared: 0 },
       };
 
       // Advance timeline through multiple ticks

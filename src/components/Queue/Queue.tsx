@@ -1,6 +1,7 @@
 import React from 'react';
 
-import type { QueueProps } from '../../types/game';
+import type { QueueProps } from '@/types/game';
+
 import { Block } from '../Block';
 
 /**

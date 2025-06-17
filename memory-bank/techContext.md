@@ -13,7 +13,7 @@
 
 - **Node.js**: Latest LTS version
 - **pnpm**: Package manager (faster than npm)
-- **ESLint**: Code linting and style enforcement
+- **ESLint**: Code linting and style enforcement (with import plugin)
 - **Modern browser**: ES6+ features required
 
 ## Project Structure
@@ -45,6 +45,62 @@ react-lumines/
 └── memory-bank/           # Project documentation
 ```
 
+## Import Alias Configuration
+
+### @ Alias Setup
+
+The project uses `@/` as an alias for the `src/` directory to enable cleaner imports.
+
+**Usage Examples:**
+```typescript
+// Instead of: import { BOARD_WIDTH } from '../../constants/gameConfig';
+import { BOARD_WIDTH } from '@/constants/gameConfig';
+
+// Instead of: import type { GameState } from '../../../types/game';
+import type { GameState } from '@/types/game';
+```
+
+**Configuration Files:**
+
+1. **TypeScript (`tsconfig.app.json`)**:
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+}
+```
+
+2. **Vite (`vite.config.ts`)**:
+```typescript
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), 'src'),
+    },
+  },
+});
+```
+
+3. **ESLint (`eslint.config.js`)**:
+```javascript
+settings: {
+  'import/resolver': {
+    'typescript': {
+      'alwaysTryTypes': true,
+      'project': './tsconfig.json'
+    },
+    'alias': {
+      'map': [['@', './src']],
+      'extensions': ['.ts', '.tsx', '.js', '.jsx']
+    }
+  }
+}
+```
+
 ## Dependencies
 
 ### Production Dependencies
@@ -62,10 +118,13 @@ react-lumines/
 {
   "@types/react": "^18.x",
   "@types/react-dom": "^18.x",
+  "@types/node": "^24.x",
   "@vitejs/plugin-react": "^4.x",
   "typescript": "^5.x",
   "vite": "^5.x",
   "eslint": "^8.x",
+  "eslint-plugin-import": "^2.x",
+  "eslint-import-resolver-typescript": "^4.x",
   "@storybook/react": "^7.x"
 }
 ```
@@ -176,3 +235,22 @@ export default defineConfig({
 - **Minimize re-renders**: Careful dependency arrays
 - **Object pooling**: Reuse objects where possible
 - **Garbage collection**: Minimize object creation in hot paths
+
+## Code Quality Configuration
+
+### ESLint with Import Plugin
+
+The project uses `eslint-plugin-import` for import management:
+
+- **Import ordering**: Enforced with alphabetical sorting and grouping
+- **No unresolved imports**: Catches broken import paths
+- **No duplicate imports**: Prevents redundant imports  
+- **Alias resolution**: TypeScript-aware import resolution
+
+**Import Order Groups:**
+1. Built-in Node modules
+2. External libraries
+3. Internal modules (using @ alias)
+4. Parent directory imports
+5. Sibling file imports
+6. Index file imports

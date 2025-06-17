@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
-import type { GameBoardProps } from '../../types/game';
+import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
+import type { GameBoardProps } from '@/types/game';
+
 import { Block } from '../Block';
 import { GridCell } from '../GridCell';
 import { Queue } from '../Queue';

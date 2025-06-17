@@ -1,4 +1,4 @@
-import type { GameConfig, ControlsConfig } from '../types/game';
+import type { GameConfig, ControlsConfig } from '@/types/game';
 
 // Core game dimensions
 export const BOARD_WIDTH = 16;

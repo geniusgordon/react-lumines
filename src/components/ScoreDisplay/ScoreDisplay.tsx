@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { ScoreDisplayProps } from '../../types/game';
+import type { ScoreDisplayProps } from '@/types/game';
 
 /**
  * ScoreDisplay component shows game statistics like score and time

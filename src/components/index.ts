@@ -14,4 +14,4 @@ export type {
   TimelineProps,
   QueueProps,
   ScoreDisplayProps,
-} from '../types/game';
+} from '@/types/game';

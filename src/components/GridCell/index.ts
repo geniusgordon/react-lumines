@@ -1,2 +1,2 @@
 export { GridCell } from './GridCell';
-export type { GridCellProps } from '../../types/game';
+export type { GridCellProps } from '@/types/game';
