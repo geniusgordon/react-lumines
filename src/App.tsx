@@ -50,6 +50,7 @@ function App() {
     x: 6.5,
     speed: 2,
     active: true,
+    rectanglesCleared: 0,
   };
 
   const demoBoard = createDemoBoard();
@@ -65,7 +66,6 @@ function App() {
           currentBlock={demoBlock}
           blockPosition={demoPosition}
           timeline={demoTimeline}
-          className="demo-board"
         />
       </div>
     </div>

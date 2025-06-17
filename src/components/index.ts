@@ -5,4 +5,9 @@ export { GameBoard } from './GameBoard';
 export { Timeline } from './Timeline';
 
 // Export types
-export type { GridCellProps, BlockProps, GameBoardProps, TimelineProps } from '../types/game';
+export type {
+  GridCellProps,
+  BlockProps,
+  GameBoardProps,
+  TimelineProps,
+} from '../types/game';

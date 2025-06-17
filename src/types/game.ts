@@ -35,6 +35,7 @@ export interface Timeline {
   x: number; // Current horizontal position (0 to BOARD_WIDTH-1)
   speed: number; // Pixels per frame
   active: boolean; // Whether timeline is currently sweeping
+  rectanglesCleared: number; // Number of rectangles cleared
 }
 
 // Rectangle for clearing detection
@@ -162,25 +163,21 @@ export interface GameBoardProps {
   currentBlock: Block;
   blockPosition: Position;
   timeline: Timeline;
-  className?: string;
 }
 
 export interface BlockProps {
   block: Block;
   position: Position;
-  className?: string;
 }
 
 export interface GridCellProps {
   value: CellValue;
   x: number;
   y: number;
-  className?: string;
 }
 
 export interface TimelineProps {
   timeline: Timeline;
-  className?: string;
 }
 
 // Hook return types

@@ -14,7 +14,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   currentBlock,
   blockPosition,
   timeline,
-  className = '',
 }) => {
   const renderBoard = () => {
     const cells = [];
@@ -24,13 +23,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         const cellValue = board[y][x];
 
         cells.push(
-          <GridCell
-            key={`${x}-${y}`}
-            value={cellValue}
-            x={x}
-            y={y}
-            className="relative"
-          />
+          <GridCell key={`${x}-${y}`} value={cellValue} x={x} y={y} />
         );
       }
     }
@@ -38,39 +31,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     return cells;
   };
 
-  const getGameBoardClasses = () => {
-    const baseClasses =
-      'bg-game-background border-2 border-game-ui rounded p-2 relative inline-block';
-    let statusClasses = '';
-
-    if (className.includes('playing')) {
-      statusClasses = 'border-game-success';
-    } else if (className.includes('paused')) {
-      statusClasses = 'border-game-warning opacity-80';
-    } else if (className.includes('game-over')) {
-      statusClasses = 'border-game-error opacity-60';
-    }
-
-    return `${baseClasses} ${statusClasses} ${className}`.trim();
-  };
-
   return (
-    <div className={getGameBoardClasses()}>
+    <div className="bg-game-background relative inline-block pt-8">
       <div
         className={`bg-game-background border-game-grid relative grid h-60 w-96 gap-0 border`}
         style={{
-          gridTemplateColumns: `repeat(${BOARD_WIDTH}, 24px)`,
-          gridTemplateRows: `repeat(${BOARD_HEIGHT}, 24px)`,
+          gridTemplateColumns: `repeat(${BOARD_WIDTH}, var(--spacing-block-size))`,
+          gridTemplateRows: `repeat(${BOARD_HEIGHT}, var(--spacing-block-size))`,
         }}
       >
         {renderBoard()}
 
         {currentBlock && (
-          <Block
-            block={currentBlock}
-            position={blockPosition}
-            className="current-block"
-          />
+          <Block block={currentBlock} position={blockPosition} />
         )}
 
         <Timeline timeline={timeline} />

@@ -2,11 +2,12 @@
 
 /* Tailwind v4 theme configuration */
 @theme {
+  --spacing-block-size: 24px; /* Size of each game block */
   --color-block-white: #fafafa; /* White blocks - clear and neutral */
   --color-block-orange: #ff9800; /* Orange blocks - vibrant accent */
   --color-game-empty: #424242; /* Empty cells - dark background */
   --color-game-grid: #616161; /* Grid lines - subtle gray */
-  --color-game-timeline: #4caf50; /* Timeline sweep - green accent */
+  --color-game-timeline: #ffffff; /* Timeline sweep - white accent */
   --color-game-background: #424242; /* Game background - dark */
   --color-game-text: #fafafa; /* UI text - light on dark */
   --color-game-ui: #757575; /* UI elements - medium gray */

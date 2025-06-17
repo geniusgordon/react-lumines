@@ -209,7 +209,7 @@ describe('Game Reducer', () => {
     it('should advance timeline when active', () => {
       const timelineState = {
         ...playingState,
-        timeline: { x: 5, speed: 1, active: true },
+        timeline: { x: 5, speed: 1, active: true, rectanglesCleared: 0 },
       };
 
       const action: GameAction = { type: 'TICK', frame: 100 };
@@ -221,7 +221,7 @@ describe('Game Reducer', () => {
     it('should deactivate timeline at end', () => {
       const timelineState = {
         ...playingState,
-        timeline: { x: 15, speed: 1, active: true },
+        timeline: { x: 15, speed: 1, active: true, rectanglesCleared: 0 },
       };
 
       const action: GameAction = { type: 'TICK', frame: 100 };

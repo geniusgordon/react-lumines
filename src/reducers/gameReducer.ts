@@ -51,6 +51,7 @@ export function createInitialGameState(
       x: 0,
       speed: GAME_CONFIG.timing.initialDropInterval,
       active: false,
+      rectanglesCleared: 0,
     },
 
     // Deterministic system
