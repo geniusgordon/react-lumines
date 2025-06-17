@@ -32,9 +32,9 @@ export interface Block {
 
 // Timeline sweep state
 export interface Timeline {
-  x: number;        // Current horizontal position (0 to BOARD_WIDTH-1)
-  speed: number;    // Pixels per frame
-  active: boolean;  // Whether timeline is currently sweeping
+  x: number; // Current horizontal position (0 to BOARD_WIDTH-1)
+  speed: number; // Pixels per frame
+  active: boolean; // Whether timeline is currently sweeping
 }
 
 // Rectangle for clearing detection
@@ -50,14 +50,14 @@ export interface Rectangle {
 export type GameStatus = 'start' | 'playing' | 'paused' | 'gameOver' | 'replay';
 
 // Game action types
-export type GameActionType = 
+export type GameActionType =
   | 'MOVE_LEFT'
-  | 'MOVE_RIGHT' 
+  | 'MOVE_RIGHT'
   | 'ROTATE_CW'
   | 'ROTATE_CCW'
   | 'SOFT_DROP'
   | 'HARD_DROP'
-  | 'TICK'          // Game loop update
+  | 'TICK' // Game loop update
   | 'PAUSE'
   | 'RESUME'
   | 'RESTART'
@@ -69,7 +69,7 @@ export type GameActionType =
 // Game action structure
 export interface GameAction {
   type: GameActionType;
-  frame: number;    // Frame when action occurred (for determinism)
+  frame: number; // Frame when action occurred (for determinism)
   payload?: unknown; // Additional action data
 }
 
@@ -80,26 +80,26 @@ export interface GameState {
   currentBlock: Block;
   nextBlock: Block;
   blockPosition: Position;
-  
+
   // Game flow
   status: GameStatus;
   score: number;
   rectanglesCleared: number;
-  
+
   // Timing (all integer frame counts)
-  frame: number;              // Current frame number
-  dropTimer: number;          // Frames until next drop
-  dropInterval: number;       // Frames between drops
-  
+  frame: number; // Current frame number
+  dropTimer: number; // Frames until next drop
+  dropInterval: number; // Frames between drops
+
   // Timeline sweep
   timeline: Timeline;
-  
+
   // Deterministic system
   seed: number;
-  rngState: number;           // Current RNG state
-  
+  rngState: number; // Current RNG state
+
   // Performance tracking
-  lastUpdateTime: number;     // For frame rate consistency
+  lastUpdateTime: number; // For frame rate consistency
 }
 
 // Replay system types
@@ -120,7 +120,7 @@ export interface ReplayData {
   inputs: ReplayInput[];
   checkpoints: ReplayCheckpoint[];
   finalScore: number;
-  duration: number;           // Total frames
+  duration: number; // Total frames
   metadata?: {
     playerName?: string;
     timestamp?: string;
@@ -147,17 +147,10 @@ export interface GameConfig {
   };
   timing: {
     targetFPS: number;
-    frameInterval: number;    // milliseconds per frame
+    frameInterval: number; // milliseconds per frame
     initialDropInterval: number; // frames between drops
   };
   controls: ControlsConfig;
-  colors: {
-    light: string;
-    dark: string;
-    empty: string;
-    grid: string;
-    timeline: string;
-  };
 }
 
 // Utility types for validation
@@ -182,7 +175,11 @@ export interface GridCellProps {
   value: CellValue;
   x: number;
   y: number;
-  isTimeline?: boolean;
+  className?: string;
+}
+
+export interface TimelineProps {
+  timeline: Timeline;
   className?: string;
 }
 
@@ -214,7 +211,7 @@ export interface UseSeededRNGReturn {
 // Error types
 export class GameError extends Error {
   code: string;
-  
+
   constructor(message: string, code: string) {
     super(message);
     this.name = 'GameError';
@@ -224,10 +221,10 @@ export class GameError extends Error {
 
 export class ReplayError extends Error {
   code: string;
-  
+
   constructor(message: string, code: string) {
     super(message);
     this.name = 'ReplayError';
     this.code = code;
   }
-} 
+}

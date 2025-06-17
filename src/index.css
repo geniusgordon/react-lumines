@@ -1,9 +1,28 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* Tailwind v4 theme configuration */
+@theme {
+  --color-block-white: #fafafa; /* White blocks - clear and neutral */
+  --color-block-orange: #ff9800; /* Orange blocks - vibrant accent */
+  --color-game-empty: #424242; /* Empty cells - dark background */
+  --color-game-grid: #616161; /* Grid lines - subtle gray */
+  --color-game-timeline: #4caf50; /* Timeline sweep - green accent */
+  --color-game-background: #424242; /* Game background - dark */
+  --color-game-text: #fafafa; /* UI text - light on dark */
+  --color-game-ui: #757575; /* UI elements - medium gray */
+  --color-game-accent: #ff9800; /* UI accent - matches orange blocks */
+  --color-game-success: #4caf50; /* Success states - green */
+  --color-game-warning: #ffc107; /* Warning states - yellow */
+  --color-game-error: #f44336; /* Error states - red */
+}
 
 /* Custom CSS for Lumines game */
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 /* Game-specific styles that might need to override Tailwind */
@@ -20,4 +39,41 @@ body {
 
 .rectangle-clearing {
   transition: opacity 200ms ease-in-out;
+}
+
+/* Custom keyframe animations */
+@keyframes block-drop {
+  from {
+    transform: translateY(-5px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes timeline-sweep {
+  0% {
+    opacity: 0.6;
+    transform: translateX(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translateX(2px);
+  }
+}
+
+@keyframes timeline-pulse {
+  0% {
+    box-shadow: inset 0 0 4px rgb(from var(--color-game-timeline) r g b / 0.3);
+  }
+  50% {
+    box-shadow: inset 0 0 8px rgb(from var(--color-game-timeline) r g b / 0.8);
+  }
+  100% {
+    box-shadow: inset 0 0 4px rgb(from var(--color-game-timeline) r g b / 0.3);
+  }
 }

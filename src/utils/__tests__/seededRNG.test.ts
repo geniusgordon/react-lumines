@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SeededRNG, createSeededRNG, validateDeterminism, testDistribution } from '../seededRNG';
+import {
+  SeededRNG,
+  createSeededRNG,
+  validateDeterminism,
+  testDistribution,
+} from '../seededRNG';
 
 describe('SeededRNG', () => {
   describe('Deterministic behavior', () => {
@@ -27,7 +32,7 @@ describe('SeededRNG', () => {
     it('should reset to initial state', () => {
       const seed = 12345;
       const rng = new SeededRNG(seed);
-      
+
       const firstSequence = Array.from({ length: 5 }, () => rng.next());
       rng.reset();
       const secondSequence = Array.from({ length: 5 }, () => rng.next());
@@ -38,10 +43,10 @@ describe('SeededRNG', () => {
     it('should reset to new seed', () => {
       const rng = new SeededRNG(12345);
       const newSeed = 54321;
-      
+
       rng.reset(newSeed);
       const newRng = new SeededRNG(newSeed);
-      
+
       // Should produce same sequence as new RNG with new seed
       for (let i = 0; i < 10; i++) {
         expect(rng.next()).toBe(newRng.next());
@@ -93,7 +98,7 @@ describe('SeededRNG', () => {
       const results = Array.from({ length: 1000 }, () => rng.nextBoolean());
       const trueCount = results.filter(Boolean).length;
       const ratio = trueCount / 1000;
-      
+
       // Should be roughly 50% (within 10% tolerance)
       expect(ratio).toBeGreaterThan(0.4);
       expect(ratio).toBeLessThan(0.6);
@@ -104,7 +109,7 @@ describe('SeededRNG', () => {
       const results = Array.from({ length: 1000 }, () => rng.nextBoolean(prob));
       const trueCount = results.filter(Boolean).length;
       const ratio = trueCount / 1000;
-      
+
       // Should be roughly 80% (within 10% tolerance)
       expect(ratio).toBeGreaterThan(0.7);
       expect(ratio).toBeLessThan(0.9);
@@ -120,7 +125,7 @@ describe('SeededRNG', () => {
 
     it('should choose random element from array', () => {
       const array = ['a', 'b', 'c', 'd', 'e'];
-      
+
       for (let i = 0; i < 50; i++) {
         const choice = rng.choice(array);
         expect(array).toContain(choice);
@@ -135,10 +140,10 @@ describe('SeededRNG', () => {
       const array = [1, 2, 3, 4, 5];
       const rng1 = new SeededRNG(12345);
       const rng2 = new SeededRNG(12345);
-      
+
       const shuffled1 = rng1.shuffle(array);
       const shuffled2 = rng2.shuffle(array);
-      
+
       expect(shuffled1).toEqual(shuffled2);
       expect(shuffled1).toHaveLength(array.length);
       expect(shuffled1.sort()).toEqual(array.sort());
@@ -147,7 +152,7 @@ describe('SeededRNG', () => {
     it('should not modify original array when shuffling', () => {
       const original = [1, 2, 3, 4, 5];
       const copy = [...original];
-      
+
       rng.shuffle(original);
       expect(original).toEqual(copy);
     });
@@ -164,9 +169,9 @@ describe('SeededRNG', () => {
       const seed = 12345;
       const rng1 = new SeededRNG(seed);
       const rng2 = rng1.clone();
-      
+
       expect(rng2.getSeed()).toBe(seed);
-      
+
       // Should produce same sequence
       for (let i = 0; i < 10; i++) {
         expect(rng1.next()).toBe(rng2.next());
@@ -176,10 +181,10 @@ describe('SeededRNG', () => {
     it('should generate deterministic IDs', () => {
       const rng1 = new SeededRNG(12345);
       const rng2 = new SeededRNG(12345);
-      
+
       const id1 = rng1.generateId();
       const id2 = rng2.generateId();
-      
+
       expect(id1).toBe(id2);
       expect(id1).toHaveLength(8);
       expect(id1).toMatch(/^[0-9a-f]+$/);
@@ -203,4 +208,4 @@ describe('SeededRNG', () => {
       expect(testDistribution(12345, 10, 10000)).toBe(true);
     });
   });
-}); 
+});

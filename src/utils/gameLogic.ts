@@ -1,30 +1,41 @@
-import type { 
-  Block, 
-  BlockPattern, 
-  GameBoard, 
-  Position, 
-  Rotation, 
-  CellValue, 
+import type {
+  Block,
+  BlockPattern,
+  GameBoard,
+  Position,
+  Rotation,
+  CellValue,
   Rectangle,
-  ValidMove 
+  ValidMove,
 } from '../types/game';
-import { BOARD_WIDTH, BOARD_HEIGHT, BLOCK_PATTERNS } from '../constants/gameConfig';
+import {
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
+  BLOCK_PATTERNS,
+} from '../constants/gameConfig';
 import { SeededRNG } from './seededRNG';
 
 /**
  * Create empty game board
  */
 export function createEmptyBoard(): GameBoard {
-  return Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0));
+  return Array(BOARD_HEIGHT)
+    .fill(null)
+    .map(() => Array(BOARD_WIDTH).fill(0));
 }
 
 /**
  * Rotate a 2x2 block pattern clockwise
  */
-export function rotateBlockPattern(pattern: BlockPattern, clockwise: boolean = true): BlockPattern {
+export function rotateBlockPattern(
+  pattern: BlockPattern,
+  clockwise: boolean = true
+): BlockPattern {
   const size = pattern.length;
-  const rotated: BlockPattern = Array(size).fill(null).map(() => Array(size).fill(0));
-  
+  const rotated: BlockPattern = Array(size)
+    .fill(null)
+    .map(() => Array(size).fill(0));
+
   for (let i = 0; i < size; i++) {
     for (let j = 0; j < size; j++) {
       if (clockwise) {
@@ -34,21 +45,24 @@ export function rotateBlockPattern(pattern: BlockPattern, clockwise: boolean = t
       }
     }
   }
-  
+
   return rotated;
 }
 
 /**
  * Get block pattern after rotation
  */
-export function getRotatedPattern(block: Block, rotation: Rotation): BlockPattern {
+export function getRotatedPattern(
+  block: Block,
+  rotation: Rotation
+): BlockPattern {
   let pattern = block.pattern;
-  const rotations = ((rotation - block.rotation) + 4) % 4;
-  
+  const rotations = (rotation - block.rotation + 4) % 4;
+
   for (let i = 0; i < rotations; i++) {
     pattern = rotateBlockPattern(pattern, true);
   }
-  
+
   return pattern;
 }
 
@@ -56,33 +70,38 @@ export function getRotatedPattern(block: Block, rotation: Rotation): BlockPatter
  * Check if position is valid for block placement
  */
 export function isValidPosition(
-  board: GameBoard, 
-  block: Block, 
-  position: Position, 
+  board: GameBoard,
+  block: Block,
+  position: Position,
   rotation?: Rotation
 ): ValidMove {
-  const pattern = rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
-  
+  const pattern =
+    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
+
   // Check bounds
-  if (position.x < 0 || position.x + pattern[0].length > BOARD_WIDTH ||
-      position.y < 0 || position.y + pattern.length > BOARD_HEIGHT) {
+  if (
+    position.x < 0 ||
+    position.x + pattern[0].length > BOARD_WIDTH ||
+    position.y < 0 ||
+    position.y + pattern.length > BOARD_HEIGHT
+  ) {
     return 'out_of_bounds';
   }
-  
+
   // Check collision with existing blocks
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[y].length; x++) {
       if (pattern[y][x] !== 0) {
         const boardX = position.x + x;
         const boardY = position.y + y;
-        
+
         if (board[boardY][boardX] !== 0) {
           return 'collision';
         }
       }
     }
   }
-  
+
   return 'valid';
 }
 
@@ -96,8 +115,9 @@ export function placeBlockOnBoard(
   rotation?: Rotation
 ): GameBoard {
   const newBoard = board.map(row => [...row]);
-  const pattern = rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
-  
+  const pattern =
+    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
+
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[y].length; x++) {
       if (pattern[y][x] !== 0) {
@@ -107,7 +127,7 @@ export function placeBlockOnBoard(
       }
     }
   }
-  
+
   return newBoard;
 }
 
@@ -120,7 +140,7 @@ export function findDropPosition(
   position: Position
 ): Position {
   let dropY = position.y;
-  
+
   while (dropY < BOARD_HEIGHT) {
     const testPos = { x: position.x, y: dropY + 1 };
     if (isValidPosition(board, block, testPos) === 'valid') {
@@ -129,7 +149,7 @@ export function findDropPosition(
       break;
     }
   }
-  
+
   return { x: position.x, y: dropY };
 }
 
@@ -138,11 +158,11 @@ export function findDropPosition(
  */
 export function generateRandomBlock(rng: SeededRNG): Block {
   const pattern = rng.choice(BLOCK_PATTERNS) as BlockPattern;
-  
+
   return {
     pattern,
     rotation: 0,
-    id: rng.generateId()
+    id: rng.generateId(),
   };
 }
 
@@ -151,8 +171,10 @@ export function generateRandomBlock(rng: SeededRNG): Block {
  */
 export function detectRectangles(board: GameBoard): Rectangle[] {
   const rectangles: Rectangle[] = [];
-  const visited = Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(false));
-  
+  const visited = Array(BOARD_HEIGHT)
+    .fill(null)
+    .map(() => Array(BOARD_WIDTH).fill(false));
+
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
       if (!visited[y][x] && board[y][x] !== 0) {
@@ -163,7 +185,7 @@ export function detectRectangles(board: GameBoard): Rectangle[] {
       }
     }
   }
-  
+
   return rectangles;
 }
 
@@ -179,47 +201,53 @@ function floodFillRectangle(
 ): Rectangle | null {
   const cells: Position[] = [];
   const stack: Position[] = [{ x: startX, y: startY }];
-  
+
   while (stack.length > 0) {
     const { x, y } = stack.pop()!;
-    
-    if (x < 0 || x >= BOARD_WIDTH || y < 0 || y >= BOARD_HEIGHT ||
-        visited[y][x] || board[y][x] !== color) {
+
+    if (
+      x < 0 ||
+      x >= BOARD_WIDTH ||
+      y < 0 ||
+      y >= BOARD_HEIGHT ||
+      visited[y][x] ||
+      board[y][x] !== color
+    ) {
       continue;
     }
-    
+
     visited[y][x] = true;
     cells.push({ x, y });
-    
+
     // Add adjacent cells
     stack.push({ x: x + 1, y });
     stack.push({ x: x - 1, y });
     stack.push({ x, y: y + 1 });
     stack.push({ x, y: y - 1 });
   }
-  
+
   if (cells.length === 0) return null;
-  
+
   // Calculate bounding rectangle
   const minX = Math.min(...cells.map(c => c.x));
   const maxX = Math.max(...cells.map(c => c.x));
   const minY = Math.min(...cells.map(c => c.y));
   const maxY = Math.max(...cells.map(c => c.y));
-  
+
   // Check if it forms a solid rectangle
   const width = maxX - minX + 1;
   const height = maxY - minY + 1;
-  
+
   if (cells.length !== width * height) {
     return null; // Not a solid rectangle
   }
-  
+
   return {
     x: minX,
     y: minY,
     width,
     height,
-    color
+    color,
   };
 }
 
@@ -232,7 +260,7 @@ export function clearRectanglesAndApplyGravity(
 ): { newBoard: GameBoard; clearedCells: number } {
   let newBoard = board.map(row => [...row]);
   let clearedCells = 0;
-  
+
   // Clear rectangles
   for (const rect of rectangles) {
     for (let y = rect.y; y < rect.y + rect.height; y++) {
@@ -244,10 +272,10 @@ export function clearRectanglesAndApplyGravity(
       }
     }
   }
-  
+
   // Apply gravity
   newBoard = applyGravity(newBoard);
-  
+
   return { newBoard, clearedCells };
 }
 
@@ -256,24 +284,24 @@ export function clearRectanglesAndApplyGravity(
  */
 export function applyGravity(board: GameBoard): GameBoard {
   const newBoard = createEmptyBoard();
-  
+
   // For each column, collect non-empty cells and place them at bottom
   for (let x = 0; x < BOARD_WIDTH; x++) {
     const column: CellValue[] = [];
-    
+
     // Collect non-empty cells from bottom to top
     for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
       if (board[y][x] !== 0) {
         column.push(board[y][x]);
       }
     }
-    
+
     // Place them at bottom of new board
     for (let i = 0; i < column.length; i++) {
       newBoard[BOARD_HEIGHT - 1 - i][x] = column[i];
     }
   }
-  
+
   return newBoard;
 }
 
@@ -284,9 +312,9 @@ export function applyGravity(board: GameBoard): GameBoard {
  */
 export function calculateScore(rectangles: Rectangle[]): number {
   if (rectangles.length === 0) return 0;
-  
+
   let totalPoints = 0;
-  
+
   for (const rect of rectangles) {
     // Count overlapping 2×2 rectangles that fit within this rectangle
     // For a W×H rectangle, you can fit (W-1) × (H-1) overlapping 2×2 rectangles
@@ -296,7 +324,7 @@ export function calculateScore(rectangles: Rectangle[]): number {
     }
     // Rectangles smaller than 2×2 shouldn't exist in Lumines, but handle gracefully
   }
-  
+
   return totalPoints;
 }
 
@@ -312,8 +340,7 @@ export function isGameOver(board: GameBoard): boolean {
  */
 export function copyBoard(board: GameBoard): GameBoard {
   return board.map(row => [...row]);
-} 
-
+}
 
 /**
  * Print game board to console for debugging
@@ -321,6 +348,6 @@ export function copyBoard(board: GameBoard): GameBoard {
 export function debugBoard(board: GameBoard): void {
   console.log('Game Board:');
   for (const row of board) {
-    console.log(row.map(cell => cell === 0 ? '.' : cell).join(''));
+    console.log(row.map(cell => (cell === 0 ? '.' : cell)).join(''));
   }
 }

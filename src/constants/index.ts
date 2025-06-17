@@ -1,2 +1,2 @@
 // Export all constants for clean imports
-export * from './gameConfig'; 
+export * from './gameConfig';

@@ -141,7 +141,10 @@ export function createSeededRNG(seed?: number): SeededRNG {
  * Validate that two RNG instances produce same sequence
  * Useful for testing deterministic behavior
  */
-export function validateDeterminism(seed: number, iterations: number = 1000): boolean {
+export function validateDeterminism(
+  seed: number,
+  iterations: number = 1000
+): boolean {
   const rng1 = new SeededRNG(seed);
   const rng2 = new SeededRNG(seed);
 
@@ -158,10 +161,14 @@ export function validateDeterminism(seed: number, iterations: number = 1000): bo
  * Test RNG distribution quality
  * Returns true if distribution appears uniform
  */
-export function testDistribution(seed: number, buckets: number = 10, samples: number = 10000): boolean {
+export function testDistribution(
+  seed: number,
+  buckets: number = 10,
+  samples: number = 10000
+): boolean {
   const rng = new SeededRNG(seed);
   const counts = new Array(buckets).fill(0);
-  
+
   for (let i = 0; i < samples; i++) {
     const bucket = Math.floor(rng.next() * buckets);
     counts[bucket]++;
@@ -170,6 +177,6 @@ export function testDistribution(seed: number, buckets: number = 10, samples: nu
   // Check if distribution is reasonably uniform
   const expected = samples / buckets;
   const tolerance = expected * 0.1; // 10% tolerance
-  
+
   return counts.every(count => Math.abs(count - expected) <= tolerance);
-} 
+}

@@ -3,18 +3,21 @@
 ## Technology Stack
 
 ### Core Technologies
+
 - **React 18**: Functional components with hooks
 - **TypeScript**: Type safety and better development experience
 - **Vite**: Fast development server and build tool
 - **Storybook**: Component development and documentation
 
 ### Development Environment
+
 - **Node.js**: Latest LTS version
 - **pnpm**: Package manager (faster than npm)
 - **ESLint**: Code linting and style enforcement
 - **Modern browser**: ES6+ features required
 
 ## Project Structure
+
 ```
 react-lumines/
 ├── src/
@@ -45,6 +48,7 @@ react-lumines/
 ## Dependencies
 
 ### Production Dependencies
+
 ```json
 {
   "react": "^18.x",
@@ -53,6 +57,7 @@ react-lumines/
 ```
 
 ### Development Dependencies
+
 ```json
 {
   "@types/react": "^18.x",
@@ -68,18 +73,21 @@ react-lumines/
 ## Technical Constraints
 
 ### Browser Support
+
 - **Modern browsers**: Chrome 90+, Firefox 88+, Safari 14+
 - **ES6+ features**: Arrow functions, destructuring, modules
 - **No polyfills**: Assumes modern JavaScript support
 - **Desktop focus**: Keyboard controls only (no mobile touch)
 
 ### Performance Requirements
+
 - **60 FPS**: Fixed timestep game loop
 - **Input lag**: < 16ms response time
 - **Memory usage**: Efficient state management
 - **Bundle size**: Keep under 1MB for fast loading
 
 ### Development Constraints
+
 - **No external game engines**: Pure React implementation
 - **No backend**: Client-side only for MVP
 - **Functional components**: No class components
@@ -88,6 +96,7 @@ react-lumines/
 ## Build Configuration
 
 ### Vite Configuration
+
 ```typescript
 // vite.config.ts
 export default defineConfig({
@@ -98,15 +107,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom']
-        }
-      }
-    }
-  }
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
+  },
 });
 ```
 
 ### TypeScript Configuration
+
 - **Strict mode**: Enabled for maximum type safety
 - **Module resolution**: Node.js style
 - **Target**: ES2020 for modern browser features
@@ -115,12 +125,14 @@ export default defineConfig({
 ## Tool Usage Patterns
 
 ### Development Workflow
+
 1. **Storybook**: Component development in isolation
 2. **Hot reload**: Instant feedback during development
 3. **TypeScript**: Compile-time error checking
 4. **ESLint**: Code quality and consistency
 
 ### Testing Strategy (Future)
+
 - **Unit tests**: Jest + React Testing Library
 - **Component tests**: Storybook interaction tests
 - **E2E tests**: Playwright for full game scenarios
@@ -129,18 +141,21 @@ export default defineConfig({
 ## Code Quality Standards
 
 ### TypeScript Usage
+
 - **Strict types**: No `any` types allowed
 - **Interface definitions**: Clear contracts for all data structures
 - **Generic types**: Flexible, reusable code
 - **Type guards**: Runtime type checking where needed
 
 ### React Best Practices
+
 - **Functional components**: Use hooks for state and effects
 - **Custom hooks**: Extract reusable logic
 - **Memoization**: React.memo for performance optimization
 - **Error boundaries**: Graceful error handling
 
 ### File Organization
+
 - **Feature-based**: Group related files together
 - **Index exports**: Clean import statements
 - **Consistent naming**: PascalCase for components, camelCase for functions
@@ -149,13 +164,15 @@ export default defineConfig({
 ## Performance Considerations
 
 ### Game Loop Implementation
+
 - **requestAnimationFrame**: Browser-optimized timing
 - **Fixed timesteps**: Deterministic updates
 - **Frame skipping**: Maintain target FPS
 - **Efficient rendering**: Only update changed elements
 
 ### Memory Management
+
 - **Avoid memory leaks**: Proper cleanup in useEffect
 - **Minimize re-renders**: Careful dependency arrays
 - **Object pooling**: Reuse objects where possible
-- **Garbage collection**: Minimize object creation in hot paths 
+- **Garbage collection**: Minimize object creation in hot paths

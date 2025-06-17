@@ -1,42 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { GameBoard } from './components';
+import {
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
+  BLOCK_PATTERNS,
+} from './constants/gameConfig';
+import type {
+  GameBoard as GameBoardType,
+  Block,
+  Position,
+  Timeline,
+} from './types/game';
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Create a demo game board with some sample data
+  const createDemoBoard = (): GameBoardType => {
+    const board: GameBoardType = Array(BOARD_HEIGHT)
+      .fill(null)
+      .map(() => Array(BOARD_WIDTH).fill(0));
+
+    // Add some sample blocks to the bottom
+    board[8][2] = 1;
+    board[8][3] = 1;
+    board[9][2] = 1;
+    board[9][3] = 1;
+
+    board[8][5] = 2;
+    board[8][6] = 2;
+    board[9][5] = 2;
+    board[9][6] = 2;
+
+    board[8][8] = 1;
+    board[8][9] = 2;
+    board[9][8] = 2;
+    board[9][9] = 1;
+
+    return board;
+  };
+
+  // Create a demo current block
+  const demoBlock: Block = {
+    pattern: BLOCK_PATTERNS[4] as [[1, 2], [2, 1]], // Diagonal pattern
+    rotation: 0,
+    id: 'demo-block',
+  };
+
+  const demoPosition: Position = { x: 7, y: 2 };
+
+  const demoTimeline: Timeline = {
+    x: 6.5,
+    speed: 2,
+    active: true,
+  };
+
+  const demoBoard = createDemoBoard();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 flex flex-col items-center justify-center text-white">
-      <div className="flex space-x-8 mb-8">
-        <a href="https://vite.dev" target="_blank" className="hover:scale-110 transition-transform">
-          <img src={viteLogo} className="w-16 h-16" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" className="hover:scale-110 transition-transform">
-          <img src={reactLogo} className="w-16 h-16 animate-spin" alt="React logo" />
-        </a>
+    <div className="bg-game-background flex h-full w-full flex-col items-center justify-center">
+      <div className="text-game-text mb-4 text-2xl font-bold">
+        🎮 Lumines Game
       </div>
-      
-      <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-        Lumines Game Setup
-      </h1>
-      
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 shadow-xl">
-        <button 
-          onClick={() => setCount((count) => count + 1)}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors mb-4"
-        >
-          count is {count}
-        </button>
-        <p className="text-gray-300 text-center">
-          Tailwind CSS is now configured! 🎉
-        </p>
-        <p className="text-gray-400 text-sm text-center mt-2">
-          Ready to build the Lumines game components
-        </p>
+      <div>
+        <GameBoard
+          board={demoBoard}
+          currentBlock={demoBlock}
+          blockPosition={demoPosition}
+          timeline={demoTimeline}
+          className="demo-board"
+        />
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

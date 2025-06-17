@@ -10,7 +10,7 @@ describe('Integration Tests', () => {
       const seed = 12345;
       const state1 = createInitialGameState(seed);
       const state2 = createInitialGameState(seed);
-      
+
       // Simulate identical game sequences
       const actions: GameAction[] = [
         { type: 'START_GAME', frame: 0 },
@@ -18,38 +18,40 @@ describe('Integration Tests', () => {
         { type: 'ROTATE_CW', frame: 20 },
         { type: 'HARD_DROP', frame: 30 },
         { type: 'MOVE_RIGHT', frame: 40 },
-        { type: 'HARD_DROP', frame: 50 }
+        { type: 'HARD_DROP', frame: 50 },
       ];
-      
+
       let finalState1 = state1;
       let finalState2 = state2;
-      
+
       for (const action of actions) {
         finalState1 = gameReducer(finalState1, action);
         finalState2 = gameReducer(finalState2, action);
       }
-      
+
       // States should be identical due to determinism
       expect(finalState1.board).toEqual(finalState2.board);
       expect(finalState1.score).toBe(finalState2.score);
-      expect(finalState1.currentBlock.pattern).toEqual(finalState2.currentBlock.pattern);
+      expect(finalState1.currentBlock.pattern).toEqual(
+        finalState2.currentBlock.pattern
+      );
     });
 
     it('should create rectangles and clear them properly', () => {
       const state = createInitialGameState(12345);
-      
+
       // Start the game
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       // Manually create a rectangle on the board for testing
       const board = currentState.board.map(row => [...row]);
       board[8][5] = 1 as CellValue;
       board[8][6] = 1 as CellValue;
       board[9][5] = 1 as CellValue;
       board[9][6] = 1 as CellValue;
-      
+
       currentState = { ...currentState, board };
-      
+
       // Verify rectangle detection
       const rectangles = detectRectangles(board);
       expect(rectangles).toHaveLength(1);
@@ -58,19 +60,19 @@ describe('Integration Tests', () => {
         y: 8,
         width: 2,
         height: 2,
-        color: 1 as CellValue
+        color: 1 as CellValue,
       });
-      
+
       // Calculate score
       const score = calculateScore(rectangles);
       expect(score).toBe(1); // (2-1) * (2-1) = 1
-      
+
       // Clear rectangles
-      const clearedState = gameReducer(currentState, { 
-        type: 'CLEAR_RECTANGLES', 
-        frame: 100 
+      const clearedState = gameReducer(currentState, {
+        type: 'CLEAR_RECTANGLES',
+        frame: 100,
       });
-      
+
       expect(clearedState.score).toBe(score);
       expect(clearedState.rectanglesCleared).toBe(1);
       expect(clearedState.timeline.active).toBe(true);
@@ -79,10 +81,10 @@ describe('Integration Tests', () => {
     it('should handle multiple game ticks correctly', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       const initialPosition = currentState.blockPosition;
       const dropInterval = currentState.dropInterval;
-      
+
       // Simulate multiple ticks without reaching drop interval
       for (let i = 1; i < dropInterval; i++) {
         currentState = gameReducer(currentState, { type: 'TICK', frame: i });
@@ -90,13 +92,13 @@ describe('Integration Tests', () => {
         expect(currentState.dropTimer).toBe(i);
         expect(currentState.blockPosition).toEqual(initialPosition);
       }
-      
+
       // Next tick should trigger a drop
-      currentState = gameReducer(currentState, { 
-        type: 'TICK', 
-        frame: dropInterval 
+      currentState = gameReducer(currentState, {
+        type: 'TICK',
+        frame: dropInterval,
       });
-      
+
       expect(currentState.blockPosition.y).toBe(initialPosition.y + 1);
       expect(currentState.dropTimer).toBe(0);
     });
@@ -104,69 +106,69 @@ describe('Integration Tests', () => {
     it('should maintain RNG determinism across actions', () => {
       const rng1 = new SeededRNG(12345);
       const rng2 = new SeededRNG(12345);
-      
+
       // Generate identical sequences
       const sequence1 = [];
       const sequence2 = [];
-      
+
       for (let i = 0; i < 100; i++) {
         sequence1.push(rng1.next());
         sequence2.push(rng2.next());
       }
-      
+
       expect(sequence1).toEqual(sequence2);
-      
+
       // Reset and verify
       rng1.reset();
       rng2.reset();
-      
+
       expect(rng1.next()).toBe(rng2.next());
     });
 
     it('should handle game over conditions', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       // Fill top row to trigger game over
       const board = currentState.board.map(row => [...row]);
       board[0][5] = 1 as CellValue;
       currentState = { ...currentState, board };
-      
+
       // Try to place a new block (should trigger game over)
-      const finalState = gameReducer(currentState, { 
-        type: 'HARD_DROP', 
-        frame: 100 
+      const finalState = gameReducer(currentState, {
+        type: 'HARD_DROP',
+        frame: 100,
       });
-      
+
       expect(finalState.status).toBe('gameOver');
     });
 
     it('should handle timeline sweep correctly', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       // Activate timeline
       currentState = {
         ...currentState,
-        timeline: { x: 0, speed: 2, active: true }
+        timeline: { x: 0, speed: 2, active: true },
       };
-      
+
       // Advance timeline through multiple ticks
       for (let i = 0; i < 7; i++) {
-        currentState = gameReducer(currentState, { 
-          type: 'TICK', 
-          frame: i * 10 
+        currentState = gameReducer(currentState, {
+          type: 'TICK',
+          frame: i * 10,
         });
         expect(currentState.timeline.x).toBe(((i + 1) * 2) % 16);
         expect(currentState.timeline.active).toBe(true);
       }
-      
+
       // Timeline should deactivate when reaching the end
-      currentState = gameReducer(currentState, { 
-        type: 'TICK', 
-        frame: 100 
+      currentState = gameReducer(currentState, {
+        type: 'TICK',
+        frame: 100,
       });
-      
+
       expect(currentState.timeline.active).toBe(false);
       expect(currentState.timeline.x).toBe(0);
     });
@@ -176,17 +178,17 @@ describe('Integration Tests', () => {
     it('should handle large numbers of actions efficiently', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       const startTime = performance.now();
-      
+
       // Process 1000 tick actions
       for (let i = 1; i <= 1000; i++) {
         currentState = gameReducer(currentState, { type: 'TICK', frame: i });
       }
-      
+
       const endTime = performance.now();
       const duration = endTime - startTime;
-      
+
       expect(currentState.frame).toBe(1000);
       expect(duration).toBeLessThan(200); // Should complete in under 100ms
     });
@@ -194,30 +196,38 @@ describe('Integration Tests', () => {
     it('should maintain state consistency across complex operations', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       // Perform a complex sequence of operations
       const operations = [
-        'MOVE_LEFT', 'MOVE_RIGHT', 'ROTATE_CW', 'ROTATE_CCW',
-        'SOFT_DROP', 'MOVE_LEFT', 'ROTATE_CW', 'HARD_DROP',
-        'TICK', 'TICK', 'TICK'
+        'MOVE_LEFT',
+        'MOVE_RIGHT',
+        'ROTATE_CW',
+        'ROTATE_CCW',
+        'SOFT_DROP',
+        'MOVE_LEFT',
+        'ROTATE_CW',
+        'HARD_DROP',
+        'TICK',
+        'TICK',
+        'TICK',
       ];
-      
+
       let frame = 0;
       for (const operation of operations) {
         frame += 10;
         const previousState = { ...currentState };
-                 currentState = gameReducer(currentState, { 
-           type: operation as GameActionType, 
-           frame 
-         });
-        
+        currentState = gameReducer(currentState, {
+          type: operation as GameActionType,
+          frame,
+        });
+
         // Verify immutability
         expect(currentState).not.toBe(previousState);
         if (currentState.board !== previousState.board) {
           expect(currentState.board).not.toBe(previousState.board);
         }
       }
-      
+
       expect(currentState.frame).toBe(frame);
       expect(currentState.status).toBe('playing');
     });
@@ -227,18 +237,18 @@ describe('Integration Tests', () => {
     it('should handle invalid frame numbers gracefully', () => {
       const state = createInitialGameState(12345);
       const playingState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       // Test negative frame
-      const result1 = gameReducer(playingState, { 
-        type: 'MOVE_LEFT', 
-        frame: -10 
+      const result1 = gameReducer(playingState, {
+        type: 'MOVE_LEFT',
+        frame: -10,
       });
       expect(result1.frame).toBe(-10); // Should still update frame but not break
-      
+
       // Test very large frame
-      const result2 = gameReducer(playingState, { 
-        type: 'MOVE_RIGHT', 
-        frame: 999999 
+      const result2 = gameReducer(playingState, {
+        type: 'MOVE_RIGHT',
+        frame: 999999,
       });
       expect(result2.frame).toBe(999999);
     });
@@ -246,29 +256,35 @@ describe('Integration Tests', () => {
     it('should maintain valid board state after all operations', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
-      
+
       // Perform random operations
       const rng = new SeededRNG(54321);
-      const actions = ['MOVE_LEFT', 'MOVE_RIGHT', 'ROTATE_CW', 'SOFT_DROP', 'TICK'];
-      
+      const actions = [
+        'MOVE_LEFT',
+        'MOVE_RIGHT',
+        'ROTATE_CW',
+        'SOFT_DROP',
+        'TICK',
+      ];
+
       for (let i = 0; i < 50; i++) {
         const action = rng.choice(actions);
-        currentState = gameReducer(currentState, { 
-          type: action as any, 
-          frame: i 
+        currentState = gameReducer(currentState, {
+          type: action as any,
+          frame: i,
         });
-        
+
         // Verify board integrity
         expect(currentState.board).toHaveLength(10);
         expect(currentState.board[0]).toHaveLength(16);
-        
+
         // Verify all cells contain valid values
         for (let y = 0; y < 10; y++) {
           for (let x = 0; x < 16; x++) {
             expect([0, 1, 2]).toContain(currentState.board[y][x]);
           }
         }
-        
+
         // Verify position bounds
         expect(currentState.blockPosition.x).toBeGreaterThanOrEqual(0);
         expect(currentState.blockPosition.x).toBeLessThan(16);
@@ -277,4 +293,4 @@ describe('Integration Tests', () => {
       }
     });
   });
-}); 
+});
