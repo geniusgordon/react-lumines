@@ -1,11 +1,12 @@
 import React from 'react';
+
+import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
 import type { GameBoardProps } from '../../types/game';
-import { GridCell } from '../GridCell';
 import { Block } from '../Block';
-import { Timeline } from '../Timeline';
+import { GridCell } from '../GridCell';
 import { Queue } from '../Queue';
 import { ScoreDisplay } from '../ScoreDisplay';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
+import { Timeline } from '../Timeline';
 
 /**
  * GameBoard represents the main 16x10 playing field

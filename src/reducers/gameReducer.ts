@@ -1,3 +1,8 @@
+import {
+  GAME_CONFIG,
+  DEFAULT_VALUES,
+  TIME_ATTACK_CONFIG,
+} from '../constants/gameConfig';
 import type { GameState, GameAction } from '../types/game';
 import {
   createEmptyBoard,
@@ -13,11 +18,6 @@ import {
   applyGravity,
 } from '../utils/gameLogic';
 import { SeededRNG } from '../utils/seededRNG';
-import {
-  GAME_CONFIG,
-  DEFAULT_VALUES,
-  TIME_ATTACK_CONFIG,
-} from '../constants/gameConfig';
 
 /**
  * Create initial game state

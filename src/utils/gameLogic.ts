@@ -1,3 +1,8 @@
+import {
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
+  BLOCK_PATTERNS,
+} from '../constants/gameConfig';
 import type {
   Block,
   BlockPattern,
@@ -8,11 +13,7 @@ import type {
   Rectangle,
   ValidMove,
 } from '../types/game';
-import {
-  BOARD_WIDTH,
-  BOARD_HEIGHT,
-  BLOCK_PATTERNS,
-} from '../constants/gameConfig';
+
 import { SeededRNG } from './seededRNG';
 
 /**

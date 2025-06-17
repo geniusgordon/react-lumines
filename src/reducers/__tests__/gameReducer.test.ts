@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { gameReducer, createInitialGameState } from '../gameReducer';
+
 import type { GameState, GameAction, GameActionType } from '../../types/game';
 import { createEmptyBoard } from '../../utils/gameLogic';
+import { gameReducer, createInitialGameState } from '../gameReducer';
 
 describe('Game Reducer', () => {
   let initialState: GameState;

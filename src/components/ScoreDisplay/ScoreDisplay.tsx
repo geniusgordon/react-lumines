@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { ScoreDisplayProps } from '../../types/game';
 
 /**

@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
+import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
+import type { Block, GameBoard, CellValue } from '../../types/game';
 import {
   createEmptyBoard,
   rotateBlockPattern,
@@ -15,8 +18,6 @@ import {
   copyBoard,
 } from '../gameLogic';
 import { SeededRNG } from '../seededRNG';
-import type { Block, GameBoard, CellValue } from '../../types/game';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '../../constants/gameConfig';
 
 describe('Game Logic', () => {
   describe('Board operations', () => {

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+
 import { gameReducer, createInitialGameState } from '../reducers/gameReducer';
-import { SeededRNG } from '../utils/seededRNG';
-import { detectRectangles, calculateScore } from '../utils/gameLogic';
 import type { GameAction, CellValue, GameActionType } from '../types/game';
+import { detectRectangles, calculateScore } from '../utils/gameLogic';
+import { SeededRNG } from '../utils/seededRNG';
 
 describe('Integration Tests', () => {
   describe('End-to-end game simulation', () => {
