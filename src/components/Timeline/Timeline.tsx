@@ -13,7 +13,7 @@ export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
 
   return (
     <div
-      className={`bg-game-timeline absolute top-0 z-[15] h-full w-0.5 animate-[timeline-sweep_0.5s_ease-in-out]`}
+      className={`bg-game-timeline absolute top-0 z-30 h-full w-0.5 animate-[timeline-sweep_0.5s_ease-in-out]`}
       style={{
         left: `calc(${timeline.x} * var(--spacing-block-size))`,
       }}

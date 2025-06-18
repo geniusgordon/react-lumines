@@ -24,22 +24,6 @@ export const DEFAULT_CONTROLS: ControlsConfig = {
   pause: ['KeyP', 'Escape'],
 };
 
-// Color scheme - Dark Theme
-export const GAME_COLORS = {
-  light: '#FAFAFA', // Light blocks - very light gray/white
-  dark: '#FF9800', // Dark blocks - orange
-  empty: '#424242', // Empty cells - dark background
-  grid: '#616161', // Subtle grid lines - medium gray
-  timeline: '#4CAF50', // Green accent for timeline sweep
-  background: '#424242', // Dark background
-  text: '#FAFAFA', // Light text for dark theme
-  ui: '#757575', // UI elements - lighter gray
-  accent: '#FF9800', // Orange accent color
-  success: '#4CAF50', // Green for positive feedback
-  warning: '#FFC107', // Yellow for warnings
-  error: '#F44336', // Red for errors/game over
-};
-
 // Complete game configuration
 export const GAME_CONFIG: GameConfig = {
   board: {

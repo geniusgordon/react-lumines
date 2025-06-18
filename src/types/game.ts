@@ -1,10 +1,5 @@
 // Game Types - Lumines Game Type Definitions
 
-// Core game constants
-export const BOARD_WIDTH = 16;
-export const BOARD_HEIGHT = 10;
-export const BLOCK_SIZE = 2; // 2x2 blocks
-
 // Cell values
 export type CellValue = 0 | 1 | 2; // 0 = empty, 1 = light, 2 = dark
 
@@ -168,6 +163,11 @@ export interface GameBoardProps {
 
 export interface BlockProps {
   block: Block;
+}
+
+export interface CurrentBlockProps {
+  currentBlock: Block;
+  blockPosition: Position;
 }
 
 export interface GridCellProps {

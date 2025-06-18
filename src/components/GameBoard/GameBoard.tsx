@@ -3,7 +3,7 @@ import React from 'react';
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
 import type { GameBoardProps } from '@/types/game';
 
-import { Block } from '../Block';
+import { CurrentBlock } from '../CurrentBlock';
 import { GridCell } from '../GridCell';
 import { Queue } from '../Queue';
 import { ScoreDisplay } from '../ScoreDisplay';
@@ -28,7 +28,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         const cellValue = board[y][x];
 
         cells.push(
-          <GridCell key={`${x}-${y}`} value={cellValue} x={x} y={y} />
+          <div key={`${x}-${y}`} className={cellValue === 0 ? '' : 'z-20'}>
+            <GridCell value={cellValue} x={x} y={y} />
+          </div>
         );
       }
     }
@@ -55,17 +57,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       >
         {renderBoard()}
 
-        {currentBlock && (
-          <div
-            className="pointer-events-none absolute z-10"
-            style={{
-              left: `calc(${blockPosition.x} * var(--spacing-block-size))`,
-              top: `calc(${blockPosition.y} * var(--spacing-block-size))`,
-            }}
-          >
-            <Block block={currentBlock} />
-          </div>
-        )}
+        <CurrentBlock
+          currentBlock={currentBlock}
+          blockPosition={blockPosition}
+        />
 
         <Timeline timeline={timeline} />
       </div>

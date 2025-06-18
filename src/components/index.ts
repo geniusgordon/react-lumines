@@ -10,6 +10,7 @@ export { ScoreDisplay } from './ScoreDisplay';
 export type {
   GridCellProps,
   BlockProps,
+  CurrentBlockProps,
   GameBoardProps,
   TimelineProps,
   QueueProps,
