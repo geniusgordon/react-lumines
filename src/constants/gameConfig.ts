@@ -19,9 +19,12 @@ export const DEFAULT_CONTROLS: ControlsConfig = {
   moveRight: ['ArrowRight', 'KeyD'],
   rotateCW: ['KeyX', 'ArrowUp'],
   rotateCCW: ['KeyZ', 'KeyQ'],
-  softDrop: ['ArrowDown', 'KeyS'],
-  hardDrop: ['Space'],
+  softDrop: ['KeyS'],
+  hardDrop: ['ArrowDown', 'Space'],
   pause: ['KeyP', 'Escape'],
+  restart: ['KeyR'],
+  debug: ['F1', 'KeyG'],
+  stepFrame: ['Period', 'BracketRight'],
 };
 
 // Complete game configuration

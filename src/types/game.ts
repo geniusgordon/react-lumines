@@ -137,6 +137,9 @@ export interface ControlsConfig {
   softDrop: string[];
   hardDrop: string[];
   pause: string[];
+  restart: string[];
+  debug: string[];
+  stepFrame: string[];
 }
 
 // Game configuration

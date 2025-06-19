@@ -1,5 +1,8 @@
 import type { Preview } from '@storybook/react-vite';
 
+// Import Tailwind CSS and custom styles
+import '../src/index.css';
+
 const preview: Preview = {
   parameters: {
     controls: {

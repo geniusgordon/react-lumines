@@ -1,6 +1,6 @@
 # Progress - Lumines Game Development
 
-## Project Status: **Initialization Complete**
+## Project Status: **Phase 3 In Progress - Game Loop & Controls**
 
 ### ✅ Completed
 
@@ -26,6 +26,7 @@
 
 - Phase 3: Game Loop & Controls 
   - [x] useGameLoop hook implemented ✅
+  - [x] useControls hook implemented ✅
 
 ### ⏳ To Do
 
@@ -50,7 +51,7 @@
 #### Phase 3: Game Loop & Controls
 
 - [x] useGameLoop hook (fixed 60 FPS) ✅
-- [ ] useControls hook (keyboard input)
+- [x] useControls hook (keyboard input) ✅
 - [ ] Block falling mechanics
 - [ ] Collision detection
 - [ ] Basic movement and rotation
@@ -109,10 +110,18 @@
   - ✅ Debug Mode: Manual frame stepping for debugging deterministic behavior
   - ✅ Debug Logging: Comprehensive action and state change logging in debug mode
   - ✅ Debug Component: Extracted DebugPanel component for modular debug UI
+- **Input System**: Complete keyboard input handling with replay support
+  - ✅ useControls: Keyboard input capture with configurable key mappings
+  - ✅ Action Mapping: All game controls (move, rotate, drop, pause) mapped to game actions
+  - ✅ Replay Recording: Deterministic input recording with frame timestamps
+  - ✅ State-Aware Controls: Different input handling based on game state (start/playing/paused/gameOver)
+  - ✅ Debug Integration: Input system respects debug mode for testing
+  - ✅ Key Repeat: Optional key repeat functionality with configurable timing
+  - ✅ Cleanup: Proper event listener and timer cleanup on unmount
 
 ### Known Issues
 
-- None yet - project just initialized
+- None yet - core systems working correctly
 
 ### Evolution of Decisions
 
@@ -135,6 +144,13 @@
 - Component-driven development using Storybook
 - TypeScript strict mode for maximum type safety
 - No external game engine dependencies
+
+#### Input System Design
+
+- Frame-based input timing for deterministic replay
+- Configurable key mappings with multiple keys per action
+- State-aware input handling for different game modes
+- Recording system built-in for replay functionality
 
 ## Success Metrics
 
@@ -167,6 +183,7 @@
 - Component architecture design
 - Basic game loop implementation
 - UI/UX design and styling
+- Input system implementation ✅
 
 ### Medium Risk ⚠️
 
@@ -184,16 +201,16 @@
 
 ## Next Milestones
 
-### Milestone 1: Foundation (Week 1)
+### Milestone 1: Foundation (Week 1) ✅ COMPLETE
 
 - Complete type definitions and core data structures
 - Implement SeededRNG class
 - Create basic GameBoard component
 - Set up game state management
 
-### Milestone 2: Basic Gameplay (Week 2)
+### Milestone 2: Basic Gameplay (Week 2) - IN PROGRESS
 
-- Implement game loop and controls
+- Implement game loop and controls ✅
 - Add block falling and collision detection
 - Create basic rectangle detection
 - Add timeline sweep mechanics
@@ -207,9 +224,9 @@
 
 ### Milestone 4: Replay System (Week 4)
 
-- Add input recording
+- Add input recording ✅ (foundation complete)
 - Implement replay playback
 - Create save/load functionality
 - Validate deterministic behavior
 
-**Current Focus**: Ready to begin Phase 1 - Core Foundation development.
+**Current Focus**: Next step is implementing block falling mechanics and collision detection to complete Phase 3.

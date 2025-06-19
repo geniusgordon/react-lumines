@@ -29,7 +29,7 @@
 
 ### 3. Core Game Loop
 
-- [ ] `useGameLoop` hook - fixed 60 FPS updates
+- [x] `useGameLoop` hook - fixed 60 FPS updates
 - [ ] `useControls` hook - keyboard input capture
 - [ ] Basic block falling mechanics
 - [ ] Collision detection system
