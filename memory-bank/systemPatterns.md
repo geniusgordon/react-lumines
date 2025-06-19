@@ -162,3 +162,106 @@ class BlockFactory {
 - **Memoization**: Expensive calculations cached
 - **Frame skipping**: Maintain 60 FPS target
 - **Efficient collision detection**: Early exit conditions
+
+## Game Loop Architecture Deep Dive
+
+### The Hybrid Approach: RAF + Fixed Timestep
+
+Our game loop uses a sophisticated hybrid approach that combines `requestAnimationFrame` with fixed timestep logic to achieve deterministic 60 FPS gameplay.
+
+#### Why Not setTimeout Alone?
+```typescript
+// ❌ AVOID: setTimeout-only approach
+setInterval(() => gameUpdate(), 16.67); // Problems:
+```
+- **Timing drift**: Accumulates inaccuracies over time
+- **Browser throttling**: Gets throttled when tab inactive (breaks determinism)  
+- **Less efficient**: Not optimized for animations
+
+#### Why Not requestAnimationFrame Alone?
+```typescript
+// ❌ AVOID: RAF-only approach  
+function gameLoop() {
+  gameUpdate(); // Runs at display refresh rate
+  requestAnimationFrame(gameLoop);
+}
+```
+- **Variable framerate**: Tied to display refresh (60Hz, 120Hz, 144Hz)
+- **Non-deterministic**: Same game on different monitors = different behavior
+- **Replay incompatibility**: Same inputs produce different results
+
+#### Our Solution: The Best of Both Worlds
+```typescript
+// ✅ HYBRID APPROACH
+const gameLoop = (currentTime) => {
+  const deltaTime = currentTime - lastTime;
+  accumulator += Math.min(deltaTime, maxFrameSkip * 16.67); // Debt cap
+  
+  while (accumulator >= 16.67 && updates < maxFrameSkip) {
+    gameUpdate(); // ALWAYS exactly 60 FPS logic
+    accumulator -= 16.67;
+    updates++;
+  }
+  
+  requestAnimationFrame(gameLoop); // Efficient rendering
+};
+```
+
+### Spiral of Death Prevention
+
+#### The Problem
+Performance hiccups can create a catastrophic feedback loop:
+
+1. **Normal**: Frame takes 16.67ms → 1 update
+2. **Hiccup**: Frame takes 200ms → 12 updates queued  
+3. **Cascade**: 12 updates take 300ms → 18 updates queued
+4. **Death Spiral**: Game becomes completely unplayable
+
+#### Our Protection Mechanisms
+
+**1. Debt Capping (`maxFrameSkip`)**
+```typescript
+// Cap how much "debt" we can accumulate
+accumulator += Math.min(deltaTime, FRAME_INTERVAL_MS * maxFrameSkip);
+// If browser freezes for 2000ms, we only add ~83ms of debt (5 frames)
+```
+
+**2. Update Limiting**
+```typescript
+let updatesThisFrame = 0;
+while (accumulator >= 16.67 && updatesThisFrame < 5) {
+  gameUpdate();
+  updatesThisFrame++; // Never more than 5 updates per frame
+}
+```
+
+#### Behavior Under Stress
+
+| Scenario | Without Protection | With Protection (maxFrameSkip=5) |
+|----------|-------------------|-----------------------------------|
+| Normal (16ms) | 1 update ✅ | 1 update ✅ |
+| Slow (50ms) | 3 updates ✅ | 3 updates ✅ |  
+| Very slow (200ms) | 12 updates 😰 | 5 updates max ✅ |
+| Browser freeze (2000ms) | 120 updates 💀 | 5 updates max ✅ |
+
+**Result**: Game stays playable even during performance crises!
+
+### Cross-Platform Determinism
+
+This architecture ensures identical behavior across all devices:
+
+```
+120Hz Monitor Example:
+RAF at 0ms    → accumulator = 8.33ms  → 0 game updates
+RAF at 8.33ms → accumulator = 16.66ms → 1 game update  
+RAF at 16.66ms → accumulator = 8.32ms → 0 game updates
+RAF at 25ms   → accumulator = 16.67ms → 1 game update
+
+Result: Perfect 60 FPS game logic on any refresh rate display!
+```
+
+This is **essential** for Lumines because:
+- **Replay system**: Must be frame-perfect for save/load
+- **Competitive gameplay**: Players expect consistent timing  
+- **Cross-device play**: Same seed must produce identical games
+- **Rectangle detection**: Timing-sensitive clearing algorithms

@@ -10,16 +10,14 @@ export const CurrentBlock: React.FC<CurrentBlockProps> = ({
   return (
     <div>
       <div
-        className="border-block-shadow absolute z-10 border-1 border-t-0 border-solid"
+        className="border-block-shadow bg-block-shadow/30 absolute z-10 border-1 border-t-0 border-solid"
         style={{
           left: `calc(${blockPosition.x} * var(--spacing-block-size))`,
           top: `calc(-1 * var(--spacing-block-size))`,
           width: `calc(2 * var(--spacing-block-size))`,
           height: `calc((${BOARD_HEIGHT + 1}) * var(--spacing-block-size))`,
         }}
-      >
-        <div className="bg-block-shadow h-full w-full opacity-30" />
-      </div>
+      />
       <div
         className="pointer-events-none absolute z-20"
         style={{

@@ -12,6 +12,8 @@
   --color-game-background: #424242; /* Game background - dark */
   --color-game-text: #fafafa; /* UI text - light on dark */
   --color-game-ui: #757575; /* UI elements - medium gray */
+  --color-game-light: #fafafa; /* Light background - white */
+  --color-game-dark: #424242; /* Dark background - black */
 }
 
 /* Custom CSS for Lumines game */

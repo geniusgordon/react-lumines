@@ -5,7 +5,27 @@ import type { GameState, GameAction } from '@/types/game';
 
 export interface UseGameLoopOptions {
   enabled?: boolean; // Whether the game loop should run
-  maxFrameSkip?: number; // Maximum frames to skip for performance
+
+  /**
+   * Maximum frames to skip per animation frame (default: 5)
+   *
+   * SPIRAL OF DEATH PREVENTION:
+   * Without this limit, performance hiccups can create a death spiral:
+   * 1. Frame takes 200ms instead of 16.67ms (browser hiccup)
+   * 2. Accumulator has 200ms of "debt" (12 frames behind)
+   * 3. Game tries to run 12 updates in next frame
+   * 4. 12 updates take 300ms to process
+   * 5. Now accumulator has 300ms of debt (18 frames)
+   * 6. Game tries to run 18 updates... gets worse and worse
+   * 7. RESULT: Game becomes completely unplayable!
+   *
+   * maxFrameSkip acts as a circuit breaker:
+   * - Normal: doesn't interfere (1-2 updates per frame)
+   * - Stress: limits damage (max 5 updates per frame)
+   * - Trade-off: Smooth gameplay > perfect timing during hiccups
+   * - Result: Game stays playable even when things go wrong
+   */
+  maxFrameSkip?: number;
 }
 
 export interface UseGameLoopReturn {
@@ -16,7 +36,24 @@ export interface UseGameLoopReturn {
 
 /**
  * Fixed timestep game loop hook for deterministic gameplay
- * Maintains exactly 60 FPS with 16.67ms intervals
+ *
+ * ARCHITECTURE DECISION: Hybrid requestAnimationFrame + Fixed Timestep
+ *
+ * Why not setTimeout alone?
+ * - Timing drift accumulates inaccuracies over time
+ * - Gets throttled when tab inactive (breaks determinism)
+ * - Less efficient than RAF for animations
+ *
+ * Why not requestAnimationFrame alone?
+ * - Variable framerate (60Hz vs 120Hz vs 144Hz monitors)
+ * - Non-deterministic (same game produces different results)
+ * - Breaks replay system compatibility
+ *
+ * Our Solution: RAF for efficient rendering + Fixed timestep for game logic
+ * - Game logic always runs at exactly 60 FPS (deterministic)
+ * - Rendering uses browser's optimized animation timing
+ * - Works consistently across all refresh rates
+ * - Essential for replay system accuracy
  */
 export function useGameLoop(
   gameState: GameState,
@@ -65,20 +102,23 @@ export function useGameLoop(
       lastUpdateTime.current = currentTime;
 
       // Add to accumulator (capped to prevent spiral of death)
+      // Cap deltaTime to maxFrameSkip worth of frames to prevent huge debt accumulation
+      // Example: If browser freezes for 2000ms, we only add ~83ms of debt (5 frames)
       accumulator.current += Math.min(
         deltaTime,
         FRAME_INTERVAL_MS * maxFrameSkip
       );
 
-      // Fixed timestep updates
+      // Fixed timestep updates with frame skip protection
+      // Always run game logic at exactly 16.67ms intervals, regardless of display refresh rate
       let updatesThisFrame = 0;
       while (
         accumulator.current >= FRAME_INTERVAL_MS &&
         updatesThisFrame < maxFrameSkip
       ) {
-        gameUpdate();
-        accumulator.current -= FRAME_INTERVAL_MS;
-        updatesThisFrame++;
+        gameUpdate(); // EXACTLY 60 FPS game logic update
+        accumulator.current -= FRAME_INTERVAL_MS; // "Pay back" 16.67ms of debt
+        updatesThisFrame++; // Track updates to prevent spiral of death
       }
 
       // FPS tracking

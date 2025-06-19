@@ -46,11 +46,11 @@ function App() {
       </div>
 
       {/* Game Controls */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-8 flex gap-2">
         {gameState.status === 'start' && (
           <button
             onClick={handleStartGame}
-            className="bg-game-light hover:bg-game-light/80 rounded px-4 py-2 text-black"
+            className="bg-game-light hover:bg-game-light/80 text-ui rounded px-4 py-2"
           >
             Start Game
           </button>
@@ -58,7 +58,7 @@ function App() {
         {(gameState.status === 'playing' || gameState.status === 'paused') && (
           <button
             onClick={handlePauseResume}
-            className="bg-game-light hover:bg-game-light/80 rounded px-4 py-2 text-black"
+            className="bg-game-light hover:bg-game-light/80 text-ui rounded px-4 py-2"
           >
             {gameState.status === 'playing' ? 'Pause' : 'Resume'}
           </button>
