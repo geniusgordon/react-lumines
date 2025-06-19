@@ -135,6 +135,241 @@ function logDebugAction(
 }
 
 /**
+ * Handle block movement (left/right)
+ */
+function handleBlockMovement(
+  state: GameState,
+  action: GameAction,
+  direction: 'left' | 'right'
+): GameState {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  const offset = direction === 'left' ? -1 : 1;
+  const newPosition = {
+    x: state.blockPosition.x + offset,
+    y: state.blockPosition.y,
+  };
+
+  if (
+    isValidPosition(state.board, state.currentBlock, newPosition) === 'valid'
+  ) {
+    return {
+      ...state,
+      blockPosition: newPosition,
+      frame: action.frame,
+    };
+  }
+
+  return state;
+}
+
+/**
+ * Handle block rotation (CW/CCW)
+ */
+function handleBlockRotation(
+  state: GameState,
+  action: GameAction,
+  direction: 'cw' | 'ccw'
+): GameState {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  const rotationOffset = direction === 'cw' ? 1 : -1;
+  const newRotation = ((state.currentBlock.rotation + rotationOffset + 4) %
+    4) as 0 | 1 | 2 | 3;
+
+  if (
+    isValidPosition(
+      state.board,
+      state.currentBlock,
+      state.blockPosition,
+      newRotation
+    ) === 'valid'
+  ) {
+    return {
+      ...state,
+      currentBlock: {
+        ...state.currentBlock,
+        rotation: newRotation,
+        pattern: getRotatedPattern(state.currentBlock, newRotation),
+      },
+      frame: action.frame,
+    };
+  }
+
+  return state;
+}
+
+/**
+ * Handle soft drop logic
+ */
+function handleSoftDrop(
+  state: GameState,
+  action: GameAction,
+  rng: SeededRNG
+): GameState {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  const softDropPosition = {
+    x: state.blockPosition.x,
+    y: state.blockPosition.y + 1,
+  };
+
+  if (
+    isValidPosition(state.board, state.currentBlock, softDropPosition) ===
+    'valid'
+  ) {
+    return {
+      ...state,
+      blockPosition: softDropPosition,
+      dropTimer: 0, // Reset drop timer
+      frame: action.frame,
+    };
+  }
+
+  // If can't drop, place block
+  return placeCurrentBlock(state, action.frame, rng);
+}
+
+/**
+ * Handle hard drop logic
+ */
+function handleHardDrop(
+  state: GameState,
+  action: GameAction,
+  rng: SeededRNG
+): GameState {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  const dropPosition = findDropPosition(
+    state.board,
+    state.currentBlock,
+    state.blockPosition
+  );
+  const newState = {
+    ...state,
+    blockPosition: dropPosition,
+    frame: action.frame,
+  };
+  return placeCurrentBlock(newState, action.frame, rng);
+}
+
+/**
+ * Handle game tick - separated into logical sub-functions
+ */
+function handleGameTick(
+  state: GameState,
+  action: GameAction,
+  rng: SeededRNG
+): GameState {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  let newState = { ...state, frame: action.frame };
+
+  // Handle block dropping
+  newState = updateDropTimer(newState, action.frame, rng);
+
+  // Handle timeline progression
+  newState = updateTimeline(newState);
+
+  return newState;
+}
+
+/**
+ * Update drop timer and handle automatic block dropping
+ */
+function updateDropTimer(
+  state: GameState,
+  frame: number,
+  rng: SeededRNG
+): GameState {
+  const newState = { ...state };
+  newState.dropTimer++;
+
+  // Check if block should drop
+  if (newState.dropTimer >= newState.dropInterval) {
+    const dropPos = {
+      x: newState.blockPosition.x,
+      y: newState.blockPosition.y + 1,
+    };
+
+    if (
+      isValidPosition(newState.board, newState.currentBlock, dropPos) ===
+      'valid'
+    ) {
+      newState.blockPosition = dropPos;
+      newState.dropTimer = 0;
+    } else {
+      // Can't drop, place block
+      return placeCurrentBlock(newState, frame, rng);
+    }
+  }
+
+  return newState;
+}
+
+/**
+ * Update timeline sweep progression
+ */
+function updateTimeline(state: GameState): GameState {
+  if (!state.timeline.active) {
+    return state;
+  }
+
+  const newTimeline = {
+    ...state.timeline,
+    x: state.timeline.x + state.timeline.speed,
+  };
+
+  // Check if timeline reached end
+  if (newTimeline.x >= GAME_CONFIG.board.width) {
+    newTimeline.active = false;
+    newTimeline.x = 0;
+  }
+
+  return {
+    ...state,
+    timeline: newTimeline,
+  };
+}
+
+/**
+ * Handle rectangle clearing logic
+ */
+function handleClearRectangles(
+  state: GameState,
+  action: GameAction,
+  rng: SeededRNG
+): GameState {
+  const rectangles = detectRectangles(state.board);
+  if (rectangles.length === 0) {
+    return state;
+  }
+
+  const { newBoard } = clearRectanglesAndApplyGravity(state.board, rectangles);
+  const points = calculateScore(rectangles);
+
+  return {
+    ...state,
+    board: newBoard,
+    score: state.score + points,
+    rectanglesCleared: state.rectanglesCleared + rectangles.length,
+    timeline: { ...state.timeline, active: true }, // Start timeline sweep
+    rngState: rng.getState(),
+    frame: action.frame,
+  };
+}
+
+/**
  * Main game state reducer
  */
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -151,6 +386,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...createInitialGameState(state.seed),
         status: 'playing',
         frame: action.frame,
+        debugMode: state.debugMode,
       };
 
     case 'PAUSE':
@@ -175,144 +411,29 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    case 'MOVE_LEFT': {
-      if (state.status !== 'playing') return state;
+    // Complex cases use extracted handlers
+    case 'MOVE_LEFT':
+      return handleBlockMovement(state, action, 'left');
 
-      const leftPosition = {
-        x: state.blockPosition.x - 1,
-        y: state.blockPosition.y,
-      };
-      if (
-        isValidPosition(state.board, state.currentBlock, leftPosition) ===
-        'valid'
-      ) {
-        return {
-          ...state,
-          blockPosition: leftPosition,
-          frame: action.frame,
-        };
-      }
-      return state;
-    }
+    case 'MOVE_RIGHT':
+      return handleBlockMovement(state, action, 'right');
 
-    case 'MOVE_RIGHT': {
-      if (state.status !== 'playing') return state;
+    case 'ROTATE_CW':
+      return handleBlockRotation(state, action, 'cw');
 
-      const rightPosition = {
-        x: state.blockPosition.x + 1,
-        y: state.blockPosition.y,
-      };
-      if (
-        isValidPosition(state.board, state.currentBlock, rightPosition) ===
-        'valid'
-      ) {
-        return {
-          ...state,
-          blockPosition: rightPosition,
-          frame: action.frame,
-        };
-      }
-      return state;
-    }
+    case 'ROTATE_CCW':
+      return handleBlockRotation(state, action, 'ccw');
 
-    case 'ROTATE_CW': {
-      if (state.status !== 'playing') return state;
+    case 'SOFT_DROP':
+      return handleSoftDrop(state, action, rng);
 
-      const cwRotation = ((state.currentBlock.rotation + 1) % 4) as
-        | 0
-        | 1
-        | 2
-        | 3;
-      if (
-        isValidPosition(
-          state.board,
-          state.currentBlock,
-          state.blockPosition,
-          cwRotation
-        ) === 'valid'
-      ) {
-        return {
-          ...state,
-          currentBlock: {
-            ...state.currentBlock,
-            rotation: cwRotation,
-            pattern: getRotatedPattern(state.currentBlock, cwRotation),
-          },
-          frame: action.frame,
-        };
-      }
-      return state;
-    }
-
-    case 'ROTATE_CCW': {
-      if (state.status !== 'playing') return state;
-
-      const ccwRotation = ((state.currentBlock.rotation - 1 + 4) % 4) as
-        | 0
-        | 1
-        | 2
-        | 3;
-      if (
-        isValidPosition(
-          state.board,
-          state.currentBlock,
-          state.blockPosition,
-          ccwRotation
-        ) === 'valid'
-      ) {
-        return {
-          ...state,
-          currentBlock: {
-            ...state.currentBlock,
-            rotation: ccwRotation,
-            pattern: getRotatedPattern(state.currentBlock, ccwRotation),
-          },
-          frame: action.frame,
-        };
-      }
-      return state;
-    }
-
-    case 'SOFT_DROP': {
-      if (state.status !== 'playing') return state;
-
-      const softDropPosition = {
-        x: state.blockPosition.x,
-        y: state.blockPosition.y + 1,
-      };
-      if (
-        isValidPosition(state.board, state.currentBlock, softDropPosition) ===
-        'valid'
-      ) {
-        return {
-          ...state,
-          blockPosition: softDropPosition,
-          dropTimer: 0, // Reset drop timer
-          frame: action.frame,
-        };
-      }
-      // If can't drop, place block
-      return placeCurrentBlock(state, action.frame, rng);
-    }
-
-    case 'HARD_DROP': {
-      if (state.status !== 'playing') return state;
-
-      const dropPosition = findDropPosition(
-        state.board,
-        state.currentBlock,
-        state.blockPosition
-      );
-      const newState = {
-        ...state,
-        blockPosition: dropPosition,
-        frame: action.frame,
-      };
-      return placeCurrentBlock(newState, action.frame, rng);
-    }
+    case 'HARD_DROP':
+      return handleHardDrop(state, action, rng);
 
     case 'APPLY_GRAVITY': {
-      if (state.status !== 'playing') return state;
+      if (state.status !== 'playing') {
+        return state;
+      }
 
       const newBoard = applyGravity(state.board);
       return {
@@ -322,70 +443,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    case 'TICK': {
-      if (state.status !== 'playing') return state;
+    case 'TICK':
+      return handleGameTick(state, action, rng);
 
-      let newState = { ...state, frame: action.frame };
-
-      // Update drop timer
-      newState.dropTimer++;
-
-      // Check if block should drop
-      if (newState.dropTimer >= newState.dropInterval) {
-        const dropPos = {
-          x: newState.blockPosition.x,
-          y: newState.blockPosition.y + 1,
-        };
-
-        if (
-          isValidPosition(newState.board, newState.currentBlock, dropPos) ===
-          'valid'
-        ) {
-          newState.blockPosition = dropPos;
-          newState.dropTimer = 0;
-        } else {
-          // Can't drop, place block
-          newState = placeCurrentBlock(newState, action.frame, rng);
-        }
-      }
-
-      // Update timeline if active
-      if (newState.timeline.active) {
-        newState.timeline = {
-          ...newState.timeline,
-          x: newState.timeline.x + newState.timeline.speed,
-        };
-
-        // Check if timeline reached end
-        if (newState.timeline.x >= GAME_CONFIG.board.width) {
-          newState.timeline.active = false;
-          newState.timeline.x = 0;
-        }
-      }
-
-      return newState;
-    }
-
-    case 'CLEAR_RECTANGLES': {
-      const rectangles = detectRectangles(state.board);
-      if (rectangles.length === 0) return state;
-
-      const { newBoard } = clearRectanglesAndApplyGravity(
-        state.board,
-        rectangles
-      );
-      const points = calculateScore(rectangles);
-
-      return {
-        ...state,
-        board: newBoard,
-        score: state.score + points,
-        rectanglesCleared: state.rectanglesCleared + rectangles.length,
-        timeline: { ...state.timeline, active: true }, // Start timeline sweep
-        rngState: rng.getState(),
-        frame: action.frame,
-      };
-    }
+    case 'CLEAR_RECTANGLES':
+      return handleClearRectangles(state, action, rng);
 
     case 'GAME_OVER':
       return {

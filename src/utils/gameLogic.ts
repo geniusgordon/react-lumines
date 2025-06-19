@@ -231,7 +231,9 @@ function floodFillRectangle(
     stack.push({ x, y: y - 1 });
   }
 
-  if (cells.length === 0) return null;
+  if (cells.length === 0) {
+    return null;
+  }
 
   // Calculate bounding rectangle
   const minX = Math.min(...cells.map(c => c.x));
@@ -316,7 +318,9 @@ export function applyGravity(board: GameBoard): GameBoard {
  * Formula: (width - 1) × (height - 1) for rectangles ≥ 2×2
  */
 export function calculateScore(rectangles: Rectangle[]): number {
-  if (rectangles.length === 0) return 0;
+  if (rectangles.length === 0) {
+    return 0;
+  }
 
   let totalPoints = 0;
 

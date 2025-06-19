@@ -45,10 +45,10 @@ export interface UseGameLoopReturn {
   frameCount: number;
 
   /**
-   * Manually advance one frame (only available in debug mode)
+   * Manually advance frames (only available in debug mode)
    * Perfect for step-by-step debugging of game logic
    */
-  manualStep: () => void;
+  manualStep: (steps?: number) => void;
 
   /**
    * Whether manual stepping mode is active
@@ -108,11 +108,20 @@ export function useGameLoop(
   }, [gameState.frame, dispatch]);
 
   // Manual frame stepping function for debug mode
-  const manualStep = useCallback(() => {
-    if (debugMode && gameState.status === 'playing') {
-      gameUpdate();
-    }
-  }, [debugMode, gameState.status, gameUpdate]);
+  const manualStep = useCallback(
+    (steps: number = 1) => {
+      if (debugMode && gameState.status === 'playing') {
+        for (let i = 0; i < steps; i++) {
+          const currentFrame = gameState.frame + 1 + i;
+          dispatch({
+            type: 'TICK',
+            frame: currentFrame,
+          });
+        }
+      }
+    },
+    [debugMode, gameState.status, gameState.frame, dispatch]
+  );
 
   // Main game loop with fixed timestep
   const gameLoop = useCallback(

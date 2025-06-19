@@ -23,13 +23,14 @@ export default tseslint.config(
       import: importPlugin,
     },
     rules: {
+      // React hooks rules - must be in same config object as plugin
       ...reactHooks.configs.recommended.rules,
+      // React refresh rules - must be in same config object as plugin
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
-      '@typescript-eslint/no-explicit-any': 'off',
-      // Import plugin rules
+      // Import plugin rules - must be in same config object as plugin
       'import/order': [
         'error',
         {
@@ -67,5 +68,13 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettierRecommended,
-  storybook.configs['flat/recommended']
+  storybook.configs['flat/recommended'],
+  // Custom rules - applied last to ensure they take precedence
+  {
+    rules: {
+      // Custom core ESLint and TypeScript rules only
+      curly: 'error',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  }
 );
