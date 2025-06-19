@@ -1,7 +1,9 @@
 import { useReducer } from 'react';
 
-import { GameScreen, DebugPanel } from './components';
-import { useGameLoop } from './hooks';
+import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
+
+import { GameScreen, DebugPanel, KeyboardShortcuts } from './components';
+import { useControls, useGameLoop } from './hooks';
 import {
   gameReducerWithDebug,
   createInitialGameState,
@@ -13,6 +15,13 @@ function App() {
     gameReducerWithDebug,
     createInitialGameState(undefined, false)
   );
+
+  const controls = useControls(gameState, dispatch, {
+    recording: true,
+    enableKeyRepeat: true,
+    keyRepeatDelay: 100,
+    uiUpdateBatchSize: 10,
+  });
 
   // Initialize game loop with debug mode option
   const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
@@ -46,7 +55,13 @@ function App() {
         isRunning={isRunning}
         isDebugMode={isDebugMode}
         manualStep={manualStep}
+        controls={controls}
       />
+
+      {/* Keyboard Shortcuts - Always visible */}
+      <div className="fixed bottom-4 left-4 z-40">
+        <KeyboardShortcuts controlsConfig={DEFAULT_CONTROLS} />
+      </div>
 
       {/* Game Controls */}
       <div className="mb-4 flex flex-wrap justify-center gap-2">

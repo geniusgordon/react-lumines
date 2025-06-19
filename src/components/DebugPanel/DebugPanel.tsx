@@ -1,11 +1,12 @@
 import { useState } from 'react';
 
+import type { UseControlsReturn } from '@/hooks';
 import type { GameState, GameAction } from '@/types/game';
 
 import { AdvancedSection } from './AdvancedSection';
+import { ControlsInfo } from './ControlsInfo';
 import { DebugModeBanner } from './DebugModeBanner';
 import { DebugPanelHeader } from './DebugPanelHeader';
-import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { PerformanceMetrics } from './PerformanceMetrics';
 import { PrimaryControls } from './PrimaryControls';
 import { QuickStats } from './QuickStats';
@@ -18,6 +19,7 @@ export interface DebugPanelProps {
   isRunning: boolean;
   isDebugMode: boolean;
   manualStep: (steps?: number) => void;
+  controls: UseControlsReturn;
 }
 
 export function DebugPanel({
@@ -27,6 +29,7 @@ export function DebugPanel({
   currentFPS,
   isRunning,
   manualStep,
+  controls,
 }: DebugPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -59,6 +62,8 @@ export function DebugPanel({
               isRunning={isRunning}
             />
 
+            <ControlsInfo controls={controls} />
+
             <PrimaryControls
               debugMode={gameState.debugMode}
               gameStatus={gameState.status}
@@ -75,8 +80,6 @@ export function DebugPanel({
           </div>
         )}
       </div>
-
-      <KeyboardShortcuts isVisible={gameState.debugMode && isExpanded} />
     </div>
   );
 }

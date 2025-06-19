@@ -9,6 +9,7 @@ export { Timeline } from './Timeline';
 export { Queue } from './Queue';
 export { ScoreDisplay } from './ScoreDisplay';
 export { CurrentBlock } from './CurrentBlock';
+export { KeyboardShortcuts } from './DebugPanel/KeyboardShortcuts';
 
 // Export types
 export type { GridCellProps } from './GridCell';

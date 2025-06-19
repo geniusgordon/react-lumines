@@ -221,7 +221,19 @@ export function useControls(
 
       if (gameState.status === 'gameOver') {
         // In game over screen, allow restart
-        if (key === 'Enter' || key === 'Space') {
+        if (gameAction === 'RESTART' || key === 'Enter' || key === 'Space') {
+          dispatchAction('RESTART');
+        }
+        return;
+      }
+
+      // Handle restart action (available in all playing states)
+      if (gameAction === 'RESTART') {
+        if (
+          gameState.status === 'playing' ||
+          gameState.status === 'paused' ||
+          gameState.status === 'replay'
+        ) {
           dispatchAction('RESTART');
         }
         return;

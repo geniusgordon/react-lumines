@@ -6,3 +6,4 @@ export { PerformanceMetrics } from './PerformanceMetrics';
 export { PrimaryControls } from './PrimaryControls';
 export { AdvancedSection } from './AdvancedSection';
 export { KeyboardShortcuts } from './KeyboardShortcuts';
+export { ControlsInfo } from './ControlsInfo';
