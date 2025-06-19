@@ -16,7 +16,7 @@ export interface GridCellProps {
 export const GridCell: React.FC<GridCellProps> = ({ value, x, y }) => {
   const getCellClass = () => {
     const baseClasses =
-      'w-block-size h-block-size border border-solid border-game-grid box-border transition-all duration-100 ease-in-out relative';
+      'w-block-size h-block-size border border-solid border-game-grid box-border relative';
 
     // Color classes based on cell value
     let colorClasses = '';

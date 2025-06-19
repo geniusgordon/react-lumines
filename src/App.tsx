@@ -1,6 +1,6 @@
 import { useReducer } from 'react';
 
-import { GameBoard, DebugPanel } from './components';
+import { GameScreen, DebugPanel } from './components';
 import { useGameLoop } from './hooks';
 import {
   gameReducerWithDebug,
@@ -68,14 +68,16 @@ function App() {
         )}
       </div>
 
-      {/* Game Board */}
+      {/* Game Screen */}
       <div>
-        <GameBoard
+        <GameScreen
           board={gameState.board}
           currentBlock={gameState.currentBlock}
           blockPosition={gameState.blockPosition}
           timeline={gameState.timeline}
           queue={gameState.queue}
+          score={gameState.score}
+          timeRemaining={60}
         />
       </div>
     </div>

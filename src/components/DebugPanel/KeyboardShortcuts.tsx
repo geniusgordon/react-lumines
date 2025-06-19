@@ -13,7 +13,7 @@ export function KeyboardShortcuts({ isVisible }: KeyboardShortcutsProps) {
       <div className="space-y-1">
         <div className="flex justify-between">
           <span>Step Frame:</span>
-          <kbd className="rounded bg-gray-700 px-1 text-gray-300">Space</kbd>
+          <kbd className="rounded bg-gray-700 px-1 text-gray-300">S</kbd>
         </div>
         <div className="flex justify-between">
           <span>Toggle Debug:</span>
