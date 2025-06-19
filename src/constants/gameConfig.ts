@@ -85,16 +85,10 @@ export const BLOCK_PATTERNS = [
   ],
 ];
 
-// Scoring system - Count overlapping 2×2 rectangles
-export const SCORING = {
-  OVERLAPPING_2X2_FORMULA: '(width - 1) × (height - 1)', // Formula for overlapping rectangles
-  MIN_RECTANGLE_SIZE: 2, // Minimum size for valid rectangles
-};
-
-// Time attack mode - no level progression
+// Time attack mode
 export const TIME_ATTACK_CONFIG = {
   FIXED_DROP_INTERVAL: 48, // Constant drop speed (frames between drops)
-  GAME_DURATION: 180000, // 3 minutes in milliseconds (optional for timed mode)
+  GAME_DURATION: 60000, // 1 minute in milliseconds (optional for timed mode)
 };
 
 // Replay system constants

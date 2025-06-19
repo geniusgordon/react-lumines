@@ -1,90 +1,78 @@
+import { useReducer } from 'react';
+
 import { GameBoard } from './components';
-import {
-  BOARD_WIDTH,
-  BOARD_HEIGHT,
-  BLOCK_PATTERNS,
-} from './constants/gameConfig';
-import type {
-  GameBoard as GameBoardType,
-  Block,
-  Position,
-  Timeline,
-} from './types/game';
+import { useGameLoop } from './hooks';
+import { gameReducer, createInitialGameState } from './reducers/gameReducer';
 
 function App() {
-  // Create a demo game board with some sample data
-  const createDemoBoard = (): GameBoardType => {
-    const board: GameBoardType = Array(BOARD_HEIGHT)
-      .fill(null)
-      .map(() => Array(BOARD_WIDTH).fill(0));
+  // Initialize game state with reducer
+  const [gameState, dispatch] = useReducer(
+    gameReducer,
+    createInitialGameState()
+  );
 
-    // Add some sample blocks to the bottom
-    board[8][2] = 1;
-    board[8][3] = 1;
-    board[9][2] = 1;
-    board[9][3] = 1;
+  // Initialize game loop
+  const { isRunning, currentFPS, frameCount } = useGameLoop(
+    gameState,
+    dispatch
+  );
 
-    board[8][5] = 2;
-    board[8][6] = 2;
-    board[9][5] = 2;
-    board[9][6] = 2;
-
-    board[8][8] = 1;
-    board[8][9] = 2;
-    board[9][8] = 2;
-    board[9][9] = 1;
-
-    return board;
+  // Start the game when component mounts
+  const handleStartGame = () => {
+    dispatch({ type: 'START_GAME', frame: 0 });
   };
 
-  // Create a demo current block
-  const demoBlock: Block = {
-    pattern: BLOCK_PATTERNS[4] as [[1, 2], [2, 1]], // Diagonal pattern
-    rotation: 0,
-    id: 'demo-block',
+  const handlePauseResume = () => {
+    if (gameState.status === 'playing') {
+      dispatch({ type: 'PAUSE', frame: frameCount });
+    } else if (gameState.status === 'paused') {
+      dispatch({ type: 'RESUME', frame: frameCount });
+    }
   };
-
-  const demoQueue: Block[] = [
-    {
-      pattern: BLOCK_PATTERNS[0] as [[1, 2], [2, 1]], // Diagonal pattern
-      rotation: 0,
-      id: 'demo-block-1',
-    },
-    {
-      pattern: BLOCK_PATTERNS[1] as [[1, 2], [2, 1]], // Diagonal pattern
-      rotation: 0,
-      id: 'demo-block-2',
-    },
-    {
-      pattern: BLOCK_PATTERNS[2] as [[1, 2], [2, 1]], // Diagonal pattern
-      rotation: 0,
-      id: 'demo-block-3',
-    },
-  ];
-
-  const demoPosition: Position = { x: 7, y: 2 };
-
-  const demoTimeline: Timeline = {
-    x: 6.5,
-    speed: 2,
-    active: true,
-    rectanglesCleared: 0,
-  };
-
-  const demoBoard = createDemoBoard();
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center">
       <div className="text-game-text mb-4 text-2xl font-bold">
-        🎮 Lumines Game
+        🎮 Lumines Game - useGameLoop Demo
       </div>
+
+      {/* Game Status Display */}
+      <div className="text-game-text mb-4 text-center">
+        <div>Status: {gameState.status}</div>
+        <div>Frame: {frameCount}</div>
+        <div>FPS: {currentFPS}</div>
+        <div>Loop Running: {isRunning ? 'Yes' : 'No'}</div>
+        <div>Score: {gameState.score}</div>
+      </div>
+
+      {/* Game Controls */}
+      <div className="mb-4 flex gap-2">
+        {gameState.status === 'start' && (
+          <button
+            onClick={handleStartGame}
+            className="bg-game-light hover:bg-game-light/80 rounded px-4 py-2 text-black"
+          >
+            Start Game
+          </button>
+        )}
+        {(gameState.status === 'playing' || gameState.status === 'paused') && (
+          <button
+            onClick={handlePauseResume}
+            className="bg-game-light hover:bg-game-light/80 rounded px-4 py-2 text-black"
+          >
+            {gameState.status === 'playing' ? 'Pause' : 'Resume'}
+          </button>
+        )}
+      </div>
+
+      {/* Game Board */}
       <div>
         <GameBoard
-          board={demoBoard}
-          currentBlock={demoBlock}
-          blockPosition={demoPosition}
-          timeline={demoTimeline}
-          queue={demoQueue}
+          board={gameState.board}
+          currentBlock={gameState.currentBlock}
+          blockPosition={gameState.blockPosition}
+          timeline={gameState.timeline}
+          queue={gameState.queue}
         />
       </div>
     </div>
