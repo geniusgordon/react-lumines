@@ -60,7 +60,8 @@ export type GameActionType =
   | 'START_GAME'
   | 'GAME_OVER'
   | 'CLEAR_RECTANGLES'
-  | 'APPLY_GRAVITY';
+  | 'APPLY_GRAVITY'
+  | 'SET_DEBUG_MODE'; // Toggle debug mode and logging
 
 // Game action structure
 export interface GameAction {
@@ -96,6 +97,9 @@ export interface GameState {
 
   // Performance tracking
   lastUpdateTime: number; // For frame rate consistency
+
+  // Debug mode
+  debugMode: boolean; // Enable debug logging and manual stepping
 }
 
 // Replay system types

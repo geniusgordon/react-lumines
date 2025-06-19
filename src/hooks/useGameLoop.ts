@@ -26,12 +26,34 @@ export interface UseGameLoopOptions {
    * - Result: Game stays playable even when things go wrong
    */
   maxFrameSkip?: number;
+
+  /**
+   * Enable manual frame stepping mode for debugging (default: false)
+   *
+   * When enabled:
+   * - Automatic game loop is disabled
+   * - Game only advances when manualStep() is called
+   * - Perfect for debugging deterministic behavior
+   * - Useful for testing specific game scenarios frame by frame
+   */
+  debugMode?: boolean;
 }
 
 export interface UseGameLoopReturn {
   isRunning: boolean;
   currentFPS: number;
   frameCount: number;
+
+  /**
+   * Manually advance one frame (only available in debug mode)
+   * Perfect for step-by-step debugging of game logic
+   */
+  manualStep: () => void;
+
+  /**
+   * Whether manual stepping mode is active
+   */
+  isDebugMode: boolean;
 }
 
 /**
@@ -60,7 +82,7 @@ export function useGameLoop(
   dispatch: React.Dispatch<GameAction>,
   options: UseGameLoopOptions = {}
 ): UseGameLoopReturn {
-  const { enabled = true, maxFrameSkip = 5 } = options;
+  const { enabled = true, maxFrameSkip = 5, debugMode = false } = options;
 
   // Refs for timing precision
   const animationFrameId = useRef<number | null>(null);
@@ -73,7 +95,8 @@ export function useGameLoop(
   });
 
   // Determine if game loop should be running
-  const shouldRun = enabled && gameState.status === 'playing';
+  // In debug mode, we don't auto-run the loop - only manual stepping
+  const shouldRun = enabled && gameState.status === 'playing' && !debugMode;
 
   // Fixed timestep update function
   const gameUpdate = useCallback(() => {
@@ -83,6 +106,13 @@ export function useGameLoop(
       frame: currentFrame,
     });
   }, [gameState.frame, dispatch]);
+
+  // Manual frame stepping function for debug mode
+  const manualStep = useCallback(() => {
+    if (debugMode && gameState.status === 'playing') {
+      gameUpdate();
+    }
+  }, [debugMode, gameState.status, gameUpdate]);
 
   // Main game loop with fixed timestep
   const gameLoop = useCallback(
@@ -176,5 +206,7 @@ export function useGameLoop(
     isRunning: shouldRun && animationFrameId.current !== null,
     currentFPS: Math.round(fpsTracker.current.currentFPS),
     frameCount: gameState.frame,
+    manualStep,
+    isDebugMode: debugMode,
   };
 }

@@ -23,7 +23,8 @@ import { SeededRNG } from '@/utils/seededRNG';
  * Create initial game state
  */
 export function createInitialGameState(
-  seed: number = DEFAULT_VALUES.SEED
+  seed: number = DEFAULT_VALUES.SEED,
+  debugMode: boolean = false
 ): GameState {
   const rng = new SeededRNG(seed);
   const currentBlock = generateRandomBlock(rng);
@@ -65,13 +66,81 @@ export function createInitialGameState(
 
     // Performance
     lastUpdateTime: 0,
+
+    // Debug mode
+    debugMode,
   };
+}
+
+/**
+ * Debug logging helper
+ */
+function logDebugAction(
+  state: GameState,
+  action: GameAction,
+  newState?: GameState
+) {
+  if (!state.debugMode) {
+    return;
+  }
+
+  const timestamp = new Date().toLocaleTimeString();
+  const frameInfo = `Frame ${action.frame}`;
+
+  console.group(`🐛 [${timestamp}] ${frameInfo} - ${action.type}`);
+
+  // Log action details
+  console.log('📥 Action:', action);
+
+  // Log relevant state changes
+  if (newState) {
+    const stateChanges: Record<string, { from: any; to: any }> = {};
+
+    // Track key state changes
+    if (state.status !== newState.status) {
+      stateChanges.status = { from: state.status, to: newState.status };
+    }
+    if (state.frame !== newState.frame) {
+      stateChanges.frame = { from: state.frame, to: newState.frame };
+    }
+    if (state.score !== newState.score) {
+      stateChanges.score = { from: state.score, to: newState.score };
+    }
+    if (
+      state.blockPosition.x !== newState.blockPosition.x ||
+      state.blockPosition.y !== newState.blockPosition.y
+    ) {
+      stateChanges.blockPosition = {
+        from: { ...state.blockPosition },
+        to: { ...newState.blockPosition },
+      };
+    }
+    if (state.dropTimer !== newState.dropTimer) {
+      stateChanges.dropTimer = {
+        from: state.dropTimer,
+        to: newState.dropTimer,
+      };
+    }
+
+    if (Object.keys(stateChanges).length > 0) {
+      console.log('📊 State Changes:', stateChanges);
+    } else {
+      console.log('📊 State: No changes');
+    }
+  } else {
+    console.log('📊 State: Before processing');
+  }
+
+  console.groupEnd();
 }
 
 /**
  * Main game state reducer
  */
 export function gameReducer(state: GameState, action: GameAction): GameState {
+  // Debug logging - log incoming action
+  logDebugAction(state, action);
+
   // Create RNG instance with current state for deterministic operations
   const rng = new SeededRNG(state.seed);
   rng.setState(state.rngState);
@@ -95,7 +164,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         : state;
 
     case 'RESTART':
-      return createInitialGameState(state.seed);
+      return createInitialGameState(state.seed, state.debugMode);
+
+    case 'SET_DEBUG_MODE': {
+      const newDebugMode = action.payload as boolean;
+      return {
+        ...state,
+        debugMode: newDebugMode,
+        frame: action.frame,
+      };
+    }
 
     case 'MOVE_LEFT': {
       if (state.status !== 'playing') return state;
@@ -317,8 +395,28 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     default:
+      if (state.debugMode) {
+        console.warn(`🐛 Unknown action type: ${action.type}`, action);
+      }
       return state;
   }
+}
+
+/**
+ * Debug-aware wrapper for gameReducer that logs state changes
+ */
+export function gameReducerWithDebug(
+  state: GameState,
+  action: GameAction
+): GameState {
+  const newState = gameReducer(state, action);
+
+  // Log the final state changes if debug mode is enabled
+  if (state.debugMode) {
+    logDebugAction(state, action, newState);
+  }
+
+  return newState;
 }
 
 /**

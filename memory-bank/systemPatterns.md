@@ -265,3 +265,80 @@ This is **essential** for Lumines because:
 - **Competitive gameplay**: Players expect consistent timing  
 - **Cross-device play**: Same seed must produce identical games
 - **Rectangle detection**: Timing-sensitive clearing algorithms
+
+### Debug Mode: Manual Frame Stepping
+
+For testing and debugging deterministic behavior, the game loop includes a manual stepping mode:
+
+```typescript
+// Enable debug mode in useGameLoop
+const { manualStep, isDebugMode } = useGameLoop(gameState, dispatch, { 
+  debugMode: true 
+});
+
+// Manual frame advance
+manualStep(); // Advances exactly one frame when called
+```
+
+#### Debug Mode Features:
+- **Automatic loop disabled**: Game only advances when `manualStep()` is called
+- **Frame-perfect testing**: Validate exact game state at any frame
+- **Deterministic verification**: Step through identical sequences
+- **UI integration**: Toggle between auto and manual modes
+- **Status indicators**: Clear feedback on current mode
+
+#### Use Cases:
+- **Replay validation**: Step through recorded inputs frame by frame
+- **Game logic testing**: Verify block movement, rotation, collision detection
+- **Rectangle detection**: Debug clearing algorithms step by step
+- **Performance analysis**: Isolate expensive operations
+- **Deterministic verification**: Ensure same inputs produce same results
+
+### Debug Logging System
+
+The game reducer includes comprehensive logging when debug mode is enabled:
+
+```typescript
+// Debug logging automatically activates when gameState.debugMode = true
+const [gameState, dispatch] = useReducer(gameReducerWithDebug, initialState);
+
+// Logs every action with:
+// 🐛 [timestamp] Frame X - ACTION_TYPE
+// 📥 Action: { type, frame, payload }
+// 📊 State Changes: { field: { from: oldValue, to: newValue } }
+```
+
+#### Logging Features:
+- **Timestamped entries**: Clear timeline of all game events
+- **Action details**: Full action objects with type, frame, and payload
+- **State change tracking**: Before/after comparison of key game state fields
+- **Console grouping**: Collapsible log entries for clean debugging
+- **Performance awareness**: Only logs when debug mode is active (zero overhead in production)
+
+#### Tracked State Changes:
+- **Game status**: start → playing → paused → gameOver
+- **Frame counter**: Tracks exact game loop progression
+- **Score changes**: Point accumulation from rectangle clearing
+- **Block position**: Movement, rotation, and dropping
+- **Drop timer**: Automatic falling mechanics
+- **Unknown actions**: Warnings for unhandled action types
+
+#### Example Debug Output:
+```
+🐛 [2:34:15 PM] Frame 245 - MOVE_LEFT
+  📥 Action: { type: "MOVE_LEFT", frame: 245 }
+  📊 State Changes: { 
+    blockPosition: { 
+      from: { x: 8, y: 3 }, 
+      to: { x: 7, y: 3 } 
+    } 
+  }
+
+🐛 [2:34:16 PM] Frame 246 - TICK  
+  📥 Action: { type: "TICK", frame: 246 }
+  📊 State Changes: { 
+    dropTimer: { from: 12, to: 13 } 
+  }
+```
+
+This logging system is essential for debugging the deterministic behavior required for the replay system.
