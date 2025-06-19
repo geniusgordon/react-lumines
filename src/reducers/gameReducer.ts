@@ -4,6 +4,7 @@ import {
   TIME_ATTACK_CONFIG,
 } from '@/constants/gameConfig';
 import type { GameState, GameAction } from '@/types/game';
+import { logGameState } from '@/utils/debugLogger';
 import {
   createEmptyBoard,
   generateRandomBlock,
@@ -310,7 +311,10 @@ function updateDropTimer(
       newState.dropTimer = 0;
     } else {
       // Can't drop, place block
-      return placeCurrentBlock(newState, frame, rng);
+      logGameState(newState);
+      const s = placeCurrentBlock(newState, frame, rng);
+      logGameState(s);
+      return s;
     }
   }
 

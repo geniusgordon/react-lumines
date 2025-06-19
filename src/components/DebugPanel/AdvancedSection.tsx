@@ -2,6 +2,7 @@ import { ChevronDown, ClipboardList, Copy } from 'lucide-react';
 import { useState } from 'react';
 
 import type { GameState } from '@/types/game';
+import { logGameState } from '@/utils/debugLogger';
 
 interface AdvancedSectionProps {
   gameState: GameState;
@@ -19,23 +20,33 @@ export function AdvancedSection({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleLogState = () => {
-    console.log('Game State:', gameState);
-    console.log('Frame Count:', frameCount);
-    console.log('Performance:', {
-      fps: currentFPS,
-      isRunning,
-    });
+    logGameState(gameState);
   };
 
   const handleCopyData = () => {
+    const timestamp = new Date().toISOString();
     const data = {
+      meta: {
+        timestamp,
+        version: '1.0',
+        capturedBy: 'DebugPanel',
+      },
+      performance: {
+        fps: currentFPS,
+        isRunning,
+        frameCount,
+      },
       gameState,
-      frameCount,
-      currentFPS,
-      isRunning,
-      timestamp: Date.now(),
     };
-    navigator.clipboard?.writeText(JSON.stringify(data, null, 2));
+
+    navigator.clipboard
+      ?.writeText(JSON.stringify(data, null, 2))
+      .then(() => {
+        console.log('📋 Debug data copied to clipboard');
+      })
+      .catch(err => {
+        console.error('❌ Failed to copy debug data:', err);
+      });
   };
 
   return (
@@ -81,7 +92,7 @@ export function AdvancedSection({
             <button
               onClick={handleLogState}
               className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
-              title="Log current game state to console"
+              title="Log detailed game state analysis to console"
             >
               <div className="flex items-center justify-center gap-1">
                 <ClipboardList className="h-3 w-3" />
@@ -92,7 +103,7 @@ export function AdvancedSection({
             <button
               onClick={handleCopyData}
               className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
-              title="Copy debug data to clipboard"
+              title="Copy comprehensive debug data to clipboard"
             >
               <div className="flex items-center justify-center gap-1">
                 <Copy className="h-3 w-3" />
