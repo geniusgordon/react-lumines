@@ -1,26 +1,86 @@
-import type { GameState } from '@/types/game';
+import type {
+  Block,
+  GameAction,
+  GameBoard,
+  GameState,
+  Position,
+} from '@/types/game';
 
 /**
- * Logs comprehensive game state information to the console with visual representations
- * @param gameState - The current game state to analyze and log
+ * Debug logging helper
  */
-export function logGameState(gameState: GameState): void {
+export function logDebugAction(
+  state: GameState,
+  action: GameAction,
+  newState?: GameState
+) {
+  if (!state.debugMode) {
+    return;
+  }
+
   const timestamp = new Date().toLocaleTimeString();
+  const frameInfo = `Frame ${action.frame}`;
 
-  console.group(`🎮 [${timestamp}] Debug Panel State Snapshot`);
+  console.groupCollapsed(`🐛 [${timestamp}] ${frameInfo} - ${action.type}`);
 
+  // Log action details
+  console.log('📥 Action:', action);
+
+  // Log relevant state changes
+  if (newState) {
+    const stateChanges: Record<string, { from: any; to: any }> = {};
+
+    // Track key state changes
+    if (state.status !== newState.status) {
+      stateChanges.status = { from: state.status, to: newState.status };
+    }
+    if (state.frame !== newState.frame) {
+      stateChanges.frame = { from: state.frame, to: newState.frame };
+    }
+    if (state.score !== newState.score) {
+      stateChanges.score = { from: state.score, to: newState.score };
+    }
+    if (
+      state.blockPosition.x !== newState.blockPosition.x ||
+      state.blockPosition.y !== newState.blockPosition.y
+    ) {
+      stateChanges.blockPosition = {
+        from: { ...state.blockPosition },
+        to: { ...newState.blockPosition },
+      };
+    }
+    if (state.dropTimer !== newState.dropTimer) {
+      stateChanges.dropTimer = {
+        from: state.dropTimer,
+        to: newState.dropTimer,
+      };
+    }
+
+    if (Object.keys(stateChanges).length > 0) {
+      console.log('📊 State Changes:', stateChanges);
+    } else {
+      console.log('📊 State: No changes');
+    }
+  } else {
+    console.log('📊 State: Before processing');
+  }
+
+  console.groupEnd();
+}
+
+export function logCurrentBlock(
+  currentBlock: Block,
+  blockPosition: Position
+): void {
   // Block state
-  console.group('🧱 Current Block State');
-  console.log(
-    '📍 Position:',
-    `(${gameState.blockPosition.x}, ${gameState.blockPosition.y})`
-  );
-  console.log('🔄 Rotation:', gameState.currentBlock.rotation);
-  console.log('🆔 Block ID:', gameState.currentBlock.id);
+  console.groupCollapsed('🧱 Current Block State');
+  console.log('📍 Position:', `(${blockPosition.x}, ${blockPosition.y})`);
+  console.log('🔄 Rotation:', currentBlock.rotation);
+  console.log('🆔 Block ID:', currentBlock.id);
 
   // Visual pattern representation
   console.log('\n🎯 Current Block Pattern:');
-  const currentPattern = gameState.currentBlock.pattern;
+  const currentPattern = currentBlock.pattern;
   const patternDisplay = currentPattern
     .map(
       row =>
@@ -29,19 +89,23 @@ export function logGameState(gameState: GameState): void {
     .join('\n');
   console.log(patternDisplay);
   console.groupEnd();
+}
 
+export function logGameBoard(
+  board: GameBoard,
+  blockPosition: Position,
+  currentBlock: Block
+): void {
   // Board visualization
-  console.group('🗂️ Current Board State');
+  console.groupCollapsed('🗂️ Current Board State');
 
   // Board statistics
-  const filledCells = gameState.board.flat().filter(cell => cell !== 0).length;
-  const totalCells = gameState.board.length * gameState.board[0].length;
+  const filledCells = board.flat().filter(cell => cell !== 0).length;
+  const totalCells = board.length * board[0].length;
   const fillPercentage = ((filledCells / totalCells) * 100).toFixed(1);
 
   console.log('📊 Board Stats:');
-  console.log(
-    `   📏 Dimensions: ${gameState.board[0].length}×${gameState.board.length}`
-  );
+  console.log(`   📏 Dimensions: ${board[0].length}×${board.length}`);
   console.log(`   📈 Fill: ${filledCells}/${totalCells} (${fillPercentage}%)`);
 
   // Create visual board representation
@@ -49,8 +113,8 @@ export function logGameState(gameState: GameState): void {
   console.log('Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block\n');
 
   // Create a string-based visual representation
-  const { x: blockX, y: blockY } = gameState.blockPosition;
-  const pattern = gameState.currentBlock.pattern;
+  const { x: blockX, y: blockY } = blockPosition;
+  const pattern = currentBlock.pattern;
 
   // Track current block positions
   const currentBlockPositions = new Set<string>();
@@ -61,9 +125,9 @@ export function logGameState(gameState: GameState): void {
       if (
         pattern[py][px] !== 0 &&
         boardY >= 0 &&
-        boardY < gameState.board.length &&
+        boardY < board.length &&
         boardX >= 0 &&
-        boardX < gameState.board[0].length
+        boardX < board[0].length
       ) {
         currentBlockPositions.add(`${boardY},${boardX}`);
       }
@@ -71,7 +135,7 @@ export function logGameState(gameState: GameState): void {
   }
 
   // Display the board with proper formatting
-  const boardString = gameState.board
+  const boardString = board
     .map((row, rowIndex) => {
       const rowString = row
         .map((cell, colIndex) => {
@@ -99,9 +163,27 @@ export function logGameState(gameState: GameState): void {
 
   console.log(boardString);
   console.groupEnd();
+}
+
+/**
+ * Logs comprehensive game state information to the console with visual representations
+ * @param gameState - The current game state to analyze and log
+ */
+export function logGameState(gameState: GameState): void {
+  const timestamp = new Date().toLocaleTimeString();
+
+  console.groupCollapsed(`🎮 [${timestamp}] Debug Panel State Snapshot`);
+
+  logCurrentBlock(gameState.currentBlock, gameState.blockPosition);
+
+  logGameBoard(
+    gameState.board,
+    gameState.blockPosition,
+    gameState.currentBlock
+  );
 
   // Enhanced Queue preview
-  console.group('🔮 Block Queue Preview');
+  console.groupCollapsed('🔮 Block Queue Preview');
   console.log('📦 Queue Length:', gameState.queue.length);
   console.log('📋 Next blocks in order:\n');
 
@@ -128,7 +210,7 @@ export function logGameState(gameState: GameState): void {
   console.groupEnd();
 
   // RNG state for determinism debugging
-  console.group('🎲 Deterministic State');
+  console.groupCollapsed('🎲 Deterministic State');
   console.log('🌱 Seed:', gameState.seed);
   console.log('🔄 RNG State:', gameState.rngState);
   console.log(
@@ -142,8 +224,5 @@ export function logGameState(gameState: GameState): void {
   console.log(gameState);
   console.groupEnd();
 
-  console.log(
-    '💡 Tip: Enable debug mode in game settings for action-by-action logging'
-  );
   console.groupEnd();
 }

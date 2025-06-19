@@ -4,7 +4,7 @@ import {
   TIME_ATTACK_CONFIG,
 } from '@/constants/gameConfig';
 import type { GameState, GameAction } from '@/types/game';
-import { logGameState } from '@/utils/debugLogger';
+import { logDebugAction, logGameState } from '@/utils/debugLogger';
 import {
   createEmptyBoard,
   generateRandomBlock,
@@ -71,68 +71,6 @@ export function createInitialGameState(
     // Debug mode
     debugMode,
   };
-}
-
-/**
- * Debug logging helper
- */
-function logDebugAction(
-  state: GameState,
-  action: GameAction,
-  newState?: GameState
-) {
-  if (!state.debugMode) {
-    return;
-  }
-
-  const timestamp = new Date().toLocaleTimeString();
-  const frameInfo = `Frame ${action.frame}`;
-
-  console.group(`🐛 [${timestamp}] ${frameInfo} - ${action.type}`);
-
-  // Log action details
-  console.log('📥 Action:', action);
-
-  // Log relevant state changes
-  if (newState) {
-    const stateChanges: Record<string, { from: any; to: any }> = {};
-
-    // Track key state changes
-    if (state.status !== newState.status) {
-      stateChanges.status = { from: state.status, to: newState.status };
-    }
-    if (state.frame !== newState.frame) {
-      stateChanges.frame = { from: state.frame, to: newState.frame };
-    }
-    if (state.score !== newState.score) {
-      stateChanges.score = { from: state.score, to: newState.score };
-    }
-    if (
-      state.blockPosition.x !== newState.blockPosition.x ||
-      state.blockPosition.y !== newState.blockPosition.y
-    ) {
-      stateChanges.blockPosition = {
-        from: { ...state.blockPosition },
-        to: { ...newState.blockPosition },
-      };
-    }
-    if (state.dropTimer !== newState.dropTimer) {
-      stateChanges.dropTimer = {
-        from: state.dropTimer,
-        to: newState.dropTimer,
-      };
-    }
-
-    if (Object.keys(stateChanges).length > 0) {
-      console.log('📊 State Changes:', stateChanges);
-    } else {
-      console.log('📊 State: No changes');
-    }
-  } else {
-    console.log('📊 State: Before processing');
-  }
-
-  console.groupEnd();
 }
 
 /**
