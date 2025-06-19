@@ -1,6 +1,10 @@
 import React from 'react';
 
-import type { TimelineProps } from '@/types/game';
+import type { Timeline as TimelineType } from '@/types/game';
+
+export interface TimelineProps {
+  timeline: TimelineType;
+}
 
 /**
  * Timeline represents the vertical sweep line that triggers rectangle clearing

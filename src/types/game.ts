@@ -156,43 +156,6 @@ export interface GameConfig {
 // Utility types for validation
 export type ValidMove = 'valid' | 'invalid' | 'collision' | 'out_of_bounds';
 
-// Component props types
-export interface GameBoardProps {
-  board: GameBoard;
-  currentBlock: Block;
-  blockPosition: Position;
-  timeline: Timeline;
-  queue: Block[];
-}
-
-export interface BlockProps {
-  block: Block;
-}
-
-export interface CurrentBlockProps {
-  currentBlock: Block;
-  blockPosition: Position;
-}
-
-export interface GridCellProps {
-  value: CellValue;
-  x: number;
-  y: number;
-}
-
-export interface TimelineProps {
-  timeline: Timeline;
-}
-
-export interface QueueProps {
-  queue: Block[];
-}
-
-export interface ScoreDisplayProps {
-  score: number;
-  timeRemaining: number;
-}
-
 // Hook return types
 export interface UseGameLoopReturn {
   gameState: GameState;

@@ -1,2 +1,2 @@
 export { ScoreDisplay } from './ScoreDisplay';
-export type { ScoreDisplayProps } from '@/types/game';
+export type { ScoreDisplayProps } from './ScoreDisplay';

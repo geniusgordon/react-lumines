@@ -1,13 +1,26 @@
 import React from 'react';
 
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
-import type { GameBoardProps } from '@/types/game';
+import type {
+  GameBoard as GameBoardType,
+  Block as BlockType,
+  Position,
+  Timeline as TimelineType,
+} from '@/types/game';
 
 import { CurrentBlock } from '../CurrentBlock';
 import { GridCell } from '../GridCell';
 import { Queue } from '../Queue';
 import { ScoreDisplay } from '../ScoreDisplay';
-import { Timeline } from '../Timeline';
+import { Timeline as TimelineComponent } from '../Timeline';
+
+export interface GameBoardProps {
+  board: GameBoardType;
+  currentBlock: BlockType;
+  blockPosition: Position;
+  timeline: TimelineType;
+  queue: BlockType[];
+}
 
 /**
  * GameBoard represents the main 16x10 playing field
@@ -62,7 +75,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           blockPosition={blockPosition}
         />
 
-        <Timeline timeline={timeline} />
+        <TimelineComponent timeline={timeline} />
       </div>
       <div
         className="absolute top-0 right-0 z-10"

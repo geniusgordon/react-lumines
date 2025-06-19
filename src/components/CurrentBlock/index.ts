@@ -1,2 +1,2 @@
 export { CurrentBlock } from './CurrentBlock';
-export type { CurrentBlockProps } from '@/types/game';
+export type { CurrentBlockProps } from './CurrentBlock';

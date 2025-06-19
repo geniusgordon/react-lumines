@@ -1,8 +1,12 @@
 import React from 'react';
 
-import type { BlockProps } from '@/types/game';
+import type { Block as BlockType } from '@/types/game';
 
 import { GridCell } from '../GridCell';
+
+export interface BlockProps {
+  block: BlockType;
+}
 
 /**
  * Block represents a 2x2 tetromino piece

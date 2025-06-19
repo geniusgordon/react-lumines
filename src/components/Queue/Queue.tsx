@@ -1,8 +1,12 @@
 import React from 'react';
 
-import type { QueueProps } from '@/types/game';
+import type { Block as BlockType } from '@/types/game';
 
-import { Block } from '../Block';
+import { Block as BlockComponent } from '../Block';
+
+export interface QueueProps {
+  queue: BlockType[];
+}
 
 /**
  * Queue component displays the upcoming blocks in preview
@@ -12,7 +16,7 @@ export const Queue: React.FC<QueueProps> = ({ queue }) => {
   return (
     <div className="space-y-block-size flex flex-col">
       {queue.map((block, index) => (
-        <Block key={`queue-${index}`} block={block} />
+        <BlockComponent key={`queue-${index}`} block={block} />
       ))}
     </div>
   );

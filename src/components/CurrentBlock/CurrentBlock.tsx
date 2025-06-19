@@ -1,7 +1,12 @@
 import { BOARD_HEIGHT } from '@/constants/gameConfig';
-import { type CurrentBlockProps } from '@/types/game';
+import { type Block as BlockType, type Position } from '@/types/game';
 
-import { Block } from '../Block';
+import { Block as BlockComponent } from '../Block';
+
+export interface CurrentBlockProps {
+  currentBlock: BlockType;
+  blockPosition: Position;
+}
 
 export const CurrentBlock: React.FC<CurrentBlockProps> = ({
   currentBlock,
@@ -25,7 +30,7 @@ export const CurrentBlock: React.FC<CurrentBlockProps> = ({
           top: `calc(${blockPosition.y} * var(--spacing-block-size))`,
         }}
       >
-        <Block block={currentBlock} />
+        <BlockComponent block={currentBlock} />
       </div>
     </div>
   );
