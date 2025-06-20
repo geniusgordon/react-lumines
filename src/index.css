@@ -77,3 +77,42 @@ body {
     box-shadow: inset 0 0 4px rgb(from var(--color-game-timeline) r g b / 0.3);
   }
 }
+
+/* Custom scrollbar styles for debug panel */
+.debug-panel-scrollbar {
+  /* Webkit scrollbar styles */
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+.debug-panel-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debug-panel-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 3px;
+}
+
+.debug-panel-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+.debug-panel-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+    color: #213547;
+  }
+}

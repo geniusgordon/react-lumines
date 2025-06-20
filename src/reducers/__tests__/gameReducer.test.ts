@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import type { GameState, GameAction, GameActionType } from '@/types/game';
+import type {
+  GameState,
+  GameAction,
+  GameActionType,
+  GameBoard,
+} from '@/types/game';
 import { createEmptyBoard } from '@/utils/gameLogic';
 
 import { gameReducer, createInitialGameState } from '../gameReducer';
@@ -353,6 +358,58 @@ describe('Game Reducer', () => {
       const newState = gameReducer(playingState, action);
 
       expect(newState.currentBlock).not.toBe(playingState.currentBlock);
+    });
+  });
+
+  describe('Game action controls', () => {
+    let playingState: GameState;
+
+    beforeEach(() => {
+      playingState = { ...initialState, status: 'playing' as const };
+    });
+
+    it('should apply gravity when APPLY_GRAVITY action is dispatched', () => {
+      // Create a state with some floating blocks (simulating after rectangles were cleared)
+      const stateWithFloatingBlocks = {
+        ...playingState,
+        board: [
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 0
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 1
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 2
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 3
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 4
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 5
+          [0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 6 - floating blocks
+          [0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 7 - floating blocks
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 8 - empty space
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 9 - empty space
+        ] as GameBoard,
+      };
+
+      const action: GameAction = { type: 'APPLY_GRAVITY', frame: 100 };
+      const newState = gameReducer(stateWithFloatingBlocks, action);
+
+      // Blocks should have fallen to the bottom
+      expect(newState.board[8][3]).toBe(1); // block fell to row 8
+      expect(newState.board[8][4]).toBe(2);
+      expect(newState.board[9][3]).toBe(2); // block fell to row 9
+      expect(newState.board[9][4]).toBe(1);
+
+      // Original positions should be empty
+      expect(newState.board[6][3]).toBe(0);
+      expect(newState.board[6][4]).toBe(0);
+      expect(newState.board[7][3]).toBe(0);
+      expect(newState.board[7][4]).toBe(0);
+
+      expect(newState.frame).toBe(100);
+    });
+
+    it('should not apply gravity when game is not playing', () => {
+      const pausedState = { ...playingState, status: 'paused' as const };
+      const action: GameAction = { type: 'APPLY_GRAVITY', frame: 100 };
+      const newState = gameReducer(pausedState, action);
+
+      expect(newState).toBe(pausedState); // State should be unchanged
     });
   });
 });
