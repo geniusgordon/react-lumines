@@ -22,10 +22,8 @@ export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
         left: `calc(${timeline.x} * var(--spacing-block-size))`,
       }}
     >
-      <div className="border-game-timeline -top-block-size h-block-size absolute right-0 flex w-12 items-center justify-end border-1 border-solid pr-1">
-        <div className="text-game-text font-mono">
-          {timeline.rectanglesCleared}
-        </div>
+      <div className="border-game-timeline -top-block-size h-block-size absolute right-0 flex w-12 items-center justify-end border-1 border-solid bg-black pr-2">
+        <div className="text-game-text">{timeline.rectanglesCleared}</div>
       </div>
       <div className="-top-block-size absolute left-0 translate-x-0.5">
         <div className="h-block-size w-block-size">
@@ -33,8 +31,8 @@ export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
             <path
               d="M 0 0 L 10 10 L 0 20"
               stroke="var(--color-game-timeline)"
-              strokeWidth="1"
-              fill="none"
+              strokeWidth="0.6"
+              fill="black"
             />
           </svg>
         </div>

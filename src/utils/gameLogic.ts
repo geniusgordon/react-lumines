@@ -259,7 +259,7 @@ function floodFillRectangle(
 }
 
 /**
- * Clear rectangles from board and apply gravity
+ * Clear rectangles from board and apply gravity (original function for backwards compatibility)
  */
 export function clearRectanglesAndApplyGravity(
   board: GameBoard,
@@ -349,14 +349,4 @@ export function isGameOver(board: GameBoard): boolean {
  */
 export function copyBoard(board: GameBoard): GameBoard {
   return board.map(row => [...row]);
-}
-
-/**
- * Print game board to console for debugging
- */
-export function debugBoard(board: GameBoard): void {
-  console.log('Game Board:');
-  for (const row of board) {
-    console.log(row.map(cell => (cell === 0 ? '.' : cell)).join(''));
-  }
 }

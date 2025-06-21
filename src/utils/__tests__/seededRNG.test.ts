@@ -84,37 +84,6 @@ describe('SeededRNG', () => {
       expect(() => rng.nextInt(0)).toThrow('Max value must be positive');
       expect(() => rng.nextInt(-1)).toThrow('Max value must be positive');
     });
-
-    it('should generate floats in range', () => {
-      const min = 5;
-      const max = 15;
-      for (let i = 0; i < 100; i++) {
-        const num = rng.nextRange(min, max);
-        expect(num).toBeGreaterThanOrEqual(min);
-        expect(num).toBeLessThan(max);
-      }
-    });
-
-    it('should generate booleans with default probability', () => {
-      const results = Array.from({ length: 1000 }, () => rng.nextBoolean());
-      const trueCount = results.filter(Boolean).length;
-      const ratio = trueCount / 1000;
-
-      // Should be roughly 50% (within 10% tolerance)
-      expect(ratio).toBeGreaterThan(0.4);
-      expect(ratio).toBeLessThan(0.6);
-    });
-
-    it('should generate booleans with custom probability', () => {
-      const prob = 0.8;
-      const results = Array.from({ length: 1000 }, () => rng.nextBoolean(prob));
-      const trueCount = results.filter(Boolean).length;
-      const ratio = trueCount / 1000;
-
-      // Should be roughly 80% (within 10% tolerance)
-      expect(ratio).toBeGreaterThan(0.7);
-      expect(ratio).toBeLessThan(0.9);
-    });
   });
 
   describe('Array methods', () => {
@@ -135,27 +104,6 @@ describe('SeededRNG', () => {
 
     it('should throw error for empty array choice', () => {
       expect(() => rng.choice([])).toThrow('Cannot choose from empty array');
-    });
-
-    it('should shuffle array deterministically', () => {
-      const array = [1, 2, 3, 4, 5];
-      const rng1 = new SeededRNG(12345);
-      const rng2 = new SeededRNG(12345);
-
-      const shuffled1 = rng1.shuffle(array);
-      const shuffled2 = rng2.shuffle(array);
-
-      expect(shuffled1).toEqual(shuffled2);
-      expect(shuffled1).toHaveLength(array.length);
-      expect(shuffled1.sort()).toEqual(array.sort());
-    });
-
-    it('should not modify original array when shuffling', () => {
-      const original = [1, 2, 3, 4, 5];
-      const copy = [...original];
-
-      rng.shuffle(original);
-      expect(original).toEqual(copy);
     });
   });
 

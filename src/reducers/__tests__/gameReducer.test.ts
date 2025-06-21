@@ -26,7 +26,7 @@ describe('Game Reducer', () => {
       expect(initialState.seed).toBe(12345);
       expect(initialState.board).toEqual(createEmptyBoard());
       expect(initialState.blockPosition).toEqual({ x: 7, y: 0 });
-      expect(initialState.timeline.active).toBe(false);
+      expect(initialState.timeline.active).toBe(true);
     });
 
     it('should generate different blocks for different seeds', () => {
@@ -225,9 +225,10 @@ describe('Game Reducer', () => {
       const newState = gameReducer(timelineState, action);
 
       expect(newState.timeline.x).toBe(6); // 5 + 1
+      expect(newState.timeline.active).toBe(true); // Should stay active
     });
 
-    it('should deactivate timeline at end', () => {
+    it('should reset timeline position at end but stay active', () => {
       const timelineState = {
         ...playingState,
         timeline: { x: 15, speed: 1, active: true, rectanglesCleared: 0 },
@@ -236,8 +237,8 @@ describe('Game Reducer', () => {
       const action: GameAction = { type: 'TICK', frame: 100 };
       const newState = gameReducer(timelineState, action);
 
-      expect(newState.timeline.active).toBe(false);
-      expect(newState.timeline.x).toBe(0);
+      expect(newState.timeline.active).toBe(true); // Timeline stays active for continuous sweep
+      expect(newState.timeline.x).toBe(0); // Position resets to start new sweep
     });
   });
 
@@ -276,7 +277,7 @@ describe('Game Reducer', () => {
 
       expect(newState.score).toBe(0);
       expect(newState.rectanglesCleared).toBe(0);
-      expect(newState.timeline.active).toBe(false);
+      expect(newState.timeline.active).toBe(true);
     });
   });
 

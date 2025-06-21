@@ -10,7 +10,7 @@ export interface GridCellProps {
 
 /**
  * GridCell represents a single cell in the game board
- * Each cell can be empty (0), light (1), or dark (2)
+ * Each cell can be empty (0), light (1), dark (2), or marked for clearing (negative values)
  * Supports timeline highlighting for sweep animation
  */
 export const GridCell: React.FC<GridCellProps> = ({ value, x, y }) => {
@@ -24,8 +24,16 @@ export const GridCell: React.FC<GridCellProps> = ({ value, x, y }) => {
       colorClasses = 'bg-game-empty opacity-80';
     } else if (value === 1) {
       colorClasses = 'bg-block-white opacity-100';
-    } else {
+    } else if (value === 2) {
       colorClasses = 'bg-block-orange opacity-100';
+    } else if (value === -1) {
+      // Marked light block - flashing/pulsing effect
+      colorClasses =
+        'bg-block-white opacity-75 animate-pulse ring-2 ring-game-timeline ring-inset';
+    } else if (value === -2) {
+      // Marked dark block - flashing/pulsing effect
+      colorClasses =
+        'bg-block-orange opacity-75 animate-pulse ring-2 ring-game-timeline ring-inset';
     }
 
     return `${baseClasses} ${colorClasses}`.trim();

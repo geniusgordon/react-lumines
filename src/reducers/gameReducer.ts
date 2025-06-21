@@ -4,7 +4,7 @@ import {
   TIME_ATTACK_CONFIG,
 } from '@/constants/gameConfig';
 import type { GameState, GameAction } from '@/types/game';
-import { logDebugAction, logGameState } from '@/utils/debugLogger';
+import { logDebugAction } from '@/utils/debugLogger';
 import {
   createEmptyBoard,
   generateRandomBlock,
@@ -57,7 +57,7 @@ export function createInitialGameState(
     timeline: {
       x: 0,
       speed: GAME_CONFIG.timing.initialDropInterval,
-      active: false,
+      active: true, // Timeline should always be active and moving
       rectanglesCleared: 0,
     },
 
@@ -249,10 +249,7 @@ function updateDropTimer(
       newState.dropTimer = 0;
     } else {
       // Can't drop, place block
-      logGameState(newState);
-      const s = placeCurrentBlock(newState, frame, rng);
-      logGameState(s);
-      return s;
+      return placeCurrentBlock(newState, frame, rng);
     }
   }
 
@@ -260,10 +257,11 @@ function updateDropTimer(
 }
 
 /**
- * Update timeline sweep progression
+ * Update timeline sweep progression - timeline always moves continuously
  */
 function updateTimeline(state: GameState): GameState {
-  if (!state.timeline.active) {
+  // Timeline always moves when game is playing
+  if (state.status !== 'playing') {
     return state;
   }
 
@@ -272,10 +270,10 @@ function updateTimeline(state: GameState): GameState {
     x: state.timeline.x + state.timeline.speed,
   };
 
-  // Check if timeline reached end
+  // Check if timeline reached end - restart from beginning for continuous sweep
   if (newTimeline.x >= GAME_CONFIG.board.width) {
-    newTimeline.active = false;
-    newTimeline.x = 0;
+    newTimeline.x = 0; // Restart sweep from left edge
+    // Timeline stays active for continuous movement
   }
 
   return {
@@ -305,7 +303,6 @@ function handleClearRectangles(
     board: newBoard,
     score: state.score + points,
     rectanglesCleared: state.rectanglesCleared + rectangles.length,
-    timeline: { ...state.timeline, active: true }, // Start timeline sweep
     rngState: rng.getState(),
     frame: action.frame,
   };
@@ -318,9 +315,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   // Debug logging - log incoming action
   logDebugAction(state, action);
 
-  // Create RNG instance with current state for deterministic operations
-  const rng = new SeededRNG(state.seed);
-  rng.setState(state.rngState);
+  // Create RNG instance only when needed - most actions don't need RNG
+  let rng: SeededRNG | null = null;
+  const getRNG = (): SeededRNG => {
+    if (!rng) {
+      rng = new SeededRNG(state.seed);
+      rng.setState(state.rngState);
+    }
+    return rng;
+  };
 
   switch (action.type) {
     case 'START_GAME':
@@ -367,10 +370,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handleBlockRotation(state, action, 'ccw');
 
     case 'SOFT_DROP':
-      return handleSoftDrop(state, action, rng);
+      return handleSoftDrop(state, action, getRNG());
 
     case 'HARD_DROP':
-      return handleHardDrop(state, action, rng);
+      return handleHardDrop(state, action, getRNG());
 
     case 'APPLY_GRAVITY': {
       if (state.status !== 'playing') {
@@ -386,10 +389,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'TICK':
-      return handleGameTick(state, action, rng);
+      return handleGameTick(state, action, getRNG());
 
     case 'CLEAR_RECTANGLES':
-      return handleClearRectangles(state, action, rng);
+      return handleClearRectangles(state, action, getRNG());
 
     case 'GAME_OVER':
       return {
@@ -456,19 +459,13 @@ function placeCurrentBlock(
   // Check for rectangles to clear
   const rectangles = detectRectangles(newBoard);
   let finalBoard = newBoard;
-  let score = state.score;
-  let rectanglesCleared = state.rectanglesCleared;
-  let timelineActive = false;
+  const score = state.score;
+  const rectanglesCleared = state.rectanglesCleared;
 
   if (rectangles.length > 0) {
-    const { newBoard: clearedBoard } = clearRectanglesAndApplyGravity(
-      newBoard,
-      rectangles
-    );
-    finalBoard = clearedBoard;
-    score += calculateScore(rectangles);
-    rectanglesCleared += rectangles.length;
-    timelineActive = true;
+    // In authentic Lumines, rectangles stay on board until timeline sweep clears them
+    // Timeline is always moving, so no need to activate it here
+    finalBoard = newBoard; // Keep rectangles on board until timeline sweeps them
   }
 
   return {
@@ -481,10 +478,6 @@ function placeCurrentBlock(
     rectanglesCleared,
     dropTimer: 0,
     dropInterval: TIME_ATTACK_CONFIG.FIXED_DROP_INTERVAL, // Keep constant speed
-    timeline: {
-      ...state.timeline,
-      active: timelineActive,
-    },
     rngState: rng.getState(),
     frame,
   };

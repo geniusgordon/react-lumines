@@ -9,6 +9,7 @@ type RandomFunction = ReturnType<typeof randomSeed.create>;
 export class SeededRNG {
   private rng: RandomFunction;
   private readonly seed: number;
+  private callCount: number = 0; // Track how many times next() has been called
 
   constructor(seed: number = Date.now()) {
     this.seed = seed;
@@ -20,6 +21,7 @@ export class SeededRNG {
    * Returns same sequence for same seed - crucial for deterministic gameplay
    */
   next(): number {
+    this.callCount++;
     return this.rng.random();
   }
 
@@ -35,28 +37,6 @@ export class SeededRNG {
   }
 
   /**
-   * Generate random float between 0 and 1
-   */
-  nextFloat(): number {
-    return this.next();
-  }
-
-  /**
-   * Generate random float between min and max
-   */
-  nextRange(min: number, max: number): number {
-    return min + this.next() * (max - min);
-  }
-
-  /**
-   * Generate random boolean with optional probability
-   * @param probability - Chance of returning true (0-1)
-   */
-  nextBoolean(probability: number = 0.5): boolean {
-    return this.next() < probability;
-  }
-
-  /**
    * Choose random element from array
    */
   choice<T>(array: T[]): T {
@@ -67,23 +47,12 @@ export class SeededRNG {
   }
 
   /**
-   * Shuffle array in place using Fisher-Yates algorithm
-   */
-  shuffle<T>(array: T[]): T[] {
-    const result = [...array];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = this.nextInt(i + 1);
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  }
-
-  /**
    * Reset RNG to initial seed or new seed
    */
   reset(newSeed?: number): void {
     const seedToUse = newSeed ?? this.seed;
     this.rng = randomSeed.create(seedToUse.toString());
+    this.callCount = 0;
   }
 
   /**
@@ -95,18 +64,25 @@ export class SeededRNG {
 
   /**
    * Get current internal state (for serialization)
-   * Note: random-seed doesn't expose internal state, so we return the seed
+   * Returns the call count to track position in the sequence
    */
   getState(): number {
-    return this.seed;
+    return this.callCount;
   }
 
   /**
    * Set internal state (for deserialization)
-   * Note: random-seed doesn't allow state setting, so we reset with new seed
+   * Recreates RNG and advances to the specified position
    */
-  setState(state: number): void {
-    this.rng = randomSeed.create(state.toString());
+  setState(callCount: number): void {
+    this.rng = randomSeed.create(this.seed.toString());
+    this.callCount = 0;
+
+    // Advance the RNG to the correct position
+    for (let i = 0; i < callCount; i++) {
+      this.rng.random();
+      this.callCount++;
+    }
   }
 
   /**
