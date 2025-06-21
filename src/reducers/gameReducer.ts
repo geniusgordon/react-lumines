@@ -11,9 +11,6 @@ import {
   isValidPosition,
   placeBlockOnBoard,
   findDropPosition,
-  detectRectangles,
-  clearRectanglesAndApplyGravity,
-  calculateScore,
   isGameOver,
   getRotatedPattern,
   applyGravity,
@@ -294,32 +291,6 @@ function updateTimeline(state: GameState): GameState {
 }
 
 /**
- * Handle rectangle clearing logic
- */
-function handleClearRectangles(
-  state: GameState,
-  action: GameAction,
-  rng: SeededRNG
-): GameState {
-  const rectangles = detectRectangles(state.board);
-  if (rectangles.length === 0) {
-    return state;
-  }
-
-  const { newBoard } = clearRectanglesAndApplyGravity(state.board, rectangles);
-  const points = calculateScore(rectangles);
-
-  return {
-    ...state,
-    board: newBoard,
-    score: state.score + points,
-    rectanglesCleared: state.rectanglesCleared + rectangles.length,
-    rngState: rng.getState(),
-    frame: action.frame,
-  };
-}
-
-/**
  * Main game state reducer
  */
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -403,7 +374,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handleGameTick(state, action, getRNG());
 
     case 'CLEAR_RECTANGLES':
-      return handleClearRectangles(state, action, getRNG());
+      // TODO: Implement rectangle clearing logic
+      return state;
 
     case 'GAME_OVER':
       return {
@@ -467,26 +439,14 @@ function placeCurrentBlock(
   const newBlock = generateRandomBlock(rng);
   const newQueue = [...remainingQueue, newBlock];
 
-  // Check for rectangles to clear
-  const rectangles = detectRectangles(newBoard);
-  let finalBoard = newBoard;
-  const score = state.score;
-  const rectanglesCleared = state.rectanglesCleared;
-
-  if (rectangles.length > 0) {
-    // In authentic Lumines, rectangles stay on board until timeline sweep clears them
-    // Timeline is always moving, so no need to activate it here
-    finalBoard = newBoard; // Keep rectangles on board until timeline sweeps them
-  }
+  // TODO: Implement rectangle clearing logic
 
   return {
     ...state,
-    board: finalBoard,
+    board: newBoard,
     currentBlock: nextBlock,
     queue: newQueue,
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
-    score,
-    rectanglesCleared,
     dropTimer: 0,
     dropInterval: TIME_ATTACK_CONFIG.FIXED_DROP_INTERVAL, // Keep constant speed
     rngState: rng.getState(),

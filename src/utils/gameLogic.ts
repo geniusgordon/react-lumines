@@ -172,93 +172,6 @@ export function generateRandomBlock(rng: SeededRNG): Block {
 }
 
 /**
- * Detect rectangles of same color on the board
- */
-export function detectRectangles(board: GameBoard): Rectangle[] {
-  const rectangles: Rectangle[] = [];
-  const visited = Array(BOARD_HEIGHT)
-    .fill(null)
-    .map(() => Array(BOARD_WIDTH).fill(false));
-
-  for (let y = 0; y < BOARD_HEIGHT; y++) {
-    for (let x = 0; x < BOARD_WIDTH; x++) {
-      if (!visited[y][x] && board[y][x] !== 0) {
-        const rectangle = floodFillRectangle(board, visited, x, y, board[y][x]);
-        if (rectangle && rectangle.width >= 2 && rectangle.height >= 2) {
-          rectangles.push(rectangle);
-        }
-      }
-    }
-  }
-
-  return rectangles;
-}
-
-/**
- * Flood fill to find connected rectangle of same color
- */
-function floodFillRectangle(
-  board: GameBoard,
-  visited: boolean[][],
-  startX: number,
-  startY: number,
-  color: CellValue
-): Rectangle | null {
-  const cells: Position[] = [];
-  const stack: Position[] = [{ x: startX, y: startY }];
-
-  while (stack.length > 0) {
-    const { x, y } = stack.pop()!;
-
-    if (
-      x < 0 ||
-      x >= BOARD_WIDTH ||
-      y < 0 ||
-      y >= BOARD_HEIGHT ||
-      visited[y][x] ||
-      board[y][x] !== color
-    ) {
-      continue;
-    }
-
-    visited[y][x] = true;
-    cells.push({ x, y });
-
-    // Add adjacent cells
-    stack.push({ x: x + 1, y });
-    stack.push({ x: x - 1, y });
-    stack.push({ x, y: y + 1 });
-    stack.push({ x, y: y - 1 });
-  }
-
-  if (cells.length === 0) {
-    return null;
-  }
-
-  // Calculate bounding rectangle
-  const minX = Math.min(...cells.map(c => c.x));
-  const maxX = Math.max(...cells.map(c => c.x));
-  const minY = Math.min(...cells.map(c => c.y));
-  const maxY = Math.max(...cells.map(c => c.y));
-
-  // Check if it forms a solid rectangle
-  const width = maxX - minX + 1;
-  const height = maxY - minY + 1;
-
-  if (cells.length !== width * height) {
-    return null; // Not a solid rectangle
-  }
-
-  return {
-    x: minX,
-    y: minY,
-    width,
-    height,
-    color,
-  };
-}
-
-/**
  * Clear rectangles from board and apply gravity (original function for backwards compatibility)
  */
 export function clearRectanglesAndApplyGravity(
@@ -310,31 +223,6 @@ export function applyGravity(board: GameBoard): GameBoard {
   }
 
   return newBoard;
-}
-
-/**
- * Calculate score for cleared rectangles
- * Score based on overlapping 2×2 rectangles that can fit within each rectangle
- * Formula: (width - 1) × (height - 1) for rectangles ≥ 2×2
- */
-export function calculateScore(rectangles: Rectangle[]): number {
-  if (rectangles.length === 0) {
-    return 0;
-  }
-
-  let totalPoints = 0;
-
-  for (const rect of rectangles) {
-    // Count overlapping 2×2 rectangles that fit within this rectangle
-    // For a W×H rectangle, you can fit (W-1) × (H-1) overlapping 2×2 rectangles
-    if (rect.width >= 2 && rect.height >= 2) {
-      const points = (rect.width - 1) * (rect.height - 1);
-      totalPoints += points;
-    }
-    // Rectangles smaller than 2×2 shouldn't exist in Lumines, but handle gracefully
-  }
-
-  return totalPoints;
 }
 
 /**
