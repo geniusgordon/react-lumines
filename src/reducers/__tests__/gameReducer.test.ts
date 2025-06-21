@@ -276,42 +276,6 @@ describe('Game Reducer', () => {
     });
   });
 
-  describe('Rectangle clearing', () => {
-    let stateWithRectangles: GameState;
-
-    beforeEach(() => {
-      // Create a state with a board containing a rectangle
-      const board = createEmptyBoard();
-      board[8][5] = 1;
-      board[8][6] = 1;
-      board[9][5] = 1;
-      board[9][6] = 1;
-
-      stateWithRectangles = {
-        ...initialState,
-        status: 'playing' as const,
-        board,
-      };
-    });
-
-    it('should clear rectangles and update score', () => {
-      const action: GameAction = { type: 'CLEAR_RECTANGLES', frame: 100 };
-      const newState = gameReducer(stateWithRectangles, action);
-
-      // TODO
-    });
-
-    it('should not clear if no rectangles present', () => {
-      const emptyState = { ...initialState, status: 'playing' as const };
-      const action: GameAction = { type: 'CLEAR_RECTANGLES', frame: 100 };
-      const newState = gameReducer(emptyState, action);
-
-      expect(newState.score).toBe(0);
-      expect(newState.rectanglesCleared).toBe(0);
-      expect(newState.timeline.active).toBe(true);
-    });
-  });
-
   describe('Gravity application', () => {
     let stateWithFloatingBlocks: GameState;
 

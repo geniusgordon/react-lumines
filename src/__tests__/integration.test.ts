@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 import type { GameAction, CellValue, GameActionType } from '@/types/game';
-import { detectRectangles, calculateScore } from '@/utils/gameLogic';
 import { SeededRNG } from '@/utils/seededRNG';
 
 describe('Integration Tests', () => {
@@ -36,10 +35,6 @@ describe('Integration Tests', () => {
       expect(finalState1.currentBlock.pattern).toEqual(
         finalState2.currentBlock.pattern
       );
-    });
-
-    it('should create rectangles and clear them properly', () => {
-      // TODO
     });
 
     it('should handle multiple game ticks correctly', () => {
