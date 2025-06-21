@@ -56,8 +56,9 @@ export function createInitialGameState(
     // Timeline
     timeline: {
       x: 0,
-      speed: GAME_CONFIG.timing.initialDropInterval,
-      active: true, // Timeline should always be active and moving
+      speed: GAME_CONFIG.timeline.speed,
+      timer: 0,
+      active: true,
       rectanglesCleared: 0,
     },
 
@@ -257,7 +258,7 @@ function updateDropTimer(
 }
 
 /**
- * Update timeline sweep progression - timeline always moves continuously
+ * Update timeline sweep progression - frame-based like block dropping
  */
 function updateTimeline(state: GameState): GameState {
   // Timeline always moves when game is playing
@@ -265,20 +266,30 @@ function updateTimeline(state: GameState): GameState {
     return state;
   }
 
-  const newTimeline = {
-    ...state.timeline,
-    x: state.timeline.x + state.timeline.speed,
-  };
+  const newTimer = state.timeline.timer + 1;
 
-  // Check if timeline reached end - restart from beginning for continuous sweep
-  if (newTimeline.x >= GAME_CONFIG.board.width) {
-    newTimeline.x = 0; // Restart sweep from left edge
-    // Timeline stays active for continuous movement
+  // Check if it's time to move timeline one column
+  if (newTimer >= state.timeline.speed) {
+    const newX = (state.timeline.x + 1) % GAME_CONFIG.board.width;
+
+    // Move timeline one column and reset timer
+    return {
+      ...state,
+      timeline: {
+        ...state.timeline,
+        x: newX,
+        timer: 0, // Reset timer for next column
+      },
+    };
   }
 
+  // Just increment timer
   return {
     ...state,
-    timeline: newTimeline,
+    timeline: {
+      ...state.timeline,
+      timer: newTimer,
+    },
   };
 }
 

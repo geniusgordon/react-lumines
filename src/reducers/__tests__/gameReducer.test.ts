@@ -215,23 +215,56 @@ describe('Game Reducer', () => {
       expect(newState.dropTimer).toBe(0); // Should reset
     });
 
-    it('should advance timeline when active', () => {
+    it('should advance timeline when timer reaches interval', () => {
       const timelineState = {
         ...playingState,
-        timeline: { x: 5, speed: 1, active: true, rectanglesCleared: 0 },
+        timeline: {
+          x: 5,
+          speed: 1,
+          timer: 0,
+          active: true,
+          rectanglesCleared: 0,
+        },
       };
 
       const action: GameAction = { type: 'TICK', frame: 100 };
       const newState = gameReducer(timelineState, action);
 
-      expect(newState.timeline.x).toBe(6); // 5 + 1
+      expect(newState.timeline.x).toBe(6); // 5 + 1 (moved one column)
+      expect(newState.timeline.timer).toBe(0); // Timer reset after movement
+      expect(newState.timeline.active).toBe(true); // Should stay active
+    });
+
+    it('should increment timer when not ready to move', () => {
+      const timelineState = {
+        ...playingState,
+        timeline: {
+          x: 5,
+          speed: 10,
+          timer: 3,
+          active: true,
+          rectanglesCleared: 0,
+        },
+      };
+
+      const action: GameAction = { type: 'TICK', frame: 100 };
+      const newState = gameReducer(timelineState, action);
+
+      expect(newState.timeline.x).toBe(5); // No movement yet
+      expect(newState.timeline.timer).toBe(4); // Timer incremented
       expect(newState.timeline.active).toBe(true); // Should stay active
     });
 
     it('should reset timeline position at end but stay active', () => {
       const timelineState = {
         ...playingState,
-        timeline: { x: 15, speed: 1, active: true, rectanglesCleared: 0 },
+        timeline: {
+          x: 15,
+          speed: 1,
+          timer: 0,
+          active: true,
+          rectanglesCleared: 0,
+        },
       };
 
       const action: GameAction = { type: 'TICK', frame: 100 };
@@ -239,6 +272,7 @@ describe('Game Reducer', () => {
 
       expect(newState.timeline.active).toBe(true); // Timeline stays active for continuous sweep
       expect(newState.timeline.x).toBe(0); // Position resets to start new sweep
+      expect(newState.timeline.timer).toBe(0); // Timer reset
     });
   });
 

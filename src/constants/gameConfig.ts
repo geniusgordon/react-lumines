@@ -11,7 +11,7 @@ export const FRAME_INTERVAL_MS = 1000 / TARGET_FPS; // 16.67ms per frame
 export const INITIAL_DROP_INTERVAL = 48; // frames (0.8 seconds at 60 FPS)
 
 // Timeline sweep speed
-export const TIMELINE_SPEED = 2; // pixels per frame
+export const TIMELINE_SWEEP_INTERVAL = 10; // frames per column (deterministic like block drops)
 
 // Control key mappings
 export const DEFAULT_CONTROLS: ControlsConfig = {
@@ -37,6 +37,9 @@ export const GAME_CONFIG: GameConfig = {
     targetFPS: TARGET_FPS,
     frameInterval: FRAME_INTERVAL_MS,
     initialDropInterval: INITIAL_DROP_INTERVAL,
+  },
+  timeline: {
+    speed: TIMELINE_SWEEP_INTERVAL,
   },
   controls: DEFAULT_CONTROLS,
 };
@@ -125,5 +128,10 @@ export const DEFAULT_VALUES = {
   SCORE: 0,
   RECTANGLES_CLEARED: 0,
   INITIAL_POSITION: { x: 7, y: 0 }, // Center top of board
-  TIMELINE_START: { x: 0, speed: TIMELINE_SPEED, active: false },
+  TIMELINE_START: {
+    x: 0,
+    speed: TIMELINE_SWEEP_INTERVAL,
+    timer: 0,
+    active: true,
+  }, // Frame-based timing
 };

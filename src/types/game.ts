@@ -28,7 +28,8 @@ export interface Block {
 // Timeline sweep state
 export interface Timeline {
   x: number; // Current horizontal position (0 to BOARD_WIDTH-1)
-  speed: number; // Pixels per frame
+  speed: number; // Timeline sweep interval in frames per column
+  timer: number; // Frames until next column movement
   active: boolean; // Whether timeline is currently sweeping
   rectanglesCleared: number; // Number of rectangles cleared
 }
@@ -152,6 +153,9 @@ export interface GameConfig {
     targetFPS: number;
     frameInterval: number; // milliseconds per frame
     initialDropInterval: number; // frames between drops
+  };
+  timeline: {
+    speed: number; // Timeline sweep interval in frames per column
   };
   controls: ControlsConfig;
 }

@@ -1,6 +1,6 @@
 # Progress - Lumines Game Development
 
-## Project Status: **Phase 3 Complete - Moving to Phase 4**
+## Project Status: **Phase 4 Complete - Timeline Implementation Finished**
 
 ### ✅ Completed
 
@@ -48,17 +48,15 @@
 - [x] Collision detection ✅
 - [x] Basic movement and rotation ✅
 
+#### Phase 4: Core Gameplay ✅ COMPLETE
+
+- [x] Rectangle detection algorithm ✅
+- [x] Timeline sweep implementation ✅ **NEW: Authentic continuous sweep**
+- [x] Rectangle clearing logic ✅
+- [x] Gravity system (blocks fall after clearing) ✅
+- [x] Scoring system ✅
+
 ### 🚧 In Progress
-
-#### Phase 4: Core Gameplay
-
-- [ ] Rectangle detection algorithm
-- [ ] Timeline sweep implementation
-- [ ] Rectangle clearing logic
-- [ ] Gravity system (blocks fall after clearing)
-- [ ] Scoring system
-
-### ⏳ To Do
 
 #### Phase 5: Game States
 
@@ -123,6 +121,14 @@
   - ✅ Queue System: 3-block preview queue with automatic generation
   - ✅ Spawn Position: New blocks spawn at top center (7,0) position
   - ✅ Deterministic Behavior: All block operations use seeded RNG for consistent results
+- **Core Gameplay**: Complete Lumines gameplay mechanics
+  - ✅ Rectangle Detection: Flood-fill algorithm finds same-colored rectangles (2x2 minimum)
+  - ✅ Timeline Sweep: Authentic continuous sweep animation across the screen
+  - ✅ Deterministic Timeline: Configurable speed (2 columns per frame) via GAME_CONFIG
+  - ✅ Rectangle Clearing: Automatic clearing and gravity application
+  - ✅ Scoring System: Points based on rectangle size and number cleared
+  - ✅ Gravity System: Blocks fall after rectangles are cleared
+  - ✅ Continuous Sweep: Timeline always moves, resets at end for authentic feel
 
 ### Known Issues
 

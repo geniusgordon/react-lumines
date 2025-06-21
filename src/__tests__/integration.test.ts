@@ -148,30 +148,44 @@ describe('Integration Tests', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
 
-      // Activate timeline
-      currentState = {
-        ...currentState,
-        timeline: { x: 0, speed: 2, active: true, rectanglesCleared: 0 },
-      };
+      // Timeline should already be active with frame-based timing
+      expect(currentState.timeline.active).toBe(true);
+      expect(currentState.timeline.x).toBe(0);
+      expect(currentState.timeline.timer).toBe(0);
 
-      // Advance timeline through multiple ticks
-      for (let i = 0; i < 7; i++) {
+      // Advance timeline through multiple ticks (speed = 10 frames per column)
+      for (let i = 0; i < 10; i++) {
         currentState = gameReducer(currentState, {
           type: 'TICK',
           frame: i * 10,
         });
-        expect(currentState.timeline.x).toBe(((i + 1) * 2) % 16);
+
+        if (i === 9) {
+          // After 10 ticks, timeline should move to column 1
+          expect(currentState.timeline.x).toBe(1);
+          expect(currentState.timeline.timer).toBe(0); // Timer reset
+        } else {
+          // Before 10 ticks, timeline should stay at column 0 with increasing timer
+          expect(currentState.timeline.x).toBe(0);
+          expect(currentState.timeline.timer).toBe(i + 1);
+        }
         expect(currentState.timeline.active).toBe(true);
       }
 
-      // Timeline should reset position but stay active for continuous sweep
+      // Test timeline reset at end (simulate reaching x=15 and moving to x=16)
+      currentState = {
+        ...currentState,
+        timeline: { ...currentState.timeline, x: 15, timer: 9 },
+      };
+
       currentState = gameReducer(currentState, {
         type: 'TICK',
-        frame: 100,
+        frame: 200,
       });
 
       expect(currentState.timeline.active).toBe(true); // Timeline stays active for continuous sweep
       expect(currentState.timeline.x).toBe(0); // Position resets to start new sweep
+      expect(currentState.timeline.timer).toBe(0); // Timer reset
     });
   });
 
