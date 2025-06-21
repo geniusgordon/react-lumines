@@ -2,9 +2,9 @@
 
 ## Current Work Status
 
-- **Phase**: Phase 2+ Complete - Visual Components + Tailwind Integration ✅
-- **Last Updated**: Components converted to Tailwind CSS with custom theme
-- **Memory Bank**: Up-to-date with Tailwind CSS conversion
+- **Phase**: Phase 3 Complete - Game Loop & Controls ✅
+- **Last Updated**: Rules clarification - Focus on timeline rhythm mechanics
+- **Memory Bank**: Updated with corrected Lumines rules understanding
 
 ## Immediate Next Steps
 
@@ -27,12 +27,20 @@
 - [x] **NEW**: CSS-first theme configuration using `@theme` directive
 - [x] **NEW**: Utility-first styling approach
 
-### 3. Core Game Loop
+### 3. Core Game Loop ✅ COMPLETED
 
 - [x] `useGameLoop` hook - fixed 60 FPS updates
-- [ ] `useControls` hook - keyboard input capture
-- [ ] Basic block falling mechanics
-- [ ] Collision detection system
+- [x] `useControls` hook - keyboard input capture
+- [x] Basic block falling mechanics
+- [x] Collision detection system
+
+### 4. Timeline Mechanics - NEXT FOCUS
+
+- [x] Timeline sweep animation ✅
+- [ ] **Pattern Detection**: Find same-colored 2×2+ regions
+- [ ] **Pattern Marking**: Mark patterns but keep them on board
+- [ ] **Timeline Clearing**: Clear marked patterns when sweep passes through
+- [ ] **Scoring**: 1 point per 2×2 square cleared
 
 ## Recent Decisions
 
@@ -56,10 +64,11 @@
 
 ### Technical Challenges
 
-1. **Fixed Timestep Implementation**: Ensuring consistent 16ms intervals
-2. **Deterministic Behavior**: Avoiding floating-point precision issues
-3. **Rectangle Detection**: Efficient algorithm for same-colored rectangles
-4. **Timeline Sweep**: Smooth animation while maintaining determinism
+1. **Fixed Timestep Implementation**: Ensuring consistent 16ms intervals ✅ SOLVED
+2. **Deterministic Behavior**: Avoiding floating-point precision issues ✅ SOLVED  
+3. **Pattern Detection & Marking**: Core Lumines mechanic - mark patterns but keep on board
+4. **Timeline-Based Clearing**: Only clear when sweep passes through marked areas
+5. **Rhythm Mechanics**: Creating the strategic timing element unique to Lumines
 
 ### Design Decisions Recently Resolved ✅
 
@@ -137,10 +146,10 @@
 
 ## Next Session Priorities
 
-1. ✅ ~~Tailwind CSS conversion~~ **COMPLETED**
-2. Start useGameLoop hook for fixed timestep updates
-3. Begin useControls hook for input capture
-4. Implement basic block falling mechanics
-5. Add collision detection system
+1. **Pattern Detection Algorithm**: Implement flood-fill to find same-colored 2×2+ regions
+2. **Pattern Marking System**: Mark detected patterns but keep them visible on board
+3. **Timeline Integration**: Clear marked patterns only when timeline sweep passes through
+4. **Scoring Implementation**: Simple 1 point per 2×2 square system
+5. **Visual Feedback**: Show marked patterns differently from regular blocks
 
-**Focus Area**: With visual components and styling complete, focus shifts to core game mechanics and the game loop implementation.
+**Focus Area**: Implement the core Lumines timeline rhythm - the delay between pattern formation and clearing that creates the unique strategic timing element.

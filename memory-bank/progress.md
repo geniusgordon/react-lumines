@@ -1,6 +1,6 @@
 # Progress - Lumines Game Development
 
-## Project Status: **Phase 4 Complete - Timeline Implementation Finished**
+## Project Status: **Phase 3 Complete - Ready for Core Timeline Mechanics**
 
 ### ✅ Completed
 
@@ -48,13 +48,14 @@
 - [x] Collision detection ✅
 - [x] Basic movement and rotation ✅
 
-#### Phase 4: Core Gameplay ✅ COMPLETE
+#### Phase 4: Core Timeline Mechanics 🚧 IN PROGRESS
 
-- [x] Timeline sweep implementation ✅ **NEW: Authentic continuous sweep**
-- [ ] Rectangle detection algorithm ✅
-- [ ] Rectangle clearing logic ✅
-- [ ] Gravity system (blocks fall after clearing) ✅
-- [ ] Scoring system ✅
+- [x] Timeline sweep animation ✅
+- [ ] **Pattern Detection**: Find same-colored 2×2+ regions using flood-fill
+- [ ] **Pattern Marking**: Mark patterns but keep them on board  
+- [ ] **Timeline Clearing**: Clear marked patterns when sweep passes through
+- [ ] **Scoring System**: 1 point per 2×2 square cleared
+- [ ] **Visual Feedback**: Show marked patterns differently
 
 ### 🚧 In Progress
 
@@ -120,18 +121,19 @@
   - ✅ Queue System: 3-block preview queue with automatic generation
   - ✅ Spawn Position: New blocks spawn at top center (7,0) position
   - ✅ Deterministic Behavior: All block operations use seeded RNG for consistent results
-- **Core Gameplay**: Complete Lumines gameplay mechanics
-  - ✅ Rectangle Detection: Flood-fill algorithm finds same-colored rectangles (2x2 minimum)
-  - ✅ Timeline Sweep: Authentic continuous sweep animation across the screen
+- **Timeline Foundation**: Basic timeline sweep mechanics
+  - ✅ Timeline Animation: Continuous sweep animation across the screen
   - ✅ Deterministic Timeline: Configurable speed (2 columns per frame) via GAME_CONFIG
-  - ✅ Rectangle Clearing: Automatic clearing and gravity application
-  - ✅ Scoring System: Points based on rectangle size and number cleared
-  - ✅ Gravity System: Blocks fall after rectangles are cleared
   - ✅ Continuous Sweep: Timeline always moves, resets at end for authentic feel
+  - 🚧 **MISSING**: Pattern detection and marking system
+  - 🚧 **MISSING**: Timeline-triggered clearing (core Lumines mechanic)
+  - 🚧 **MISSING**: Scoring system implementation
 
 ### Known Issues
 
-- None - all core systems working correctly with 85/85 tests passing
+- **Core Lumines Mechanics Missing**: Pattern detection, marking, and timeline-based clearing not yet implemented
+- **Status Discrepancy**: Progress.md previously claimed Phase 4 complete, but CLEAR_RECTANGLES action is still TODO
+- **Scoring Tests**: All scoring tests marked as TODO in gameLogic.test.ts
 
 ### Evolution of Decisions
 
@@ -168,6 +170,22 @@
 - Collision detection using grid-based validation
 - Automatic block placement with queue management
 - Smooth integration with debug logging system
+
+## Current Focus: The Timeline Rhythm
+
+### What Makes Lumines Unique
+The core mechanic that differentiates Lumines from other puzzle games:
+
+1. **Instant Pattern Marking**: Same-colored 2×2+ regions get marked immediately
+2. **Delayed Clearing**: Marked patterns only clear when the timeline sweep passes through them  
+3. **Strategic Timing**: Players must think about WHERE the timeline will be, not just pattern formation
+4. **Rhythm Element**: Creates anticipation and timing-based strategy
+
+### Implementation Roadmap
+1. **Pattern Detection**: Flood-fill algorithm to find connected same-colored regions ≥ 2×2
+2. **Marking System**: Visual indication of marked patterns (keep them on board)
+3. **Timeline Integration**: Clear marked patterns only when sweep passes through
+4. **Simple Scoring**: 1 point per 2×2 square cleared (no complex formulas)
 
 ## Success Metrics
 
