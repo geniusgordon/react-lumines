@@ -44,16 +44,15 @@ export function DebugPanel({
   return (
     <div className="fixed top-4 right-4 z-50 w-80 select-none">
       <DebugModeBanner isVisible={gameState.debugMode} />
-
       {/* Main Debug Panel */}
-      <div className="flex max-h-[calc(100vh-2rem)] flex-col rounded-lg border border-gray-600/50 bg-gray-900/95 shadow-xl backdrop-blur-sm">
+      <div className="flex max-h-[calc(100vh-10rem)] flex-col rounded-lg border border-gray-600/50 bg-gray-900/95 shadow-xl backdrop-blur-sm">
         <DebugPanelHeader
           isExpanded={isExpanded}
           onToggleExpanded={() => setIsExpanded(!isExpanded)}
         />
 
         {isExpanded && (
-          <div className="debug-panel-scrollbar max-h-[calc(100vh-8rem)] space-y-4 overflow-y-auto p-4">
+          <div className="debug-panel-scrollbar max-h-[calc(100vh-10rem)] space-y-4 overflow-y-auto p-4">
             <QuickStats status={gameState.status} score={gameState.score} />
 
             <PerformanceMetrics

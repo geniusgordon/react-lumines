@@ -25,59 +25,6 @@ body {
     sans-serif;
 }
 
-/* Game-specific styles that might need to override Tailwind */
-.game-board {
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-}
-
-/* Ensure smooth animations for game elements */
-.block-falling {
-  transition: transform 16ms linear;
-}
-
-.rectangle-clearing {
-  transition: opacity 200ms ease-in-out;
-}
-
-/* Custom keyframe animations */
-@keyframes block-drop {
-  from {
-    transform: translateY(-5px);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes timeline-sweep {
-  0% {
-    opacity: 0.6;
-    transform: translateX(-2px);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  100% {
-    opacity: 0.9;
-    transform: translateX(2px);
-  }
-}
-
-@keyframes timeline-pulse {
-  0% {
-    box-shadow: inset 0 0 4px rgb(from var(--color-game-timeline) r g b / 0.3);
-  }
-  50% {
-    box-shadow: inset 0 0 8px rgb(from var(--color-game-timeline) r g b / 0.8);
-  }
-  100% {
-    box-shadow: inset 0 0 4px rgb(from var(--color-game-timeline) r g b / 0.3);
-  }
-}
-
 /* Custom scrollbar styles for debug panel */
 .debug-panel-scrollbar {
   /* Webkit scrollbar styles */
@@ -101,18 +48,4 @@ body {
 
 .debug-panel-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-    color: #213547;
-  }
 }
