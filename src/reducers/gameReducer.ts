@@ -9,9 +9,9 @@ import {
   createEmptyBoard,
   generateRandomBlock,
   isValidPosition,
-  placeBlockOnBoard,
+  placeBlockOnBoardPartial,
   findDropPosition,
-  isGameOver,
+  isGameOverEnhanced,
   getRotatedPattern,
   applyGravity,
   detectPatterns,
@@ -178,8 +178,8 @@ function handleSoftDrop(
     };
   }
 
-  // If can't drop, place block
-  return placeCurrentBlock(state, action.frame, rng);
+  // If can't drop, place block and apply gravity
+  return placeBlockAndApplyPhysics(state, action.frame, rng);
 }
 
 /**
@@ -204,7 +204,7 @@ function handleHardDrop(
     blockPosition: dropPosition,
     frame: action.frame,
   };
-  return placeCurrentBlock(newState, action.frame, rng);
+  return placeBlockAndApplyPhysics(newState, action.frame, rng);
 }
 
 /**
@@ -235,7 +235,7 @@ function handleGameTick(
   let newState = { ...state, frame: action.frame };
 
   // 1. Handle block dropping and placement
-  newState = handleBlockDrop(newState, rng);
+  newState = handleBlockDrop(newState, action.frame, rng);
 
   // 2. Update pattern detection (only once per tick)
   newState = updatePatternDetection(newState);
@@ -249,7 +249,11 @@ function handleGameTick(
 /**
  * Handle block dropping logic - either move down or place block
  */
-function handleBlockDrop(state: GameState, rng: SeededRNG): GameState {
+function handleBlockDrop(
+  state: GameState,
+  frame: number,
+  rng: SeededRNG
+): GameState {
   const newState = { ...state };
   newState.dropTimer++;
 
@@ -271,7 +275,7 @@ function handleBlockDrop(state: GameState, rng: SeededRNG): GameState {
       return newState;
     } else {
       // Can't drop, place block and apply physics
-      return placeBlockAndApplyPhysics(newState, rng);
+      return placeBlockAndApplyPhysics(newState, frame, rng);
     }
   }
 
@@ -284,10 +288,11 @@ function handleBlockDrop(state: GameState, rng: SeededRNG): GameState {
  */
 function placeBlockAndApplyPhysics(
   state: GameState,
+  frame: number,
   rng: SeededRNG
 ): GameState {
   // Place the block on the board
-  const placedState = placeCurrentBlock(state, state.frame, rng);
+  const placedState = placeCurrentBlock(state, frame, rng);
 
   // Apply gravity to settle all blocks
   const settledState = {
@@ -536,22 +541,27 @@ export function gameReducerWithDebug(
 }
 
 /**
- * Place current block on board and spawn next block
+ * Place current block on board and spawn next block with enhanced game over logic
  */
 function placeCurrentBlock(
   state: GameState,
   frame: number,
   rng: SeededRNG
 ): GameState {
-  // Place block on board
-  const newBoard = placeBlockOnBoard(
+  // Try partial placement first - place what fits, discard what doesn't
+  const { newBoard } = placeBlockOnBoardPartial(
     state.board,
     state.currentBlock,
     state.blockPosition
   );
 
-  // Check for game over
-  if (isGameOver(newBoard)) {
+  // Move first block from queue to current, add new block to end of queue
+  const [nextBlock, ...remainingQueue] = state.queue;
+  const newBlock = generateRandomBlock(rng);
+  const newQueue = [...remainingQueue, newBlock];
+
+  // Enhanced game over check - only trigger if NO part of the next block can be placed anywhere
+  if (isGameOverEnhanced(newBoard, nextBlock)) {
     return {
       ...state,
       board: newBoard,
@@ -559,13 +569,6 @@ function placeCurrentBlock(
       frame,
     };
   }
-
-  // Move first block from queue to current, add new block to end of queue
-  const [nextBlock, ...remainingQueue] = state.queue;
-  const newBlock = generateRandomBlock(rng);
-  const newQueue = [...remainingQueue, newBlock];
-
-  // TODO: Implement square clearing logic
 
   return {
     ...state,
