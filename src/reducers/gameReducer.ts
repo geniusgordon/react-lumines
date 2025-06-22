@@ -43,7 +43,7 @@ export function createInitialGameState(
     // Game flow
     status: 'start',
     score: 0,
-    rectanglesCleared: 0,
+    squaresCleared: 0,
 
     // Timing
     frame: 0,
@@ -56,7 +56,7 @@ export function createInitialGameState(
       speed: GAME_CONFIG.timeline.speed,
       timer: 0,
       active: true,
-      rectanglesCleared: 0,
+      squaresCleared: 0,
     },
 
     // Deterministic system
@@ -373,8 +373,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'TICK':
       return handleGameTick(state, action, getRNG());
 
-    case 'CLEAR_RECTANGLES':
-      // TODO: Implement rectangle clearing logic
+    case 'CLEAR_SQUARES':
+      // TODO: Implement square clearing logic
       return state;
 
     case 'GAME_OVER':
@@ -439,7 +439,7 @@ function placeCurrentBlock(
   const newBlock = generateRandomBlock(rng);
   const newQueue = [...remainingQueue, newBlock];
 
-  // TODO: Implement rectangle clearing logic
+  // TODO: Implement square clearing logic
 
   return {
     ...state,

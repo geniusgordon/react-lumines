@@ -97,36 +97,11 @@ export const TIME_ATTACK_CONFIG = {
   GAME_DURATION: 60000, // 1 minute in milliseconds (optional for timed mode)
 };
 
-// Replay system constants
-export const REPLAY_CONFIG = {
-  VERSION: '1.0',
-  CHECKPOINT_INTERVAL: 300, // Save checkpoint every 5 seconds (300 frames)
-  MAX_REPLAY_SIZE: 1000000, // 1MB max replay file size
-  COMPRESSION: false, // No compression for MVP
-};
-
-// Animation timing (in frames)
-export const ANIMATION_FRAMES = {
-  BLOCK_DROP: 8, // Hard drop animation
-  RECTANGLE_CLEAR: 12, // Rectangle clearing animation
-  TIMELINE_SWEEP: 4, // Timeline sweep effect
-  GAME_OVER: 30, // Game over animation
-};
-
-// Development/debug constants
-export const DEBUG_CONFIG = {
-  SHOW_FPS: false, // Show FPS counter
-  SHOW_GRID_COORDS: false, // Show grid coordinates
-  SHOW_COLLISION_DEBUG: false, // Show collision detection areas
-  LOG_ACTIONS: false, // Log game actions to console
-  ENABLE_CHEATS: false, // Enable debug cheats
-};
-
 // Default game state values
 export const DEFAULT_VALUES = {
   SEED: 12345, // Default seed for testing
   SCORE: 0,
-  RECTANGLES_CLEARED: 0,
+  SQUARES_CLEARED: 0,
   INITIAL_POSITION: { x: 7, y: 0 }, // Center top of board
   TIMELINE_START: {
     x: 0,

@@ -37,9 +37,9 @@
 ### 4. Timeline Mechanics - NEXT FOCUS
 
 - [x] Timeline sweep animation ✅
-- [ ] **Pattern Detection**: Find same-colored 2×2+ regions
-- [ ] **Pattern Marking**: Mark patterns but keep them on board
-- [ ] **Timeline Clearing**: Clear marked patterns when sweep passes through
+- [ ] **Square Detection**: Find same-colored 2×2+ regions
+- [ ] **Square Marking**: Mark squares but keep them on board
+- [ ] **Timeline Clearing**: Clear marked squares when sweep passes through
 - [ ] **Scoring**: 1 point per 2×2 square cleared
 
 ## Recent Decisions
@@ -66,7 +66,7 @@
 
 1. **Fixed Timestep Implementation**: Ensuring consistent 16ms intervals ✅ SOLVED
 2. **Deterministic Behavior**: Avoiding floating-point precision issues ✅ SOLVED  
-3. **Pattern Detection & Marking**: Core Lumines mechanic - mark patterns but keep on board
+3. **Square Detection & Marking**: Core Lumines mechanic - mark squares but keep on board
 4. **Timeline-Based Clearing**: Only clear when sweep passes through marked areas
 5. **Rhythm Mechanics**: Creating the strategic timing element unique to Lumines
 
@@ -146,10 +146,10 @@
 
 ## Next Session Priorities
 
-1. **Pattern Detection Algorithm**: Implement flood-fill to find same-colored 2×2+ regions
-2. **Pattern Marking System**: Mark detected patterns but keep them visible on board
-3. **Timeline Integration**: Clear marked patterns only when timeline sweep passes through
+1. **Square Detection Algorithm**: Implement flood-fill to find same-colored 2×2+ regions
+2. **Square Marking System**: Mark detected squares but keep them visible on board
+3. **Timeline Integration**: Clear marked squares only when timeline sweep passes through
 4. **Scoring Implementation**: Simple 1 point per 2×2 square system
-5. **Visual Feedback**: Show marked patterns differently from regular blocks
+5. **Visual Feedback**: Show marked squares differently from regular blocks
 
-**Focus Area**: Implement the core Lumines timeline rhythm - the delay between pattern formation and clearing that creates the unique strategic timing element.
+**Focus Area**: Implement the core Lumines timeline rhythm - the delay between square formation and clearing that creates the unique strategic timing element.

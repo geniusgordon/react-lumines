@@ -12,7 +12,7 @@ import type {
   Block,
   Position,
   CellValue,
-  Rectangle,
+  Square,
   BlockPattern,
   Rotation,
   ValidMove,
@@ -172,19 +172,19 @@ export function generateRandomBlock(rng: SeededRNG): Block {
 }
 
 /**
- * Clear rectangles from board and apply gravity (original function for backwards compatibility)
+ * Clear squares from board and apply gravity (original function for backwards compatibility)
  */
-export function clearRectanglesAndApplyGravity(
+export function clearSquaresAndApplyGravity(
   board: GameBoard,
-  rectangles: Rectangle[]
+  squares: Square[]
 ): { newBoard: GameBoard; clearedCells: number } {
   let newBoard = board.map(row => [...row]);
   let clearedCells = 0;
 
-  // Clear rectangles
-  for (const rect of rectangles) {
-    for (let y = rect.y; y < rect.y + rect.height; y++) {
-      for (let x = rect.x; x < rect.x + rect.width; x++) {
+  // Clear squares
+  for (const square of squares) {
+    for (let y = square.y; y < square.y + square.height; y++) {
+      for (let x = square.x; x < square.x + square.width; x++) {
         if (newBoard[y][x] !== 0) {
           newBoard[y][x] = 0;
           clearedCells++;

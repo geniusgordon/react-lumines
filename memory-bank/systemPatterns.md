@@ -33,7 +33,6 @@ App
 useGameLoop(gameState, dispatch); // Fixed 60 FPS updates
 useControls(dispatch, isRecording); // Input capture & recording
 useSeededRNG(seed); // Deterministic randomness
-useTimeline(gameState); // Rectangle clearing logic
 useReplay(replayData); // Playback functionality
 ```
 
@@ -96,29 +95,6 @@ interface GameAction {
 ```typescript
 type GameStatus = 'start' | 'playing' | 'paused' | 'gameOver' | 'replay';
 // State transitions handled by reducer with clear rules
-```
-
-### 3. Observer Pattern (Game Events)
-
-```typescript
-// Custom events for game milestones
-useEffect(() => {
-  if (rectanglesCleared > 0) {
-    onRectanglesCleared(rectanglesCleared);
-  }
-}, [rectanglesCleared]);
-```
-
-### 4. Factory Pattern (Block Generation)
-
-```typescript
-class BlockFactory {
-  constructor(private rng: SeededRNG) {}
-
-  createBlock(): Block {
-    // Generate deterministic block patterns
-  }
-}
 ```
 
 ## Component Relationships

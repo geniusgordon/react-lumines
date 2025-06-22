@@ -11,7 +11,7 @@ import {
   placeBlockOnBoard,
   findDropPosition,
   generateRandomBlock,
-  clearRectanglesAndApplyGravity,
+  clearSquaresAndApplyGravity,
   applyGravity,
   isGameOver,
   copyBoard,
@@ -239,15 +239,15 @@ describe('Game Logic', () => {
     });
   });
 
-  describe('Rectangle detection', () => {
+  describe('Square detection', () => {
     let board: GameBoard;
 
     beforeEach(() => {
       board = createEmptyBoard();
     });
 
-    it('should detect 2x2 rectangle', () => {
-      // Create 2x2 rectangle of light blocks
+    it('should detect 2x2 square', () => {
+      // Create 2x2 square of light blocks
       board[5][5] = 1;
       board[5][6] = 1;
       board[6][5] = 1;
@@ -256,8 +256,8 @@ describe('Game Logic', () => {
       // TODO
     });
 
-    it('should detect 3x3 rectangle', () => {
-      // Create 3x2 rectangle
+    it('should detect 3x2 square', () => {
+      // Create 3x2 square
       board[5][5] = 1;
       board[5][6] = 1;
       board[5][7] = 1;
@@ -268,7 +268,7 @@ describe('Game Logic', () => {
       // TODO
     });
 
-    it('should detect L shape overlapping rectangles', () => {
+    it('should detect L shape overlapping squares', () => {
       board[5][5] = 1;
       board[5][6] = 1;
       board[5][7] = 1;
@@ -281,14 +281,14 @@ describe('Game Logic', () => {
       // TODO
     });
 
-    it('should detect multiple rectangles', () => {
-      // Rectangle 1
+    it('should detect multiple squares', () => {
+      // Square 1
       board[1][1] = 1;
       board[1][2] = 1;
       board[2][1] = 1;
       board[2][2] = 1;
 
-      // Rectangle 2
+      // Square 2
       board[5][5] = 2;
       board[5][6] = 2;
       board[6][5] = 2;
@@ -297,8 +297,8 @@ describe('Game Logic', () => {
       // TODO
     });
 
-    it('should not detect non-rectangular shapes', () => {
-      // L-shape (not a rectangle)
+    it('should not detect non-square shapes', () => {
+      // L-shape (not a square)
       board[3][3] = 1;
       board[3][4] = 1;
       board[4][3] = 1;
@@ -306,7 +306,7 @@ describe('Game Logic', () => {
       // TODO
     });
 
-    it('should ignore rectangles smaller than 2x2', () => {
+    it('should ignore squares smaller than 2x2', () => {
       // Single cell
       board[3][3] = 1;
 
@@ -339,18 +339,18 @@ describe('Game Logic', () => {
       expect(newBoard[2][5]).toBe(0);
     });
 
-    it('should clear rectangles and apply gravity', () => {
-      // Create floating blocks above a rectangle
+    it('should clear squares and apply gravity', () => {
+      // Create floating blocks above a square
       board[2][5] = 1;
       board[3][5] = 2;
 
-      // Create rectangle that will be cleared
+      // Create square that will be cleared
       board[7][5] = 1;
       board[7][6] = 1;
       board[8][5] = 1;
       board[8][6] = 1;
 
-      const rectangles = [
+      const squares = [
         {
           x: 5,
           y: 7,
@@ -360,14 +360,14 @@ describe('Game Logic', () => {
         },
       ];
 
-      const { newBoard, clearedCells } = clearRectanglesAndApplyGravity(
+      const { newBoard, clearedCells } = clearSquaresAndApplyGravity(
         board,
-        rectangles
+        squares
       );
 
       expect(clearedCells).toBe(4);
 
-      // Rectangle should be cleared
+      // Square should be cleared
       expect(newBoard[7][5]).toBe(0);
       expect(newBoard[8][6]).toBe(0);
 
@@ -378,23 +378,23 @@ describe('Game Logic', () => {
   });
 
   describe('Scoring', () => {
-    it('should calculate score for 2x2 rectangle', () => {
+    it('should calculate score for 2x2 square', () => {
       // TODO
     });
 
-    it('should calculate score for 3x2 rectangle', () => {
+    it('should calculate score for 3x2 square', () => {
       // TODO
     });
 
-    it('should calculate score for 3x3 rectangle', () => {
+    it('should calculate score for 3x3 square', () => {
       // TODO
     });
 
-    it('should calculate score for multiple rectangles', () => {
+    it('should calculate score for multiple squares', () => {
       // TODO
     });
 
-    it('should return 0 for no rectangles', () => {
+    it('should return 0 for no squares', () => {
       // TODO
     });
   });

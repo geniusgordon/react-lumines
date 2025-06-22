@@ -21,7 +21,7 @@ describe('Game Reducer', () => {
     it('should create valid initial state', () => {
       expect(initialState.status).toBe('start');
       expect(initialState.score).toBe(0);
-      expect(initialState.rectanglesCleared).toBe(0);
+      expect(initialState.squaresCleared).toBe(0);
       expect(initialState.frame).toBe(0);
       expect(initialState.seed).toBe(12345);
       expect(initialState.board).toEqual(createEmptyBoard());
@@ -82,7 +82,7 @@ describe('Game Reducer', () => {
         ...initialState,
         status: 'gameOver' as const,
         score: 1000,
-        rectanglesCleared: 5,
+        squaresCleared: 5,
         frame: 500,
       };
 
@@ -91,7 +91,7 @@ describe('Game Reducer', () => {
 
       expect(newState.status).toBe('start');
       expect(newState.score).toBe(0);
-      expect(newState.rectanglesCleared).toBe(0);
+      expect(newState.squaresCleared).toBe(0);
       expect(newState.frame).toBe(0);
       expect(newState.board).toEqual(createEmptyBoard());
     });
@@ -223,7 +223,7 @@ describe('Game Reducer', () => {
           speed: 1,
           timer: 0,
           active: true,
-          rectanglesCleared: 0,
+          squaresCleared: 0,
         },
       };
 
@@ -243,7 +243,7 @@ describe('Game Reducer', () => {
           speed: 10,
           timer: 3,
           active: true,
-          rectanglesCleared: 0,
+          squaresCleared: 0,
         },
       };
 
@@ -263,7 +263,7 @@ describe('Game Reducer', () => {
           speed: 1,
           timer: 0,
           active: true,
-          rectanglesCleared: 0,
+          squaresCleared: 0,
         },
       };
 
@@ -365,7 +365,7 @@ describe('Game Reducer', () => {
     });
 
     it('should apply gravity when APPLY_GRAVITY action is dispatched', () => {
-      // Create a state with some floating blocks (simulating after rectangles were cleared)
+      // Create a state with some floating blocks (simulating after squares were cleared)
       const stateWithFloatingBlocks = {
         ...playingState,
         board: [

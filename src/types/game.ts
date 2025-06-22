@@ -31,11 +31,11 @@ export interface Timeline {
   speed: number; // Timeline sweep interval in frames per column
   timer: number; // Frames until next column movement
   active: boolean; // Whether timeline is currently sweeping
-  rectanglesCleared: number; // Number of rectangles cleared
+  squaresCleared: number; // Number of squares cleared
 }
 
-// Rectangle for clearing detection
-export interface Rectangle {
+// Square for clearing detection (minimum 2x2)
+export interface Square {
   x: number;
   y: number;
   width: number;
@@ -60,7 +60,7 @@ export type GameActionType =
   | 'RESTART'
   | 'START_GAME'
   | 'GAME_OVER'
-  | 'CLEAR_RECTANGLES'
+  | 'CLEAR_SQUARES'
   | 'APPLY_GRAVITY'
   | 'SET_DEBUG_MODE'; // Toggle debug mode and logging
 
@@ -82,7 +82,7 @@ export interface GameState {
   // Game flow
   status: GameStatus;
   score: number;
-  rectanglesCleared: number;
+  squaresCleared: number;
 
   // Timing (all integer frame counts)
   frame: number; // Current frame number
