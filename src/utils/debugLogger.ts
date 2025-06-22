@@ -62,6 +62,54 @@ export function logDebugAction(
       };
     }
 
+    // Track timeline state changes
+    if (state.timeline.x !== newState.timeline.x) {
+      stateChanges.timelineX = {
+        from: state.timeline.x,
+        to: newState.timeline.x,
+      };
+    }
+    if (state.timeline.timer !== newState.timeline.timer) {
+      stateChanges.timelineTimer = {
+        from: state.timeline.timer,
+        to: newState.timeline.timer,
+      };
+    }
+    if (state.timeline.holdingScore !== newState.timeline.holdingScore) {
+      stateChanges.timelineHoldingScore = {
+        from: state.timeline.holdingScore,
+        to: newState.timeline.holdingScore,
+      };
+    }
+    if (state.timeline.active !== newState.timeline.active) {
+      stateChanges.timelineActive = {
+        from: state.timeline.active,
+        to: newState.timeline.active,
+      };
+    }
+
+    // Track marked cells changes
+    if (state.markedCells.length !== newState.markedCells.length) {
+      stateChanges.markedCells = {
+        from: state.markedCells.length,
+        to: newState.markedCells.length,
+      };
+    }
+
+    // Track timer system changes
+    if (state.countdown !== newState.countdown) {
+      stateChanges.countdown = {
+        from: state.countdown,
+        to: newState.countdown,
+      };
+    }
+    if (state.gameTimer !== newState.gameTimer) {
+      stateChanges.gameTimer = {
+        from: state.gameTimer,
+        to: newState.gameTimer,
+      };
+    }
+
     if (Object.keys(stateChanges).length > 0) {
       console.log('📊 State Changes:', stateChanges);
     } else {
@@ -117,7 +165,14 @@ export function logPatterns(detectedPatterns: Square[]): void {
 }
 
 export function logGameBoard(gameState: GameState, message: string): void {
-  const { board, blockPosition, currentBlock, detectedPatterns } = gameState;
+  const {
+    board,
+    blockPosition,
+    currentBlock,
+    detectedPatterns,
+    markedCells,
+    timeline,
+  } = gameState;
 
   // Board visualization
   console.groupCollapsed(`🗂️ Current Board State - ${message}`);
@@ -130,11 +185,19 @@ export function logGameBoard(gameState: GameState, message: string): void {
   console.log('📊 Board Stats:');
   console.log(`   📏 Dimensions: ${board[0].length}×${board.length}`);
   console.log(`   📈 Fill: ${filledCells}/${totalCells} (${fillPercentage}%)`);
+  console.log(
+    `   🔄 Timeline: Column ${timeline.x} (Timer: ${timeline.timer}/${timeline.speed})`
+  );
+  console.log(`   💰 Holding Score: ${timeline.holdingScore}`);
+  console.log(`   🎯 Detected Patterns: ${detectedPatterns.length}`);
+  console.log(`   ❌ Marked Cells: ${markedCells.length}`);
 
   // Create visual board representation
-  console.log('\n🎯 Visual Board (with current block and patterns):');
   console.log(
-    'Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block, {X}=Detected, <X>=Marked\n'
+    '\n🎯 Visual Board (with current block, patterns, and timeline):'
+  );
+  console.log(
+    'Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block, {X}=Detected, <X>=Marked, |=Timeline\n'
   );
 
   // Create a string-based visual representation
@@ -169,14 +232,10 @@ export function logGameBoard(gameState: GameState, message: string): void {
     }
   });
 
-  // Track marked pattern positions (2x2 each)
+  // Track marked cell positions (individual cells)
   const markedPositions = new Set<string>();
-  detectedPatterns.forEach(square => {
-    for (let py = 0; py < 2; py++) {
-      for (let px = 0; px < 2; px++) {
-        markedPositions.add(`${square.y + py},${square.x + px}`);
-      }
-    }
+  markedCells.forEach(cell => {
+    markedPositions.add(`${cell.y},${cell.x}`);
   });
 
   // Display the board with proper formatting
@@ -196,10 +255,16 @@ export function logGameBoard(gameState: GameState, message: string): void {
             return `[${patternValue}]`; // Current block
           }
           if (isMarked && cell !== 0) {
-            return `<${cell}>`; // Marked pattern
+            return `<${cell}>`; // Marked cell
           }
           if (isDetected && cell !== 0) {
             return `{${cell}}`; // Detected pattern
+          }
+          if (colIndex === timeline.x && cell === 0) {
+            return ' | '; // Timeline position (empty cell)
+          }
+          if (colIndex === timeline.x && cell !== 0) {
+            return `|${cell}|`; // Timeline position (filled cell)
           }
           if (cell === 0) {
             return ' · ';
@@ -259,6 +324,38 @@ export function logGameState(gameState: GameState): void {
     }
   });
   console.groupEnd();
+
+  // Game timers and state
+  console.groupCollapsed('⏰ Game Timers & Timeline');
+  console.log('🕐 Game Status:', gameState.status);
+  console.log('📊 Current Frame:', gameState.frame);
+  console.log(
+    '⏱️ Drop Timer:',
+    `${gameState.dropTimer}/${gameState.dropInterval}`
+  );
+  console.log('⏳ Countdown:', gameState.countdown);
+  console.log('🎮 Game Timer:', `${gameState.gameTimer} frames remaining`);
+  console.log('📍 Timeline Position:', `Column ${gameState.timeline.x}`);
+  console.log(
+    '⏲️ Timeline Timer:',
+    `${gameState.timeline.timer}/${gameState.timeline.speed}`
+  );
+  console.log('💰 Holding Score:', gameState.timeline.holdingScore);
+  console.log('🔄 Timeline Active:', gameState.timeline.active);
+  console.groupEnd();
+
+  // Marked cells details
+  if (gameState.markedCells.length > 0) {
+    console.groupCollapsed('❌ Marked Cells for Clearing');
+    console.log('📊 Total marked:', gameState.markedCells.length);
+    gameState.markedCells.forEach((cell, index) => {
+      const colorName = cell.color === 1 ? 'Light' : 'Dark';
+      console.log(
+        `   ${index + 1}. (${cell.x}, ${cell.y}) - ${colorName} (${cell.color})`
+      );
+    });
+    console.groupEnd();
+  }
 
   // RNG state for determinism debugging
   console.groupCollapsed('🎲 Deterministic State');

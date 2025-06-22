@@ -10,7 +10,7 @@ export const DetectedPatterns: React.FC<DetectedPatternsProps> = ({
   return patterns.map(pattern => {
     return (
       <div
-        key={`${pattern.x}-${pattern.y}`}
+        key={`detected-pattern-${pattern.x}-${pattern.y}`}
         className="absolute z-20 border-2 border-solid border-white"
         style={{
           left: `calc(${pattern.x} * var(--spacing-block-size))`,

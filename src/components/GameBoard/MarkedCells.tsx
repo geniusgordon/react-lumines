@@ -8,7 +8,7 @@ export const MarkedCells: React.FC<MarkedCellsProps> = ({ markedCells }) => {
   return markedCells.map(cell => {
     return (
       <div
-        key={`${cell.x}-${cell.y}`}
+        key={`marked-cell-${cell.x}-${cell.y}`}
         className="absolute z-25"
         style={{
           left: `calc(${cell.x} * var(--spacing-block-size))`,

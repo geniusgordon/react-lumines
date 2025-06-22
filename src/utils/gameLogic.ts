@@ -321,6 +321,15 @@ export function markColumnCells(
   detectedPatterns: Square[]
 ): Square[] {
   const markedCells: Square[] = [];
+  const markedSet = new Set<string>();
+
+  const markCell = (x: number, y: number, color: CellValue) => {
+    const cell = `${x},${y}`;
+    if (!markedSet.has(cell)) {
+      markedCells.push({ x, y, color });
+      markedSet.add(cell);
+    }
+  };
 
   // Mark cells from patterns that start in the current column
   const currentColumnPatterns = getPatternsByLeftColumn(
@@ -329,10 +338,8 @@ export function markColumnCells(
   );
   for (const pattern of currentColumnPatterns) {
     // Mark the left column of this 2x2 pattern
-    markedCells.push(
-      { x: pattern.x, y: pattern.y, color: pattern.color },
-      { x: pattern.x, y: pattern.y + 1, color: pattern.color }
-    );
+    markCell(pattern.x, pattern.y, pattern.color);
+    markCell(pattern.x, pattern.y + 1, pattern.color);
   }
 
   // Mark cells from patterns that started in the previous column
@@ -343,10 +350,8 @@ export function markColumnCells(
     );
     for (const pattern of previousColumnPatterns) {
       // Mark the right column of this 2x2 pattern
-      markedCells.push(
-        { x: pattern.x + 1, y: pattern.y, color: pattern.color },
-        { x: pattern.x + 1, y: pattern.y + 1, color: pattern.color }
-      );
+      markCell(pattern.x + 1, pattern.y, pattern.color);
+      markCell(pattern.x + 1, pattern.y + 1, pattern.color);
     }
   }
 

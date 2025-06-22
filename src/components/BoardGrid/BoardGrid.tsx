@@ -22,7 +22,10 @@ export const BoardGrid: React.FC<BoardGridProps> = ({ board }) => {
         const cellValue = board[y][x];
 
         cells.push(
-          <div key={`${x}-${y}`} className={cellValue === 0 ? '' : 'z-20'}>
+          <div
+            key={`grid-cell-${x}-${y}`}
+            className={cellValue === 0 ? '' : 'z-20'}
+          >
             <GridCell value={cellValue} x={x} y={y} />
           </div>
         );
