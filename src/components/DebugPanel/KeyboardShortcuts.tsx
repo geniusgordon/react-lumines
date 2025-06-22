@@ -11,55 +11,42 @@ export function KeyboardShortcuts({
 }: KeyboardShortcutsProps) {
   // Helper function to render key badges
   const renderKeys = (keys: string[]) => (
-    <div className="ml-4 space-x-1">
+    <div className="flex gap-1">
       {keys.map(key => (
-        <kbd key={key} className="rounded bg-gray-700 px-1 text-gray-300">
+        <kbd
+          key={key}
+          className="rounded-md border border-gray-600/50 bg-gray-700/80 px-2 py-1 font-mono text-xs text-gray-200 shadow-sm"
+        >
           {formatKey(key)}
         </kbd>
       ))}
     </div>
   );
 
+  const controls = [
+    { label: 'Move Left', keys: controlsConfig.moveLeft },
+    { label: 'Move Right', keys: controlsConfig.moveRight },
+    { label: 'Rotate CW', keys: controlsConfig.rotateCW },
+    { label: 'Rotate CCW', keys: controlsConfig.rotateCCW },
+    { label: 'Soft Drop', keys: controlsConfig.softDrop },
+    { label: 'Hard Drop', keys: controlsConfig.hardDrop },
+    { label: 'Pause', keys: controlsConfig.pause },
+    { label: 'Restart', keys: controlsConfig.restart },
+    { label: 'Toggle Debug', keys: controlsConfig.debug },
+  ];
+
   return (
-    <div className="rounded-lg bg-gray-800/50 p-4">
-      <h3 className="mb-3 text-sm font-medium text-gray-300">Controls</h3>
-      <div className="space-y-1 text-xs text-gray-400">
-        <div className="flex justify-between">
-          <span>Move Left:</span>
-          {renderKeys(controlsConfig.moveLeft)}
-        </div>
-        <div className="flex justify-between">
-          <span>Move Right:</span>
-          {renderKeys(controlsConfig.moveRight)}
-        </div>
-        <div className="flex justify-between">
-          <span>Rotate CW:</span>
-          {renderKeys(controlsConfig.rotateCW)}
-        </div>
-        <div className="flex justify-between">
-          <span>Rotate CCW:</span>
-          {renderKeys(controlsConfig.rotateCCW)}
-        </div>
-        <div className="flex justify-between">
-          <span>Soft Drop:</span>
-          {renderKeys(controlsConfig.softDrop)}
-        </div>
-        <div className="flex justify-between">
-          <span>Hard Drop:</span>
-          {renderKeys(controlsConfig.hardDrop)}
-        </div>
-        <div className="flex justify-between">
-          <span>Pause:</span>
-          {renderKeys(controlsConfig.pause)}
-        </div>
-        <div className="flex justify-between">
-          <span>Restart:</span>
-          {renderKeys(controlsConfig.restart)}
-        </div>
-        <div className="flex justify-between">
-          <span>Toggle Debug:</span>
-          {renderKeys(controlsConfig.debug)}
-        </div>
+    <div className="rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 backdrop-blur-sm">
+      <h3 className="mb-3 text-sm font-semibold tracking-wide text-gray-300">
+        Controls
+      </h3>
+      <div className="space-y-2">
+        {controls.map(({ label, keys }) => (
+          <div key={label} className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-400">{label}:</span>
+            {renderKeys(keys)}
+          </div>
+        ))}
       </div>
     </div>
   );

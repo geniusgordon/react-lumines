@@ -41,8 +41,8 @@ export const StartScreen: React.FC = () => {
         </div>
 
         <div className="mt-8 space-y-4">
-          <div className="rounded-lg bg-gray-800/50 p-4">
-            <h3 className="mb-2 text-sm font-medium text-gray-300">
+          <div className="rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 backdrop-blur-sm">
+            <h3 className="mb-3 text-sm font-semibold tracking-wide text-gray-300">
               How to Play
             </h3>
             <div className="space-y-1 text-xs text-gray-400">
