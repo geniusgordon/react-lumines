@@ -25,7 +25,7 @@ import { SeededRNG } from '@/utils/seededRNG';
  * Create initial game state
  */
 export function createInitialGameState(
-  seed: number = DEFAULT_VALUES.SEED,
+  seed: number | undefined,
   debugMode: boolean = false
 ): GameState {
   const rng = new SeededRNG(seed);
