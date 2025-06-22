@@ -84,33 +84,28 @@ describe('Integration Tests', () => {
       expect(rng1.next()).toBe(rng2.next());
     });
 
-    it('should handle game over conditions', () => {
+    it('should handle game over conditions with enhanced logic', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
 
-      // Fill top row to trigger game over
+      // Fill the entire board except for a small area to test enhanced game over logic
       const board = currentState.board.map(row => [...row]);
-      board[0][5] = 1 as CellValue;
+
+      // Fill entire board to create true game over scenario
+      for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 16; x++) {
+          board[y][x] = 1 as CellValue;
+        }
+      }
 
       /*
-       * Game over scenario - blocked spawn position:
-       *     0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
-       * 0   . . . . . 1 . . . . .  .  .  .  .  .  ← block in top row
-       * 1   . . . . . . . . . . .  .  .  .  .  .
-       * 2   . . . . . . . . . . .  .  .  .  .  .
-       * ...
-       * 9   . . . . . . . . . . .  .  .  .  .  .
-       *             ↑   ↑
-       *           block spawn area (x=7)
-       *           existing block blocks spawn
-       *
-       * When a new block tries to spawn at (7,0), it will be blocked
-       * by the existing block at (5,0), triggering game over.
+       * Enhanced game over scenario - no space for any block placement:
+       * All positions filled, so no partial placement is possible
        */
 
       currentState = { ...currentState, board };
 
-      // Try to place a new block (should trigger game over)
+      // Try to place a new block (should trigger game over since no space exists)
       const finalState = gameReducer(currentState, {
         type: 'HARD_DROP',
         frame: 100,

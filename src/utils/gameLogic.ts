@@ -233,6 +233,114 @@ export function isGameOver(board: GameBoard): boolean {
 }
 
 /**
+ * Check if any part of a block can be placed on the board
+ * Returns true if at least one cell of the block can be placed
+ */
+export function canPlaceAnyPartOfBlock(
+  board: GameBoard,
+  block: Block,
+  position: Position,
+  rotation?: Rotation
+): boolean {
+  const pattern =
+    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
+
+  // Check if any individual cell of the block can be placed
+  for (let y = 0; y < pattern.length; y++) {
+    for (let x = 0; x < pattern[y].length; x++) {
+      if (pattern[y][x] !== 0) {
+        const boardX = position.x + x;
+        const boardY = position.y + y;
+
+        // Check if this cell position is valid and not occupied
+        if (
+          boardX >= 0 &&
+          boardX < BOARD_WIDTH &&
+          boardY >= 0 &&
+          boardY < BOARD_HEIGHT &&
+          board[boardY][boardX] === 0
+        ) {
+          return true; // At least one cell can be placed
+        }
+      }
+    }
+  }
+
+  return false; // No cells can be placed
+}
+
+/**
+ * Enhanced game over check - only triggers when NO part of any block can be placed
+ * Tests all possible positions and rotations for the current block
+ */
+export function isGameOverEnhanced(board: GameBoard, block: Block): boolean {
+  // Test all possible positions across the entire board
+  for (let x = -1; x <= BOARD_WIDTH; x++) {
+    // Test all y positions across the entire board height
+    for (let y = -1; y <= BOARD_HEIGHT; y++) {
+      const testPosition = { x, y };
+
+      // Test all 4 possible rotations
+      for (let rotation = 0; rotation < 4; rotation++) {
+        if (
+          canPlaceAnyPartOfBlock(
+            board,
+            block,
+            testPosition,
+            rotation as Rotation
+          )
+        ) {
+          return false; // Game can continue
+        }
+      }
+    }
+  }
+
+  return true; // No placement possible - game over
+}
+
+/**
+ * Place block on board with partial placement support
+ * Only places cells that fit within bounds and don't collide
+ */
+export function placeBlockOnBoardPartial(
+  board: GameBoard,
+  block: Block,
+  position: Position,
+  rotation?: Rotation
+): { newBoard: GameBoard; placedCells: number } {
+  const newBoard = board.map(row => [...row]);
+  const pattern =
+    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
+
+  let placedCells = 0;
+
+  for (let y = 0; y < pattern.length; y++) {
+    for (let x = 0; x < pattern[y].length; x++) {
+      if (pattern[y][x] !== 0) {
+        const boardX = position.x + x;
+        const boardY = position.y + y;
+
+        // Only place if within bounds and position is empty
+        if (
+          boardX >= 0 &&
+          boardX < BOARD_WIDTH &&
+          boardY >= 0 &&
+          boardY < BOARD_HEIGHT &&
+          newBoard[boardY][boardX] === 0
+        ) {
+          newBoard[boardY][boardX] = pattern[y][x];
+          placedCells++;
+        }
+        // Cells that can't be placed are simply discarded
+      }
+    }
+  }
+
+  return { newBoard, placedCells };
+}
+
+/**
  * Create a copy of game board
  */
 export function copyBoard(board: GameBoard): GameBoard {

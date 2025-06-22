@@ -9,11 +9,13 @@ import {
   getRotatedPattern,
   isValidPosition,
   placeBlockOnBoard,
+  placeBlockOnBoardPartial,
   findDropPosition,
   generateRandomBlock,
   clearSquaresAndApplyGravity,
   applyGravity,
   isGameOver,
+  isGameOverEnhanced,
   copyBoard,
   detectPatterns,
 } from '../gameLogic';
@@ -561,6 +563,85 @@ describe('Game Logic', () => {
 
     it('should return 0 for no squares', () => {
       // TODO
+    });
+  });
+
+  describe('Enhanced Game Over Logic', () => {
+    it('should allow partial placement when only one column has space', () => {
+      const board = createEmptyBoard();
+
+      // Fill column 1 but leave column 0 empty
+      board[0][1] = 1;
+      board[1][1] = 1;
+
+      const block: Block = {
+        pattern: [
+          [2, 2],
+          [2, 2],
+        ],
+        rotation: 0,
+        id: 'test',
+      };
+
+      // Try to place block at position (0, 0) - column 0 is free, column 1 is blocked
+      const { newBoard, placedCells } = placeBlockOnBoardPartial(board, block, {
+        x: 0,
+        y: 0,
+      });
+
+      // Should place only the cells that fit (2 cells in column 0)
+      expect(placedCells).toBe(2);
+      expect(newBoard[0][0]).toBe(2); // New block placed
+      expect(newBoard[1][0]).toBe(2); // New block placed
+      expect(newBoard[0][1]).toBe(1); // Original block remains (collision avoided)
+      expect(newBoard[1][1]).toBe(1); // Original block remains (collision avoided)
+    });
+
+    it('should trigger game over only when no placement is possible', () => {
+      const board = createEmptyBoard();
+
+      // Fill most of the board but leave one space
+      for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 16; x++) {
+          if (!(x === 15 && y === 9)) {
+            board[y][x] = 1;
+          }
+        }
+      }
+
+      const block: Block = {
+        pattern: [
+          [2, 2],
+          [2, 2],
+        ],
+        rotation: 0,
+        id: 'test',
+      };
+
+      // Should not be game over since partial placement is still possible
+      expect(isGameOverEnhanced(board, block)).toBe(false);
+    });
+
+    it('should detect true game over when no cells can be placed', () => {
+      const board = createEmptyBoard();
+
+      // Fill the entire board
+      for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 16; x++) {
+          board[y][x] = 1;
+        }
+      }
+
+      const block: Block = {
+        pattern: [
+          [2, 2],
+          [2, 2],
+        ],
+        rotation: 0,
+        id: 'test',
+      };
+
+      expect(isGameOverEnhanced(board, block)).toBe(true);
     });
   });
 });
