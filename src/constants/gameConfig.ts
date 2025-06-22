@@ -97,6 +97,14 @@ export const TIME_ATTACK_CONFIG = {
   GAME_DURATION: 60000, // 1 minute in milliseconds (optional for timed mode)
 };
 
+// Timer constants
+export const TIMER_CONFIG = {
+  COUNTDOWN_START: 3, // Start countdown from 3
+  COUNTDOWN_DURATION: 20, // 20 frames per countdown
+  GAME_DURATION_FRAMES: 3600, // 60 seconds * 60 FPS = 3600 frames
+  GAME_DURATION_SECONDS: 60, // 60 seconds total game time
+};
+
 // Default game state values
 export const DEFAULT_VALUES = {
   SEED: 12345, // Default seed for testing

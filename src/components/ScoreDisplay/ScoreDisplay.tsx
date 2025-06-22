@@ -1,8 +1,12 @@
 import React from 'react';
 
+import type { GameStatus } from '@/types/game';
+
 export interface ScoreDisplayProps {
   score: number;
-  timeRemaining: number;
+  gameTimer: number; // frames remaining
+  countdown: number;
+  gameStatus: GameStatus;
 }
 
 /**
@@ -11,17 +15,28 @@ export interface ScoreDisplayProps {
  */
 export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   score,
-  timeRemaining,
+  gameTimer,
+  countdown,
+  gameStatus,
 }) => {
+  // Convert frames to seconds for display
+  const timeInSeconds = Math.ceil(gameTimer / 60);
+
   return (
     <div className="text-game-text space-y-2">
       <div>
         <div className="text-xs">Time</div>
-        <div className="text-2xl">{timeRemaining}</div>
+        {gameStatus === 'countdown' || gameStatus === 'countdownPaused' ? (
+          <div className="animate-pulse text-center text-4xl font-bold">
+            {countdown > 0 ? countdown : 'GO!'}
+          </div>
+        ) : (
+          <div className="text-4xl font-bold">{timeInSeconds}</div>
+        )}
       </div>
       <div className="mt-block-size">
         <div className="text-xs">Score</div>
-        <div className="text-2xl">{score}</div>
+        <div className="text-4xl font-bold">{score}</div>
       </div>
     </div>
   );

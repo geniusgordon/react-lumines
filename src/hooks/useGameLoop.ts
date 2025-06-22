@@ -96,7 +96,10 @@ export function useGameLoop(
 
   // Determine if game loop should be running
   // In debug mode, we don't auto-run the loop - only manual stepping
-  const shouldRun = enabled && gameState.status === 'playing' && !debugMode;
+  const shouldRun =
+    enabled &&
+    (gameState.status === 'playing' || gameState.status === 'countdown') &&
+    !debugMode;
 
   // Fixed timestep update function
   const gameUpdate = useCallback(() => {
@@ -110,7 +113,10 @@ export function useGameLoop(
   // Manual frame stepping function for debug mode
   const manualStep = useCallback(
     (steps: number = 1) => {
-      if (debugMode && gameState.status === 'playing') {
+      if (
+        debugMode &&
+        (gameState.status === 'playing' || gameState.status === 'countdown')
+      ) {
         for (let i = 0; i < steps; i++) {
           const currentFrame = gameState.frame + 1 + i;
           dispatch({

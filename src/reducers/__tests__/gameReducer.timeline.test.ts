@@ -10,10 +10,7 @@ describe('Game Reducer - Timeline Processing', () => {
 
   beforeEach(() => {
     initialState = createInitialGameState(12345);
-    playingState = gameReducer(initialState, {
-      type: 'START_GAME',
-      frame: 0,
-    });
+    playingState = { ...initialState, status: 'playing' as const };
   });
 
   describe('processTimelineColumn function behavior', () => {

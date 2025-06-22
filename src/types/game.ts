@@ -42,7 +42,14 @@ export interface Square {
 }
 
 // Game status states
-export type GameStatus = 'start' | 'playing' | 'paused' | 'gameOver' | 'replay';
+export type GameStatus =
+  | 'start'
+  | 'countdown'
+  | 'countdownPaused'
+  | 'playing'
+  | 'paused'
+  | 'gameOver'
+  | 'replay';
 
 // Game action types
 export type GameActionType =
@@ -78,6 +85,10 @@ export interface GameState {
   // Game flow
   status: GameStatus;
   score: number;
+
+  // Timer system
+  countdown: number; // 3, 2, 1, 0 (0 means countdown finished)
+  gameTimer: number; // frames remaining in game (60 seconds * 60 FPS = 3600 frames)
 
   // Pattern detection
   detectedPatterns: Square[]; // Currently detected 2x2 patterns

@@ -2,6 +2,7 @@ import {
   GAME_CONFIG,
   DEFAULT_VALUES,
   TIME_ATTACK_CONFIG,
+  TIMER_CONFIG,
 } from '@/constants/gameConfig';
 import type { GameState, GameAction, Square } from '@/types/game';
 import { logDebugAction } from '@/utils/debugLogger';
@@ -47,6 +48,10 @@ export function createInitialGameState(
     // Game flow
     status: 'start',
     score: 0,
+
+    // Timer system
+    countdown: TIMER_CONFIG.COUNTDOWN_START,
+    gameTimer: TIMER_CONFIG.GAME_DURATION_FRAMES,
 
     // Pattern detection
     detectedPatterns: [],
@@ -210,6 +215,63 @@ function updatePatternDetection(state: GameState): GameState {
 }
 
 /**
+ * Handle countdown and timer logic
+ */
+function handleCountdownAndTimer(
+  state: GameState,
+  action: GameAction
+): GameState {
+  // Handle countdown state
+  if (state.status === 'countdown') {
+    // Simple countdown logic - every 60 frames decrements countdown
+    const countdownStep = Math.floor(
+      action.frame / TIMER_CONFIG.COUNTDOWN_DURATION
+    );
+    const newCountdown = TIMER_CONFIG.COUNTDOWN_START - countdownStep;
+
+    if (newCountdown <= 0) {
+      // Countdown finished, start playing
+      return {
+        ...state,
+        status: 'playing',
+        countdown: 0,
+        frame: action.frame,
+      };
+    } else {
+      // Continue countdown
+      return {
+        ...state,
+        countdown: newCountdown,
+        frame: action.frame,
+      };
+    }
+  }
+
+  // Handle game timer for playing state
+  if (state.status === 'playing') {
+    const newGameTimer = state.gameTimer - 1;
+
+    // Check if time is up
+    if (newGameTimer <= 0) {
+      return {
+        ...state,
+        status: 'gameOver',
+        gameTimer: 0,
+        frame: action.frame,
+      };
+    }
+
+    return {
+      ...state,
+      gameTimer: newGameTimer,
+      frame: action.frame,
+    };
+  }
+
+  return state;
+}
+
+/**
  * Handle game tick - main game loop logic
  */
 function handleGameTick(
@@ -217,11 +279,13 @@ function handleGameTick(
   action: GameAction,
   rng: SeededRNG
 ): GameState {
-  if (state.status !== 'playing') {
-    return state;
-  }
+  // First handle countdown and timer logic
+  let newState = handleCountdownAndTimer(state, action);
 
-  let newState = { ...state, frame: action.frame };
+  // Only process game logic if we're in playing state
+  if (newState.status !== 'playing') {
+    return newState;
+  }
 
   // 1. Handle block dropping and placement
   newState = handleBlockDrop(newState, action.frame, rng);
@@ -431,9 +495,6 @@ function clearMarkedCellsAndScore(state: GameState): GameState {
  * Main game state reducer
  */
 export function gameReducer(state: GameState, action: GameAction): GameState {
-  // Debug logging - log incoming action
-  logDebugAction(state, action);
-
   // Create RNG instance only when needed - most actions don't need RNG
   let rng: SeededRNG | null = null;
   const getRNG = (): SeededRNG => {
@@ -448,20 +509,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START_GAME':
       return {
         ...createInitialGameState(state.seed),
-        status: 'playing',
+        status: 'countdown',
         frame: action.frame,
         debugMode: state.debugMode,
       };
 
     case 'PAUSE':
-      return state.status === 'playing'
-        ? { ...state, status: 'paused', frame: action.frame }
-        : state;
+      if (state.status === 'playing') {
+        return { ...state, status: 'paused', frame: action.frame };
+      } else if (state.status === 'countdown') {
+        return { ...state, status: 'countdownPaused', frame: action.frame };
+      }
+      return state;
 
     case 'RESUME':
-      return state.status === 'paused'
-        ? { ...state, status: 'playing', frame: action.frame }
-        : state;
+      if (state.status === 'paused') {
+        return { ...state, status: 'playing', frame: action.frame };
+      } else if (state.status === 'countdownPaused') {
+        return { ...state, status: 'countdown', frame: action.frame };
+      }
+      return state;
 
     case 'RESTART':
       return createInitialGameState(state.seed, state.debugMode);

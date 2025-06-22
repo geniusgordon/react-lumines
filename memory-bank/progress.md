@@ -61,20 +61,21 @@
 
 - [x] Timeline sweep animation ✅
 - [x] **Pattern Detection**: Find same-colored 2×2+ regions ✅
-- [ ] **Pattern Marking**: Mark patterns but keep them on board
-- [ ] **Timeline Clearing**: Clear marked patterns when sweep passes through
-- [ ] **Scoring System**: 1 point per 2×2 square cleared
-- [ ] **Visual Feedback**: Show marked patterns differently
+- [x] **Pattern Marking**: Mark patterns but keep them on board
+- [x] **Timeline Clearing**: Clear marked patterns when sweep passes through
+- [x] **Scoring System**: 1 point per 2×2 square cleared
+- [x] **Visual Feedback**: Show marked patterns differently
 
 ### 🚧 In Progress
 
 #### Phase 5: Game States
 
-- [ ] Start screen
+- [x] Next block preview
+- [x] Score display
+- [x] Timer count down ✅ **NEW!** - 3, 2, 1 countdown when starting + 60-second game timer
+- [ ] Pause menu
 - [ ] Game over screen
-- [ ] Pause functionality
-- [ ] Score display
-- [ ] Next block preview
+- [ ] Start screen
 
 #### Phase 6: Replay System
 
@@ -145,6 +146,17 @@
   - 🚧 **MISSING**: Pattern marking system (mark but keep on board)
   - 🚧 **MISSING**: Timeline-triggered clearing (core Lumines mechanic)
   - 🚧 **MISSING**: Scoring system implementation
+- **Timer Countdown System**: Complete countdown and game timer implementation ✅ **NEW!**
+  - ✅ **3-2-1 Countdown**: Visual countdown overlay when starting game
+  - ✅ **Game Timer**: 60-second countdown during gameplay
+  - ✅ **Auto Game Over**: Game ends when timer reaches zero
+  - ✅ **Visual Feedback**: Large countdown display over game board + timer in score area
+  - ✅ **State Management**: New 'countdown' game status with proper transitions
+  - ✅ **Frame-Based Timing**: Deterministic countdown using 60 FPS frame counting
+  - ✅ **Integration**: Seamlessly integrated with existing game loop and UI components
+  - ✅ **Pause During Countdown**: Players can pause/resume countdown with visual "PAUSED" indicator ✅ **ENHANCED!**
+  - ✅ **Natural Resume**: Countdown resumes naturally since useGameLoop stops during pause (no frame advances)
+  - ✅ **Unified Controls**: Same pause/resume keys (P, Escape) work for both countdown and gameplay states
 
 ### Known Issues
 

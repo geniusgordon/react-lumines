@@ -40,7 +40,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({ gameState }) => {
           transform: 'translateX(calc(100% + var(--spacing-block-size)))',
         }}
       >
-        <ScoreDisplay score={gameState.score} timeRemaining={60} />
+        <ScoreDisplay
+          score={gameState.score}
+          gameTimer={gameState.gameTimer}
+          countdown={gameState.countdown}
+          gameStatus={gameState.status}
+        />
       </div>
     </div>
   );

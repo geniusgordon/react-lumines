@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
-import type { GameAction, CellValue, GameActionType } from '@/types/game';
+import type {
+  GameAction,
+  CellValue,
+  GameActionType,
+  GameStatus,
+} from '@/types/game';
 import { SeededRNG } from '@/utils/seededRNG';
 
 describe('Integration Tests', () => {
@@ -39,7 +44,7 @@ describe('Integration Tests', () => {
 
     it('should handle multiple game ticks correctly', () => {
       const state = createInitialGameState(12345);
-      let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      let currentState = { ...state, status: 'playing' as GameStatus };
 
       const initialPosition = currentState.blockPosition;
       const dropInterval = currentState.dropInterval;
@@ -84,9 +89,9 @@ describe('Integration Tests', () => {
       expect(rng1.next()).toBe(rng2.next());
     });
 
-    it('should handle game over conditions with enhanced logic', () => {
+    it('should handle game over conditions', () => {
       const state = createInitialGameState(12345);
-      let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Fill the top rows of the board to create a realistic game over scenario
       // This simulates blocks stacking up to the point where new blocks can't spawn
@@ -120,7 +125,7 @@ describe('Integration Tests', () => {
 
     it('should handle timeline sweep correctly', () => {
       const state = createInitialGameState(12345);
-      let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Timeline should already be active with frame-based timing
       expect(currentState.timeline.active).toBe(true);
@@ -166,7 +171,7 @@ describe('Integration Tests', () => {
   describe('Performance and consistency', () => {
     it('should handle large numbers of actions efficiently', () => {
       const state = createInitialGameState(12345);
-      let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      let currentState = { ...state, status: 'playing' as GameStatus };
 
       const startTime = performance.now();
 
@@ -184,7 +189,7 @@ describe('Integration Tests', () => {
 
     it('should maintain state consistency across complex operations', () => {
       const state = createInitialGameState(12345);
-      let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Perform a complex sequence of operations
       const operations = [
@@ -225,7 +230,7 @@ describe('Integration Tests', () => {
   describe('Error resilience', () => {
     it('should handle invalid frame numbers gracefully', () => {
       const state = createInitialGameState(12345);
-      const playingState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      const playingState = { ...state, status: 'playing' as GameStatus };
 
       // Test negative frame
       const result1 = gameReducer(playingState, {
@@ -244,7 +249,7 @@ describe('Integration Tests', () => {
 
     it('should maintain valid board state after all operations', () => {
       const state = createInitialGameState(12345);
-      let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
+      let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Perform random operations
       const rng = new SeededRNG(54321);

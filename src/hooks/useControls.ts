@@ -232,6 +232,8 @@ export function useControls(
         if (
           gameState.status === 'playing' ||
           gameState.status === 'paused' ||
+          gameState.status === 'countdown' ||
+          gameState.status === 'countdownPaused' ||
           gameState.status === 'replay'
         ) {
           dispatchAction('RESTART');
@@ -241,9 +243,15 @@ export function useControls(
 
       // Handle pause action (available in all playing states)
       if (gameAction === 'PAUSE') {
-        if (gameState.status === 'playing') {
+        if (
+          gameState.status === 'playing' ||
+          gameState.status === 'countdown'
+        ) {
           dispatchAction('PAUSE');
-        } else if (gameState.status === 'paused') {
+        } else if (
+          gameState.status === 'paused' ||
+          gameState.status === 'countdownPaused'
+        ) {
           dispatchAction('RESUME');
         }
         return;

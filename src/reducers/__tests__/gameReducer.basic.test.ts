@@ -49,8 +49,10 @@ describe('Game Reducer - Basic Functionality', () => {
       const action: GameAction = { type: 'START_GAME', frame: 0 };
       const newState = gameReducer(initialState, action);
 
-      expect(newState.status).toBe('playing');
+      expect(newState.status).toBe('countdown');
       expect(newState.frame).toBe(0);
+      expect(newState.countdown).toBe(3);
+      expect(newState.gameTimer).toBe(3600); // 60 seconds * 60 FPS
     });
 
     it('should pause game', () => {
@@ -118,6 +120,101 @@ describe('Game Reducer - Basic Functionality', () => {
 
       expect(offState.debugMode).toBe(false);
       expect(offState.frame).toBe(60);
+    });
+  });
+
+  describe('Countdown functionality', () => {
+    it('should start with countdown of 3', () => {
+      const action: GameAction = { type: 'START_GAME', frame: 0 };
+      const newState = gameReducer(initialState, action);
+
+      expect(newState.status).toBe('countdown');
+      expect(newState.countdown).toBe(3);
+    });
+
+    it('should countdown from 3 to 2 to 1', () => {
+      const startAction: GameAction = { type: 'START_GAME', frame: 0 };
+      let state = gameReducer(initialState, startAction);
+
+      // First countdown (3 -> 2)
+      const tick1: GameAction = { type: 'TICK', frame: 60 };
+      state = gameReducer(state, tick1);
+      expect(state.countdown).toBe(2);
+      expect(state.status).toBe('countdown');
+
+      // Second countdown (2 -> 1)
+      const tick2: GameAction = { type: 'TICK', frame: 120 };
+      state = gameReducer(state, tick2);
+      expect(state.countdown).toBe(1);
+      expect(state.status).toBe('countdown');
+
+      // Final countdown (1 -> 0, start playing)
+      const tick3: GameAction = { type: 'TICK', frame: 180 };
+      state = gameReducer(state, tick3);
+      expect(state.countdown).toBe(0);
+      expect(state.status).toBe('playing');
+    });
+
+    it('should handle game timer countdown', () => {
+      // Start game and get to playing state
+      const startAction: GameAction = { type: 'START_GAME', frame: 0 };
+      let state = gameReducer(initialState, startAction);
+
+      // Fast forward through countdown
+      for (let i = 1; i <= 3; i++) {
+        const tick: GameAction = { type: 'TICK', frame: i * 60 };
+        state = gameReducer(state, tick);
+      }
+
+      expect(state.status).toBe('playing');
+      const initialGameTimer = state.gameTimer;
+
+      // Game timer should count down during play
+      const playTick: GameAction = { type: 'TICK', frame: 181 };
+      state = gameReducer(state, playTick);
+      expect(state.gameTimer).toBe(initialGameTimer - 1);
+    });
+
+    it('should end game when timer reaches zero', () => {
+      // Create state with almost no time left
+      const almostExpiredState = {
+        ...initialState,
+        status: 'playing' as const,
+        gameTimer: 1,
+      };
+
+      const tick: GameAction = { type: 'TICK', frame: 3600 };
+      const finalState = gameReducer(almostExpiredState, tick);
+
+      expect(finalState.status).toBe('gameOver');
+      expect(finalState.gameTimer).toBe(0);
+    });
+
+    it('should pause countdown and resume correctly', () => {
+      // Start game with countdown
+      const startAction: GameAction = { type: 'START_GAME', frame: 0 };
+      let state = gameReducer(initialState, startAction);
+      expect(state.status).toBe('countdown');
+
+      // Advance to frame 30 (halfway through first countdown)
+      const tick1: GameAction = { type: 'TICK', frame: 30 };
+      state = gameReducer(state, tick1);
+      expect(state.countdown).toBe(3); // Still on 3
+
+      // Pause during countdown
+      const pauseAction: GameAction = { type: 'PAUSE', frame: 30 };
+      state = gameReducer(state, pauseAction);
+      expect(state.status).toBe('countdownPaused');
+
+      // Resume - since useGameLoop stops during pause, frame doesn't advance
+      const resumeAction: GameAction = { type: 'RESUME', frame: 30 };
+      state = gameReducer(state, resumeAction);
+      expect(state.status).toBe('countdown');
+
+      // Continue ticking from where we left off (frame 30 -> 60)
+      const tick2: GameAction = { type: 'TICK', frame: 60 };
+      state = gameReducer(state, tick2);
+      expect(state.countdown).toBe(2); // Should decrement to 2
     });
   });
 

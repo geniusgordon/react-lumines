@@ -3,13 +3,18 @@ interface QuickStatsProps {
   score: number;
 }
 
-export function QuickStats({ status, score }: QuickStatsProps) {
+export function QuickStats(props: QuickStatsProps) {
+  const { score } = props;
+  const status = props.status === 'countdownPaused' ? 'paused' : props.status;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'playing':
         return 'text-green-400';
       case 'paused':
         return 'text-yellow-400';
+      case 'countdown':
+        return 'text-blue-400';
       case 'gameOver':
         return 'text-red-400';
       default:

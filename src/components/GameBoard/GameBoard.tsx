@@ -5,6 +5,7 @@ import type { GameState } from '@/types/game';
 
 import { BoardGrid } from '../BoardGrid';
 import { CurrentBlock } from '../CurrentBlock';
+import { Countdown } from '../GameScreen/Countdown';
 import { Timeline as TimelineComponent } from '../Timeline';
 
 import { DetectedPatterns } from './DetectedPatterns';
@@ -41,6 +42,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
       />
 
       <TimelineComponent timeline={gameState.timeline} />
+
+      <Countdown gameState={gameState} />
     </div>
   );
 };

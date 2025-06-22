@@ -209,11 +209,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
   describe('Pattern detection', () => {
     it('should detect patterns during game tick', () => {
-      // Create a playing state with a 2x2 pattern on the board
-      const playingState = gameReducer(initialState, {
-        type: 'START_GAME',
-        frame: 0,
-      });
+      const playingState = { ...initialState, status: 'playing' as const };
 
       // Place a 2x2 pattern manually
       const boardWithPattern = playingState.board.map(row => [...row]);
@@ -252,10 +248,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
     });
 
     it('should detect multiple patterns during game tick', () => {
-      const playingState = gameReducer(initialState, {
-        type: 'START_GAME',
-        frame: 0,
-      });
+      const playingState = { ...initialState, status: 'playing' as const };
 
       // Place two separate 2x2 patterns
       const boardWithPatterns = playingState.board.map(row => [...row]);
@@ -305,10 +298,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
     });
 
     it('should detect larger rectangular patterns', () => {
-      const playingState = gameReducer(initialState, {
-        type: 'START_GAME',
-        frame: 0,
-      });
+      const playingState = { ...initialState, status: 'playing' as const };
 
       // Create a 3x2 pattern (should detect 2 overlapping 2x2 patterns)
       const boardWithLargePattern = playingState.board.map(row => [...row]);
@@ -362,10 +352,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
     });
 
     it('should clear detected patterns when no patterns exist', () => {
-      const playingState = gameReducer(initialState, {
-        type: 'START_GAME',
-        frame: 0,
-      });
+      const playingState = { ...initialState, status: 'playing' as const };
 
       // Start with some detected patterns
       const stateWithOldPatterns = {
@@ -383,10 +370,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
     });
 
     it('should not detect patterns when colors do not match', () => {
-      const playingState = gameReducer(initialState, {
-        type: 'START_GAME',
-        frame: 0,
-      });
+      const playingState = { ...initialState, status: 'playing' as const };
 
       // Place blocks that form a 2x2 but with different colors
       const boardWithMismatchedColors = playingState.board.map(row => [...row]);
