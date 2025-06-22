@@ -58,8 +58,6 @@ export type GameActionType =
   | 'RESTART'
   | 'START_GAME'
   | 'GAME_OVER'
-  | 'CLEAR_SQUARES'
-  | 'APPLY_GRAVITY'
   | 'SET_DEBUG_MODE'; // Toggle debug mode and logging
 
 // Game action structure

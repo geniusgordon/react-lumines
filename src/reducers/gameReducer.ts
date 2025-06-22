@@ -3,7 +3,7 @@ import {
   DEFAULT_VALUES,
   TIME_ATTACK_CONFIG,
 } from '@/constants/gameConfig';
-import type { GameState, GameAction } from '@/types/game';
+import type { GameState, GameAction, Square } from '@/types/game';
 import { logDebugAction } from '@/utils/debugLogger';
 import {
   createEmptyBoard,
@@ -204,14 +204,7 @@ function handleHardDrop(
     blockPosition: dropPosition,
     frame: action.frame,
   };
-  const placedState = placeCurrentBlock(newState, action.frame, rng);
-
-  const gravityAppliedState = {
-    ...placedState,
-    board: applyGravity(placedState.board),
-  };
-
-  return gravityAppliedState;
+  return placeCurrentBlock(newState, action.frame, rng);
 }
 
 /**
@@ -228,7 +221,7 @@ function updatePatternDetection(state: GameState): GameState {
 }
 
 /**
- * Handle game tick - separated into logical sub-functions
+ * Handle game tick - main game loop logic
  */
 function handleGameTick(
   state: GameState,
@@ -241,68 +234,74 @@ function handleGameTick(
 
   let newState = { ...state, frame: action.frame };
 
-  // Handle block dropping
-  const updateDropTimerResult = updateDropTimer(newState, action.frame, rng);
-  newState = updateDropTimerResult.state;
-  const blockPlaced = updateDropTimerResult.blockPlaced;
+  // 1. Handle block dropping and placement
+  newState = handleBlockDrop(newState, rng);
 
-  if (blockPlaced) {
-    newState.board = applyGravity(newState.board);
-    newState = updatePatternDetection(newState);
-  }
-
-  // Handle pattern detection
+  // 2. Update pattern detection (only once per tick)
   newState = updatePatternDetection(newState);
 
-  // Handle timeline progression
+  // 3. Handle timeline progression and clearing
   newState = updateTimeline(newState);
 
   return newState;
 }
 
 /**
- * Update drop timer and handle automatic block dropping
- * Returns both the new state and whether a block was placed
+ * Handle block dropping logic - either move down or place block
  */
-function updateDropTimer(
-  state: GameState,
-  frame: number,
-  rng: SeededRNG
-): { state: GameState; blockPlaced: boolean } {
+function handleBlockDrop(state: GameState, rng: SeededRNG): GameState {
   const newState = { ...state };
   newState.dropTimer++;
 
   // Check if block should drop
   if (newState.dropTimer >= newState.dropInterval) {
-    const dropPos = {
+    const dropPosition = {
       x: newState.blockPosition.x,
       y: newState.blockPosition.y + 1,
     };
 
+    // Try to move block down
     if (
-      isValidPosition(newState.board, newState.currentBlock, dropPos) ===
+      isValidPosition(newState.board, newState.currentBlock, dropPosition) ===
       'valid'
     ) {
       // Block can drop normally
-      newState.blockPosition = dropPos;
+      newState.blockPosition = dropPosition;
       newState.dropTimer = 0;
-      return { state: newState, blockPlaced: false };
+      return newState;
     } else {
-      // Can't drop, place block
-      const placedState = placeCurrentBlock(newState, frame, rng);
-      return { state: placedState, blockPlaced: true };
+      // Can't drop, place block and apply physics
+      return placeBlockAndApplyPhysics(newState, rng);
     }
   }
 
   // Timer hasn't reached drop interval yet
-  return { state: newState, blockPlaced: false };
+  return newState;
+}
+
+/**
+ * Place current block and apply all physics (gravity, spawning)
+ */
+function placeBlockAndApplyPhysics(
+  state: GameState,
+  rng: SeededRNG
+): GameState {
+  // Place the block on the board
+  const placedState = placeCurrentBlock(state, state.frame, rng);
+
+  // Apply gravity to settle all blocks
+  const settledState = {
+    ...placedState,
+    board: applyGravity(placedState.board),
+  };
+
+  return settledState;
 }
 
 /**
  * Update timeline sweep progression with column-based clearing logic
  */
 function updateTimeline(state: GameState): GameState {
-  // Timeline always moves when game is playing
   if (state.status !== 'playing') {
     return state;
   }
@@ -311,22 +310,7 @@ function updateTimeline(state: GameState): GameState {
 
   // Check if it's time to move timeline one column
   if (newTimer >= state.timeline.speed) {
-    const currentColumn = state.timeline.x;
-    const nextColumn = (currentColumn + 1) % GAME_CONFIG.board.width;
-
-    const newState = { ...state };
-
-    // Process the current column before moving
-    const processedState = processTimelineColumn(newState, currentColumn);
-
-    return {
-      ...processedState,
-      timeline: {
-        ...processedState.timeline,
-        x: nextColumn,
-        timer: 0, // Reset timer for next column
-      },
-    };
+    return advanceTimelineToNextColumn(state);
   }
 
   // Just increment timer
@@ -335,6 +319,26 @@ function updateTimeline(state: GameState): GameState {
     timeline: {
       ...state.timeline,
       timer: newTimer,
+    },
+  };
+}
+
+/**
+ * Advance timeline to next column and process the current column
+ */
+function advanceTimelineToNextColumn(state: GameState): GameState {
+  const currentColumn = state.timeline.x;
+  const nextColumn = (currentColumn + 1) % GAME_CONFIG.board.width;
+
+  // Process the current column before moving
+  const processedState = processTimelineColumn(state, currentColumn);
+
+  return {
+    ...processedState,
+    timeline: {
+      ...processedState.timeline,
+      x: nextColumn,
+      timer: 0, // Reset timer for next column
     },
   };
 }
@@ -351,61 +355,82 @@ function processTimelineColumn(state: GameState, column: number): GameState {
     state.detectedPatterns,
     column - 1
   );
+
   const hasPatternsInCurrentColumn = patternsInColumn.length > 0;
   const hasPatternsInPreviousColumn = patternsInPreviousColumn.length > 0;
 
-  // Check if there are patterns in current or previous column to mark cells for clearing
+  // Case 1: Mark cells for clearing if there are patterns
   if (hasPatternsInCurrentColumn || hasPatternsInPreviousColumn) {
-    let newState = { ...state };
-
-    // Only add holding score for patterns in current column
-    if (hasPatternsInCurrentColumn) {
-      const holdingPoints = patternsInColumn.length;
-      newState = {
-        ...newState,
-        timeline: {
-          ...newState.timeline,
-          holdingScore: state.timeline.holdingScore + holdingPoints,
-        },
-      };
-    }
-
-    const newMarkedCells = markColumnCells(column, state.detectedPatterns);
-    newState = {
-      ...newState,
-      markedCells: [...state.markedCells, ...newMarkedCells],
-    };
-
-    return newState;
+    return markCellsForClearing(state, column, patternsInColumn);
   }
 
-  // If no patterns in current AND previous column AND there's holding score, clear
-  const noPatterns =
-    !hasPatternsInCurrentColumn && !hasPatternsInPreviousColumn;
-  const hasHoldingScore = state.timeline.holdingScore > 0;
-  const hasMarkedCells = state.markedCells.length > 0;
+  // Case 2: Clear marked cells if no patterns and we have holding score
+  const shouldClear =
+    !hasPatternsInCurrentColumn &&
+    !hasPatternsInPreviousColumn &&
+    state.timeline.holdingScore > 0 &&
+    state.markedCells.length > 0;
 
-  if (noPatterns && hasHoldingScore && hasMarkedCells) {
-    const newBoard = clearMarkedCellsAndApplyGravity(
-      state.board,
-      state.markedCells
-    );
-    const detectedPatterns = detectPatterns(newBoard);
-
-    return {
-      ...state,
-      board: newBoard,
-      detectedPatterns,
-      score: state.score + state.timeline.holdingScore,
-      timeline: {
-        ...state.timeline,
-        holdingScore: 0,
-      },
-      markedCells: [],
-    };
+  if (shouldClear) {
+    return clearMarkedCellsAndScore(state);
   }
 
   return state;
+}
+
+/**
+ * Mark cells for clearing and update holding score
+ */
+function markCellsForClearing(
+  state: GameState,
+  column: number,
+  patternsInColumn: Square[]
+): GameState {
+  let newState = { ...state };
+
+  // Add holding score for patterns in current column
+  if (patternsInColumn.length > 0) {
+    const holdingPoints = patternsInColumn.length;
+    newState = {
+      ...newState,
+      timeline: {
+        ...newState.timeline,
+        holdingScore: state.timeline.holdingScore + holdingPoints,
+      },
+    };
+  }
+
+  // Mark cells in this column for clearing
+  const newMarkedCells = markColumnCells(column, state.detectedPatterns);
+  newState = {
+    ...newState,
+    markedCells: [...state.markedCells, ...newMarkedCells],
+  };
+
+  return newState;
+}
+
+/**
+ * Clear marked cells and update score
+ */
+function clearMarkedCellsAndScore(state: GameState): GameState {
+  const newBoard = clearMarkedCellsAndApplyGravity(
+    state.board,
+    state.markedCells
+  );
+  const detectedPatterns = detectPatterns(newBoard);
+
+  return {
+    ...state,
+    board: newBoard,
+    detectedPatterns,
+    score: state.score + state.timeline.holdingScore,
+    timeline: {
+      ...state.timeline,
+      holdingScore: 0,
+    },
+    markedCells: [],
+  };
 }
 
 /**
@@ -475,25 +500,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'HARD_DROP':
       return handleHardDrop(state, action, getRNG());
 
-    case 'APPLY_GRAVITY': {
-      if (state.status !== 'playing') {
-        return state;
-      }
-
-      const newBoard = applyGravity(state.board);
-      return {
-        ...state,
-        board: newBoard,
-        frame: action.frame,
-      };
-    }
-
     case 'TICK':
       return handleGameTick(state, action, getRNG());
-
-    case 'CLEAR_SQUARES':
-      // TODO: Implement square clearing logic
-      return state;
 
     case 'GAME_OVER':
       return {

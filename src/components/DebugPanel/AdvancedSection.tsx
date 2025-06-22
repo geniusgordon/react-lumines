@@ -1,12 +1,11 @@
-import { ChevronDown, ClipboardList, Copy, ArrowDown } from 'lucide-react';
+import { ChevronDown, ClipboardList, Copy } from 'lucide-react';
 import { useState } from 'react';
 
-import type { GameState, GameAction } from '@/types/game';
+import type { GameState } from '@/types/game';
 import { logGameState } from '@/utils/debugLogger';
 
 interface AdvancedSectionProps {
   gameState: GameState;
-  dispatch: React.Dispatch<GameAction>;
   frameCount: number;
   currentFPS: number;
   isRunning: boolean;
@@ -14,7 +13,6 @@ interface AdvancedSectionProps {
 
 export function AdvancedSection({
   gameState,
-  dispatch,
   frameCount,
   currentFPS,
   isRunning,
@@ -50,15 +48,6 @@ export function AdvancedSection({
         console.error('❌ Failed to copy debug data:', err);
       });
   };
-
-  const handleApplyGravity = () => {
-    dispatch({
-      type: 'APPLY_GRAVITY',
-      frame: frameCount,
-    });
-  };
-
-  const isGamePlaying = gameState.status === 'playing';
 
   return (
     <div className="border-t border-gray-700/50 pt-4">
@@ -97,33 +86,6 @@ export function AdvancedSection({
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Game Actions Section */}
-          <div className="space-y-2">
-            <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
-              Game Actions
-            </div>
-
-            <button
-              onClick={handleApplyGravity}
-              disabled={!isGamePlaying}
-              className={`w-full rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                isGamePlaying
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500'
-                  : 'cursor-not-allowed bg-gray-700 text-gray-500'
-              }`}
-              title={
-                isGamePlaying
-                  ? 'Apply gravity to make all blocks fall down'
-                  : 'Game must be playing to apply gravity'
-              }
-            >
-              <div className="flex items-center justify-center gap-2">
-                <ArrowDown className="h-3 w-3" />
-                Apply Gravity
-              </div>
-            </button>
           </div>
 
           {/* Debug Tools Section */}

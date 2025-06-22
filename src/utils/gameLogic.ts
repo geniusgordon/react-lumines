@@ -292,8 +292,10 @@ export function getPatternsByLeftColumn(
 }
 
 /**
- * Mark cells in a column as cleared by timeline
- * Returns the cells that were marked (x,y coordinate strings)
+ * Mark cells in a column for clearing by the timeline
+ * This function marks cells from patterns that intersect with the given column:
+ * - Patterns with left edge in current column (left half of pattern)
+ * - Patterns with left edge in previous column (right half of pattern)
  */
 export function markColumnCells(
   column: number,
@@ -301,38 +303,31 @@ export function markColumnCells(
 ): Square[] {
   const markedCells: Square[] = [];
 
-  const patternsInColumn = getPatternsByLeftColumn(detectedPatterns, column);
-
-  for (const pattern of patternsInColumn) {
-    markedCells.push({
-      x: pattern.x,
-      y: pattern.y,
-      color: pattern.color,
-    });
-    markedCells.push({
-      x: pattern.x,
-      y: pattern.y + 1,
-      color: pattern.color,
-    });
+  // Mark cells from patterns that start in the current column
+  const currentColumnPatterns = getPatternsByLeftColumn(
+    detectedPatterns,
+    column
+  );
+  for (const pattern of currentColumnPatterns) {
+    // Mark the left column of this 2x2 pattern
+    markedCells.push(
+      { x: pattern.x, y: pattern.y, color: pattern.color },
+      { x: pattern.x, y: pattern.y + 1, color: pattern.color }
+    );
   }
 
+  // Mark cells from patterns that started in the previous column
   if (column > 0) {
-    const patternsInPreviousColumn = getPatternsByLeftColumn(
+    const previousColumnPatterns = getPatternsByLeftColumn(
       detectedPatterns,
       column - 1
     );
-
-    for (const pattern of patternsInPreviousColumn) {
-      markedCells.push({
-        x: pattern.x + 1,
-        y: pattern.y,
-        color: pattern.color,
-      });
-      markedCells.push({
-        x: pattern.x + 1,
-        y: pattern.y + 1,
-        color: pattern.color,
-      });
+    for (const pattern of previousColumnPatterns) {
+      // Mark the right column of this 2x2 pattern
+      markedCells.push(
+        { x: pattern.x + 1, y: pattern.y, color: pattern.color },
+        { x: pattern.x + 1, y: pattern.y + 1, color: pattern.color }
+      );
     }
   }
 
@@ -341,23 +336,30 @@ export function markColumnCells(
 
 /**
  * Clear marked cells from the board and apply gravity
- * Returns the new board
+ * Returns the new board with marked cells cleared and blocks settled
  */
 export function clearMarkedCellsAndApplyGravity(
   board: GameBoard,
   markedCells: Square[]
 ): GameBoard {
-  let newBoard = board.map(row => [...row]);
+  // Create a copy of the board to avoid mutation
+  const newBoard = board.map(row => [...row]);
 
-  // Clear marked cells
+  // Create a set of positions to clear for efficient lookup
+  const cellsToClare = new Set<string>();
   for (const cell of markedCells) {
-    if (newBoard[cell.y][cell.x] !== 0) {
-      newBoard[cell.y][cell.x] = 0;
+    cellsToClare.add(`${cell.x},${cell.y}`);
+  }
+
+  // Clear all marked cells
+  for (let y = 0; y < BOARD_HEIGHT; y++) {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      if (cellsToClare.has(`${x},${y}`)) {
+        newBoard[y][x] = 0;
+      }
     }
   }
 
-  // Apply gravity
-  newBoard = applyGravity(newBoard);
-
-  return newBoard;
+  // Apply gravity to settle remaining blocks
+  return applyGravity(newBoard);
 }

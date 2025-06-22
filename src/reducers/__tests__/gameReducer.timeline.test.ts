@@ -47,7 +47,7 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 3, // Timeline at column 3
           timer: playingState.timeline.speed - 1, // About to move
-          holdingScore: 0
+          holdingScore: 0,
         },
         markedCells: [],
       };
@@ -248,9 +248,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 5,
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateWithMultiplePatterns, {
@@ -293,9 +293,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 5,
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateWithNoPatterns, {
@@ -334,7 +334,7 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 15, // Last column
           timer: playingState.timeline.speed - 1,
-          holdingScore: 1
+          holdingScore: 1,
         },
         markedCells: [{ x: 14, y: 8, color: 1 as const }],
       };
@@ -380,9 +380,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 5, // Timeline at column 5, pattern in previous column 4
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateWithPreviousPattern, {
@@ -416,9 +416,9 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 3,
           timer: playingState.timeline.speed - 1, // One frame before moving
           // Use default speed (10 frames from config)
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateWithPattern, {
@@ -440,9 +440,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 3,
           timer: 5, // Not at threshold yet (default speed is 10)
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateWithPattern, {
@@ -488,9 +488,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 0, // Timeline at column 0
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateWithEdgePattern, {
@@ -512,9 +512,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 15, // Last column
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(stateAtRightEdge, {
@@ -557,15 +557,15 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 10, // Timeline far from marked columns
           timer: playingState.timeline.speed - 1,
-          holdingScore: 5
+          holdingScore: 5,
         },
         markedCells: [
-            { x: 2, y: 8, color: 1 as const },
-            { x: 3, y: 8, color: 1 as const },
-            { x: 4, y: 8, color: 2 as const },
-            { x: 5, y: 8, color: 2 as const },
-            { x: 6, y: 8, color: 1 as const },
-          ],
+          { x: 2, y: 8, color: 1 as const },
+          { x: 3, y: 8, color: 1 as const },
+          { x: 4, y: 8, color: 2 as const },
+          { x: 5, y: 8, color: 2 as const },
+          { x: 6, y: 8, color: 1 as const },
+        ],
       };
 
       const result = gameReducer(stateWithComplexMarking, {
@@ -589,9 +589,9 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 5,
           speed: 30, // Very slow timeline
           timer: 29, // One frame before moving
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(slowTimelineState, {
@@ -612,9 +612,9 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 5,
           speed: 1, // Very fast timeline
           timer: 0, // Ready to move immediately
-          holdingScore: 0
+          holdingScore: 0,
         },
-        markedCells:  [],
+        markedCells: [],
       };
 
       const result = gameReducer(fastTimelineState, {

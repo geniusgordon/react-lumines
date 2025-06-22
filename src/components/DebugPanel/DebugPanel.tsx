@@ -72,7 +72,6 @@ export function DebugPanel({
 
             <AdvancedSection
               gameState={gameState}
-              dispatch={dispatch}
               frameCount={frameCount}
               currentFPS={currentFPS}
               isRunning={isRunning}
