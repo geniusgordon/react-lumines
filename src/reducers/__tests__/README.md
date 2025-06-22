@@ -11,6 +11,30 @@ This directory contains organized test suites for the game reducer functionality
 - **`gameReducer.gameplay.test.ts`** - Gameplay mechanics tests (18 tests)
 - **`gameReducer.timeline.test.ts`** - Timeline processing tests (14 tests)
 
+### 🎨 Visual Board Diagrams
+
+Many tests include ASCII art diagrams to visualize board states, making it easier to understand:
+- **Pattern layouts** - Shows 2x2 squares and larger rectangles
+- **Collision scenarios** - Displays blocked movement situations  
+- **Timeline processing** - Illustrates which columns contain patterns
+- **Gravity effects** - Shows before/after states of falling blocks
+- **Game over conditions** - Visualizes blocked spawn scenarios
+
+Example diagram format:
+```
+/*
+ * Board layout (showing only relevant area):
+ *     0 1 2 3 4 5 6 7 8 9
+ * 0   . . . . . . . . . .
+ * 1   . . . . . . . . . .
+ * ...
+ * 8   . . . . . 1 1 . . .  ← 2x2 pattern
+ * 9   . . . . . 1 1 . . .  ← 2x2 pattern
+ *               ↑
+ *         pattern at (5,8)
+ */
+```
+
 ### 🧪 Test Categories
 
 #### Basic Functionality (`gameReducer.basic.test.ts`)
@@ -58,11 +82,9 @@ npm test -- src/reducers/__tests__/gameReducer.timeline.test.ts
 
 ## Test Coverage
 
-Total: **122 tests** covering all aspects of the game reducer
-
 This organization makes it easier to:
 - Navigate to relevant tests for specific functionality
 - Add new tests in logical groupings
 - Maintain and update test suites
 - Debug specific game mechanics
-- Onboard new developers to the codebase 
+- Onboard new developers to the codebase

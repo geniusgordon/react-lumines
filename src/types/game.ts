@@ -31,8 +31,6 @@ export interface Timeline {
   speed: number; // Timeline sweep interval in frames per column
   timer: number; // Frames until next column movement
   active: boolean; // Whether timeline is currently sweeping
-  // Column-based clearing state (using arrays for serializability)
-  markedColumns: number[]; // Columns that have been marked by timeline
   holdingScore: number; // Accumulated points waiting to be cleared
   markedCells: Square[]; // Individual cells marked for clearing
 }

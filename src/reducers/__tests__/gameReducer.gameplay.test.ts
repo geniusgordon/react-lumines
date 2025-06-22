@@ -44,7 +44,6 @@ describe('Game Reducer - Gameplay Mechanics', () => {
           speed: 1,
           timer: 0,
           active: true,
-          markedColumns: [],
           holdingScore: 0,
           markedCells: [],
         },
@@ -66,7 +65,6 @@ describe('Game Reducer - Gameplay Mechanics', () => {
           speed: 10,
           timer: 3,
           active: true,
-          markedColumns: [],
           holdingScore: 0,
           markedCells: [],
         },
@@ -88,7 +86,6 @@ describe('Game Reducer - Gameplay Mechanics', () => {
           speed: 1,
           timer: 0,
           active: true,
-          markedColumns: [],
           holdingScore: 0,
           markedCells: [],
         },
@@ -121,6 +118,21 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       board[3][5] = 1; // Floating block
       board[5][7] = 2; // Another floating block
 
+      /*
+       * Board layout (showing only relevant rows and columns):
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * 2   . . . . . . . . . .
+       * 3   . . . . . 1 . . . .  ← floating block
+       * 4   . . . . . . . . . .
+       * 5   . . . . . . . 2 . .  ← floating block
+       * 6   . . . . . . . . . .
+       * 7   . . . . . . . . . .
+       * 8   . . . . . . . . . .
+       * 9   . . . . . . . . . .  ← ground level
+       */
+
       stateWithFloatingBlocks = {
         ...initialState,
         status: 'playing' as const,
@@ -147,6 +159,21 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       complexBoard[8][3] = 2; // Gap, these should fall down
       complexBoard[2][7] = 1; // Isolated floating block
 
+      /*
+       * Board layout (showing only relevant columns):
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * 2   . . . . . . . 1 . .  ← isolated floating block
+       * 3   . . . . . . . . . .
+       * 4   . . . 1 . . . . . .  ← top of stack
+       * 5   . . . 2 . . . . . .  ← middle of stack
+       * 6   . . . 1 . . . . . .  ← bottom of stack
+       * 7   . . . . . . . . . .  ← empty gap
+       * 8   . . . 2 . . . . . .  ← floating block (will fall)
+       * 9   . . . . . . . . . .  ← ground level
+       */
+
       const complexState = {
         ...stateWithFloatingBlocks,
         board: complexBoard,
@@ -156,6 +183,20 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       const newState = gameReducer(complexState, action);
 
       // Check that blocks fell correctly
+      /*
+       * Expected result after gravity:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * 2   . . . . . . . . . .
+       * 3   . . . . . . . . . .
+       * 4   . . . . . . . . . .
+       * 5   . . . . . . . . . .
+       * 6   . . . 1 . . . . . .  ← stack bottom (was at row 4)
+       * 7   . . . 2 . . . . . .  ← stack middle (was at row 5)
+       * 8   . . . 1 . . . . . .  ← stack bottom (was at row 6)
+       * 9   . . . 2 . . . 1 . .  ← floating block fell + isolated block fell
+       */
       expect(newState.board[6][3]).toBe(1); // Bottom of stack
       expect(newState.board[7][3]).toBe(2);
       expect(newState.board[8][3]).toBe(1);
@@ -189,6 +230,18 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       boardWithPattern[8][6] = 1; // light block
       boardWithPattern[9][5] = 1; // light block
       boardWithPattern[9][6] = 1; // light block
+
+      /*
+       * Board layout (showing only relevant area):
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 7   . . . . . . . . . .
+       * 8   . . . . . 1 1 . . .  ← 2x2 pattern (top row)
+       * 9   . . . . . 1 1 . . .  ← 2x2 pattern (bottom row)
+       *                 ↑ pattern at (5,8)
+       */
 
       const stateWithPattern = {
         ...playingState,
@@ -226,6 +279,20 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       boardWithPatterns[8][10] = 2;
       boardWithPatterns[8][11] = 2;
 
+      /*
+       * Board layout (showing only relevant area):
+       *     0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+       * 0   . . . . . . . . . . .  .  .  .  .  .
+       * 1   . . . . . . . . . . .  .  .  .  .  .
+       * ...
+       * 6   . . . . . . . . . . .  .  .  .  .  .
+       * 7   . . 1 1 . . . . . . 2  2  .  .  .  .  ← patterns (top row)
+       * 8   . . 1 1 . . . . . . 2  2  .  .  .  .  ← patterns (bottom row)
+       * 9   . . . . . . . . . . .  .  .  .  .  .
+       *         ↑ pattern 1      ↑ pattern 2
+       *       at (2,7)        at (10,7)
+       */
+
       const stateWithPatterns = {
         ...playingState,
         board: boardWithPatterns,
@@ -260,6 +327,25 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       boardWithLargePattern[8][5] = 1;
       boardWithLargePattern[8][6] = 1;
       boardWithLargePattern[8][7] = 1;
+
+      /*
+       * Board layout (showing only relevant area):
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 6   . . . . . . . . . .
+       * 7   . . . . . 1 1 1 . .  ← 3x2 rectangle (top row)
+       * 8   . . . . . 1 1 1 . .  ← 3x2 rectangle (bottom row)
+       * 9   . . . . . . . . . .
+       *               ↑   ↑
+       *         pattern1 pattern2
+       *          at(5,7) at(6,7)
+       *
+       * This creates 2 overlapping 2x2 patterns:
+       * Pattern 1: positions (5,7), (6,7), (5,8), (6,8)
+       * Pattern 2: positions (6,7), (7,7), (6,8), (7,8)
+       */
 
       const stateWithLargePattern = {
         ...playingState,
@@ -317,6 +403,20 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       boardWithMismatchedColors[8][6] = 2; // red
       boardWithMismatchedColors[9][5] = 1; // blue
       boardWithMismatchedColors[9][6] = 2; // red
+
+      /*
+       * Board layout (showing only relevant area):
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 7   . . . . . . . . . .
+       * 8   . . . . . 1 2 . . .  ← checkerboard pattern (no match)
+       * 9   . . . . . 1 2 . . .  ← checkerboard pattern (no match)
+       *               ↑
+       *         not a valid pattern
+       *         (different colors)
+       */
 
       const stateWithMismatchedColors = {
         ...playingState,
@@ -387,6 +487,34 @@ describe('Game Reducer - Gameplay Mechanics', () => {
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 9 - empty space
         ] as GameBoard,
       };
+
+      /*
+       * Board layout (before gravity):
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * 2   . . . . . . . . . .
+       * 3   . . . . . . . . . .
+       * 4   . . . . . . . . . .
+       * 5   . . . . . . . . . .
+       * 6   . . . 1 2 . . . . .  ← floating blocks
+       * 7   . . . 2 1 . . . . .  ← floating blocks
+       * 8   . . . . . . . . . .  ← empty space (gap)
+       * 9   . . . . . . . . . .  ← ground level
+       *
+       * Expected after gravity:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * 2   . . . . . . . . . .
+       * 3   . . . . . . . . . .
+       * 4   . . . . . . . . . .
+       * 5   . . . . . . . . . .
+       * 6   . . . . . . . . . .
+       * 7   . . . . . . . . . .
+       * 8   . . . 1 2 . . . . .  ← blocks fell down
+       * 9   . . . 2 1 . . . . .  ← blocks fell down
+       */
 
       const action: GameAction = { type: 'APPLY_GRAVITY', frame: 100 };
       const newState = gameReducer(stateWithFloatingBlocks, action);

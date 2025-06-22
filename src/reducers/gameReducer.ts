@@ -63,8 +63,6 @@ export function createInitialGameState(
       speed: GAME_CONFIG.timeline.speed,
       timer: 0,
       active: true,
-      // Column-based clearing state (using arrays for serializability)
-      markedColumns: [],
       holdingScore: 0,
       markedCells: [],
     },
@@ -312,20 +310,12 @@ function updateTimeline(state: GameState): GameState {
     // Process the current column before moving
     const processedState = processTimelineColumn(newState, currentColumn);
 
-    // Move timeline to next column
-    const currentMarkedColumns = processedState.timeline.markedColumns;
-    const isColumnAlreadyMarked = currentMarkedColumns.includes(currentColumn);
-    const updatedMarkedColumns = isColumnAlreadyMarked
-      ? currentMarkedColumns
-      : [...currentMarkedColumns, currentColumn];
-
     return {
       ...processedState,
       timeline: {
         ...processedState.timeline,
         x: nextColumn,
         timer: 0, // Reset timer for next column
-        markedColumns: updatedMarkedColumns,
       },
     };
   }

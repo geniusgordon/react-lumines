@@ -25,6 +25,20 @@ describe('Game Reducer - Timeline Processing', () => {
       boardWithPattern[9][3] = 1;
       boardWithPattern[9][4] = 1;
 
+      /*
+       * Board layout with timeline at column 3:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 7   . . . . . . . . . .
+       * 8   . . . 1 1 . . . . .  ← 2x2 pattern
+       * 9   . . . 1 1 . . . . .  ← 2x2 pattern
+       *           ↑ ↑
+       *           | timeline here (column 3)
+       *           pattern at (3,8)
+       */
+
       const stateWithPattern = {
         ...playingState,
         board: boardWithPattern,
@@ -35,7 +49,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: playingState.timeline.speed - 1, // About to move
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -60,9 +73,6 @@ describe('Game Reducer - Timeline Processing', () => {
         y: 8,
         color: 1 as const,
       });
-
-      // Should mark the column as processed
-      expect(result.timeline.markedColumns).toContain(3);
     });
 
     it('should clear marked cells and apply score when no patterns in current or previous column', () => {
@@ -70,6 +80,27 @@ describe('Game Reducer - Timeline Processing', () => {
       const stateWithHoldingScore = {
         ...playingState,
         detectedPatterns: [], // No current patterns
+
+        /*
+         * Timeline processing scenario:
+         * - Timeline at column 5 (no patterns here)
+         * - Previous columns 2,3,4 have marked cells from earlier patterns
+         * - No patterns in current (5) or previous (4) column
+         * - Should trigger clearing of all marked cells
+         *
+         * Board layout with marked cells (will be cleared):
+         *     0 1 2 3 4 5 6 7 8 9
+         * 0   . . . . . . . . . .
+         * 1   . . . . . . . . . .
+         * ...
+         * 7   . . 2 . . . . . . .  ← will fall after clearing
+         * 8   . . 1 1 . . . . . .  ← marked cells (will be cleared)
+         * 9   . . 1 . . . . . . .  ← marked cells (will be cleared)
+         *         ↑ ↑     ↑
+         *       marked  timeline at column 5
+         *       cells   (no patterns)
+         */
+
         timeline: {
           ...playingState.timeline,
           x: 5, // Timeline at column 5 (no patterns)
@@ -80,7 +111,6 @@ describe('Game Reducer - Timeline Processing', () => {
             { x: 2, y: 9, color: 1 as const },
             { x: 3, y: 8, color: 1 as const },
           ],
-          markedColumns: [2, 3, 4],
         },
       };
 
@@ -124,20 +154,40 @@ describe('Game Reducer - Timeline Processing', () => {
       boardWithPattern[9][4] = 1;
       boardWithPattern[9][5] = 1;
 
+      /*
+       * Timeline processing scenario:
+       * - Timeline at column 5, moving to column 6
+       * - Pattern exists in column 4 (previous column)
+       * - Current column 5 has no patterns
+       * - Should NOT clear because previous column has patterns
+       *
+       * Board layout:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 7   . . . . . . . . . .
+       * 8   . . . . 1 1 . . . .  ← pattern spans columns 4-5
+       * 9   . . . . 1 1 . . . .  ← pattern spans columns 4-5
+       *           ↑ ↑ ↑
+       *           | | timeline at column 5
+       *           | pattern starts at column 4 (previous)
+       *           pattern detected at (4,8)
+       */
+
       const stateWithPreviousPatterns = {
         ...playingState,
         board: boardWithPattern,
-        detectedPatterns: [{ x: 4, y: 8, color: 1 as const }], // Pattern in column 4
+        detectedPatterns: [{ x: 4, y: 8, color: 1 as const }],
         timeline: {
           ...playingState.timeline,
-          x: 5, // Timeline at column 5, pattern in column 4 (previous)
-          timer: playingState.timeline.speed - 1, // About to move to column 6
+          x: 5, // Timeline at column 5, pattern in previous column 4
+          timer: playingState.timeline.speed - 1,
           holdingScore: 2,
           markedCells: [
             { x: 2, y: 8, color: 1 as const },
             { x: 2, y: 9, color: 1 as const },
           ],
-          markedColumns: [2, 3, 4],
         },
       };
 
@@ -168,6 +218,25 @@ describe('Game Reducer - Timeline Processing', () => {
       boardWithMultiplePatterns[9][5] = 2;
       boardWithMultiplePatterns[9][6] = 2;
 
+      /*
+       * Board layout with multiple patterns:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 5   . . . . . . . . . .
+       * 6   . . . . . 1 1 . . .  ← pattern 1 (top)
+       * 7   . . . . . 1 1 . . .  ← pattern 1 (bottom)
+       * 8   . . . . . 2 2 . . .  ← pattern 2 (top)
+       * 9   . . . . . 2 2 . . .  ← pattern 2 (bottom)
+       *             ↑
+       *             timeline at column 5
+       *
+       * Two patterns detected:
+       * - Pattern 1 at (5,6) with color 1
+       * - Pattern 2 at (5,8) with color 2
+       */
+
       const stateWithMultiplePatterns = {
         ...playingState,
         board: boardWithMultiplePatterns,
@@ -181,7 +250,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: playingState.timeline.speed - 1,
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -227,7 +295,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: playingState.timeline.speed - 1,
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -248,13 +315,27 @@ describe('Game Reducer - Timeline Processing', () => {
       const stateAtEdge = {
         ...playingState,
         detectedPatterns: [],
+
+        /*
+         * Timeline at board edge scenario:
+         *     ... 12 13 14 15  0  1  2 ...
+         * 0   ... .  .  .  .   .  .  . ...
+         * 1   ... .  .  .  .   .  .  . ...
+         * ...
+         * 8   ... .  .  1  .   .  .  . ...  ← marked cell at column 14
+         * 9   ... .  .  .  .   .  .  . ...
+         *              ↑  ↑   ↑
+         *              |  |   wraps to here (column 0)
+         *              |  timeline at column 15 (last column)
+         *              marked cell (will be cleared when wrapping)
+         */
+
         timeline: {
           ...playingState.timeline,
           x: 15, // Last column
           timer: playingState.timeline.speed - 1,
           holdingScore: 1,
           markedCells: [{ x: 14, y: 8, color: 1 as const }],
-          markedColumns: [14, 15],
         },
       };
 
@@ -276,6 +357,21 @@ describe('Game Reducer - Timeline Processing', () => {
       boardWithPreviousPattern[9][4] = 1;
       boardWithPreviousPattern[9][5] = 1;
 
+      /*
+       * Pattern in previous column scenario:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 7   . . . . . . . . . .
+       * 8   . . . . 1 1 . . . .  ← pattern spans columns 4-5
+       * 9   . . . . 1 1 . . . .  ← pattern spans columns 4-5
+       *           ↑ ↑ ↑
+       *           | | timeline at column 5
+       *           | already marked as processed
+       *           pattern at (4,8) in previous column
+       */
+
       const stateWithPreviousPattern = {
         ...playingState,
         board: boardWithPreviousPattern,
@@ -286,7 +382,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: playingState.timeline.speed - 1,
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [4],
         },
       };
 
@@ -323,7 +418,6 @@ describe('Game Reducer - Timeline Processing', () => {
           // Use default speed (10 frames from config)
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -348,7 +442,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: 5, // Not at threshold yet (default speed is 10)
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -373,6 +466,20 @@ describe('Game Reducer - Timeline Processing', () => {
       boardWithEdgePattern[9][0] = 1;
       boardWithEdgePattern[9][1] = 1;
 
+      /*
+       * Pattern at board edge:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . . . . .
+       * 1   . . . . . . . . . .
+       * ...
+       * 7   . . . . . . . . . .
+       * 8   1 1 . . . . . . . .  ← pattern at left edge
+       * 9   1 1 . . . . . . . .  ← pattern at left edge
+       *     ↑ ↑
+       *     | timeline at column 0 (left edge)
+       *     pattern at (0,8)
+       */
+
       const stateWithEdgePattern = {
         ...playingState,
         board: boardWithEdgePattern,
@@ -383,7 +490,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: playingState.timeline.speed - 1,
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -408,7 +514,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: playingState.timeline.speed - 1,
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -427,6 +532,27 @@ describe('Game Reducer - Timeline Processing', () => {
       const stateWithComplexMarking = {
         ...playingState,
         detectedPatterns: [], // No current patterns to trigger clearing
+
+        /*
+         * Complex clearing scenario:
+         * - Timeline at column 10 (far from marked areas)
+         * - Multiple marked columns (2,3,4,5,6) from previous patterns
+         * - No current patterns at timeline position
+         * - Should clear all accumulated marked cells and score
+         *
+         * Board layout with marked cells:
+         *     0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+         * 0   . . . . . . . . . . .  .  .  .  .  .
+         * 1   . . . . . . . . . . .  .  .  .  .  .
+         * ...
+         * 7   . . . . . . . . . . .  .  .  .  .  .
+         * 8   . . M M M M M . . . .  .  .  .  .  .  ← marked cells (M)
+         * 9   . . . . . . . . . . .  .  .  .  .  .
+         *         ↑ ↑ ↑ ↑ ↑       ↑
+         *         marked cells    timeline at column 10
+         *         columns 2-6     (no patterns here)
+         */
+
         timeline: {
           ...playingState.timeline,
           x: 10, // Timeline far from marked columns
@@ -439,7 +565,6 @@ describe('Game Reducer - Timeline Processing', () => {
             { x: 5, y: 8, color: 2 as const },
             { x: 6, y: 8, color: 1 as const },
           ],
-          markedColumns: [2, 3, 4, 5, 6],
         },
       };
 
@@ -452,7 +577,6 @@ describe('Game Reducer - Timeline Processing', () => {
       expect(result.timeline.holdingScore).toBe(0);
       expect(result.timeline.markedCells).toHaveLength(0);
       expect(result.score).toBe(playingState.score + 5);
-      // Note: markedColumns might not be completely cleared as timeline moves to next position
     });
   });
 
@@ -467,7 +591,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: 29, // One frame before moving
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 
@@ -491,7 +614,6 @@ describe('Game Reducer - Timeline Processing', () => {
           timer: 0, // Ready to move immediately
           holdingScore: 0,
           markedCells: [],
-          markedColumns: [],
         },
       };
 

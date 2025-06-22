@@ -166,6 +166,22 @@ describe('Game Reducer - Block Movement', () => {
       boardWithBlocks[0][6] = 1; // Block to the left
       boardWithBlocks[0][8] = 1; // Block to the right
 
+      /*
+       * Board layout showing collision scenario:
+       *     0 1 2 3 4 5 6 7 8 9
+       * 0   . . . . . . 1 C 1 .  ← C = current block at (7,0)
+       * 1   . . . . . . . . . .     blocked on left and right
+       * 2   . . . . . . . . . .
+       * ...
+       * 9   . . . . . . . . . .
+       *                 ↑
+       *         current block position (7,0)
+       *
+       * Movement attempts:
+       * - Left to (6,0): BLOCKED by existing block
+       * - Right to (8,0): BLOCKED by existing block
+       */
+
       const stateWithBlocks = {
         ...playingState,
         board: boardWithBlocks,

@@ -91,6 +91,23 @@ describe('Integration Tests', () => {
       // Fill top row to trigger game over
       const board = currentState.board.map(row => [...row]);
       board[0][5] = 1 as CellValue;
+
+      /*
+       * Game over scenario - blocked spawn position:
+       *     0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+       * 0   . . . . . 1 . . . . .  .  .  .  .  .  ← block in top row
+       * 1   . . . . . . . . . . .  .  .  .  .  .
+       * 2   . . . . . . . . . . .  .  .  .  .  .
+       * ...
+       * 9   . . . . . . . . . . .  .  .  .  .  .
+       *             ↑   ↑
+       *           block spawn area (x=7)
+       *           existing block blocks spawn
+       *
+       * When a new block tries to spawn at (7,0), it will be blocked
+       * by the existing block at (5,0), triggering game over.
+       */
+
       currentState = { ...currentState, board };
 
       // Try to place a new block (should trigger game over)
