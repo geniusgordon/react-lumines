@@ -3,3 +3,5 @@ export type { UseGameLoopOptions, UseGameLoopReturn } from './useGameLoop';
 
 export { useControls } from './useControls';
 export type { UseControlsOptions, UseControlsReturn } from './useControls';
+
+export { useResponsiveScale } from './useResponsiveScale';

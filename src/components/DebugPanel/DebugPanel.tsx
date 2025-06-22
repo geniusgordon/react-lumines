@@ -20,6 +20,7 @@ export interface DebugPanelProps {
   isDebugMode: boolean;
   manualStep: (steps?: number) => void;
   controls: UseControlsReturn;
+  scale?: number;
 }
 
 export function DebugPanel({
@@ -30,6 +31,7 @@ export function DebugPanel({
   isRunning,
   manualStep,
   controls,
+  scale,
 }: DebugPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -52,7 +54,11 @@ export function DebugPanel({
 
         {isExpanded && (
           <div className="debug-panel-scrollbar max-h-[calc(100vh-10rem)] space-y-4 overflow-y-auto p-4">
-            <QuickStats status={gameState.status} score={gameState.score} />
+            <QuickStats
+              status={gameState.status}
+              score={gameState.score}
+              scale={scale}
+            />
 
             <PerformanceMetrics
               frameCount={frameCount}

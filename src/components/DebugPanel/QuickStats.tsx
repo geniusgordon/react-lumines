@@ -1,10 +1,11 @@
 interface QuickStatsProps {
   status: string;
   score: number;
+  scale?: number;
 }
 
 export function QuickStats(props: QuickStatsProps) {
-  const { score } = props;
+  const { score, scale } = props;
   const status = props.status === 'countdownPaused' ? 'paused' : props.status;
 
   const getStatusColor = (status: string) => {
@@ -23,7 +24,7 @@ export function QuickStats(props: QuickStatsProps) {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className={`grid gap-3 ${scale ? 'grid-cols-3' : 'grid-cols-2'}`}>
       <div className="rounded-md bg-gray-800/50 p-3">
         <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
           Status
@@ -40,6 +41,16 @@ export function QuickStats(props: QuickStatsProps) {
           {score.toLocaleString()}
         </div>
       </div>
+      {scale && (
+        <div className="rounded-md bg-gray-800/50 p-3">
+          <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+            Scale
+          </div>
+          <div className="text-lg font-semibold text-purple-400">
+            {(scale * 100).toFixed(0)}%
+          </div>
+        </div>
+      )}
     </div>
   );
 }
