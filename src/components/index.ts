@@ -11,6 +11,7 @@ export { Queue } from './Queue';
 export { ScoreDisplay } from './ScoreDisplay';
 export { CurrentBlock } from './CurrentBlock';
 export { KeyboardShortcuts } from './DebugPanel/KeyboardShortcuts';
+export { GameOverMenu } from './GameScreen';
 
 // Export types
 export type { GridCellProps } from './GridCell';

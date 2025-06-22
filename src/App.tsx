@@ -7,6 +7,7 @@ import {
   DebugPanel,
   KeyboardShortcuts,
   PauseMenu,
+  GameOverMenu,
 } from './components';
 import { useControls, useGameLoop } from './hooks';
 import {
@@ -50,6 +51,12 @@ function App() {
       <GameScreen gameState={gameState} />
 
       <PauseMenu
+        gameState={gameState}
+        controlsConfig={DEFAULT_CONTROLS}
+        dispatch={dispatch}
+      />
+
+      <GameOverMenu
         gameState={gameState}
         controlsConfig={DEFAULT_CONTROLS}
         dispatch={dispatch}

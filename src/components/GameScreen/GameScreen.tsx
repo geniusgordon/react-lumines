@@ -24,7 +24,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({ gameState }) => {
         marginTop: 'calc(var(--spacing-block-size) * 2)',
       }}
     >
-      {/* Queue positioned to the left */}
       <div
         className="absolute top-0 z-10"
         style={{ left: 'calc(-3 * var(--spacing-block-size))' }}
@@ -32,10 +31,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ gameState }) => {
         <Queue queue={gameState.queue} />
       </div>
 
-      {/* Main game board */}
       <GameBoard gameState={gameState} />
 
-      {/* Score display positioned to the right */}
       <div
         className="absolute top-0 right-0 z-10"
         style={{
