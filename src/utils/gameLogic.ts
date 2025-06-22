@@ -310,8 +310,8 @@ export function markColumnCells(
       color: pattern.color,
     });
     markedCells.push({
-      x: pattern.x + 1,
-      y: pattern.y,
+      x: pattern.x,
+      y: pattern.y + 1,
       color: pattern.color,
     });
   }
@@ -324,12 +324,12 @@ export function markColumnCells(
 
     for (const pattern of patternsInPreviousColumn) {
       markedCells.push({
-        x: pattern.x - 1,
+        x: pattern.x + 1,
         y: pattern.y,
         color: pattern.color,
       });
       markedCells.push({
-        x: pattern.x - 1,
+        x: pattern.x + 1,
         y: pattern.y + 1,
         color: pattern.color,
       });

@@ -23,7 +23,7 @@ export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
       }}
     >
       <div className="border-game-timeline -top-block-size h-block-size absolute right-0 flex w-12 items-center justify-end border-2 border-solid bg-black pr-2">
-        <div className="text-game-text">{0}</div>
+        <div className="text-game-text">{timeline.holdingScore}</div>
       </div>
       <div className="-top-block-size absolute left-0 translate-x-0.5">
         <div className="h-block-size w-block-size">

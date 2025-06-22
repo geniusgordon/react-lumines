@@ -203,7 +203,14 @@ function handleHardDrop(
     blockPosition: dropPosition,
     frame: action.frame,
   };
-  return placeCurrentBlock(newState, action.frame, rng);
+  const placedState = placeCurrentBlock(newState, action.frame, rng);
+
+  const gravityAppliedState = {
+    ...placedState,
+    board: applyGravity(placedState.board),
+  };
+
+  return gravityAppliedState;
 }
 
 /**
@@ -239,6 +246,7 @@ function handleGameTick(
   const blockPlaced = updateDropTimerResult.blockPlaced;
 
   if (blockPlaced) {
+    newState.board = applyGravity(newState.board);
     newState = updatePatternDetection(newState);
   }
 
@@ -345,33 +353,51 @@ function processTimelineColumn(state: GameState, column: number): GameState {
   const hasPatternsInCurrentColumn = patternsInColumn.length > 0;
   const hasPatternsInPreviousColumn = patternsInPreviousColumn.length > 0;
 
-  if (hasPatternsInCurrentColumn) {
-    const holdingPoints = patternsInColumn.length;
-    const newMarkedCells = markColumnCells(column, state.detectedPatterns);
+  // Check if there are patterns in current or previous column to mark cells for clearing
+  if (hasPatternsInCurrentColumn || hasPatternsInPreviousColumn) {
+    let newState = { ...state };
 
-    return {
-      ...state,
+    // Only add holding score for patterns in current column
+    if (hasPatternsInCurrentColumn) {
+      const holdingPoints = patternsInColumn.length;
+      newState = {
+        ...newState,
+        timeline: {
+          ...newState.timeline,
+          holdingScore: state.timeline.holdingScore + holdingPoints,
+        },
+      };
+    }
+
+    const newMarkedCells = markColumnCells(column, state.detectedPatterns);
+    newState = {
+      ...newState,
       timeline: {
-        ...state.timeline,
-        holdingScore: state.timeline.holdingScore + holdingPoints,
+        ...newState.timeline,
         markedCells: [...state.timeline.markedCells, ...newMarkedCells],
       },
     };
+
+    return newState;
   }
 
+  // If no patterns in current AND previous column AND there's holding score, clear
   const noPatterns =
     !hasPatternsInCurrentColumn && !hasPatternsInPreviousColumn;
   const hasHoldingScore = state.timeline.holdingScore > 0;
   const hasMarkedCells = state.timeline.markedCells.length > 0;
+
   if (noPatterns && hasHoldingScore && hasMarkedCells) {
     const newBoard = clearMarkedCellsAndApplyGravity(
       state.board,
       state.timeline.markedCells
     );
+    const detectedPatterns = detectPatterns(newBoard);
 
     return {
       ...state,
       board: newBoard,
+      detectedPatterns,
       score: state.score + state.timeline.holdingScore,
       timeline: {
         ...state.timeline,

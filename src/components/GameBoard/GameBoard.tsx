@@ -8,6 +8,7 @@ import { CurrentBlock } from '../CurrentBlock';
 import { Timeline as TimelineComponent } from '../Timeline';
 
 import { DetectedPatterns } from './DetectedPatterns';
+import { MarkedCells } from './MarkedCells';
 
 export interface GameBoardProps {
   gameState: GameState;
@@ -31,6 +32,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
       <BoardGrid board={gameState.board} />
 
       <DetectedPatterns patterns={gameState.detectedPatterns} />
+
+      <MarkedCells markedCells={gameState.timeline.markedCells} />
 
       <CurrentBlock
         currentBlock={gameState.currentBlock}

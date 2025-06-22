@@ -1,7 +1,6 @@
 import type {
   Block,
   GameAction,
-  GameBoard,
   GameState,
   Position,
   Square,
@@ -141,15 +140,17 @@ export function logPatterns(
   console.groupEnd();
 }
 
-export function logGameBoard(
-  board: GameBoard,
-  blockPosition: Position,
-  currentBlock: Block,
-  detectedPatterns: Square[] = [],
-  markedPatterns: Square[] = []
-): void {
+export function logGameBoard(gameState: GameState, message: string): void {
+  const {
+    board,
+    blockPosition,
+    currentBlock,
+    detectedPatterns,
+    markedPatterns,
+  } = gameState;
+
   // Board visualization
-  console.groupCollapsed('🗂️ Current Board State');
+  console.groupCollapsed(`🗂️ Current Board State - ${message}`);
 
   // Board statistics
   const filledCells = board.flat().filter(cell => cell !== 0).length;
@@ -258,13 +259,7 @@ export function logGameState(gameState: GameState): void {
 
   logCurrentBlock(gameState.currentBlock, gameState.blockPosition);
 
-  logGameBoard(
-    gameState.board,
-    gameState.blockPosition,
-    gameState.currentBlock,
-    gameState.detectedPatterns,
-    gameState.markedPatterns
-  );
+  logGameBoard(gameState, 'Game State');
 
   logPatterns(gameState.detectedPatterns, gameState.markedPatterns);
 

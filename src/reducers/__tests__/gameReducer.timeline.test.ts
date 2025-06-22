@@ -69,8 +69,8 @@ describe('Game Reducer - Timeline Processing', () => {
         color: 1 as const,
       });
       expect(result.timeline.markedCells).toContainEqual({
-        x: 4,
-        y: 8,
+        x: 3,
+        y: 9,
         color: 1 as const,
       });
     });
@@ -199,7 +199,7 @@ describe('Game Reducer - Timeline Processing', () => {
       // Should NOT clear because column 4 (previous) has patterns
       // Timeline processes column 5 (current) which has no patterns, but column 4 (previous) has patterns
       expect(result.timeline.holdingScore).toBe(2); // Unchanged - no clearing
-      expect(result.timeline.markedCells).toHaveLength(2); // Unchanged - no clearing
+      expect(result.timeline.markedCells).toHaveLength(4); // 2 cells per pattern
       expect(result.score).toBe(playingState.score); // No score added
       expect(result.timeline.x).toBe(6); // Timeline should move forward
     });
@@ -269,8 +269,8 @@ describe('Game Reducer - Timeline Processing', () => {
         color: 1 as const,
       });
       expect(result.timeline.markedCells).toContainEqual({
-        x: 6,
-        y: 6,
+        x: 5,
+        y: 7,
         color: 1 as const,
       });
       expect(result.timeline.markedCells).toContainEqual({
@@ -279,8 +279,8 @@ describe('Game Reducer - Timeline Processing', () => {
         color: 2 as const,
       });
       expect(result.timeline.markedCells).toContainEqual({
-        x: 6,
-        y: 8,
+        x: 5,
+        y: 9,
         color: 2 as const,
       });
     });
