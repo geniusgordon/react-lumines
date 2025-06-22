@@ -184,8 +184,8 @@ describe('Game Logic', () => {
 
   describe('Random block generation', () => {
     it('should generate deterministic blocks', () => {
-      const rng1 = new SeededRNG(12345);
-      const rng2 = new SeededRNG(12345);
+      const rng1 = new SeededRNG('12345');
+      const rng2 = new SeededRNG('12345');
 
       const block1 = generateRandomBlock(rng1);
       const block2 = generateRandomBlock(rng2);
@@ -195,7 +195,7 @@ describe('Game Logic', () => {
     });
 
     it('should generate valid blocks', () => {
-      const rng = new SeededRNG(12345);
+      const rng = new SeededRNG('12345');
 
       for (let i = 0; i < 50; i++) {
         const block = generateRandomBlock(rng);

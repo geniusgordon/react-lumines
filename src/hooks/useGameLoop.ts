@@ -206,7 +206,7 @@ export function useGameLoop(
 
   // Reset timing when game state changes dramatically
   useEffect(() => {
-    if (gameState.status === 'start' || gameState.status === 'gameOver') {
+    if (gameState.status === 'countdown' || gameState.status === 'playing') {
       lastUpdateTime.current = 0;
       accumulator.current = 0;
       fpsTracker.current = {

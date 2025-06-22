@@ -10,7 +10,7 @@ describe('Game Reducer - Basic Functionality', () => {
   let initialState: GameState;
 
   beforeEach(() => {
-    initialState = createInitialGameState(12345);
+    initialState = createInitialGameState('12345');
   });
 
   describe('Initial state creation', () => {
@@ -18,15 +18,15 @@ describe('Game Reducer - Basic Functionality', () => {
       expect(initialState.status).toBe('countdown');
       expect(initialState.score).toBe(0);
       expect(initialState.frame).toBe(0);
-      expect(initialState.seed).toBe(12345);
+      expect(initialState.seed).toBe('12345');
       expect(initialState.board).toEqual(createEmptyBoard());
       expect(initialState.blockPosition).toEqual({ x: 7, y: -2 });
       expect(initialState.timeline.active).toBe(true);
     });
 
     it('should generate different blocks for different seeds', () => {
-      const state1 = createInitialGameState(12345);
-      const state2 = createInitialGameState(54321);
+      const state1 = createInitialGameState('12345');
+      const state2 = createInitialGameState('54321');
 
       // Blocks should be different for different seeds
       expect(state1.currentBlock.pattern).not.toEqual(
@@ -35,8 +35,8 @@ describe('Game Reducer - Basic Functionality', () => {
     });
 
     it('should generate same blocks for same seed', () => {
-      const state1 = createInitialGameState(12345);
-      const state2 = createInitialGameState(12345);
+      const state1 = createInitialGameState('12345');
+      const state2 = createInitialGameState('12345');
 
       expect(state1.currentBlock.pattern).toEqual(state2.currentBlock.pattern);
       expect(state1.queue[0].pattern).toEqual(state2.queue[0].pattern);
@@ -89,15 +89,6 @@ describe('Game Reducer - Basic Functionality', () => {
       expect(newState.score).toBe(0);
       expect(newState.frame).toBe(0);
       expect(newState.board).toEqual(createEmptyBoard());
-    });
-
-    it('should end game', () => {
-      const playingState = { ...initialState, status: 'playing' as const };
-      const action: GameAction = { type: 'GAME_OVER', frame: 300 };
-      const newState = gameReducer(playingState, action);
-
-      expect(newState.status).toBe('gameOver');
-      expect(newState.frame).toBe(300);
     });
 
     it('should toggle debug mode', () => {

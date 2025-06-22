@@ -25,7 +25,7 @@ import { SeededRNG } from '@/utils/seededRNG';
  * Create initial game state
  */
 export function createInitialGameState(
-  seed: number | undefined,
+  seed: string | undefined,
   debugMode: boolean = false
 ): GameState {
   const rng = new SeededRNG(seed);
@@ -73,7 +73,7 @@ export function createInitialGameState(
     markedCells: [],
 
     // Deterministic system
-    seed,
+    seed: seed ?? Date.now().toString(),
     rngState: rng.getState(),
 
     // Performance
@@ -562,13 +562,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'TICK':
       return handleGameTick(state, action, getRNG());
-
-    case 'GAME_OVER':
-      return {
-        ...state,
-        status: 'gameOver',
-        frame: action.frame,
-      };
 
     default:
       if (state.debugMode) {

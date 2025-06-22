@@ -10,7 +10,7 @@ import {
 describe('SeededRNG', () => {
   describe('Deterministic behavior', () => {
     it('should produce identical sequences for same seed', () => {
-      const seed = 12345;
+      const seed = '12345';
       const rng1 = new SeededRNG(seed);
       const rng2 = new SeededRNG(seed);
 
@@ -21,8 +21,8 @@ describe('SeededRNG', () => {
     });
 
     it('should produce different sequences for different seeds', () => {
-      const rng1 = new SeededRNG(12345);
-      const rng2 = new SeededRNG(54321);
+      const rng1 = new SeededRNG('12345');
+      const rng2 = new SeededRNG('54321');
 
       const sequence1 = Array.from({ length: 10 }, () => rng1.next());
       const sequence2 = Array.from({ length: 10 }, () => rng2.next());
@@ -31,7 +31,7 @@ describe('SeededRNG', () => {
     });
 
     it('should reset to initial state', () => {
-      const seed = 12345;
+      const seed = '12345';
       const rng = new SeededRNG(seed);
 
       const firstSequence = Array.from({ length: 5 }, () => rng.next());
@@ -42,8 +42,8 @@ describe('SeededRNG', () => {
     });
 
     it('should reset to new seed', () => {
-      const rng = new SeededRNG(12345);
-      const newSeed = 54321;
+      const rng = new SeededRNG('12345');
+      const newSeed = '54321';
 
       rng.reset(newSeed);
       const newRng = new SeededRNG(newSeed);
@@ -59,7 +59,7 @@ describe('SeededRNG', () => {
     let rng: SeededRNG;
 
     beforeEach(() => {
-      rng = new SeededRNG(12345);
+      rng = new SeededRNG('12345');
     });
 
     it('should generate numbers between 0 and 1', () => {
@@ -90,7 +90,7 @@ describe('SeededRNG', () => {
     let rng: SeededRNG;
 
     beforeEach(() => {
-      rng = new SeededRNG(12345);
+      rng = new SeededRNG('12345');
     });
 
     it('should choose random element from array', () => {
@@ -109,13 +109,13 @@ describe('SeededRNG', () => {
 
   describe('State management', () => {
     it('should return correct seed', () => {
-      const seed = 12345;
+      const seed = '12345';
       const rng = new SeededRNG(seed);
       expect(rng.getSeed()).toBe(seed);
     });
 
     it('should clone with same seed', () => {
-      const seed = 12345;
+      const seed = '12345';
       const rng1 = new SeededRNG(seed);
       const rng2 = rng1.clone();
 
@@ -128,8 +128,8 @@ describe('SeededRNG', () => {
     });
 
     it('should generate deterministic IDs', () => {
-      const rng1 = new SeededRNG(12345);
-      const rng2 = new SeededRNG(12345);
+      const rng1 = new SeededRNG('12345');
+      const rng2 = new SeededRNG('12345');
 
       const id1 = rng1.generateId();
       const id2 = rng2.generateId();
@@ -142,19 +142,19 @@ describe('SeededRNG', () => {
 
   describe('Utility functions', () => {
     it('should create RNG instance', () => {
-      const rng = createSeededRNG(12345);
+      const rng = createSeededRNG('12345');
       expect(rng).toBeInstanceOf(SeededRNG);
-      expect(rng.getSeed()).toBe(12345);
+      expect(rng.getSeed()).toBe('12345');
     });
 
     it('should validate determinism', () => {
-      expect(validateDeterminism(12345, 100)).toBe(true);
-      expect(validateDeterminism(54321, 100)).toBe(true);
+      expect(validateDeterminism('12345', 100)).toBe(true);
+      expect(validateDeterminism('54321', 100)).toBe(true);
     });
 
     it('should test distribution quality', () => {
       // Test with a good seed
-      expect(testDistribution(12345, 10, 10000)).toBe(true);
+      expect(testDistribution('12345', 10, 10000)).toBe(true);
     });
   });
 });

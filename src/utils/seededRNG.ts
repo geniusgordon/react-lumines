@@ -8,12 +8,12 @@ type RandomFunction = ReturnType<typeof randomSeed.create>;
  */
 export class SeededRNG {
   private rng: RandomFunction;
-  private readonly seed: number;
+  private readonly seed: string;
   private callCount: number = 0; // Track how many times next() has been called
 
-  constructor(seed: number = Date.now()) {
+  constructor(seed: string = Date.now().toString()) {
     this.seed = seed;
-    this.rng = randomSeed.create(seed.toString());
+    this.rng = randomSeed.create(seed);
   }
 
   /**
@@ -49,16 +49,16 @@ export class SeededRNG {
   /**
    * Reset RNG to initial seed or new seed
    */
-  reset(newSeed?: number): void {
+  reset(newSeed?: string): void {
     const seedToUse = newSeed ?? this.seed;
-    this.rng = randomSeed.create(seedToUse.toString());
+    this.rng = randomSeed.create(seedToUse);
     this.callCount = 0;
   }
 
   /**
    * Get current seed
    */
-  getSeed(): number {
+  getSeed(): string {
     return this.seed;
   }
 
@@ -75,7 +75,7 @@ export class SeededRNG {
    * Recreates RNG and advances to the specified position
    */
   setState(callCount: number): void {
-    this.rng = randomSeed.create(this.seed.toString());
+    this.rng = randomSeed.create(this.seed);
     this.callCount = 0;
 
     // Advance the RNG to the correct position
@@ -109,7 +109,7 @@ export class SeededRNG {
 /**
  * Create a new SeededRNG instance
  */
-export function createSeededRNG(seed?: number): SeededRNG {
+export function createSeededRNG(seed?: string): SeededRNG {
   return new SeededRNG(seed);
 }
 
@@ -118,7 +118,7 @@ export function createSeededRNG(seed?: number): SeededRNG {
  * Useful for testing deterministic behavior
  */
 export function validateDeterminism(
-  seed: number,
+  seed: string,
   iterations: number = 1000
 ): boolean {
   const rng1 = new SeededRNG(seed);
@@ -138,7 +138,7 @@ export function validateDeterminism(
  * Returns true if distribution appears uniform
  */
 export function testDistribution(
-  seed: number,
+  seed: string,
   buckets: number = 10,
   samples: number = 10000
 ): boolean {

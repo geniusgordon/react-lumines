@@ -20,7 +20,6 @@ export type { BlockProps } from './Block';
 export type { BoardGridProps } from './BoardGrid';
 export type { CurrentBlockProps } from './CurrentBlock';
 export type { GameBoardProps } from './GameBoard';
-export type { GameScreenProps } from './Game';
 export type { TimelineProps } from './Timeline';
 export type { QueueProps } from './Queue';
 export type { ScoreDisplayProps } from './ScoreDisplay';

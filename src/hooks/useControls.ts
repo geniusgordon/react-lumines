@@ -7,7 +7,26 @@ import type {
   GameActionType,
   ReplayInput,
   ControlsConfig,
+  GameStatus,
 } from '@/types/game';
+
+const isRestartableState = (status: GameStatus): boolean => {
+  return (
+    status === 'playing' ||
+    status === 'paused' ||
+    status === 'countdown' ||
+    status === 'countdownPaused' ||
+    status === 'gameOver'
+  );
+};
+
+const isPausableState = (status: GameStatus): boolean => {
+  return status === 'playing' || status === 'countdown';
+};
+
+const isResumableState = (status: GameStatus): boolean => {
+  return status === 'paused' || status === 'countdownPaused';
+};
 
 export interface UseControlsOptions {
   /**
@@ -210,32 +229,9 @@ export function useControls(
         setPressedKeys(new Set(pressedKeysRef.current));
       }
 
-      // Handle different game states
-      if (gameState.status === 'start') {
-        // In start screen, only allow starting the game
-        if (gameAction === 'PAUSE' || key === 'Enter' || key === 'Space') {
-          dispatchAction('START_GAME');
-        }
-        return;
-      }
-
-      if (gameState.status === 'gameOver') {
-        // In game over screen, allow restart
-        if (gameAction === 'RESTART' || key === 'Enter' || key === 'Space') {
-          dispatchAction('RESTART');
-        }
-        return;
-      }
-
-      // Handle restart action (available in all playing states)
+      // Handle restart action (available in all restartable states)
       if (gameAction === 'RESTART') {
-        if (
-          gameState.status === 'playing' ||
-          gameState.status === 'paused' ||
-          gameState.status === 'countdown' ||
-          gameState.status === 'countdownPaused' ||
-          gameState.status === 'replay'
-        ) {
+        if (isRestartableState(gameState.status)) {
           dispatchAction('RESTART');
         }
         return;
@@ -243,15 +239,9 @@ export function useControls(
 
       // Handle pause action (available in all playing states)
       if (gameAction === 'PAUSE') {
-        if (
-          gameState.status === 'playing' ||
-          gameState.status === 'countdown'
-        ) {
+        if (isPausableState(gameState.status)) {
           dispatchAction('PAUSE');
-        } else if (
-          gameState.status === 'paused' ||
-          gameState.status === 'countdownPaused'
-        ) {
+        } else if (isResumableState(gameState.status)) {
           dispatchAction('RESUME');
         }
         return;

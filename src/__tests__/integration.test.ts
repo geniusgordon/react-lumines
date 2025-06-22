@@ -13,7 +13,7 @@ import { SeededRNG } from '@/utils/seededRNG';
 describe('Integration Tests', () => {
   describe('End-to-end game simulation', () => {
     it('should handle complete game flow deterministically', () => {
-      const seed = 12345;
+      const seed = '12345';
       const state1 = createInitialGameState(seed);
       const state2 = createInitialGameState(seed);
 
@@ -44,7 +44,7 @@ describe('Integration Tests', () => {
     });
 
     it('should handle multiple game ticks correctly', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
 
       const initialPosition = currentState.blockPosition;
@@ -69,8 +69,8 @@ describe('Integration Tests', () => {
     });
 
     it('should maintain RNG determinism across actions', () => {
-      const rng1 = new SeededRNG(12345);
-      const rng2 = new SeededRNG(12345);
+      const rng1 = new SeededRNG('12345');
+      const rng2 = new SeededRNG('12345');
 
       // Generate identical sequences
       const sequence1 = [];
@@ -91,7 +91,7 @@ describe('Integration Tests', () => {
     });
 
     it('should handle game over conditions', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Fill the top rows of the board to create a realistic game over scenario
@@ -125,7 +125,7 @@ describe('Integration Tests', () => {
     });
 
     it('should handle timeline sweep correctly', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Timeline should already be active with frame-based timing
@@ -175,7 +175,7 @@ describe('Integration Tests', () => {
 
   describe('Performance and consistency', () => {
     it('should handle large numbers of actions efficiently', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
 
       const startTime = performance.now();
@@ -193,7 +193,7 @@ describe('Integration Tests', () => {
     });
 
     it('should maintain state consistency across complex operations', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Perform a complex sequence of operations
@@ -234,7 +234,7 @@ describe('Integration Tests', () => {
 
   describe('Error resilience', () => {
     it('should handle invalid frame numbers gracefully', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       const playingState = { ...state, status: 'playing' as GameStatus };
 
       // Test negative frame
@@ -253,11 +253,11 @@ describe('Integration Tests', () => {
     });
 
     it('should maintain valid board state after all operations', () => {
-      const state = createInitialGameState(12345);
+      const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
 
       // Perform random operations
-      const rng = new SeededRNG(54321);
+      const rng = new SeededRNG('54321');
       const actions = [
         'MOVE_LEFT',
         'MOVE_RIGHT',

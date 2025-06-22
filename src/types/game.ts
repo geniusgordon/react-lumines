@@ -100,7 +100,7 @@ export interface GameState {
   timeline: Timeline;
 
   // Deterministic system
-  seed: number;
+  seed: string;
   rngState: number; // Current RNG state
 
   // Performance tracking

@@ -9,7 +9,7 @@ describe('Game Reducer - Block Movement', () => {
   let playingState: GameState;
 
   beforeEach(() => {
-    initialState = createInitialGameState(12345);
+    initialState = createInitialGameState('12345');
     playingState = { ...initialState, status: 'playing' as const };
   });
 

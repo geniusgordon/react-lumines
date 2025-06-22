@@ -10,7 +10,7 @@ import { useControls, type UseControlsOptions } from './useControls';
 function ControlsDemo({ options }: { options?: UseControlsOptions }) {
   const [gameState, dispatch] = useReducer(
     gameReducer,
-    createInitialGameState(12345, options?.debugMode)
+    createInitialGameState('12345', options?.debugMode)
   );
 
   const controlsReturn = useControls(gameState, dispatch, options);
