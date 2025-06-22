@@ -15,6 +15,9 @@ import {
   getRotatedPattern,
   applyGravity,
   detectPatterns,
+  getPatternsByLeftColumn,
+  markColumnCells,
+  clearMarkedCellsAndApplyGravity,
 } from '@/utils/gameLogic';
 import { SeededRNG } from '@/utils/seededRNG';
 
@@ -44,7 +47,6 @@ export function createInitialGameState(
     // Game flow
     status: 'start',
     score: 0,
-    squaresCleared: 0,
 
     // Pattern detection
     detectedPatterns: [],
@@ -61,7 +63,10 @@ export function createInitialGameState(
       speed: GAME_CONFIG.timeline.speed,
       timer: 0,
       active: true,
-      squaresCleared: 0,
+      // Column-based clearing state (using arrays for serializability)
+      markedColumns: [],
+      holdingScore: 0,
+      markedCells: [],
     },
 
     // Deterministic system
@@ -287,7 +292,7 @@ function updateDropTimer(
 }
 
 /**
- * Update timeline sweep progression - frame-based like block dropping
+ * Update timeline sweep progression with column-based clearing logic
  */
 function updateTimeline(state: GameState): GameState {
   // Timeline always moves when game is playing
@@ -299,15 +304,28 @@ function updateTimeline(state: GameState): GameState {
 
   // Check if it's time to move timeline one column
   if (newTimer >= state.timeline.speed) {
-    const newX = (state.timeline.x + 1) % GAME_CONFIG.board.width;
+    const currentColumn = state.timeline.x;
+    const nextColumn = (currentColumn + 1) % GAME_CONFIG.board.width;
 
-    // Move timeline one column and reset timer
+    const newState = { ...state };
+
+    // Process the current column before moving
+    const processedState = processTimelineColumn(newState, currentColumn);
+
+    // Move timeline to next column
+    const currentMarkedColumns = processedState.timeline.markedColumns;
+    const isColumnAlreadyMarked = currentMarkedColumns.includes(currentColumn);
+    const updatedMarkedColumns = isColumnAlreadyMarked
+      ? currentMarkedColumns
+      : [...currentMarkedColumns, currentColumn];
+
     return {
-      ...state,
+      ...processedState,
       timeline: {
-        ...state.timeline,
-        x: newX,
+        ...processedState.timeline,
+        x: nextColumn,
         timer: 0, // Reset timer for next column
+        markedColumns: updatedMarkedColumns,
       },
     };
   }
@@ -320,6 +338,60 @@ function updateTimeline(state: GameState): GameState {
       timer: newTimer,
     },
   };
+}
+
+/**
+ * Process a single column when timeline passes through it
+ */
+function processTimelineColumn(state: GameState, column: number): GameState {
+  const patternsInColumn = getPatternsByLeftColumn(
+    state.detectedPatterns,
+    column
+  );
+  const patternsInPreviousColumn = getPatternsByLeftColumn(
+    state.detectedPatterns,
+    column - 1
+  );
+  const hasPatternsInCurrentColumn = patternsInColumn.length > 0;
+  const hasPatternsInPreviousColumn = patternsInPreviousColumn.length > 0;
+
+  if (hasPatternsInCurrentColumn) {
+    const holdingPoints = patternsInColumn.length;
+    const newMarkedCells = markColumnCells(column, state.detectedPatterns);
+
+    return {
+      ...state,
+      timeline: {
+        ...state.timeline,
+        holdingScore: state.timeline.holdingScore + holdingPoints,
+        markedCells: [...state.timeline.markedCells, ...newMarkedCells],
+      },
+    };
+  }
+
+  const noPatterns =
+    !hasPatternsInCurrentColumn && !hasPatternsInPreviousColumn;
+  const hasHoldingScore = state.timeline.holdingScore > 0;
+  const hasMarkedCells = state.timeline.markedCells.length > 0;
+  if (noPatterns && hasHoldingScore && hasMarkedCells) {
+    const newBoard = clearMarkedCellsAndApplyGravity(
+      state.board,
+      state.timeline.markedCells
+    );
+
+    return {
+      ...state,
+      board: newBoard,
+      score: state.score + state.timeline.holdingScore,
+      timeline: {
+        ...state.timeline,
+        holdingScore: 0,
+        markedCells: [],
+      },
+    };
+  }
+
+  return state;
 }
 
 /**

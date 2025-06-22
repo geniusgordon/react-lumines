@@ -31,10 +31,13 @@ export interface Timeline {
   speed: number; // Timeline sweep interval in frames per column
   timer: number; // Frames until next column movement
   active: boolean; // Whether timeline is currently sweeping
-  squaresCleared: number; // Number of squares cleared
+  // Column-based clearing state (using arrays for serializability)
+  markedColumns: number[]; // Columns that have been marked by timeline
+  holdingScore: number; // Accumulated points waiting to be cleared
+  markedCells: Square[]; // Individual cells marked for clearing
 }
 
-// Square for clearing detection (minimum 2x2)
+// Square for clearing detection
 export interface Square {
   x: number;
   y: number;
@@ -80,7 +83,6 @@ export interface GameState {
   // Game flow
   status: GameStatus;
   score: number;
-  squaresCleared: number;
 
   // Pattern detection
   detectedPatterns: Square[]; // Currently detected 2x2 patterns

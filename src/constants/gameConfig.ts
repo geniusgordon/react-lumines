@@ -101,7 +101,6 @@ export const TIME_ATTACK_CONFIG = {
 export const DEFAULT_VALUES = {
   SEED: 12345, // Default seed for testing
   SCORE: 0,
-  SQUARES_CLEARED: 0,
   INITIAL_POSITION: { x: 7, y: 0 }, // Center top of board
   TIMELINE_START: {
     x: 0,

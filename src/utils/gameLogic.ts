@@ -279,3 +279,85 @@ export function detectPatterns(board: GameBoard): Square[] {
 
   return patterns;
 }
+
+/**
+ * Check if a column contains any part of detected 2x2 patterns
+ * Returns the patterns that have their left edge in this column
+ */
+export function getPatternsByLeftColumn(
+  detectedPatterns: Square[],
+  column: number
+): Square[] {
+  return detectedPatterns.filter(pattern => pattern.x === column);
+}
+
+/**
+ * Mark cells in a column as cleared by timeline
+ * Returns the cells that were marked (x,y coordinate strings)
+ */
+export function markColumnCells(
+  column: number,
+  detectedPatterns: Square[]
+): Square[] {
+  const markedCells: Square[] = [];
+
+  const patternsInColumn = getPatternsByLeftColumn(detectedPatterns, column);
+
+  for (const pattern of patternsInColumn) {
+    markedCells.push({
+      x: pattern.x,
+      y: pattern.y,
+      color: pattern.color,
+    });
+    markedCells.push({
+      x: pattern.x + 1,
+      y: pattern.y,
+      color: pattern.color,
+    });
+  }
+
+  if (column > 0) {
+    const patternsInPreviousColumn = getPatternsByLeftColumn(
+      detectedPatterns,
+      column - 1
+    );
+
+    for (const pattern of patternsInPreviousColumn) {
+      markedCells.push({
+        x: pattern.x - 1,
+        y: pattern.y,
+        color: pattern.color,
+      });
+      markedCells.push({
+        x: pattern.x - 1,
+        y: pattern.y + 1,
+        color: pattern.color,
+      });
+    }
+  }
+
+  return markedCells;
+}
+
+/**
+ * Clear marked cells from the board and apply gravity
+ * Returns the new board
+ */
+export function clearMarkedCellsAndApplyGravity(
+  board: GameBoard,
+  markedCells: Square[]
+): GameBoard {
+  let newBoard = board.map(row => [...row]);
+
+  // Clear marked cells
+  for (const cell of markedCells) {
+    if (newBoard[cell.y][cell.x] !== 0) {
+      newBoard[cell.y][cell.x] = 0;
+    }
+  }
+
+  // Apply gravity
+  newBoard = applyGravity(newBoard);
+
+  return newBoard;
+}
