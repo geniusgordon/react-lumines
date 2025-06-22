@@ -1,7 +1,7 @@
 // Game Types - Lumines Game Type Definitions
 
 // Cell values
-export type CellValue = -2 | -1 | 0 | 1 | 2; // Negative values = marked for clearing, 0 = empty, 1 = light, 2 = dark
+export type CellValue = -1 | 0 | 1 | 2; // 0 = empty, 1 = light, 2 = dark, -1 = marked for clearing
 
 // Game board representation
 export type GameBoard = CellValue[][];
@@ -38,8 +38,6 @@ export interface Timeline {
 export interface Square {
   x: number;
   y: number;
-  width: number;
-  height: number;
   color: CellValue;
 }
 

@@ -27,13 +27,8 @@ export const GridCell: React.FC<GridCellProps> = ({ value, x, y }) => {
     } else if (value === 2) {
       colorClasses = 'bg-block-orange opacity-100';
     } else if (value === -1) {
-      // Marked light block - flashing/pulsing effect
-      colorClasses =
-        'bg-block-white opacity-75 animate-pulse ring-2 ring-game-timeline ring-inset';
-    } else if (value === -2) {
-      // Marked dark block - flashing/pulsing effect
-      colorClasses =
-        'bg-block-orange opacity-75 animate-pulse ring-2 ring-game-timeline ring-inset';
+      // Marked for clearing
+      colorClasses = 'bg-block-white opacity-75';
     }
 
     return `${baseClasses} ${colorClasses}`.trim();

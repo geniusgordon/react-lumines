@@ -172,7 +172,7 @@ export function generateRandomBlock(rng: SeededRNG): Block {
 }
 
 /**
- * Clear squares from board and apply gravity (original function for backwards compatibility)
+ * Clear squares from board and apply gravity
  */
 export function clearSquaresAndApplyGravity(
   board: GameBoard,
@@ -183,8 +183,8 @@ export function clearSquaresAndApplyGravity(
 
   // Clear squares
   for (const square of squares) {
-    for (let y = square.y; y < square.y + square.height; y++) {
-      for (let x = square.x; x < square.x + square.width; x++) {
+    for (let y = square.y; y < square.y + 2; y++) {
+      for (let x = square.x; x < square.x + 2; x++) {
         if (newBoard[y][x] !== 0) {
           newBoard[y][x] = 0;
           clearedCells++;
@@ -237,4 +237,45 @@ export function isGameOver(board: GameBoard): boolean {
  */
 export function copyBoard(board: GameBoard): GameBoard {
   return board.map(row => [...row]);
+}
+
+/**
+ * Detect all 2x2 same-colored patterns on the board
+ * Returns an array of Square objects representing detected patterns
+ */
+export function detectPatterns(board: GameBoard): Square[] {
+  const patterns: Square[] = [];
+
+  // Scan the board for 2x2 patterns
+  // Stop at BOARD_HEIGHT-1 and BOARD_WIDTH-1 since we're checking 2x2 areas
+  for (let y = 0; y < BOARD_HEIGHT - 1; y++) {
+    for (let x = 0; x < BOARD_WIDTH - 1; x++) {
+      const topLeft = board[y][x];
+
+      // Skip empty cells and marked cells
+      if (topLeft <= 0) {
+        continue;
+      }
+
+      // Check if all 4 cells in the 2x2 area have the same color
+      const topRight = board[y][x + 1];
+      const bottomLeft = board[y + 1][x];
+      const bottomRight = board[y + 1][x + 1];
+
+      if (
+        topLeft === topRight &&
+        topLeft === bottomLeft &&
+        topLeft === bottomRight &&
+        topLeft > 0 // Must be a valid color (1 or 2), not empty or marked
+      ) {
+        patterns.push({
+          x,
+          y,
+          color: topLeft,
+        });
+      }
+    }
+  }
+
+  return patterns;
 }

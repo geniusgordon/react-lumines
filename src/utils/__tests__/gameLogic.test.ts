@@ -15,6 +15,7 @@ import {
   applyGravity,
   isGameOver,
   copyBoard,
+  detectPatterns,
 } from '../gameLogic';
 import { SeededRNG } from '../seededRNG';
 
@@ -253,11 +254,18 @@ describe('Game Logic', () => {
       board[6][5] = 1;
       board[6][6] = 1;
 
-      // TODO
+      const patterns = detectPatterns(board);
+
+      expect(patterns).toHaveLength(1);
+      expect(patterns[0]).toEqual({
+        x: 5,
+        y: 5,
+        color: 1,
+      });
     });
 
-    it('should detect 3x2 square', () => {
-      // Create 3x2 square
+    it('should detect 3x2 pattern (overlapping 2x2s)', () => {
+      // Create 3x2 pattern
       board[5][5] = 1;
       board[5][6] = 1;
       board[5][7] = 1;
@@ -265,7 +273,20 @@ describe('Game Logic', () => {
       board[6][6] = 1;
       board[6][7] = 1;
 
-      // TODO
+      const patterns = detectPatterns(board);
+
+      // Should detect 2 overlapping 2x2 patterns
+      expect(patterns).toHaveLength(2);
+      expect(patterns).toContainEqual({
+        x: 5,
+        y: 5,
+        color: 1,
+      });
+      expect(patterns).toContainEqual({
+        x: 6,
+        y: 5,
+        color: 1,
+      });
     });
 
     it('should detect L shape overlapping squares', () => {
@@ -294,7 +315,19 @@ describe('Game Logic', () => {
       board[6][5] = 2;
       board[6][6] = 2;
 
-      // TODO
+      const patterns = detectPatterns(board);
+
+      expect(patterns).toHaveLength(2);
+      expect(patterns).toContainEqual({
+        x: 1,
+        y: 1,
+        color: 1,
+      });
+      expect(patterns).toContainEqual({
+        x: 5,
+        y: 5,
+        color: 2,
+      });
     });
 
     it('should not detect non-square shapes', () => {
@@ -303,14 +336,42 @@ describe('Game Logic', () => {
       board[3][4] = 1;
       board[4][3] = 1;
 
-      // TODO
+      const patterns = detectPatterns(board);
+
+      expect(patterns).toHaveLength(0);
     });
 
     it('should ignore squares smaller than 2x2', () => {
       // Single cell
       board[3][3] = 1;
 
-      // TODO
+      const patterns = detectPatterns(board);
+
+      expect(patterns).toHaveLength(0);
+    });
+
+    it('should ignore empty cells and marked cells', () => {
+      // Create a pattern with marked cells (should be ignored)
+      board[3][3] = -1; // marked
+      board[3][4] = -1; // marked
+      board[4][3] = -1; // marked
+      board[4][4] = -1; // marked
+
+      // Create a pattern with empty cells (should be ignored)
+      board[6][6] = 0; // empty
+      board[6][7] = 0; // empty
+      board[7][6] = 0; // empty
+      board[7][7] = 0; // empty
+
+      const patterns = detectPatterns(board);
+
+      expect(patterns).toHaveLength(0);
+    });
+
+    it('should return empty array for empty board', () => {
+      const patterns = detectPatterns(board);
+
+      expect(patterns).toHaveLength(0);
     });
   });
 
@@ -354,8 +415,6 @@ describe('Game Logic', () => {
         {
           x: 5,
           y: 7,
-          width: 2,
-          height: 2,
           color: 1 as CellValue,
         },
       ];
