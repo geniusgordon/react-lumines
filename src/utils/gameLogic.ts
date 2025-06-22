@@ -77,11 +77,9 @@ export function getRotatedPattern(
 export function isValidPosition(
   board: GameBoard,
   block: Block,
-  position: Position,
-  rotation?: Rotation
+  position: Position
 ): ValidMove {
-  const pattern =
-    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
+  const pattern = block.pattern;
 
   // Check bounds
   if (

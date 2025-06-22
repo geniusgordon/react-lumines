@@ -149,9 +149,7 @@ describe('Game Logic', () => {
         id: 'tall',
       };
 
-      expect(isValidPosition(board, tallBlock, { x: 0, y: 0 }, 1)).toBe(
-        'valid'
-      );
+      expect(isValidPosition(board, tallBlock, { x: 0, y: 0 })).toBe('valid');
     });
   });
 

@@ -127,26 +127,15 @@ function handleBlockRotation(
   const newRotation = ((state.currentBlock.rotation + rotationOffset + 4) %
     4) as 0 | 1 | 2 | 3;
 
-  if (
-    isValidPosition(
-      state.board,
-      state.currentBlock,
-      state.blockPosition,
-      newRotation
-    ) === 'valid'
-  ) {
-    return {
-      ...state,
-      currentBlock: {
-        ...state.currentBlock,
-        rotation: newRotation,
-        pattern: getRotatedPattern(state.currentBlock, newRotation),
-      },
-      frame: action.frame,
-    };
-  }
-
-  return state;
+  return {
+    ...state,
+    currentBlock: {
+      ...state.currentBlock,
+      rotation: newRotation,
+      pattern: getRotatedPattern(state.currentBlock, newRotation),
+    },
+    frame: action.frame,
+  };
 }
 
 /**
