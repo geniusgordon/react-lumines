@@ -9,9 +9,9 @@ import {
   createEmptyBoard,
   generateRandomBlock,
   isValidPosition,
-  placeBlockOnBoardPartial,
+  placeBlockOnBoard,
   findDropPosition,
-  isGameOverEnhanced,
+  isGameOver,
   getRotatedPattern,
   applyGravity,
   detectPatterns,
@@ -549,7 +549,7 @@ function placeCurrentBlock(
   rng: SeededRNG
 ): GameState {
   // Try partial placement first - place what fits, discard what doesn't
-  const { newBoard } = placeBlockOnBoardPartial(
+  const { newBoard } = placeBlockOnBoard(
     state.board,
     state.currentBlock,
     state.blockPosition
@@ -561,7 +561,7 @@ function placeCurrentBlock(
   const newQueue = [...remainingQueue, newBlock];
 
   // Enhanced game over check - only trigger if NO part of the next block can be placed anywhere
-  if (isGameOverEnhanced(newBoard, nextBlock)) {
+  if (isGameOver(newBoard, nextBlock)) {
     return {
       ...state,
       board: newBoard,

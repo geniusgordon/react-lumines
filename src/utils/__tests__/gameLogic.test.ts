@@ -9,13 +9,11 @@ import {
   getRotatedPattern,
   isValidPosition,
   placeBlockOnBoard,
-  placeBlockOnBoardPartial,
   findDropPosition,
   generateRandomBlock,
   clearSquaresAndApplyGravity,
   applyGravity,
   isGameOver,
-  isGameOverEnhanced,
   copyBoard,
   detectPatterns,
 } from '../gameLogic';
@@ -47,15 +45,6 @@ describe('Game Logic', () => {
       // Ensure it's a deep copy
       copy[3][3] = 1;
       expect(board[3][3]).toBe(0);
-    });
-
-    it('should detect game over condition', () => {
-      const board = createEmptyBoard();
-      expect(isGameOver(board)).toBe(false);
-
-      // Place block in top row
-      board[0][5] = 1;
-      expect(isGameOver(board)).toBe(true);
     });
   });
 
@@ -182,18 +171,6 @@ describe('Game Logic', () => {
         rotation: 0,
         id: 'test',
       };
-    });
-
-    it('should place block on board', () => {
-      const newBoard = placeBlockOnBoard(board, block, { x: 5, y: 3 });
-
-      expect(newBoard[3][5]).toBe(1);
-      expect(newBoard[3][6]).toBe(2);
-      expect(newBoard[4][5]).toBe(1);
-      expect(newBoard[4][6]).toBe(2);
-
-      // Original board should be unchanged
-      expect(board[3][5]).toBe(0);
     });
 
     it('should find correct drop position', () => {
@@ -584,7 +561,7 @@ describe('Game Logic', () => {
       };
 
       // Try to place block at position (0, 0) - column 0 is free, column 1 is blocked
-      const { newBoard, placedCells } = placeBlockOnBoardPartial(board, block, {
+      const { newBoard, placedCells } = placeBlockOnBoard(board, block, {
         x: 0,
         y: 0,
       });
@@ -619,7 +596,7 @@ describe('Game Logic', () => {
       };
 
       // Should not be game over since partial placement is still possible
-      expect(isGameOverEnhanced(board, block)).toBe(false);
+      expect(isGameOver(board, block)).toBe(false);
     });
 
     it('should detect true game over when no cells can be placed', () => {
@@ -641,7 +618,7 @@ describe('Game Logic', () => {
         id: 'test',
       };
 
-      expect(isGameOverEnhanced(board, block)).toBe(true);
+      expect(isGameOver(board, block)).toBe(true);
     });
   });
 });

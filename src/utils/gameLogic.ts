@@ -111,32 +111,6 @@ export function isValidPosition(
 }
 
 /**
- * Place block on board (does not modify original board)
- */
-export function placeBlockOnBoard(
-  board: GameBoard,
-  block: Block,
-  position: Position,
-  rotation?: Rotation
-): GameBoard {
-  const newBoard = board.map(row => [...row]);
-  const pattern =
-    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
-
-  for (let y = 0; y < pattern.length; y++) {
-    for (let x = 0; x < pattern[y].length; x++) {
-      if (pattern[y][x] !== 0) {
-        const boardX = position.x + x;
-        const boardY = position.y + y;
-        newBoard[boardY][boardX] = pattern[y][x];
-      }
-    }
-  }
-
-  return newBoard;
-}
-
-/**
  * Find lowest valid position for hard drop
  */
 export function findDropPosition(
@@ -226,13 +200,6 @@ export function applyGravity(board: GameBoard): GameBoard {
 }
 
 /**
- * Check if game is over (top row has blocks)
- */
-export function isGameOver(board: GameBoard): boolean {
-  return board[0].some(cell => cell !== 0);
-}
-
-/**
  * Check if any part of a block can be placed on the board
  * Returns true if at least one cell of the block can be placed
  */
@@ -273,7 +240,7 @@ export function canPlaceAnyPartOfBlock(
  * Enhanced game over check - only triggers when NO part of any block can be placed
  * Tests all possible positions and rotations for the current block
  */
-export function isGameOverEnhanced(board: GameBoard, block: Block): boolean {
+export function isGameOver(board: GameBoard, block: Block): boolean {
   // Test all possible positions across the entire board
   for (let x = -1; x <= BOARD_WIDTH; x++) {
     // Test all y positions across the entire board height
@@ -303,7 +270,7 @@ export function isGameOverEnhanced(board: GameBoard, block: Block): boolean {
  * Place block on board with partial placement support
  * Only places cells that fit within bounds and don't collide
  */
-export function placeBlockOnBoardPartial(
+export function placeBlockOnBoard(
   board: GameBoard,
   block: Block,
   position: Position,
