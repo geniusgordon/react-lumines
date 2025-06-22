@@ -231,7 +231,13 @@ function handleGameTick(
   let newState = { ...state, frame: action.frame };
 
   // Handle block dropping
-  newState = updateDropTimer(newState, action.frame, rng);
+  const updateDropTimerResult = updateDropTimer(newState, action.frame, rng);
+  newState = updateDropTimerResult.state;
+  const blockPlaced = updateDropTimerResult.blockPlaced;
+
+  if (blockPlaced) {
+    newState = updatePatternDetection(newState);
+  }
 
   // Handle pattern detection
   newState = updatePatternDetection(newState);
@@ -244,12 +250,13 @@ function handleGameTick(
 
 /**
  * Update drop timer and handle automatic block dropping
+ * Returns both the new state and whether a block was placed
  */
 function updateDropTimer(
   state: GameState,
   frame: number,
   rng: SeededRNG
-): GameState {
+): { state: GameState; blockPlaced: boolean } {
   const newState = { ...state };
   newState.dropTimer++;
 
@@ -264,15 +271,19 @@ function updateDropTimer(
       isValidPosition(newState.board, newState.currentBlock, dropPos) ===
       'valid'
     ) {
+      // Block can drop normally
       newState.blockPosition = dropPos;
       newState.dropTimer = 0;
+      return { state: newState, blockPlaced: false };
     } else {
       // Can't drop, place block
-      return placeCurrentBlock(newState, frame, rng);
+      const placedState = placeCurrentBlock(newState, frame, rng);
+      return { state: placedState, blockPlaced: true };
     }
   }
 
-  return newState;
+  // Timer hasn't reached drop interval yet
+  return { state: newState, blockPlaced: false };
 }
 
 /**

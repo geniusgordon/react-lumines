@@ -1,39 +1,20 @@
 import React from 'react';
 
-import type {
-  GameBoard as GameBoardType,
-  Block as BlockType,
-  Position,
-  Timeline as TimelineType,
-} from '@/types/game';
+import type { GameState } from '@/types/game';
 
 import { GameBoard } from '../GameBoard';
 import { Queue } from '../Queue';
 import { ScoreDisplay } from '../ScoreDisplay';
 
 export interface GameScreenProps {
-  board: GameBoardType;
-  currentBlock: BlockType;
-  blockPosition: Position;
-  timeline: TimelineType;
-  queue: BlockType[];
-  score?: number;
-  timeRemaining?: number;
+  gameState: GameState;
 }
 
 /**
  * GameScreen represents the complete game interface layout
  * Handles positioning of the queue, game board, and score display
  */
-export const GameScreen: React.FC<GameScreenProps> = ({
-  board,
-  currentBlock,
-  blockPosition,
-  timeline,
-  queue,
-  score = 100,
-  timeRemaining = 60,
-}) => {
+export const GameScreen: React.FC<GameScreenProps> = ({ gameState }) => {
   return (
     <div className="bg-game-background relative mt-8 inline-block">
       {/* Queue positioned to the left */}
@@ -41,16 +22,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         className="absolute top-0 z-10"
         style={{ left: 'calc(-3 * var(--spacing-block-size))' }}
       >
-        <Queue queue={queue} />
+        <Queue queue={gameState.queue} />
       </div>
 
       {/* Main game board */}
-      <GameBoard
-        board={board}
-        currentBlock={currentBlock}
-        blockPosition={blockPosition}
-        timeline={timeline}
-      />
+      <GameBoard gameState={gameState} />
 
       {/* Score display positioned to the right */}
       <div
@@ -59,7 +35,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           transform: 'translateX(calc(100% + var(--spacing-block-size)))',
         }}
       >
-        <ScoreDisplay score={score} timeRemaining={timeRemaining} />
+        <ScoreDisplay score={gameState.score} timeRemaining={60} />
       </div>
     </div>
   );

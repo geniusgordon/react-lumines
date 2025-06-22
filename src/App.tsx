@@ -85,15 +85,7 @@ function App() {
 
       {/* Game Screen */}
       <div>
-        <GameScreen
-          board={gameState.board}
-          currentBlock={gameState.currentBlock}
-          blockPosition={gameState.blockPosition}
-          timeline={gameState.timeline}
-          queue={gameState.queue}
-          score={gameState.score}
-          timeRemaining={60}
-        />
+        <GameScreen gameState={gameState} />
       </div>
     </div>
   );

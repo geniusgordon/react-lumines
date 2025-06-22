@@ -1,34 +1,23 @@
 import React from 'react';
 
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
-import type {
-  GameBoard as GameBoardType,
-  Block as BlockType,
-  Position,
-  Timeline as TimelineType,
-} from '@/types/game';
+import type { GameState } from '@/types/game';
 
 import { BoardGrid } from '../BoardGrid';
 import { CurrentBlock } from '../CurrentBlock';
 import { Timeline as TimelineComponent } from '../Timeline';
 
+import { DetectedPatterns } from './DetectedPatterns';
+
 export interface GameBoardProps {
-  board: GameBoardType;
-  currentBlock: BlockType;
-  blockPosition: Position;
-  timeline: TimelineType;
+  gameState: GameState;
 }
 
 /**
  * GameBoard represents the core 16x10 playing field
  * Contains the grid, current falling block, and timeline
  */
-export const GameBoard: React.FC<GameBoardProps> = ({
-  board,
-  currentBlock,
-  blockPosition,
-  timeline,
-}) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
   return (
     <div
       className={`bg-game-background border-game-grid relative grid gap-0 border`}
@@ -39,11 +28,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         gridTemplateRows: `repeat(${BOARD_HEIGHT}, var(--spacing-block-size))`,
       }}
     >
-      <BoardGrid board={board} />
+      <BoardGrid board={gameState.board} />
 
-      <CurrentBlock currentBlock={currentBlock} blockPosition={blockPosition} />
+      <DetectedPatterns patterns={gameState.detectedPatterns} />
 
-      <TimelineComponent timeline={timeline} />
+      <CurrentBlock
+        currentBlock={gameState.currentBlock}
+        blockPosition={gameState.blockPosition}
+      />
+
+      <TimelineComponent timeline={gameState.timeline} />
     </div>
   );
 };
