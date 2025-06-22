@@ -11,13 +11,13 @@ import {
   isValidPosition,
   placeBlockOnBoard,
   findDropPosition,
-  isGameOver,
   getRotatedPattern,
   applyGravity,
   detectPatterns,
   getPatternsByLeftColumn,
   markColumnCells,
   clearMarkedCellsAndApplyGravity,
+  canPlaceAnyPartOfBlock,
 } from '@/utils/gameLogic';
 import { SeededRNG } from '@/utils/seededRNG';
 
@@ -548,8 +548,20 @@ function placeCurrentBlock(
   frame: number,
   rng: SeededRNG
 ): GameState {
-  // Try partial placement first - place what fits, discard what doesn't
-  const { newBoard } = placeBlockOnBoard(
+  const canPlaceBlock = canPlaceAnyPartOfBlock(
+    state.board,
+    state.blockPosition
+  );
+
+  if (!canPlaceBlock) {
+    return {
+      ...state,
+      status: 'gameOver',
+      frame,
+    };
+  }
+
+  const newBoard = placeBlockOnBoard(
     state.board,
     state.currentBlock,
     state.blockPosition
@@ -559,16 +571,6 @@ function placeCurrentBlock(
   const [nextBlock, ...remainingQueue] = state.queue;
   const newBlock = generateRandomBlock(rng);
   const newQueue = [...remainingQueue, newBlock];
-
-  // Enhanced game over check - only trigger if NO part of the next block can be placed anywhere
-  if (isGameOver(newBoard, nextBlock)) {
-    return {
-      ...state,
-      board: newBoard,
-      status: 'gameOver',
-      frame,
-    };
-  }
 
   return {
     ...state,

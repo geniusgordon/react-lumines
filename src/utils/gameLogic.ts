@@ -87,7 +87,7 @@ export function isValidPosition(
   if (
     position.x < 0 ||
     position.x + pattern[0].length > BOARD_WIDTH ||
-    position.y < 0 ||
+    position.y < -2 ||
     position.y + pattern.length > BOARD_HEIGHT
   ) {
     return 'out_of_bounds';
@@ -96,13 +96,15 @@ export function isValidPosition(
   // Check collision with existing blocks
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[y].length; x++) {
-      if (pattern[y][x] !== 0) {
-        const boardX = position.x + x;
-        const boardY = position.y + y;
+      const boardX = position.x + x;
+      const boardY = position.y + y;
 
-        if (board[boardY][boardX] !== 0) {
-          return 'collision';
-        }
+      if (boardY < 0) {
+        continue;
+      }
+
+      if (board[boardY][boardX] !== 0) {
+        return 'collision';
       }
     }
   }
@@ -205,65 +207,13 @@ export function applyGravity(board: GameBoard): GameBoard {
  */
 export function canPlaceAnyPartOfBlock(
   board: GameBoard,
-  block: Block,
-  position: Position,
-  rotation?: Rotation
+  position: Position
 ): boolean {
-  const pattern =
-    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
-
-  // Check if any individual cell of the block can be placed
-  for (let y = 0; y < pattern.length; y++) {
-    for (let x = 0; x < pattern[y].length; x++) {
-      if (pattern[y][x] !== 0) {
-        const boardX = position.x + x;
-        const boardY = position.y + y;
-
-        // Check if this cell position is valid and not occupied
-        if (
-          boardX >= 0 &&
-          boardX < BOARD_WIDTH &&
-          boardY >= 0 &&
-          boardY < BOARD_HEIGHT &&
-          board[boardY][boardX] === 0
-        ) {
-          return true; // At least one cell can be placed
-        }
-      }
-    }
+  const firstRow = board[0];
+  if (firstRow[position.x] === 0 || firstRow[position.x + 1] === 0) {
+    return true;
   }
-
-  return false; // No cells can be placed
-}
-
-/**
- * Enhanced game over check - only triggers when NO part of any block can be placed
- * Tests all possible positions and rotations for the current block
- */
-export function isGameOver(board: GameBoard, block: Block): boolean {
-  // Test all possible positions across the entire board
-  for (let x = -1; x <= BOARD_WIDTH; x++) {
-    // Test all y positions across the entire board height
-    for (let y = -1; y <= BOARD_HEIGHT; y++) {
-      const testPosition = { x, y };
-
-      // Test all 4 possible rotations
-      for (let rotation = 0; rotation < 4; rotation++) {
-        if (
-          canPlaceAnyPartOfBlock(
-            board,
-            block,
-            testPosition,
-            rotation as Rotation
-          )
-        ) {
-          return false; // Game can continue
-        }
-      }
-    }
-  }
-
-  return true; // No placement possible - game over
+  return false;
 }
 
 /**
@@ -275,12 +225,10 @@ export function placeBlockOnBoard(
   block: Block,
   position: Position,
   rotation?: Rotation
-): { newBoard: GameBoard; placedCells: number } {
+): GameBoard {
   const newBoard = board.map(row => [...row]);
   const pattern =
     rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
-
-  let placedCells = 0;
 
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[y].length; x++) {
@@ -297,14 +245,12 @@ export function placeBlockOnBoard(
           newBoard[boardY][boardX] === 0
         ) {
           newBoard[boardY][boardX] = pattern[y][x];
-          placedCells++;
         }
-        // Cells that can't be placed are simply discarded
       }
     }
   }
 
-  return { newBoard, placedCells };
+  return newBoard;
 }
 
 /**

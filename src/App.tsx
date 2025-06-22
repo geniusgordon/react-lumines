@@ -18,7 +18,7 @@ function App() {
 
   const controls = useControls(gameState, dispatch, {
     recording: true,
-    enableKeyRepeat: true,
+    enableKeyRepeat: false,
     keyRepeatDelay: 100,
     uiUpdateBatchSize: 10,
   });

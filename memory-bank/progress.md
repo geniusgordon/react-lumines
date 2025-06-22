@@ -50,8 +50,8 @@
 
 #### Phase 3.5: Enhanced Game Over Logic ✅ COMPLETE
 
-- [x] **Enhanced Game Over Detection**: `isGameOverEnhanced()` function ✅
-- [x] **Partial Block Placement**: `placeBlockOnBoardPartial()` function ✅  
+- [x] **Enhanced Game Over Detection**: `isGameOver()` function ✅
+- [x] **Partial Block Placement**: `placeBlockOnBoard()` function ✅
 - [x] **Placement Validation**: `canPlaceAnyPartOfBlock()` function ✅
 - [x] **Game Reducer Integration**: Updated to use enhanced logic ✅
 - [x] **Frame Propagation Fix**: Fixed bug in block placement functions ✅
@@ -61,7 +61,7 @@
 
 - [x] Timeline sweep animation ✅
 - [x] **Pattern Detection**: Find same-colored 2×2+ regions ✅
-- [ ] **Pattern Marking**: Mark patterns but keep them on board  
+- [ ] **Pattern Marking**: Mark patterns but keep them on board
 - [ ] **Timeline Clearing**: Clear marked patterns when sweep passes through
 - [ ] **Scoring System**: 1 point per 2×2 square cleared
 - [ ] **Visual Feedback**: Show marked patterns differently
@@ -190,14 +190,16 @@
 ## Current Focus: The Timeline Rhythm
 
 ### What Makes Lumines Unique
+
 The core mechanic that differentiates Lumines from other puzzle games:
 
 1. **Instant Pattern Marking**: Same-colored 2×2+ regions get marked immediately
-2. **Delayed Clearing**: Marked patterns only clear when the timeline sweep passes through them  
+2. **Delayed Clearing**: Marked patterns only clear when the timeline sweep passes through them
 3. **Strategic Timing**: Players must think about WHERE the timeline will be, not just pattern formation
 4. **Rhythm Element**: Creates anticipation and timing-based strategy
 
 ### Implementation Roadmap
+
 1. **Pattern Detection**: Flood-fill algorithm to find connected same-colored regions ≥ 2×2
 2. **Marking System**: Visual indication of marked patterns (keep them on board)
 3. **Timeline Integration**: Clear marked patterns only when sweep passes through

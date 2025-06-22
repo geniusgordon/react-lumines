@@ -19,7 +19,7 @@ describe('Game Reducer - Basic Functionality', () => {
       expect(initialState.frame).toBe(0);
       expect(initialState.seed).toBe(12345);
       expect(initialState.board).toEqual(createEmptyBoard());
-      expect(initialState.blockPosition).toEqual({ x: 7, y: 0 });
+      expect(initialState.blockPosition).toEqual({ x: 7, y: -2 });
       expect(initialState.timeline.active).toBe(true);
     });
 

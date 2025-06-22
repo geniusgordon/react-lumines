@@ -88,24 +88,28 @@ describe('Integration Tests', () => {
       const state = createInitialGameState(12345);
       let currentState = gameReducer(state, { type: 'START_GAME', frame: 0 });
 
-      // Fill the entire board except for a small area to test enhanced game over logic
+      // Fill the top rows of the board to create a realistic game over scenario
+      // This simulates blocks stacking up to the point where new blocks can't spawn
       const board = currentState.board.map(row => [...row]);
 
-      // Fill entire board to create true game over scenario
-      for (let y = 0; y < 10; y++) {
+      // Fill top 3 rows completely - this makes it impossible for any new block to spawn
+      // since even with y=-2, part of the block needs to be visible (y>=0)
+      for (let y = 0; y < 3; y++) {
         for (let x = 0; x < 16; x++) {
           board[y][x] = 1 as CellValue;
         }
       }
 
       /*
-       * Enhanced game over scenario - no space for any block placement:
-       * All positions filled, so no partial placement is possible
+       * Enhanced game over scenario - no space for new block spawn:
+       * With top 3 rows filled and initial spawn at y=-2,
+       * no part of any new block can be placed since it requires
+       * at least some part to be visible (y >= 0)
        */
 
       currentState = { ...currentState, board };
 
-      // Try to place a new block (should trigger game over since no space exists)
+      // Try to place a new block (should trigger game over since no space exists for spawn)
       const finalState = gameReducer(currentState, {
         type: 'HARD_DROP',
         frame: 100,
@@ -273,7 +277,7 @@ describe('Integration Tests', () => {
         // Verify position bounds
         expect(currentState.blockPosition.x).toBeGreaterThanOrEqual(0);
         expect(currentState.blockPosition.x).toBeLessThan(16);
-        expect(currentState.blockPosition.y).toBeGreaterThanOrEqual(0);
+        expect(currentState.blockPosition.y).toBeGreaterThanOrEqual(-2);
         expect(currentState.blockPosition.y).toBeLessThan(10);
       }
     });

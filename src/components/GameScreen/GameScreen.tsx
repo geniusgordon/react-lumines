@@ -16,7 +16,12 @@ export interface GameScreenProps {
  */
 export const GameScreen: React.FC<GameScreenProps> = ({ gameState }) => {
   return (
-    <div className="bg-game-background relative mt-8 inline-block">
+    <div
+      className="bg-game-background relative inline-block"
+      style={{
+        marginTop: 'calc(var(--spacing-block-size) * 2)',
+      }}
+    >
       {/* Queue positioned to the left */}
       <div
         className="absolute top-0 z-10"

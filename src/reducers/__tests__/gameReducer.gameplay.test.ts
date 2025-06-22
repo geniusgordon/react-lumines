@@ -32,7 +32,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       const action: GameAction = { type: 'TICK', frame: 100 };
       const newState = gameReducer(stateNearDrop, action);
 
-      expect(newState.blockPosition.y).toBe(1); // Should drop
+      expect(newState.blockPosition.y).toBe(-1); // Should drop
       expect(newState.dropTimer).toBe(0); // Should reset
     });
 
@@ -441,7 +441,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       expect(newState.queue).toHaveLength(3); // Queue should maintain length
 
       // Block position should reset
-      expect(newState.blockPosition).toEqual({ x: 7, y: 0 });
+      expect(newState.blockPosition).toEqual({ x: 7, y: -2 });
     });
 
     it('should place block on the board when it settles', () => {
@@ -505,7 +505,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
       // Verify the block was placed and a new block was spawned
       expect(newState.currentBlock.id).not.toBe(stateWithGap.currentBlock.id);
-      expect(newState.blockPosition).toEqual({ x: 7, y: 0 }); // Reset position
+      expect(newState.blockPosition).toEqual({ x: 7, y: -2 }); // Reset position
     });
 
     it('should handle gravity through timeline clearing mechanics', () => {

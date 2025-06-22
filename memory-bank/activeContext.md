@@ -65,7 +65,7 @@
 ### Technical Challenges
 
 1. **Fixed Timestep Implementation**: Ensuring consistent 16ms intervals ✅ SOLVED
-2. **Deterministic Behavior**: Avoiding floating-point precision issues ✅ SOLVED  
+2. **Deterministic Behavior**: Avoiding floating-point precision issues ✅ SOLVED
 3. **Enhanced Game Over Logic**: More permissive block placement logic ✅ SOLVED
 4. **Square Detection & Marking**: Core Lumines mechanic - mark squares but keep on board
 5. **Timeline-Based Clearing**: Only clear when sweep passes through marked areas
@@ -149,11 +149,7 @@
 
 ### Enhanced Game Over Logic ✅ COMPLETE
 
-- **New Functions Implemented**: 
-  - `canPlaceAnyPartOfBlock()` - Tests if any part of a 2×2 block can be placed
-  - `isGameOverEnhanced()` - Only triggers game over when NO placement is possible anywhere
-  - `placeBlockOnBoardPartial()` - Places only cells that fit, discards out-of-bounds cells
-- **Game Reducer Updates**: 
+- **Game Reducer Updates**:
   - Modified to use enhanced logic for more optimal gameplay
   - Fixed frame propagation bug in block placement functions
 - **Test Coverage**: All 122 tests passing including comprehensive enhanced game over tests

@@ -13,9 +13,9 @@ import {
   generateRandomBlock,
   clearSquaresAndApplyGravity,
   applyGravity,
-  isGameOver,
   copyBoard,
   detectPatterns,
+  canPlaceAnyPartOfBlock,
 } from '../gameLogic';
 import { SeededRNG } from '../seededRNG';
 
@@ -128,9 +128,7 @@ describe('Game Logic', () => {
       expect(isValidPosition(board, block, { x: 15, y: 0 })).toBe(
         'out_of_bounds'
       );
-      expect(isValidPosition(board, block, { x: 0, y: -1 })).toBe(
-        'out_of_bounds'
-      );
+      // Negative y is now allowed (above board), only test horizontal bounds
       expect(isValidPosition(board, block, { x: 0, y: 9 })).toBe(
         'out_of_bounds'
       );
@@ -521,29 +519,7 @@ describe('Game Logic', () => {
     });
   });
 
-  describe('Scoring', () => {
-    it('should calculate score for 2x2 square', () => {
-      // TODO
-    });
-
-    it('should calculate score for 3x2 square', () => {
-      // TODO
-    });
-
-    it('should calculate score for 3x3 square', () => {
-      // TODO
-    });
-
-    it('should calculate score for multiple squares', () => {
-      // TODO
-    });
-
-    it('should return 0 for no squares', () => {
-      // TODO
-    });
-  });
-
-  describe('Enhanced Game Over Logic', () => {
+  describe('Game Over Logic', () => {
     it('should allow partial placement when only one column has space', () => {
       const board = createEmptyBoard();
 
@@ -561,13 +537,12 @@ describe('Game Logic', () => {
       };
 
       // Try to place block at position (0, 0) - column 0 is free, column 1 is blocked
-      const { newBoard, placedCells } = placeBlockOnBoard(board, block, {
+      const newBoard = placeBlockOnBoard(board, block, {
         x: 0,
         y: 0,
       });
 
       // Should place only the cells that fit (2 cells in column 0)
-      expect(placedCells).toBe(2);
       expect(newBoard[0][0]).toBe(2); // New block placed
       expect(newBoard[1][0]).toBe(2); // New block placed
       expect(newBoard[0][1]).toBe(1); // Original block remains (collision avoided)
@@ -580,45 +555,29 @@ describe('Game Logic', () => {
       // Fill most of the board but leave one space
       for (let y = 0; y < 10; y++) {
         for (let x = 0; x < 16; x++) {
-          if (!(x === 15 && y === 9)) {
+          if (!(x === 15 && y === 0)) {
             board[y][x] = 1;
           }
         }
       }
 
-      const block: Block = {
-        pattern: [
-          [2, 2],
-          [2, 2],
-        ],
-        rotation: 0,
-        id: 'test',
-      };
-
       // Should not be game over since partial placement is still possible
-      expect(isGameOver(board, block)).toBe(false);
+      expect(canPlaceAnyPartOfBlock(board, { x: 14, y: 0 })).toBe(true);
     });
 
     it('should detect true game over when no cells can be placed', () => {
       const board = createEmptyBoard();
 
-      // Fill the entire board
-      for (let y = 0; y < 10; y++) {
+      // Fill the top rows to make spawning impossible
+      // This simulates a realistic game over where blocks have stacked too high
+      for (let y = 0; y < 3; y++) {
         for (let x = 0; x < 16; x++) {
           board[y][x] = 1;
         }
       }
 
-      const block: Block = {
-        pattern: [
-          [2, 2],
-          [2, 2],
-        ],
-        rotation: 0,
-        id: 'test',
-      };
-
-      expect(isGameOver(board, block)).toBe(true);
+      // With top 3 rows filled and spawn at y=-2, no visible part can be placed
+      expect(canPlaceAnyPartOfBlock(board, { x: 14, y: 0 })).toBe(false);
     });
   });
 });

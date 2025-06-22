@@ -19,7 +19,7 @@ describe('Game Reducer - Block Movement', () => {
       const newState = gameReducer(playingState, action);
 
       expect(newState.blockPosition.x).toBe(6); // 7 - 1
-      expect(newState.blockPosition.y).toBe(0);
+      expect(newState.blockPosition.y).toBe(-2);
       expect(newState.frame).toBe(10);
     });
 
@@ -28,7 +28,7 @@ describe('Game Reducer - Block Movement', () => {
       const newState = gameReducer(playingState, action);
 
       expect(newState.blockPosition.x).toBe(8); // 7 + 1
-      expect(newState.blockPosition.y).toBe(0);
+      expect(newState.blockPosition.y).toBe(-2);
       expect(newState.frame).toBe(10);
     });
 
@@ -114,7 +114,7 @@ describe('Game Reducer - Block Movement', () => {
       const action: GameAction = { type: 'SOFT_DROP', frame: 10 };
       const newState = gameReducer(playingState, action);
 
-      expect(newState.blockPosition.y).toBe(1); // 0 + 1
+      expect(newState.blockPosition.y).toBe(-1); // -2 + 1
       expect(newState.frame).toBe(10);
       expect(newState.dropTimer).toBe(0); // Should reset drop timer
     });
@@ -123,7 +123,7 @@ describe('Game Reducer - Block Movement', () => {
       const action: GameAction = { type: 'HARD_DROP', frame: 10 };
       const newState = gameReducer(playingState, action);
 
-      expect(newState.blockPosition.y).toBe(0);
+      expect(newState.blockPosition.y).toBe(-2);
       expect(newState.frame).toBe(10);
       // Should place block and generate new one
       expect(newState.currentBlock.id).not.toBe(playingState.currentBlock.id);
@@ -143,7 +143,7 @@ describe('Game Reducer - Block Movement', () => {
       expect(newState.currentBlock.id).not.toBe(
         nearBottomState.currentBlock.id
       );
-      expect(newState.blockPosition).toEqual({ x: 7, y: 0 }); // Reset position for new block
+      expect(newState.blockPosition).toEqual({ x: 7, y: -2 }); // Reset position for new block
     });
 
     it('should not drop when game is not playing', () => {
@@ -162,29 +162,28 @@ describe('Game Reducer - Block Movement', () => {
   describe('Collision detection in movement', () => {
     it('should prevent movement into occupied cells', () => {
       // Create a state with blocks on the board to test collision
+      // Since current block starts at y: -2, it needs blocks higher up to collide
       const boardWithBlocks = playingState.board.map(row => [...row]);
-      boardWithBlocks[0][6] = 1; // Block to the left
-      boardWithBlocks[0][8] = 1; // Block to the right
+      boardWithBlocks[0][6] = 1; // Block to the left where current block will collide
+      boardWithBlocks[0][8] = 1; // Block to the right where current block will collide
 
       /*
        * Board layout showing collision scenario:
        *     0 1 2 3 4 5 6 7 8 9
-       * 0   . . . . . . 1 C 1 .  ← C = current block at (7,0)
-       * 1   . . . . . . . . . .     blocked on left and right
+       * -2  . . . . . . . C . .  ← C = current block at (7,-2) - above board
+       * -1  . . . . . . . C . .  ← C = current block continues
+       * 0   . . . . . . 1 . 1 .  ← blocks that will collide when moving
+       * 1   . . . . . . . . . .
        * 2   . . . . . . . . . .
        * ...
        * 9   . . . . . . . . . .
-       *                 ↑
-       *         current block position (7,0)
-       *
-       * Movement attempts:
-       * - Left to (6,0): BLOCKED by existing block
-       * - Right to (8,0): BLOCKED by existing block
        */
 
+      // Position the current block lower so it will actually collide
       const stateWithBlocks = {
         ...playingState,
         board: boardWithBlocks,
+        blockPosition: { x: 7, y: -1 }, // Move closer to the collision area
       };
 
       // Try to move left into occupied space
