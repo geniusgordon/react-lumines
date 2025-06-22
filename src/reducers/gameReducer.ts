@@ -50,7 +50,6 @@ export function createInitialGameState(
 
     // Pattern detection
     detectedPatterns: [],
-    markedPatterns: [],
 
     // Timing
     frame: 0,
@@ -64,8 +63,10 @@ export function createInitialGameState(
       timer: 0,
       active: true,
       holdingScore: 0,
-      markedCells: [],
     },
+
+    // Pattern clearing
+    markedCells: [],
 
     // Deterministic system
     seed,
@@ -372,10 +373,7 @@ function processTimelineColumn(state: GameState, column: number): GameState {
     const newMarkedCells = markColumnCells(column, state.detectedPatterns);
     newState = {
       ...newState,
-      timeline: {
-        ...newState.timeline,
-        markedCells: [...state.timeline.markedCells, ...newMarkedCells],
-      },
+      markedCells: [...state.markedCells, ...newMarkedCells],
     };
 
     return newState;
@@ -385,12 +383,12 @@ function processTimelineColumn(state: GameState, column: number): GameState {
   const noPatterns =
     !hasPatternsInCurrentColumn && !hasPatternsInPreviousColumn;
   const hasHoldingScore = state.timeline.holdingScore > 0;
-  const hasMarkedCells = state.timeline.markedCells.length > 0;
+  const hasMarkedCells = state.markedCells.length > 0;
 
   if (noPatterns && hasHoldingScore && hasMarkedCells) {
     const newBoard = clearMarkedCellsAndApplyGravity(
       state.board,
-      state.timeline.markedCells
+      state.markedCells
     );
     const detectedPatterns = detectPatterns(newBoard);
 
@@ -402,8 +400,8 @@ function processTimelineColumn(state: GameState, column: number): GameState {
       timeline: {
         ...state.timeline,
         holdingScore: 0,
-        markedCells: [],
       },
+      markedCells: [],
     };
   }
 

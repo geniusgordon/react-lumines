@@ -33,7 +33,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
 
       <DetectedPatterns patterns={gameState.detectedPatterns} />
 
-      <MarkedCells markedCells={gameState.timeline.markedCells} />
+      <MarkedCells markedCells={gameState.markedCells} />
 
       <CurrentBlock
         currentBlock={gameState.currentBlock}

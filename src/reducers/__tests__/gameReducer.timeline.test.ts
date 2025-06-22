@@ -47,9 +47,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 3, // Timeline at column 3
           timer: playingState.timeline.speed - 1, // About to move
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells: [],
       };
 
       // Simulate timeline moving to next column (which triggers processing of column 3)
@@ -62,13 +62,13 @@ describe('Game Reducer - Timeline Processing', () => {
       expect(result.timeline.holdingScore).toBe(1);
 
       // Should mark cells for clearing (2 cells from the pattern in column 3)
-      expect(result.timeline.markedCells).toHaveLength(2);
-      expect(result.timeline.markedCells).toContainEqual({
+      expect(result.markedCells).toHaveLength(2);
+      expect(result.markedCells).toContainEqual({
         x: 3,
         y: 8,
         color: 1 as const,
       });
-      expect(result.timeline.markedCells).toContainEqual({
+      expect(result.markedCells).toContainEqual({
         x: 3,
         y: 9,
         color: 1 as const,
@@ -106,12 +106,12 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 5, // Timeline at column 5 (no patterns)
           timer: playingState.timeline.speed - 1, // About to move
           holdingScore: 3, // Some accumulated score
-          markedCells: [
-            { x: 2, y: 8, color: 1 as const },
-            { x: 2, y: 9, color: 1 as const },
-            { x: 3, y: 8, color: 1 as const },
-          ],
         },
+        markedCells: [
+          { x: 2, y: 8, color: 1 as const },
+          { x: 2, y: 9, color: 1 as const },
+          { x: 3, y: 8, color: 1 as const },
+        ],
       };
 
       // Put some blocks on the board that should be cleared
@@ -135,7 +135,7 @@ describe('Game Reducer - Timeline Processing', () => {
       expect(result.timeline.holdingScore).toBe(0);
 
       // Should clear marked cells
-      expect(result.timeline.markedCells).toHaveLength(0);
+      expect(result.markedCells).toHaveLength(0);
 
       // Should apply gravity - block at [7][2] should fall down
       expect(result.board[8][2]).toBe(0); // Cleared
@@ -184,11 +184,11 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 5, // Timeline at column 5, pattern in previous column 4
           timer: playingState.timeline.speed - 1,
           holdingScore: 2,
-          markedCells: [
-            { x: 2, y: 8, color: 1 as const },
-            { x: 2, y: 9, color: 1 as const },
-          ],
         },
+        markedCells: [
+          { x: 2, y: 8, color: 1 as const },
+          { x: 2, y: 9, color: 1 as const },
+        ],
       };
 
       const result = gameReducer(stateWithPreviousPatterns, {
@@ -199,7 +199,7 @@ describe('Game Reducer - Timeline Processing', () => {
       // Should NOT clear because column 4 (previous) has patterns
       // Timeline processes column 5 (current) which has no patterns, but column 4 (previous) has patterns
       expect(result.timeline.holdingScore).toBe(2); // Unchanged - no clearing
-      expect(result.timeline.markedCells).toHaveLength(4); // 2 cells per pattern
+      expect(result.markedCells).toHaveLength(4); // 2 cells per pattern
       expect(result.score).toBe(playingState.score); // No score added
       expect(result.timeline.x).toBe(6); // Timeline should move forward
     });
@@ -248,9 +248,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 5,
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateWithMultiplePatterns, {
@@ -262,23 +262,23 @@ describe('Game Reducer - Timeline Processing', () => {
       expect(result.timeline.holdingScore).toBe(2);
 
       // Should mark cells from both patterns
-      expect(result.timeline.markedCells).toHaveLength(4); // 2 cells per pattern
-      expect(result.timeline.markedCells).toContainEqual({
+      expect(result.markedCells).toHaveLength(4); // 2 cells per pattern
+      expect(result.markedCells).toContainEqual({
         x: 5,
         y: 6,
         color: 1 as const,
       });
-      expect(result.timeline.markedCells).toContainEqual({
+      expect(result.markedCells).toContainEqual({
         x: 5,
         y: 7,
         color: 1 as const,
       });
-      expect(result.timeline.markedCells).toContainEqual({
+      expect(result.markedCells).toContainEqual({
         x: 5,
         y: 8,
         color: 2 as const,
       });
-      expect(result.timeline.markedCells).toContainEqual({
+      expect(result.markedCells).toContainEqual({
         x: 5,
         y: 9,
         color: 2 as const,
@@ -293,9 +293,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 5,
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateWithNoPatterns, {
@@ -305,7 +305,7 @@ describe('Game Reducer - Timeline Processing', () => {
 
       // Timeline should move but no clearing should happen
       expect(result.timeline.holdingScore).toBe(0);
-      expect(result.timeline.markedCells).toHaveLength(0);
+      expect(result.markedCells).toHaveLength(0);
       expect(result.score).toBe(playingState.score);
       expect(result.board).toEqual(playingState.board);
     });
@@ -334,9 +334,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 15, // Last column
           timer: playingState.timeline.speed - 1,
-          holdingScore: 1,
-          markedCells: [{ x: 14, y: 8, color: 1 as const }],
+          holdingScore: 1
         },
+        markedCells: [{ x: 14, y: 8, color: 1 as const }],
       };
 
       const result = gameReducer(stateAtEdge, { type: 'TICK', frame: 1 });
@@ -380,9 +380,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 5, // Timeline at column 5, pattern in previous column 4
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateWithPreviousPattern, {
@@ -416,9 +416,9 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 3,
           timer: playingState.timeline.speed - 1, // One frame before moving
           // Use default speed (10 frames from config)
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateWithPattern, {
@@ -430,7 +430,7 @@ describe('Game Reducer - Timeline Processing', () => {
       expect(result.timeline.x).toBe(4);
       expect(result.timeline.timer).toBe(0);
       expect(result.timeline.holdingScore).toBe(1);
-      expect(result.timeline.markedCells.length).toBeGreaterThan(0);
+      expect(result.markedCells.length).toBeGreaterThan(0);
     });
 
     it('should not process column when timeline timer has not reached threshold', () => {
@@ -440,9 +440,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 3,
           timer: 5, // Not at threshold yet (default speed is 10)
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateWithPattern, {
@@ -488,9 +488,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 0, // Timeline at column 0
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateWithEdgePattern, {
@@ -500,7 +500,7 @@ describe('Game Reducer - Timeline Processing', () => {
 
       // Should process normally even at edge
       expect(result.timeline.holdingScore).toBe(1);
-      expect(result.timeline.markedCells).toHaveLength(2);
+      expect(result.markedCells).toHaveLength(2);
     });
 
     it('should handle timeline at right edge (column 15)', () => {
@@ -512,9 +512,9 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 15, // Last column
           timer: playingState.timeline.speed - 1,
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(stateAtRightEdge, {
@@ -557,15 +557,15 @@ describe('Game Reducer - Timeline Processing', () => {
           ...playingState.timeline,
           x: 10, // Timeline far from marked columns
           timer: playingState.timeline.speed - 1,
-          holdingScore: 5,
-          markedCells: [
+          holdingScore: 5
+        },
+        markedCells: [
             { x: 2, y: 8, color: 1 as const },
             { x: 3, y: 8, color: 1 as const },
             { x: 4, y: 8, color: 2 as const },
             { x: 5, y: 8, color: 2 as const },
             { x: 6, y: 8, color: 1 as const },
           ],
-        },
       };
 
       const result = gameReducer(stateWithComplexMarking, {
@@ -575,7 +575,7 @@ describe('Game Reducer - Timeline Processing', () => {
 
       // Should clear all marked cells and apply score
       expect(result.timeline.holdingScore).toBe(0);
-      expect(result.timeline.markedCells).toHaveLength(0);
+      expect(result.markedCells).toHaveLength(0);
       expect(result.score).toBe(playingState.score + 5);
     });
   });
@@ -589,9 +589,9 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 5,
           speed: 30, // Very slow timeline
           timer: 29, // One frame before moving
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(slowTimelineState, {
@@ -612,9 +612,9 @@ describe('Game Reducer - Timeline Processing', () => {
           x: 5,
           speed: 1, // Very fast timeline
           timer: 0, // Ready to move immediately
-          holdingScore: 0,
-          markedCells: [],
+          holdingScore: 0
         },
+        markedCells:  [],
       };
 
       const result = gameReducer(fastTimelineState, {

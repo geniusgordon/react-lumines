@@ -32,7 +32,6 @@ export interface Timeline {
   timer: number; // Frames until next column movement
   active: boolean; // Whether timeline is currently sweeping
   holdingScore: number; // Accumulated points waiting to be cleared
-  markedCells: Square[]; // Individual cells marked for clearing
 }
 
 // Square for clearing detection
@@ -84,7 +83,7 @@ export interface GameState {
 
   // Pattern detection
   detectedPatterns: Square[]; // Currently detected 2x2 patterns
-  markedPatterns: Square[]; // Patterns marked for clearing
+  markedCells: Square[]; // Individual cells marked for clearing
 
   // Timing (all integer frame counts)
   frame: number; // Current frame number
