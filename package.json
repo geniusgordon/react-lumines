@@ -23,7 +23,8 @@
     "polished": "^4.3.1",
     "random-seed": "^0.3.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
@@ -36,6 +37,7 @@
     "@types/random-seed": "^0.3.5",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.4.1",
     "@vitest/ui": "^3.2.3",
     "autoprefixer": "^10.4.21",

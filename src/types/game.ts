@@ -43,13 +43,11 @@ export interface Square {
 
 // Game status states
 export type GameStatus =
-  | 'start'
   | 'countdown'
   | 'countdownPaused'
   | 'playing'
   | 'paused'
-  | 'gameOver'
-  | 'replay';
+  | 'gameOver';
 
 // Game action types
 export type GameActionType =
@@ -64,7 +62,6 @@ export type GameActionType =
   | 'RESUME'
   | 'RESTART'
   | 'START_GAME'
-  | 'GAME_OVER'
   | 'SET_DEBUG_MODE'; // Toggle debug mode and logging
 
 // Game action structure

@@ -5,7 +5,7 @@ import type { GameState } from '@/types/game';
 
 import { BoardGrid } from '../BoardGrid';
 import { CurrentBlock } from '../CurrentBlock';
-import { Countdown } from '../GameScreen/Countdown';
+import { Countdown } from '../Game/Countdown';
 import { Timeline as TimelineComponent } from '../Timeline';
 
 import { DetectedPatterns } from './DetectedPatterns';

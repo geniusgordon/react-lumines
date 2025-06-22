@@ -21,9 +21,9 @@ export function KeyboardShortcuts({
   );
 
   return (
-    <div className="rounded-md bg-gray-800/80 p-2 text-xs text-gray-400">
-      <div className="mb-1 font-medium text-gray-300">Keyboard Shortcuts:</div>
-      <div className="space-y-1">
+    <div className="rounded-lg bg-gray-800/50 p-4">
+      <h3 className="mb-3 text-sm font-medium text-gray-300">Controls</h3>
+      <div className="space-y-1 text-xs text-gray-400">
         <div className="flex justify-between">
           <span>Move Left:</span>
           {renderKeys(controlsConfig.moveLeft)}

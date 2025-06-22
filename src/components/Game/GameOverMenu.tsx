@@ -1,5 +1,6 @@
 import { RotateCcw, Home, Trophy } from 'lucide-react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { GameState, GameAction, ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
@@ -15,6 +16,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   dispatch,
   controlsConfig,
 }) => {
+  const navigate = useNavigate();
   const { status, score } = gameState;
 
   if (status !== 'gameOver') {
@@ -26,7 +28,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   };
 
   const handleQuit = () => {
-    dispatch({ type: 'RESTART', frame: gameState.frame });
+    navigate('/');
   };
 
   return (

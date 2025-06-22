@@ -74,7 +74,7 @@
 - [x] Score display
 - [x] Timer count down ✅ **NEW!** - 3, 2, 1 countdown when starting + 60-second game timer
 - [x] Pause menu ✅ **NEW!** - Full pause menu overlay with resume, restart, and quit options
-- [ ] Game over screen
+- [x] Game over screen
 - [ ] Start screen
 
 #### Phase 6: Replay System

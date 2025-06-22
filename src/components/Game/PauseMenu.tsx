@@ -1,5 +1,6 @@
 import { Play, RotateCcw, Home, Pause } from 'lucide-react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { GameState, GameAction, ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
@@ -15,6 +16,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
   dispatch,
   controlsConfig,
 }) => {
+  const navigate = useNavigate();
   const { status } = gameState;
 
   if (status !== 'paused' && status !== 'countdownPaused') {
@@ -30,7 +32,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
   };
 
   const handleQuit = () => {
-    dispatch({ type: 'RESTART', frame: gameState.frame });
+    navigate('/');
   };
 
   return (
