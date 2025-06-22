@@ -1,7 +1,6 @@
 import {
   GAME_CONFIG,
   DEFAULT_VALUES,
-  TIME_ATTACK_CONFIG,
   TIMER_CONFIG,
 } from '@/constants/gameConfig';
 import type { GameState, GameAction, Square } from '@/types/game';
@@ -46,7 +45,7 @@ export function createInitialGameState(
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
 
     // Game flow
-    status: 'start',
+    status: 'countdown',
     score: 0,
 
     // Timer system
@@ -59,7 +58,7 @@ export function createInitialGameState(
     // Timing
     frame: 0,
     dropTimer: 0,
-    dropInterval: TIME_ATTACK_CONFIG.FIXED_DROP_INTERVAL,
+    dropInterval: TIMER_CONFIG.FIXED_DROP_INTERVAL,
 
     // Timeline
     timeline: {
@@ -635,7 +634,7 @@ function placeCurrentBlock(
     queue: newQueue,
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
     dropTimer: 0,
-    dropInterval: TIME_ATTACK_CONFIG.FIXED_DROP_INTERVAL, // Keep constant speed
+    dropInterval: TIMER_CONFIG.FIXED_DROP_INTERVAL,
     rngState: rng.getState(),
     frame,
   };

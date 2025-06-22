@@ -6,6 +6,8 @@ import { GameBoard } from '../GameBoard';
 import { Queue } from '../Queue';
 import { ScoreDisplay } from '../ScoreDisplay';
 
+import { Countdown } from './Countdown';
+
 export interface GameScreenProps {
   gameState: GameState;
 }
@@ -47,6 +49,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ gameState }) => {
           gameStatus={gameState.status}
         />
       </div>
+
+      <Countdown gameState={gameState} />
     </div>
   );
 };

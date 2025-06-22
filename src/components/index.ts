@@ -5,6 +5,7 @@ export { BoardGrid } from './BoardGrid';
 export { DebugPanel } from './DebugPanel';
 export { GameBoard } from './GameBoard';
 export { GameScreen } from './GameScreen';
+export { PauseMenu } from './GameScreen';
 export { Timeline } from './Timeline';
 export { Queue } from './Queue';
 export { ScoreDisplay } from './ScoreDisplay';

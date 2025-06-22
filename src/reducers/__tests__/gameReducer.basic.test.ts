@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { TIMER_CONFIG } from '@/constants/gameConfig';
 import type { GameState, GameAction, GameActionType } from '@/types/game';
 import { createEmptyBoard } from '@/utils/gameLogic';
 
@@ -14,7 +15,7 @@ describe('Game Reducer - Basic Functionality', () => {
 
   describe('Initial state creation', () => {
     it('should create valid initial state', () => {
-      expect(initialState.status).toBe('start');
+      expect(initialState.status).toBe('countdown');
       expect(initialState.score).toBe(0);
       expect(initialState.frame).toBe(0);
       expect(initialState.seed).toBe(12345);
@@ -84,7 +85,7 @@ describe('Game Reducer - Basic Functionality', () => {
       const action: GameAction = { type: 'RESTART', frame: 0 };
       const newState = gameReducer(gameOverState, action);
 
-      expect(newState.status).toBe('start');
+      expect(newState.status).toBe('countdown');
       expect(newState.score).toBe(0);
       expect(newState.frame).toBe(0);
       expect(newState.board).toEqual(createEmptyBoard());
@@ -137,19 +138,28 @@ describe('Game Reducer - Basic Functionality', () => {
       let state = gameReducer(initialState, startAction);
 
       // First countdown (3 -> 2)
-      const tick1: GameAction = { type: 'TICK', frame: 60 };
+      const tick1: GameAction = {
+        type: 'TICK',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
+      };
       state = gameReducer(state, tick1);
       expect(state.countdown).toBe(2);
       expect(state.status).toBe('countdown');
 
       // Second countdown (2 -> 1)
-      const tick2: GameAction = { type: 'TICK', frame: 120 };
+      const tick2: GameAction = {
+        type: 'TICK',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION * 2,
+      };
       state = gameReducer(state, tick2);
       expect(state.countdown).toBe(1);
       expect(state.status).toBe('countdown');
 
       // Final countdown (1 -> 0, start playing)
-      const tick3: GameAction = { type: 'TICK', frame: 180 };
+      const tick3: GameAction = {
+        type: 'TICK',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION * 3,
+      };
       state = gameReducer(state, tick3);
       expect(state.countdown).toBe(0);
       expect(state.status).toBe('playing');
@@ -197,24 +207,36 @@ describe('Game Reducer - Basic Functionality', () => {
       expect(state.status).toBe('countdown');
 
       // Advance to frame 30 (halfway through first countdown)
-      const tick1: GameAction = { type: 'TICK', frame: 30 };
+      const tick1: GameAction = {
+        type: 'TICK',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
+      };
       state = gameReducer(state, tick1);
-      expect(state.countdown).toBe(3); // Still on 3
+      expect(state.countdown).toBe(2);
 
       // Pause during countdown
-      const pauseAction: GameAction = { type: 'PAUSE', frame: 30 };
+      const pauseAction: GameAction = {
+        type: 'PAUSE',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
+      };
       state = gameReducer(state, pauseAction);
       expect(state.status).toBe('countdownPaused');
 
       // Resume - since useGameLoop stops during pause, frame doesn't advance
-      const resumeAction: GameAction = { type: 'RESUME', frame: 30 };
+      const resumeAction: GameAction = {
+        type: 'RESUME',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
+      };
       state = gameReducer(state, resumeAction);
       expect(state.status).toBe('countdown');
 
-      // Continue ticking from where we left off (frame 30 -> 60)
-      const tick2: GameAction = { type: 'TICK', frame: 60 };
+      // Continue ticking from where we left off
+      const tick2: GameAction = {
+        type: 'TICK',
+        frame: TIMER_CONFIG.COUNTDOWN_DURATION * 2,
+      };
       state = gameReducer(state, tick2);
-      expect(state.countdown).toBe(2); // Should decrement to 2
+      expect(state.countdown).toBe(1);
     });
   });
 

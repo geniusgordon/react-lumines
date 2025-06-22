@@ -1,5 +1,6 @@
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import type { ControlsConfig } from '@/types/game';
+import { formatKey } from '@/utils/keyboard';
 
 interface KeyboardShortcutsProps {
   controlsConfig?: ControlsConfig;
@@ -8,15 +9,6 @@ interface KeyboardShortcutsProps {
 export function KeyboardShortcuts({
   controlsConfig = DEFAULT_CONTROLS,
 }: KeyboardShortcutsProps) {
-  // Helper function to format key names for display
-  const formatKey = (key: string) => {
-    return key
-      .replace('Key', '')
-      .replace('Arrow', '')
-      .replace('Escape', 'Esc')
-      .replace('Space', 'Space');
-  };
-
   // Helper function to render key badges
   const renderKeys = (keys: string[]) => (
     <div className="ml-4 space-x-1">

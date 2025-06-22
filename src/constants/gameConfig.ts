@@ -8,10 +8,16 @@ export const BLOCK_SIZE = 2;
 // Timing constants (deterministic frame-based)
 export const TARGET_FPS = 60;
 export const FRAME_INTERVAL_MS = 1000 / TARGET_FPS; // 16.67ms per frame
-export const INITIAL_DROP_INTERVAL = 48; // frames (0.8 seconds at 60 FPS)
 
-// Timeline sweep speed
-export const TIMELINE_SWEEP_INTERVAL = 10; // frames per column (deterministic like block drops)
+// Timer constants
+export const TIMER_CONFIG = {
+  FIXED_DROP_INTERVAL: 60, // Constant drop speed (frames between drops)
+  COUNTDOWN_START: 3, // Start countdown from 3
+  COUNTDOWN_DURATION: 20, // 20 frames per countdown
+  GAME_DURATION_FRAMES: 60 * TARGET_FPS, // 60 seconds * 60 FPS = 3600 frames
+  GAME_DURATION_SECONDS: 60, // 60 seconds total game time
+  TIMELINE_SWEEP_INTERVAL: (60 * TARGET_FPS) / 15 / BOARD_WIDTH, // Timeline frames per column (15 rounds for 60 seconds)
+};
 
 // Control key mappings
 export const DEFAULT_CONTROLS: ControlsConfig = {
@@ -36,10 +42,10 @@ export const GAME_CONFIG: GameConfig = {
   timing: {
     targetFPS: TARGET_FPS,
     frameInterval: FRAME_INTERVAL_MS,
-    initialDropInterval: INITIAL_DROP_INTERVAL,
+    initialDropInterval: TIMER_CONFIG.FIXED_DROP_INTERVAL,
   },
   timeline: {
-    speed: TIMELINE_SWEEP_INTERVAL,
+    speed: TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL,
   },
   controls: DEFAULT_CONTROLS,
 };
@@ -91,20 +97,6 @@ export const BLOCK_PATTERNS = [
   ],
 ];
 
-// Time attack mode
-export const TIME_ATTACK_CONFIG = {
-  FIXED_DROP_INTERVAL: 48, // Constant drop speed (frames between drops)
-  GAME_DURATION: 60000, // 1 minute in milliseconds (optional for timed mode)
-};
-
-// Timer constants
-export const TIMER_CONFIG = {
-  COUNTDOWN_START: 3, // Start countdown from 3
-  COUNTDOWN_DURATION: 20, // 20 frames per countdown
-  GAME_DURATION_FRAMES: 3600, // 60 seconds * 60 FPS = 3600 frames
-  GAME_DURATION_SECONDS: 60, // 60 seconds total game time
-};
-
 // Default game state values
 export const DEFAULT_VALUES = {
   SEED: 12345, // Default seed for testing
@@ -112,7 +104,7 @@ export const DEFAULT_VALUES = {
   INITIAL_POSITION: { x: 7, y: -2 }, // Center top of board, higher to avoid collision
   TIMELINE_START: {
     x: 0,
-    speed: TIMELINE_SWEEP_INTERVAL,
+    speed: TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL,
     timer: 0,
     active: true,
   }, // Frame-based timing

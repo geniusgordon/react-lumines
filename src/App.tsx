@@ -1,9 +1,13 @@
-import { Gamepad2 } from 'lucide-react';
 import { useReducer } from 'react';
 
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 
-import { GameScreen, DebugPanel, KeyboardShortcuts } from './components';
+import {
+  GameScreen,
+  DebugPanel,
+  KeyboardShortcuts,
+  PauseMenu,
+} from './components';
 import { useControls, useGameLoop } from './hooks';
 import {
   gameReducerWithDebug,
@@ -44,6 +48,12 @@ function App() {
       </div>
 
       <GameScreen gameState={gameState} />
+
+      <PauseMenu
+        gameState={gameState}
+        controlsConfig={DEFAULT_CONTROLS}
+        dispatch={dispatch}
+      />
     </div>
   );
 }

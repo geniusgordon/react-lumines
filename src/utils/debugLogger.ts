@@ -61,12 +61,6 @@ export function logDebugAction(
         to: newState.detectedPatterns.length,
       };
     }
-    if (state.markedPatterns.length !== newState.markedPatterns.length) {
-      stateChanges.markedPatterns = {
-        from: state.markedPatterns.length,
-        to: newState.markedPatterns.length,
-      };
-    }
 
     if (Object.keys(stateChanges).length > 0) {
       console.log('📊 State Changes:', stateChanges);
@@ -103,15 +97,11 @@ export function logCurrentBlock(
   console.groupEnd();
 }
 
-export function logPatterns(
-  detectedPatterns: Square[],
-  markedPatterns: Square[]
-): void {
+export function logPatterns(detectedPatterns: Square[]): void {
   console.groupCollapsed('🔍 Pattern Detection');
 
   console.log('📊 Pattern Summary:');
   console.log(`   🔍 Detected: ${detectedPatterns.length} pattern(s)`);
-  console.log(`   ✨ Marked: ${markedPatterns.length} pattern(s)`);
 
   if (detectedPatterns.length > 0) {
     console.log('\n🎯 Detected Patterns:');
@@ -123,31 +113,11 @@ export function logPatterns(
     });
   }
 
-  if (markedPatterns.length > 0) {
-    console.log('\n✨ Marked Patterns (ready for clearing):');
-    markedPatterns.forEach((pattern, index) => {
-      const colorName = pattern.color === 1 ? 'Light' : 'Dark';
-      console.log(
-        `   ${index + 1}. Position (${pattern.x}, ${pattern.y}) - ${colorName} (${pattern.color})`
-      );
-    });
-  }
-
-  if (detectedPatterns.length === 0 && markedPatterns.length === 0) {
-    console.log('   No patterns detected or marked');
-  }
-
   console.groupEnd();
 }
 
 export function logGameBoard(gameState: GameState, message: string): void {
-  const {
-    board,
-    blockPosition,
-    currentBlock,
-    detectedPatterns,
-    markedPatterns,
-  } = gameState;
+  const { board, blockPosition, currentBlock, detectedPatterns } = gameState;
 
   // Board visualization
   console.groupCollapsed(`🗂️ Current Board State - ${message}`);
@@ -201,7 +171,7 @@ export function logGameBoard(gameState: GameState, message: string): void {
 
   // Track marked pattern positions (2x2 each)
   const markedPositions = new Set<string>();
-  markedPatterns.forEach(square => {
+  detectedPatterns.forEach(square => {
     for (let py = 0; py < 2; py++) {
       for (let px = 0; px < 2; px++) {
         markedPositions.add(`${square.y + py},${square.x + px}`);
@@ -261,7 +231,7 @@ export function logGameState(gameState: GameState): void {
 
   logGameBoard(gameState, 'Game State');
 
-  logPatterns(gameState.detectedPatterns, gameState.markedPatterns);
+  logPatterns(gameState.detectedPatterns);
 
   // Enhanced Queue preview
   console.groupCollapsed('🔮 Block Queue Preview');

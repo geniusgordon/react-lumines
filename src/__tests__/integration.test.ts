@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
+import { BOARD_WIDTH, TIMER_CONFIG } from '@/constants';
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 import type {
   GameAction,
@@ -132,19 +133,19 @@ describe('Integration Tests', () => {
       expect(currentState.timeline.x).toBe(0);
       expect(currentState.timeline.timer).toBe(0);
 
-      // Advance timeline through multiple ticks (speed = 10 frames per column)
-      for (let i = 0; i < 10; i++) {
+      // Advance timeline through multiple ticks (speed = TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL frames per column)
+      for (let i = 0; i < TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL; i++) {
         currentState = gameReducer(currentState, {
           type: 'TICK',
-          frame: i * 10,
+          frame: i * TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL,
         });
 
-        if (i === 9) {
-          // After 10 ticks, timeline should move to column 1
+        if (i === TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL - 1) {
+          // After TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL ticks, timeline should move to column 1
           expect(currentState.timeline.x).toBe(1);
           expect(currentState.timeline.timer).toBe(0); // Timer reset
         } else {
-          // Before 10 ticks, timeline should stay at column 0 with increasing timer
+          // Before TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL ticks, timeline should stay at column 0 with increasing timer
           expect(currentState.timeline.x).toBe(0);
           expect(currentState.timeline.timer).toBe(i + 1);
         }
@@ -154,12 +155,16 @@ describe('Integration Tests', () => {
       // Test timeline reset at end (simulate reaching x=15 and moving to x=16)
       currentState = {
         ...currentState,
-        timeline: { ...currentState.timeline, x: 15, timer: 9 },
+        timeline: {
+          ...currentState.timeline,
+          x: BOARD_WIDTH - 1,
+          timer: TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL - 1,
+        },
       };
 
       currentState = gameReducer(currentState, {
         type: 'TICK',
-        frame: 200,
+        frame: TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL * 2,
       });
 
       expect(currentState.timeline.active).toBe(true); // Timeline stays active for continuous sweep
