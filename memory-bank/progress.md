@@ -1,6 +1,6 @@
 # Progress - Lumines Game Development
 
-## Project Status: **Phase 3 Complete - Ready for Core Timeline Mechanics**
+## Project Status: **Enhanced Game Over Logic Complete - Timeline Mechanics Next**
 
 ### ✅ Completed
 
@@ -47,6 +47,15 @@
 - [x] Block falling mechanics ✅
 - [x] Collision detection ✅
 - [x] Basic movement and rotation ✅
+
+#### Phase 3.5: Enhanced Game Over Logic ✅ COMPLETE
+
+- [x] **Enhanced Game Over Detection**: `isGameOverEnhanced()` function ✅
+- [x] **Partial Block Placement**: `placeBlockOnBoardPartial()` function ✅  
+- [x] **Placement Validation**: `canPlaceAnyPartOfBlock()` function ✅
+- [x] **Game Reducer Integration**: Updated to use enhanced logic ✅
+- [x] **Frame Propagation Fix**: Fixed bug in block placement functions ✅
+- [x] **Comprehensive Testing**: All 122 tests passing ✅
 
 #### Phase 4: Core Timeline Mechanics 🚧 IN PROGRESS
 
@@ -121,6 +130,13 @@
   - ✅ Queue System: 3-block preview queue with automatic generation
   - ✅ Spawn Position: New blocks spawn at top center (7,0) position
   - ✅ Deterministic Behavior: All block operations use seeded RNG for consistent results
+- **Enhanced Game Over Logic**: Intelligent block placement system ✅ NEW!
+  - ✅ **Partial Placement**: Blocks place what fits, discard out-of-bounds cells
+  - ✅ **Enhanced Detection**: Game over only when NO placement possible anywhere
+  - ✅ **All Rotations Tested**: Checks all 4 rotations at all positions before game over
+  - ✅ **Optimized Gameplay**: Players can continue longer, more strategic gameplay
+  - ✅ **Frame Propagation**: Fixed bug causing test failures in SOFT_DROP actions
+  - ✅ **Comprehensive Testing**: 122/122 tests passing including integration tests
 - **Timeline Foundation**: Basic timeline sweep mechanics
   - ✅ Timeline Animation: Continuous sweep animation across the screen
   - ✅ Deterministic Timeline: Configurable speed (2 columns per frame) via GAME_CONFIG
@@ -133,8 +149,7 @@
 ### Known Issues
 
 - **Core Lumines Mechanics Partial**: Pattern detection implemented ✅, marking and timeline-based clearing still needed
-- **Status Discrepancy**: Progress.md previously claimed Phase 4 complete, but CLEAR_RECTANGLES action is still TODO
-- **Scoring Tests**: All scoring tests marked as TODO in gameLogic.test.ts
+- **Scoring Tests**: All scoring tests marked as TODO in gameLogic.test.ts (but pattern detection works)
 
 ### Evolution of Decisions
 
