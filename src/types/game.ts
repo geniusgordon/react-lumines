@@ -82,6 +82,10 @@ export interface GameState {
   score: number;
   squaresCleared: number;
 
+  // Pattern detection
+  detectedPatterns: Square[]; // Currently detected 2x2 patterns
+  markedPatterns: Square[]; // Patterns marked for clearing
+
   // Timing (all integer frame counts)
   frame: number; // Current frame number
   dropTimer: number; // Frames until next drop

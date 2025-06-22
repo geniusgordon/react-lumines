@@ -14,6 +14,7 @@ import {
   isGameOver,
   getRotatedPattern,
   applyGravity,
+  detectPatterns,
 } from '@/utils/gameLogic';
 import { SeededRNG } from '@/utils/seededRNG';
 
@@ -44,6 +45,10 @@ export function createInitialGameState(
     status: 'start',
     score: 0,
     squaresCleared: 0,
+
+    // Pattern detection
+    detectedPatterns: [],
+    markedPatterns: [],
 
     // Timing
     frame: 0,
@@ -199,6 +204,19 @@ function handleHardDrop(
 }
 
 /**
+ * Update pattern detection
+ */
+function updatePatternDetection(state: GameState): GameState {
+  // Detect all current 2x2 patterns on the board
+  const detectedPatterns = detectPatterns(state.board);
+
+  return {
+    ...state,
+    detectedPatterns,
+  };
+}
+
+/**
  * Handle game tick - separated into logical sub-functions
  */
 function handleGameTick(
@@ -214,6 +232,9 @@ function handleGameTick(
 
   // Handle block dropping
   newState = updateDropTimer(newState, action.frame, rng);
+
+  // Handle pattern detection
+  newState = updatePatternDetection(newState);
 
   // Handle timeline progression
   newState = updateTimeline(newState);

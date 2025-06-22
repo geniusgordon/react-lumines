@@ -408,4 +408,97 @@ describe('Game Reducer', () => {
       expect(newState).toBe(pausedState); // State should be unchanged
     });
   });
+
+  describe('Pattern detection', () => {
+    it('should detect patterns during game tick', () => {
+      // Create a playing state with a 2x2 pattern on the board
+      const playingState = gameReducer(initialState, {
+        type: 'START_GAME',
+        frame: 0,
+      });
+
+      // Place a 2x2 pattern manually
+      const boardWithPattern = playingState.board.map(row => [...row]);
+      boardWithPattern[8][5] = 1; // light block
+      boardWithPattern[8][6] = 1; // light block
+      boardWithPattern[9][5] = 1; // light block
+      boardWithPattern[9][6] = 1; // light block
+
+      const stateWithPattern = {
+        ...playingState,
+        board: boardWithPattern,
+      };
+
+      // Perform a game tick
+      const result = gameReducer(stateWithPattern, { type: 'TICK', frame: 1 });
+
+      // Should detect the 2x2 pattern
+      expect(result.detectedPatterns).toHaveLength(1);
+      expect(result.detectedPatterns[0]).toEqual({
+        x: 5,
+        y: 8,
+        color: 1 as const,
+      });
+    });
+
+    it('should detect multiple patterns during game tick', () => {
+      const playingState = gameReducer(initialState, {
+        type: 'START_GAME',
+        frame: 0,
+      });
+
+      // Place two separate 2x2 patterns
+      const boardWithPatterns = playingState.board.map(row => [...row]);
+      // Pattern 1 (blue)
+      boardWithPatterns[7][2] = 1;
+      boardWithPatterns[7][3] = 1;
+      boardWithPatterns[8][2] = 1;
+      boardWithPatterns[8][3] = 1;
+      // Pattern 2 (red)
+      boardWithPatterns[7][10] = 2;
+      boardWithPatterns[7][11] = 2;
+      boardWithPatterns[8][10] = 2;
+      boardWithPatterns[8][11] = 2;
+
+      const stateWithPatterns = {
+        ...playingState,
+        board: boardWithPatterns,
+      };
+
+      const result = gameReducer(stateWithPatterns, { type: 'TICK', frame: 1 });
+
+      expect(result.detectedPatterns).toHaveLength(2);
+      expect(result.detectedPatterns).toContainEqual({
+        x: 2,
+        y: 7,
+        color: 1 as const,
+      });
+      expect(result.detectedPatterns).toContainEqual({
+        x: 10,
+        y: 7,
+        color: 2 as const,
+      });
+    });
+
+    it('should clear detected patterns when no patterns exist', () => {
+      const playingState = gameReducer(initialState, {
+        type: 'START_GAME',
+        frame: 0,
+      });
+
+      // Start with some detected patterns
+      const stateWithOldPatterns = {
+        ...playingState,
+        detectedPatterns: [{ x: 5, y: 8, color: 1 as const }],
+      };
+
+      // Perform tick on empty board (no patterns)
+      const result = gameReducer(stateWithOldPatterns, {
+        type: 'TICK',
+        frame: 1,
+      });
+
+      expect(result.detectedPatterns).toHaveLength(0);
+    });
+  });
 });

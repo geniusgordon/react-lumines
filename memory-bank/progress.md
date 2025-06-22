@@ -51,7 +51,7 @@
 #### Phase 4: Core Timeline Mechanics 🚧 IN PROGRESS
 
 - [x] Timeline sweep animation ✅
-- [ ] **Pattern Detection**: Find same-colored 2×2+ regions using flood-fill
+- [x] **Pattern Detection**: Find same-colored 2×2+ regions ✅
 - [ ] **Pattern Marking**: Mark patterns but keep them on board  
 - [ ] **Timeline Clearing**: Clear marked patterns when sweep passes through
 - [ ] **Scoring System**: 1 point per 2×2 square cleared
@@ -125,13 +125,14 @@
   - ✅ Timeline Animation: Continuous sweep animation across the screen
   - ✅ Deterministic Timeline: Configurable speed (2 columns per frame) via GAME_CONFIG
   - ✅ Continuous Sweep: Timeline always moves, resets at end for authentic feel
-  - 🚧 **MISSING**: Pattern detection and marking system
+  - ✅ **Pattern Detection**: Algorithm detects all 2×2 same-colored patterns per frame
+  - 🚧 **MISSING**: Pattern marking system (mark but keep on board)
   - 🚧 **MISSING**: Timeline-triggered clearing (core Lumines mechanic)
   - 🚧 **MISSING**: Scoring system implementation
 
 ### Known Issues
 
-- **Core Lumines Mechanics Missing**: Pattern detection, marking, and timeline-based clearing not yet implemented
+- **Core Lumines Mechanics Partial**: Pattern detection implemented ✅, marking and timeline-based clearing still needed
 - **Status Discrepancy**: Progress.md previously claimed Phase 4 complete, but CLEAR_RECTANGLES action is still TODO
 - **Scoring Tests**: All scoring tests marked as TODO in gameLogic.test.ts
 

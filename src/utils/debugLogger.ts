@@ -4,6 +4,7 @@ import type {
   GameBoard,
   GameState,
   Position,
+  Square,
 } from '@/types/game';
 
 /**
@@ -55,6 +56,18 @@ export function logDebugAction(
         to: newState.dropTimer,
       };
     }
+    if (state.detectedPatterns.length !== newState.detectedPatterns.length) {
+      stateChanges.detectedPatterns = {
+        from: state.detectedPatterns.length,
+        to: newState.detectedPatterns.length,
+      };
+    }
+    if (state.markedPatterns.length !== newState.markedPatterns.length) {
+      stateChanges.markedPatterns = {
+        from: state.markedPatterns.length,
+        to: newState.markedPatterns.length,
+      };
+    }
 
     if (Object.keys(stateChanges).length > 0) {
       console.log('📊 State Changes:', stateChanges);
@@ -91,10 +104,49 @@ export function logCurrentBlock(
   console.groupEnd();
 }
 
+export function logPatterns(
+  detectedPatterns: Square[],
+  markedPatterns: Square[]
+): void {
+  console.groupCollapsed('🔍 Pattern Detection');
+
+  console.log('📊 Pattern Summary:');
+  console.log(`   🔍 Detected: ${detectedPatterns.length} pattern(s)`);
+  console.log(`   ✨ Marked: ${markedPatterns.length} pattern(s)`);
+
+  if (detectedPatterns.length > 0) {
+    console.log('\n🎯 Detected Patterns:');
+    detectedPatterns.forEach((pattern, index) => {
+      const colorName = pattern.color === 1 ? 'Light' : 'Dark';
+      console.log(
+        `   ${index + 1}. Position (${pattern.x}, ${pattern.y}) - ${colorName} (${pattern.color})`
+      );
+    });
+  }
+
+  if (markedPatterns.length > 0) {
+    console.log('\n✨ Marked Patterns (ready for clearing):');
+    markedPatterns.forEach((pattern, index) => {
+      const colorName = pattern.color === 1 ? 'Light' : 'Dark';
+      console.log(
+        `   ${index + 1}. Position (${pattern.x}, ${pattern.y}) - ${colorName} (${pattern.color})`
+      );
+    });
+  }
+
+  if (detectedPatterns.length === 0 && markedPatterns.length === 0) {
+    console.log('   No patterns detected or marked');
+  }
+
+  console.groupEnd();
+}
+
 export function logGameBoard(
   board: GameBoard,
   blockPosition: Position,
-  currentBlock: Block
+  currentBlock: Block,
+  detectedPatterns: Square[] = [],
+  markedPatterns: Square[] = []
 ): void {
   // Board visualization
   console.groupCollapsed('🗂️ Current Board State');
@@ -109,8 +161,10 @@ export function logGameBoard(
   console.log(`   📈 Fill: ${filledCells}/${totalCells} (${fillPercentage}%)`);
 
   // Create visual board representation
-  console.log('\n🎯 Visual Board (with current block):');
-  console.log('Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block\n');
+  console.log('\n🎯 Visual Board (with current block and patterns):');
+  console.log(
+    'Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block, {X}=Detected, <X>=Marked\n'
+  );
 
   // Create a string-based visual representation
   const { x: blockX, y: blockY } = blockPosition;
@@ -134,19 +188,47 @@ export function logGameBoard(
     }
   }
 
+  // Track detected pattern positions (2x2 each)
+  const detectedPositions = new Set<string>();
+  detectedPatterns.forEach(square => {
+    for (let py = 0; py < 2; py++) {
+      for (let px = 0; px < 2; px++) {
+        detectedPositions.add(`${square.y + py},${square.x + px}`);
+      }
+    }
+  });
+
+  // Track marked pattern positions (2x2 each)
+  const markedPositions = new Set<string>();
+  markedPatterns.forEach(square => {
+    for (let py = 0; py < 2; py++) {
+      for (let px = 0; px < 2; px++) {
+        markedPositions.add(`${square.y + py},${square.x + px}`);
+      }
+    }
+  });
+
   // Display the board with proper formatting
   const boardString = board
     .map((row, rowIndex) => {
       const rowString = row
         .map((cell, colIndex) => {
-          const isCurrentBlock = currentBlockPositions.has(
-            `${rowIndex},${colIndex}`
-          );
+          const posKey = `${rowIndex},${colIndex}`;
+          const isCurrentBlock = currentBlockPositions.has(posKey);
+          const isDetected = detectedPositions.has(posKey);
+          const isMarked = markedPositions.has(posKey);
+
           if (isCurrentBlock) {
             const patternY = rowIndex - blockY;
             const patternX = colIndex - blockX;
             const patternValue = pattern[patternY][patternX];
             return `[${patternValue}]`; // Current block
+          }
+          if (isMarked && cell !== 0) {
+            return `<${cell}>`; // Marked pattern
+          }
+          if (isDetected && cell !== 0) {
+            return `{${cell}}`; // Detected pattern
           }
           if (cell === 0) {
             return ' · ';
@@ -179,8 +261,12 @@ export function logGameState(gameState: GameState): void {
   logGameBoard(
     gameState.board,
     gameState.blockPosition,
-    gameState.currentBlock
+    gameState.currentBlock,
+    gameState.detectedPatterns,
+    gameState.markedPatterns
   );
+
+  logPatterns(gameState.detectedPatterns, gameState.markedPatterns);
 
   // Enhanced Queue preview
   console.groupCollapsed('🔮 Block Queue Preview');
