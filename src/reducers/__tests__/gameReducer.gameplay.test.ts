@@ -41,7 +41,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         ...playingState,
         timeline: {
           x: 5,
-          speed: 1,
+          sweepInterval: 1,
           timer: 0,
           active: true,
           holdingScore: 0,
@@ -62,7 +62,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         ...playingState,
         timeline: {
           x: 5,
-          speed: 10,
+          sweepInterval: 10,
           timer: 3,
           active: true,
           holdingScore: 0,
@@ -83,7 +83,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         ...playingState,
         timeline: {
           x: 15,
-          speed: 1,
+          sweepInterval: 1,
           timer: 0,
           active: true,
           holdingScore: 0,
@@ -174,7 +174,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         board: complexBoard,
         timeline: {
           x: 5, // Timeline will clear the pattern
-          speed: 1,
+          sweepInterval: 1,
           timer: 0,
           active: true,
           holdingScore: 0,
@@ -511,7 +511,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         ] as GameBoard,
         timeline: {
           x: 5, // Timeline will clear the pattern
-          speed: 1,
+          sweepInterval: 1,
           timer: 0,
           active: true,
           holdingScore: 0,
