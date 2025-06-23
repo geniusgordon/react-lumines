@@ -18,20 +18,16 @@ export const GridCell: React.FC<GridCellProps> = ({ value, x, y }) => {
     const baseClasses =
       'w-block-size h-block-size border border-solid border-game-grid box-border relative';
 
-    // Color classes based on cell value
-    let colorClasses = '';
+    let className = '';
     if (value === 0) {
-      colorClasses = 'bg-game-empty opacity-80';
+      className = 'bg-game-empty';
     } else if (value === 1) {
-      colorClasses = 'bg-block-white opacity-100';
+      className = 'bg-block-light';
     } else if (value === 2) {
-      colorClasses = 'bg-block-orange opacity-100';
-    } else if (value === -1) {
-      // Marked for clearing
-      colorClasses = 'bg-block-white opacity-75';
+      className = 'bg-block-dark';
     }
 
-    return `${baseClasses} ${colorClasses}`.trim();
+    return `${baseClasses} ${className}`.trim();
   };
 
   return (

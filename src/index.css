@@ -3,8 +3,8 @@
 /* Tailwind v4 theme configuration */
 @theme {
   --spacing-block-size: 32px; /* Size of each game block */
-  --color-block-white: #fafafa; /* White blocks - clear and neutral */
-  --color-block-orange: #ff9800; /* Orange blocks - vibrant accent */
+  --color-block-light: #fafafa; /* Light blocks - white */
+  --color-block-dark: #ff9800; /* Dark blocks - orange */
   --color-block-dark-detected: #ffb74d; /* Dark detected blocks - orange */
   --color-block-light-detected: #e0e0e0; /* Light detected blocks - gray */
   --color-block-marked: #757575; /* Marked clear blocks - gray */
