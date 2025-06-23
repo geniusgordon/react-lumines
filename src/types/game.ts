@@ -41,6 +41,14 @@ export interface Square {
   color: CellValue;
 }
 
+// Falling cell representation
+export interface FallingCell {
+  x: number; // Current horizontal column (0 to BOARD_WIDTH-1)
+  y: number; // Current vertical row (0 to BOARD_HEIGHT-1)
+  color: CellValue; // Color of the cell
+  timer: number; // Frames until next cell movement
+}
+
 // Game status states
 export type GameStatus =
   | 'countdown'
@@ -98,6 +106,9 @@ export interface GameState {
 
   // Timeline sweep
   timeline: Timeline;
+
+  // Falling cells
+  fallingCells: FallingCell[];
 
   // Deterministic system
   seed: string;

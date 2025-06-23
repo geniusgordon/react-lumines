@@ -69,6 +69,9 @@ export function createInitialGameState(
       holdingScore: 0,
     },
 
+    // Falling cells
+    fallingCells: [],
+
     // Pattern clearing
     markedCells: [],
 

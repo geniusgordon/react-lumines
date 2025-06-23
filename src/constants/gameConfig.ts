@@ -17,6 +17,7 @@ export const TIMER_CONFIG = {
   GAME_DURATION_FRAMES: 60 * TARGET_FPS, // 60 seconds * 60 FPS = 3600 frames
   GAME_DURATION_SECONDS: 60, // 60 seconds total game time
   TIMELINE_SWEEP_INTERVAL: (60 * TARGET_FPS) / 15 / BOARD_WIDTH, // Timeline frames per column (15 rounds for 60 seconds)
+  FALLING_CELL_INTERVAL: 5, // Falling cell interval (frames between falling cells)
 };
 
 // Control key mappings

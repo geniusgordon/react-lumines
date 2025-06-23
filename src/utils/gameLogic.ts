@@ -16,6 +16,8 @@ import type {
   BlockPattern,
   Rotation,
   ValidMove,
+  GameState,
+  FallingCell,
 } from '@/types/game';
 
 import { SeededRNG } from './seededRNG';
