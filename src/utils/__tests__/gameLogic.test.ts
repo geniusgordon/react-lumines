@@ -325,18 +325,11 @@ describe('Game Logic', () => {
       expect(patterns).toHaveLength(0);
     });
 
-    it('should ignore empty cells and marked cells', () => {
-      // Create a pattern with marked cells (should be ignored)
-      board[3][3] = -1; // marked
-      board[3][4] = -1; // marked
-      board[4][3] = -1; // marked
-      board[4][4] = -1; // marked
-
-      // Create a pattern with empty cells (should be ignored)
-      board[6][6] = 0; // empty
-      board[6][7] = 0; // empty
-      board[7][6] = 0; // empty
-      board[7][7] = 0; // empty
+    it('should ignore empty cells', () => {
+      board[6][6] = 0;
+      board[6][7] = 0;
+      board[7][6] = 0;
+      board[7][7] = 0;
 
       const patterns = detectPatterns(board);
 

@@ -1,7 +1,7 @@
 // Game Types - Lumines Game Type Definitions
 
 // Cell values
-export type CellValue = -1 | 0 | 1 | 2; // 0 = empty, 1 = light, 2 = dark, -1 = marked for clearing
+export type CellValue = 0 | 1 | 2; // 0 = empty, 1 = light, 2 = dark
 
 // Game board representation
 export type GameBoard = CellValue[][];
@@ -27,8 +27,8 @@ export interface Block {
 
 // Timeline sweep state
 export interface Timeline {
-  x: number; // Current horizontal position (0 to BOARD_WIDTH-1)
-  speed: number; // Timeline sweep interval in frames per column
+  x: number; // Current horizontal column (0 to BOARD_WIDTH-1)
+  sweepInterval: number; // Timeline sweep interval in frames per column
   timer: number; // Frames until next column movement
   active: boolean; // Whether timeline is currently sweeping
   holdingScore: number; // Accumulated points waiting to be cleared

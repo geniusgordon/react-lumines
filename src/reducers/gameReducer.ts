@@ -63,7 +63,7 @@ export function createInitialGameState(
     // Timeline
     timeline: {
       x: 0,
-      speed: GAME_CONFIG.timeline.speed,
+      sweepInterval: GAME_CONFIG.timeline.speed,
       timer: 0,
       active: true,
       holdingScore: 0,
@@ -366,7 +366,7 @@ function updateTimeline(state: GameState): GameState {
   const newTimer = state.timeline.timer + 1;
 
   // Check if it's time to move timeline one column
-  if (newTimer >= state.timeline.speed) {
+  if (newTimer >= state.timeline.sweepInterval) {
     return advanceTimelineToNextColumn(state);
   }
 
@@ -388,7 +388,7 @@ function advanceTimelineToNextColumn(state: GameState): GameState {
   const nextColumn = (currentColumn + 1) % GAME_CONFIG.board.width;
 
   // Process the current column before moving
-  const processedState = processTimelineColumn(state, currentColumn);
+  const processedState = processTimelineColumn(state, nextColumn);
 
   return {
     ...processedState,

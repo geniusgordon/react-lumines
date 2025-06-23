@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { Timeline as TimelineType } from '@/types/game';
 
@@ -11,15 +11,20 @@ export interface TimelineProps {
  * Renders a vertical line that moves from left to right across the board
  */
 export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
+  const interpolatedX = useMemo(() => {
+    const percent = timeline.timer / timeline.sweepInterval;
+    return timeline.x + percent;
+  }, [timeline]);
+
   if (!timeline.active) {
     return null;
   }
 
   return (
     <div
-      className={`bg-game-timeline absolute top-0 z-30 h-full w-0.5`}
+      className="bg-game-timeline absolute top-0 z-30 h-full w-0.5"
       style={{
-        left: `calc(${timeline.x} * var(--spacing-block-size))`,
+        left: `calc(${interpolatedX} * var(--spacing-block-size))`,
       }}
     >
       <div className="border-game-timeline -top-block-size h-block-size absolute right-0 flex w-12 items-center justify-end border-2 border-solid bg-black pr-2">

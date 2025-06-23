@@ -43,7 +43,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 3, // Timeline at column 3
-          timer: playingState.timeline.speed - 1, // About to move
+          timer: playingState.timeline.sweepInterval - 1, // About to move
           holdingScore: 0,
         },
         markedCells: [],
@@ -101,7 +101,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 5, // Timeline at column 5 (no patterns)
-          timer: playingState.timeline.speed - 1, // About to move
+          timer: playingState.timeline.sweepInterval - 1, // About to move
           holdingScore: 3, // Some accumulated score
         },
         markedCells: [
@@ -179,7 +179,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 5, // Timeline at column 5, pattern in previous column 4
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 2,
         },
         markedCells: [
@@ -244,7 +244,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 5,
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 0,
         },
         markedCells: [],
@@ -289,7 +289,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 5,
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 0,
         },
         markedCells: [],
@@ -330,7 +330,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 15, // Last column
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 1,
         },
         markedCells: [{ x: 14, y: 8, color: 1 as const }],
@@ -376,7 +376,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 5, // Timeline at column 5, pattern in previous column 4
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 0,
         },
         markedCells: [],
@@ -411,7 +411,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 3,
-          timer: playingState.timeline.speed - 1, // One frame before moving
+          timer: playingState.timeline.sweepInterval - 1, // One frame before moving
           // Use default speed (10 frames from config)
           holdingScore: 0,
         },
@@ -484,7 +484,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 0, // Timeline at column 0
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 0,
         },
         markedCells: [],
@@ -508,7 +508,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 15, // Last column
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 0,
         },
         markedCells: [],
@@ -553,7 +553,7 @@ describe('Game Reducer - Timeline Processing', () => {
         timeline: {
           ...playingState.timeline,
           x: 10, // Timeline far from marked columns
-          timer: playingState.timeline.speed - 1,
+          timer: playingState.timeline.sweepInterval - 1,
           holdingScore: 5,
         },
         markedCells: [

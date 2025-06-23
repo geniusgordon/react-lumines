@@ -186,7 +186,7 @@ export function logGameBoard(gameState: GameState, message: string): void {
   console.log(`   📏 Dimensions: ${board[0].length}×${board.length}`);
   console.log(`   📈 Fill: ${filledCells}/${totalCells} (${fillPercentage}%)`);
   console.log(
-    `   🔄 Timeline: Column ${timeline.x} (Timer: ${timeline.timer}/${timeline.speed})`
+    `   🔄 Timeline: Column ${timeline.x} (Timer: ${timeline.timer}/${timeline.sweepInterval})`
   );
   console.log(`   💰 Holding Score: ${timeline.holdingScore}`);
   console.log(`   🎯 Detected Patterns: ${detectedPatterns.length}`);
@@ -338,7 +338,7 @@ export function logGameState(gameState: GameState): void {
   console.log('📍 Timeline Position:', `Column ${gameState.timeline.x}`);
   console.log(
     '⏲️ Timeline Timer:',
-    `${gameState.timeline.timer}/${gameState.timeline.speed}`
+    `${gameState.timeline.timer}/${gameState.timeline.sweepInterval}`
   );
   console.log('💰 Holding Score:', gameState.timeline.holdingScore);
   console.log('🔄 Timeline Active:', gameState.timeline.active);
