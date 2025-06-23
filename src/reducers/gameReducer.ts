@@ -505,32 +505,37 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   };
 
   switch (action.type) {
-    case 'START_GAME':
+    case 'START_GAME': {
       return {
         ...createInitialGameState(state.seed),
         status: 'countdown',
         frame: action.frame,
         debugMode: state.debugMode,
       };
+    }
 
-    case 'PAUSE':
+    case 'PAUSE': {
       if (state.status === 'playing') {
         return { ...state, status: 'paused', frame: action.frame };
       } else if (state.status === 'countdown') {
         return { ...state, status: 'countdownPaused', frame: action.frame };
       }
       return state;
+    }
 
-    case 'RESUME':
+    case 'RESUME': {
       if (state.status === 'paused') {
         return { ...state, status: 'playing', frame: action.frame };
       } else if (state.status === 'countdownPaused') {
         return { ...state, status: 'countdown', frame: action.frame };
       }
       return state;
+    }
 
-    case 'RESTART':
-      return createInitialGameState(state.seed, state.debugMode);
+    case 'RESTART': {
+      const newSeed = Date.now().toString();
+      return createInitialGameState(newSeed, state.debugMode);
+    }
 
     case 'SET_DEBUG_MODE': {
       const newDebugMode = action.payload as boolean;

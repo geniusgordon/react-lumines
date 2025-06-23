@@ -25,9 +25,14 @@ export const Game: React.FC<GameProps> = ({ scale }) => {
     return urlParams.get('debug') === 'true';
   }, []);
 
+  const seed = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('seed') ?? Date.now().toString();
+  }, []);
+
   const [gameState, dispatch] = useReducer(
     gameReducerWithDebug,
-    createInitialGameState(undefined, showDebugPanel)
+    createInitialGameState(seed, showDebugPanel)
   );
 
   const controls = useControls(gameState, dispatch, {
