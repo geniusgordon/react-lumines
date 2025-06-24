@@ -2,6 +2,7 @@ import { Play, RotateCcw, Home, Pause } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/Button';
 import type { GameState, GameAction, ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
 
@@ -52,32 +53,35 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
         </div>
 
         <div className="space-y-3">
-          <button
+          <Button
             onClick={handleResume}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3 font-medium text-white shadow-lg transition-all hover:from-green-500 hover:to-emerald-500 focus:ring-2 focus:ring-green-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
-            title="Resume the current game"
+            variant="primary"
+            size="lg"
+            icon={Play}
+            fullWidth
           >
-            <Play className="h-4 w-4" />
-            <span className="text-lg">Resume Game</span>
-          </button>
+            Resume Game
+          </Button>
 
-          <button
+          <Button
             onClick={handleRestart}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r from-gray-600 to-gray-700 px-4 py-3 font-medium text-gray-100 shadow-lg transition-all hover:from-gray-500 hover:to-gray-600 focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
-            title="Start a new game from the beginning"
+            variant="secondary"
+            size="lg"
+            icon={RotateCcw}
+            fullWidth
           >
-            <RotateCcw className="h-4 w-4" />
-            <span className="text-lg">Restart Game</span>
-          </button>
+            Restart Game
+          </Button>
 
-          <button
+          <Button
             onClick={handleQuit}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 font-medium text-red-100 shadow-lg transition-all hover:from-red-500 hover:to-red-600 focus:ring-2 focus:ring-red-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
-            title="Return to the main menu"
+            variant="warning"
+            size="lg"
+            icon={Home}
+            fullWidth
           >
-            <Home className="h-4 w-4" />
-            <span className="text-lg">Quit to Menu</span>
-          </button>
+            Quit to Menu
+          </Button>
         </div>
 
         <div className="mt-8 border-t border-slate-600/30 pt-6">

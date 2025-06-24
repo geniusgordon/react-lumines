@@ -56,6 +56,7 @@ export interface FallingColumn {
 
 // Game status states
 export type GameStatus =
+  | 'initial'
   | 'countdown'
   | 'countdownPaused'
   | 'playing'

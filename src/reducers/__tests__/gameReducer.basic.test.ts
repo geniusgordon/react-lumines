@@ -15,7 +15,7 @@ describe('Game Reducer - Basic Functionality', () => {
 
   describe('Initial state creation', () => {
     it('should create valid initial state', () => {
-      expect(initialState.status).toBe('countdown');
+      expect(initialState.status).toBe('initial');
       expect(initialState.score).toBe(0);
       expect(initialState.frame).toBe(0);
       expect(initialState.seed).toBe('12345');
@@ -85,7 +85,7 @@ describe('Game Reducer - Basic Functionality', () => {
       const action: GameAction = { type: 'RESTART', frame: 0 };
       const newState = gameReducer(gameOverState, action);
 
-      expect(newState.status).toBe('countdown');
+      expect(newState.status).toBe('initial');
       expect(newState.score).toBe(0);
       expect(newState.frame).toBe(0);
       expect(newState.board).toEqual(createEmptyBoard());

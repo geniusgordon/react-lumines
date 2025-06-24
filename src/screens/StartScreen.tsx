@@ -19,7 +19,7 @@ export const StartScreen: React.FC = () => {
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8 shadow-2xl backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8">
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-5xl font-bold tracking-tight text-white">
             Lumines

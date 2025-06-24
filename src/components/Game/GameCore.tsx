@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 
 import {
   GameLayout,
@@ -36,15 +36,12 @@ export const GameCore: React.FC<GameCoreProps> = ({
     return urlParams.get('seed') ?? Date.now().toString();
   }, [replayMode, replayData]);
 
-  const { gameState, gameLoop, dispatch, startReplayPlayback } =
-    useGameWithReplay(seed, showDebugPanel);
-
-  // Start replay playback when in replay mode
-  useEffect(() => {
-    if (replayMode && replayData) {
-      startReplayPlayback(replayData);
-    }
-  }, [replayMode, replayData, startReplayPlayback]);
+  const { gameState, gameLoop, dispatch } = useGameWithReplay(
+    seed,
+    showDebugPanel,
+    replayMode,
+    replayData
+  );
 
   const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
     gameLoop;
@@ -70,15 +67,13 @@ export const GameCore: React.FC<GameCoreProps> = ({
         />
       )}
 
-      <div className="flex w-full flex-1 items-center justify-center">
-        <div
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: 'center top',
-          }}
-        >
-          <GameLayout gameState={gameState} />
-        </div>
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+      >
+        <GameLayout gameState={gameState} />
       </div>
 
       <Countdown gameState={gameState} />

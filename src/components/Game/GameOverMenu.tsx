@@ -2,6 +2,7 @@ import { RotateCcw, Home, Trophy } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/Button';
 import type { GameState, GameAction, ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
 
@@ -54,23 +55,25 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
         </div>
 
         <div className="space-y-3">
-          <button
+          <Button
             onClick={handlePlayAgain}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 font-medium text-white shadow-lg transition-all hover:from-blue-500 hover:to-blue-600 focus:ring-2 focus:ring-blue-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
-            title="Start a new game"
+            variant="primary"
+            size="lg"
+            icon={RotateCcw}
+            fullWidth
           >
-            <RotateCcw className="h-4 w-4" />
-            <span className="text-lg">Play Again</span>
-          </button>
+            Play Again
+          </Button>
 
-          <button
+          <Button
             onClick={handleQuit}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r from-gray-600 to-gray-700 px-4 py-3 font-medium text-gray-100 shadow-lg transition-all hover:from-gray-500 hover:to-gray-600 focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 focus:outline-none"
-            title="Return to the main menu"
+            variant="secondary"
+            size="lg"
+            icon={Home}
+            fullWidth
           >
-            <Home className="h-4 w-4" />
-            <span className="text-lg">Quit to Menu</span>
-          </button>
+            Quit to Menu
+          </Button>
         </div>
 
         <div className="mt-8 border-t border-slate-600/30 pt-6">

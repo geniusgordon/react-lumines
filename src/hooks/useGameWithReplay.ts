@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useRef } from 'react';
+import { useReducer, useCallback, useRef, useEffect } from 'react';
 
 import {
   gameReducerWithDebug,
@@ -9,6 +9,7 @@ import type { ReplayData } from '@/types/replay';
 
 import { useGameLoop } from './useGameLoop';
 import { useReplay } from './useReplay';
+import { useSaveLoadReplay } from './useSaveLoadReplay';
 
 // Type guard to validate replay input actions
 function isValidReplayAction(type: string): type is GameActionType {
@@ -108,7 +109,9 @@ function validateReplayData(replayData: ReplayData): {
 
 export function useGameWithReplay(
   initialSeed?: string,
-  defaultDebugMode = false
+  defaultDebugMode = false,
+  replayMode = false,
+  replayData?: ReplayData
 ) {
   const [gameState, dispatchGame] = useReducer(
     gameReducerWithDebug,
@@ -126,8 +129,55 @@ export function useGameWithReplay(
     exportReplay,
   } = useReplay(gameState);
 
+  const { saveReplay } = useSaveLoadReplay();
+
   // Track if we're currently processing a replay input to prevent recording it
   const processingReplayInput = useRef(false);
+
+  // Track previous game status to detect game over transition
+  const prevGameStatus = useRef(gameState.status);
+
+  // Auto-stop recording and save replay when game over occurs
+  useEffect(() => {
+    if (
+      prevGameStatus.current !== 'gameOver' &&
+      gameState.status === 'gameOver'
+    ) {
+      // Only stop recording and save if we're currently recording (not in playback mode)
+      if (replayState.isRecording && !replayState.isPlayback) {
+        stopRecording();
+
+        // Export and save the replay
+        const replayData = exportReplay();
+        if (replayData) {
+          // Generate a descriptive name with timestamp and score
+          const timestamp = new Date().toLocaleString();
+          const replayName = `Game ${timestamp} - Score: ${gameState.score}`;
+
+          const saveResult = saveReplay(replayData, replayName);
+
+          if (saveResult.success) {
+            console.log(`Game Over - Replay saved: "${replayName}"`);
+          } else {
+            console.error('Failed to save replay:', saveResult.error?.message);
+          }
+        } else {
+          console.warn('Game Over - No replay data to save');
+        }
+      }
+    }
+
+    // Update previous status
+    prevGameStatus.current = gameState.status;
+  }, [
+    gameState.status,
+    gameState.score,
+    replayState.isRecording,
+    replayState.isPlayback,
+    stopRecording,
+    exportReplay,
+    saveReplay,
+  ]);
 
   // Error handling for replay issues
   const handleReplayError = useCallback(
@@ -233,6 +283,26 @@ export function useGameWithReplay(
     },
     [startPlayback, dispatch, handleReplayError]
   );
+
+  // Auto-start replay playback when in replay mode, or start new game when not in replay mode
+  useEffect(() => {
+    if (gameState.status !== 'initial') {
+      return;
+    }
+
+    if (replayMode && replayData) {
+      startReplayPlayback(replayData);
+    } else if (!replayMode) {
+      // Auto-start new game when not in replay mode
+      startNewGame();
+    }
+  }, [
+    gameState.status,
+    replayMode,
+    replayData,
+    startReplayPlayback,
+    startNewGame,
+  ]);
 
   return {
     gameState,

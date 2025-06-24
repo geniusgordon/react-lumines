@@ -77,9 +77,8 @@ export function ReplayScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-700 bg-gray-900 p-4">
+    <div className="bg-game-background h-screen text-white">
+      <div className="absolute top-0 right-0 left-0 border-b border-gray-700 bg-gray-900 p-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-purple-400">
@@ -132,10 +131,8 @@ export function ReplayScreen() {
       </div>
 
       {/* Game Container */}
-      <div className="flex min-h-[calc(100vh-80px)] items-center justify-center p-4">
-        <div className="w-full max-w-4xl">
-          <Game replayMode={true} replayData={replay.data} />
-        </div>
+      <div className="flex h-full w-full items-center justify-center">
+        <Game replayMode={true} replayData={replay.data} />
       </div>
 
       {/* Delete Confirmation Modal */}

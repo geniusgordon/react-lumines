@@ -54,11 +54,10 @@ export function LeaderboardScreen() {
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8 shadow-2xl backdrop-blur-sm">
-        {/* Header */}
+      <div className="w-full max-w-2xl rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8">
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-4xl font-bold tracking-tight text-white">
-            Rankings
+            Leaderboard
           </h1>
           <p className="text-sm text-gray-400">
             {filteredReplays.length}{' '}
@@ -66,7 +65,6 @@ export function LeaderboardScreen() {
           </p>
         </div>
 
-        {/* Filter Tabs */}
         <div className="mb-6 flex w-full gap-2">
           <Button
             onClick={() => navigate('/leaderboard')}
@@ -93,10 +91,9 @@ export function LeaderboardScreen() {
           </Button>
         </div>
 
-        {/* Replay List */}
         <div className="mb-6 max-h-96 overflow-y-auto">
           {filteredReplays.length === 0 ? (
-            <div className="py-8 text-center">
+            <div className="py-16 text-center">
               <p className="mb-4 text-gray-400">No replays found</p>
               <div className="flex justify-center">
                 <Button
@@ -150,7 +147,6 @@ export function LeaderboardScreen() {
           )}
         </div>
 
-        {/* Back Button */}
         <Button
           onClick={() => navigate('/')}
           variant="secondary"

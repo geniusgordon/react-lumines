@@ -15,7 +15,7 @@ export const Game: React.FC<GameProps> = ({
   const { scale, ready } = useResponsiveScale({
     baseWidth: 704,
     minScale: 0.4,
-    maxScale: 1.5,
+    maxScale: 1.2,
     padding: 20,
   });
 

@@ -14,6 +14,7 @@ export function useReplay(gameState: GameState) {
   const [isPlayback, setIsPlayback] = useState(false);
 
   const startRecording = useCallback(() => {
+    console.log('startRecording');
     recordedInputsRef.current = [];
     currentReplayRef.current = null;
     playbackInputMapRef.current = new Map();

@@ -52,7 +52,7 @@ export function createInitialGameState(
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
 
     // Game flow
-    status: 'countdown',
+    status: 'initial',
     score: 0,
 
     // Timer system
