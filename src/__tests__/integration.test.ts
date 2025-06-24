@@ -8,7 +8,7 @@ import type {
   GameActionType,
   GameStatus,
 } from '@/types/game';
-import { SeededRNG } from '@/utils/seededRNG';
+import { SeededRNG } from '@/utils/seededRNG/seededRNG';
 
 describe('Integration Tests', () => {
   describe('End-to-end game simulation', () => {

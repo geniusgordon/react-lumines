@@ -1,12 +1,14 @@
 import randomSeed from 'random-seed';
 
+import type { SeededRNGType } from './type';
+
 type RandomFunction = ReturnType<typeof randomSeed.create>;
 
 /**
  * Seeded Random Number Generator for deterministic gameplay
  * Uses the random-seed package for reliable, well-tested random generation
  */
-export class SeededRNG {
+export class SeededRNG implements SeededRNGType {
   private rng: RandomFunction;
   private readonly seed: string;
   private callCount: number = 0; // Track how many times next() has been called
@@ -88,7 +90,7 @@ export class SeededRNG {
   /**
    * Create a copy of this RNG with same seed
    */
-  clone(): SeededRNG {
+  clone(): SeededRNGType {
     return new SeededRNG(this.seed);
   }
 
@@ -109,7 +111,7 @@ export class SeededRNG {
 /**
  * Create a new SeededRNG instance
  */
-export function createSeededRNG(seed?: string): SeededRNG {
+export function createSeededRNG(seed?: string): SeededRNGType {
   return new SeededRNG(seed);
 }
 

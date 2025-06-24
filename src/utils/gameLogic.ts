@@ -16,11 +16,11 @@ import type {
   BlockPattern,
   Rotation,
   ValidMove,
-  GameState,
+  FallingColumn,
   FallingCell,
 } from '@/types/game';
 
-import { SeededRNG } from './seededRNG';
+import type { SeededRNGType } from './seededRNG';
 
 /**
  * Create empty game board
@@ -137,7 +137,7 @@ export function findDropPosition(
 /**
  * Generate random block using seeded RNG
  */
-export function generateRandomBlock(rng: SeededRNG): Block {
+export function generateRandomBlock(rng: SeededRNGType): Block {
   const pattern = rng.choice(BLOCK_PATTERNS) as BlockPattern;
 
   return {
@@ -145,34 +145,6 @@ export function generateRandomBlock(rng: SeededRNG): Block {
     rotation: 0,
     id: rng.generateId(),
   };
-}
-
-/**
- * Clear squares from board and apply gravity
- */
-export function clearSquaresAndApplyGravity(
-  board: GameBoard,
-  squares: Square[]
-): { newBoard: GameBoard; clearedCells: number } {
-  let newBoard = board.map(row => [...row]);
-  let clearedCells = 0;
-
-  // Clear squares
-  for (const square of squares) {
-    for (let y = square.y; y < square.y + 2; y++) {
-      for (let x = square.x; x < square.x + 2; x++) {
-        if (newBoard[y][x] !== 0) {
-          newBoard[y][x] = 0;
-          clearedCells++;
-        }
-      }
-    }
-  }
-
-  // Apply gravity
-  newBoard = applyGravity(newBoard);
-
-  return { newBoard, clearedCells };
 }
 
 /**
@@ -199,6 +171,67 @@ export function applyGravity(board: GameBoard): GameBoard {
   }
 
   return newBoard;
+}
+
+/**
+ * Create falling cells from board
+ */
+export function createFallingColumns(
+  board: GameBoard,
+  fallingColumns: FallingColumn[],
+  rng: SeededRNGType
+): { newFallingColumns: FallingColumn[]; newBoard: GameBoard } {
+  const newBoard = board.map(row => [...row]);
+  const newFallingColumns: FallingColumn[] = [];
+
+  // Process each column
+  for (let x = 0; x < BOARD_WIDTH; x++) {
+    // Find any cells that need to fall in this column
+    const fallingCells = findFallingCellsInColumn(newBoard, x, rng);
+
+    if (fallingCells.length > 0) {
+      // Merge with any existing falling cells in this column
+      const existingColumn = fallingColumns.find(col => col.x === x);
+      const mergedCells = existingColumn
+        ? [...existingColumn.cells, ...fallingCells]
+        : fallingCells;
+
+      // Create new column with merged cells sorted by y position
+      newFallingColumns.push({
+        x,
+        cells: mergedCells.sort((a, b) => b.y - a.y), // Sort bottom to top
+        timer: existingColumn?.timer ?? 0,
+      });
+    }
+  }
+
+  return { newFallingColumns, newBoard };
+}
+
+function findFallingCellsInColumn(
+  board: GameBoard,
+  x: number,
+  rng: SeededRNGType
+): FallingCell[] {
+  const cells: FallingCell[] = [];
+  let foundGap = false;
+
+  for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+    const cell = board[y][x];
+
+    if (cell === 0) {
+      foundGap = true;
+    } else if (foundGap) {
+      cells.push({
+        id: rng.generateId(),
+        y,
+        color: cell,
+      });
+      board[y][x] = 0;
+    }
+  }
+
+  return cells;
 }
 
 /**
@@ -366,8 +399,10 @@ export function markColumnCells(
  */
 export function clearMarkedCellsAndApplyGravity(
   board: GameBoard,
-  markedCells: Square[]
-): GameBoard {
+  markedCells: Square[],
+  fallingColumns: FallingColumn[],
+  rng: SeededRNGType
+): { newBoard: GameBoard; newFallingColumns: FallingColumn[] } {
   // Create a copy of the board to avoid mutation
   const newBoard = board.map(row => [...row]);
 
@@ -386,6 +421,5 @@ export function clearMarkedCellsAndApplyGravity(
     }
   }
 
-  // Apply gravity to settle remaining blocks
-  return applyGravity(newBoard);
+  return createFallingColumns(newBoard, fallingColumns, rng);
 }

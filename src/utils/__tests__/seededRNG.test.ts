@@ -5,7 +5,7 @@ import {
   createSeededRNG,
   validateDeterminism,
   testDistribution,
-} from '../seededRNG';
+} from '../seededRNG/seededRNG';
 
 describe('SeededRNG', () => {
   describe('Deterministic behavior', () => {

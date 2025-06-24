@@ -5,9 +5,10 @@ import type { GameBoard, CellValue } from '@/types/game';
 
 import {
   createEmptyBoard,
-  clearSquaresAndApplyGravity,
+  clearMarkedCellsAndApplyGravity,
   applyGravity,
 } from '../gameLogic';
+import { SeededRNGMock } from '../seededRNG';
 
 describe('Gravity and Clearing', () => {
   let board: GameBoard;
@@ -157,21 +158,43 @@ describe('Gravity and Clearing', () => {
         y: 7,
         color: 1 as CellValue,
       },
+      {
+        x: 5,
+        y: 8,
+        color: 1 as CellValue,
+      },
+      {
+        x: 6,
+        y: 7,
+        color: 1 as CellValue,
+      },
+      {
+        x: 6,
+        y: 8,
+        color: 1 as CellValue,
+      },
     ];
 
-    const { newBoard, clearedCells } = clearSquaresAndApplyGravity(
+    const { newBoard, newFallingColumns } = clearMarkedCellsAndApplyGravity(
       board,
-      squares
+      squares,
+      [],
+      new SeededRNGMock([1, 2, 3, 4, 5, 6, 7, 8, 9])
     );
-
-    expect(clearedCells).toBe(4);
 
     // Square should be cleared
     expect(newBoard[7][5]).toBe(0);
     expect(newBoard[8][6]).toBe(0);
 
-    // Floating blocks should fall
-    expect(newBoard[8][5]).toBe(1); // Was at 3, fell down
-    expect(newBoard[9][5]).toBe(2); // Was at 2, fell to bottom
+    expect(newFallingColumns).toEqual([
+      {
+        x: 5,
+        cells: [
+          { y: 3, color: 2, id: '1' },
+          { y: 2, color: 1, id: '2' },
+        ],
+        timer: 0,
+      },
+    ]);
   });
 });

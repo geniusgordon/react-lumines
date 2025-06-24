@@ -2,8 +2,15 @@ import {
   GAME_CONFIG,
   DEFAULT_VALUES,
   TIMER_CONFIG,
+  BOARD_HEIGHT,
 } from '@/constants/gameConfig';
-import type { GameState, GameAction, Square } from '@/types/game';
+import type {
+  GameState,
+  GameAction,
+  Square,
+  FallingColumn,
+  FallingCell,
+} from '@/types/game';
 import { logDebugAction } from '@/utils/debugLogger';
 import {
   createEmptyBoard,
@@ -12,14 +19,14 @@ import {
   placeBlockOnBoard,
   findDropPosition,
   getRotatedPattern,
-  applyGravity,
   detectPatterns,
   getPatternsByLeftColumn,
   markColumnCells,
   clearMarkedCellsAndApplyGravity,
   canPlaceAnyPartOfBlock,
+  createFallingColumns,
 } from '@/utils/gameLogic';
-import { SeededRNG } from '@/utils/seededRNG';
+import { SeededRNG, type SeededRNGType } from '@/utils/seededRNG';
 
 /**
  * Create initial game state
@@ -63,14 +70,14 @@ export function createInitialGameState(
     // Timeline
     timeline: {
       x: 0,
-      sweepInterval: GAME_CONFIG.timeline.speed,
+      sweepInterval: GAME_CONFIG.timeline.sweepInterval,
       timer: 0,
       active: true,
       holdingScore: 0,
     },
 
     // Falling cells
-    fallingCells: [],
+    fallingColumns: [],
 
     // Pattern clearing
     markedCells: [],
@@ -151,7 +158,7 @@ function handleBlockRotation(
 function handleSoftDrop(
   state: GameState,
   action: GameAction,
-  rng: SeededRNG
+  rng: SeededRNGType
 ): GameState {
   if (state.status !== 'playing') {
     return state;
@@ -184,7 +191,7 @@ function handleSoftDrop(
 function handleHardDrop(
   state: GameState,
   action: GameAction,
-  rng: SeededRNG
+  rng: SeededRNGType
 ): GameState {
   if (state.status !== 'playing') {
     return state;
@@ -279,7 +286,7 @@ function handleCountdownAndTimer(
 function handleGameTick(
   state: GameState,
   action: GameAction,
-  rng: SeededRNG
+  rng: SeededRNGType
 ): GameState {
   // First handle countdown and timer logic
   let newState = handleCountdownAndTimer(state, action);
@@ -289,14 +296,17 @@ function handleGameTick(
     return newState;
   }
 
-  // 1. Handle block dropping and placement
+  // Handle block dropping and placement
   newState = handleBlockDrop(newState, action.frame, rng);
 
-  // 2. Update pattern detection (only once per tick)
+  // Update pattern detection (only once per tick)
   newState = updatePatternDetection(newState);
 
-  // 3. Handle timeline progression and clearing
-  newState = updateTimeline(newState);
+  // Handle timeline progression and clearing
+  newState = updateTimeline(newState, rng);
+
+  // Update falling columns
+  newState = updateFallingColumns(newState);
 
   return newState;
 }
@@ -307,7 +317,7 @@ function handleGameTick(
 function handleBlockDrop(
   state: GameState,
   frame: number,
-  rng: SeededRNG
+  rng: SeededRNGType
 ): GameState {
   const newState = { ...state };
   newState.dropTimer++;
@@ -344,24 +354,77 @@ function handleBlockDrop(
 function placeBlockAndApplyPhysics(
   state: GameState,
   frame: number,
-  rng: SeededRNG
+  rng: SeededRNGType
 ): GameState {
   // Place the block on the board
   const placedState = placeCurrentBlock(state, frame, rng);
 
+  const { newFallingColumns, newBoard } = createFallingColumns(
+    placedState.board,
+    placedState.fallingColumns,
+    rng
+  );
+
   // Apply gravity to settle all blocks
-  const settledState = {
+  const newState = {
     ...placedState,
-    board: applyGravity(placedState.board),
+    board: newBoard,
+    fallingColumns: newFallingColumns,
   };
 
-  return settledState;
+  return newState;
+}
+
+function updateFallingColumns(state: GameState): GameState {
+  if (state.status !== 'playing') {
+    return state;
+  }
+
+  const newBoard = state.board.map(row => [...row]);
+  const newFallingColumns: FallingColumn[] = [];
+
+  for (const column of state.fallingColumns) {
+    const newTimer = column.timer + 1;
+    const isTimerReached = newTimer >= TIMER_CONFIG.FALLING_CELL_INTERVAL;
+    const updatedCells: FallingCell[] = [];
+
+    // Process each cell in the column
+    for (const cell of column.cells) {
+      const nextY = cell.y + 1;
+
+      if (nextY >= BOARD_HEIGHT || newBoard[nextY][column.x] !== 0) {
+        newBoard[cell.y][column.x] = cell.color;
+        continue;
+      }
+
+      updatedCells.push({
+        id: cell.id,
+        y: isTimerReached ? nextY : cell.y,
+        color: cell.color,
+      });
+    }
+
+    // Only keep columns that still have falling cells
+    if (updatedCells.length > 0) {
+      newFallingColumns.push({
+        x: column.x,
+        cells: updatedCells,
+        timer: isTimerReached ? 0 : newTimer,
+      });
+    }
+  }
+
+  return {
+    ...state,
+    board: newBoard,
+    fallingColumns: newFallingColumns,
+  };
 }
 
 /**
  * Update timeline sweep progression with column-based clearing logic
  */
-function updateTimeline(state: GameState): GameState {
+function updateTimeline(state: GameState, rng: SeededRNGType): GameState {
   if (state.status !== 'playing') {
     return state;
   }
@@ -370,7 +433,7 @@ function updateTimeline(state: GameState): GameState {
 
   // Check if it's time to move timeline one column
   if (newTimer >= state.timeline.sweepInterval) {
-    return advanceTimelineToNextColumn(state);
+    return advanceTimelineToNextColumn(state, rng);
   }
 
   // Just increment timer
@@ -386,12 +449,15 @@ function updateTimeline(state: GameState): GameState {
 /**
  * Advance timeline to next column and process the current column
  */
-function advanceTimelineToNextColumn(state: GameState): GameState {
+function advanceTimelineToNextColumn(
+  state: GameState,
+  rng: SeededRNGType
+): GameState {
   const currentColumn = state.timeline.x;
   const nextColumn = (currentColumn + 1) % GAME_CONFIG.board.width;
 
   // Process the current column before moving
-  const processedState = processTimelineColumn(state, nextColumn);
+  const processedState = processTimelineColumn(state, nextColumn, rng);
 
   return {
     ...processedState,
@@ -406,7 +472,11 @@ function advanceTimelineToNextColumn(state: GameState): GameState {
 /**
  * Process a single column when timeline passes through it
  */
-function processTimelineColumn(state: GameState, column: number): GameState {
+function processTimelineColumn(
+  state: GameState,
+  column: number,
+  rng: SeededRNGType
+): GameState {
   const patternsInColumn = getPatternsByLeftColumn(
     state.detectedPatterns,
     column
@@ -432,7 +502,7 @@ function processTimelineColumn(state: GameState, column: number): GameState {
     state.markedCells.length > 0;
 
   if (shouldClear) {
-    return clearMarkedCellsAndScore(state);
+    return clearMarkedCellsAndScore(state, rng);
   }
 
   return state;
@@ -473,16 +543,22 @@ function markCellsForClearing(
 /**
  * Clear marked cells and update score
  */
-function clearMarkedCellsAndScore(state: GameState): GameState {
-  const newBoard = clearMarkedCellsAndApplyGravity(
+function clearMarkedCellsAndScore(
+  state: GameState,
+  rng: SeededRNGType
+): GameState {
+  const { newBoard, newFallingColumns } = clearMarkedCellsAndApplyGravity(
     state.board,
-    state.markedCells
+    state.markedCells,
+    state.fallingColumns,
+    rng
   );
   const detectedPatterns = detectPatterns(newBoard);
 
   return {
     ...state,
     board: newBoard,
+    fallingColumns: newFallingColumns,
     detectedPatterns,
     score: state.score + state.timeline.holdingScore,
     timeline: {
@@ -498,8 +574,8 @@ function clearMarkedCellsAndScore(state: GameState): GameState {
  */
 export function gameReducer(state: GameState, action: GameAction): GameState {
   // Create RNG instance only when needed - most actions don't need RNG
-  let rng: SeededRNG | null = null;
-  const getRNG = (): SeededRNG => {
+  let rng: SeededRNGType | null = null;
+  const getRNG = (): SeededRNGType => {
     if (!rng) {
       rng = new SeededRNG(state.seed);
       rng.setState(state.rngState);
@@ -602,7 +678,7 @@ export function gameReducerWithDebug(
 function placeCurrentBlock(
   state: GameState,
   frame: number,
-  rng: SeededRNG
+  rng: SeededRNGType
 ): GameState {
   const canPlaceBlock = canPlaceAnyPartOfBlock(
     state.board,

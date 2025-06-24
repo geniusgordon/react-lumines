@@ -139,7 +139,11 @@ describe('Game Reducer - Timeline Processing', () => {
 
       // Should apply gravity - block at [7][2] should fall down
       expect(result.board[8][2]).toBe(0); // Cleared
-      expect(result.board[9][2]).toBe(2); // Block fell down
+      expect(result.fallingColumns[0].x).toBe(2);
+      expect(result.fallingColumns[0].cells).toHaveLength(1);
+      expect(result.fallingColumns[0].cells[0].y).toBe(7);
+      expect(result.fallingColumns[0].cells[0].color).toBe(2);
+      expect(result.fallingColumns[0].timer).toBe(1);
 
       // Timeline should have moved to column 5
       expect(result.timeline.x).toBe(5);
