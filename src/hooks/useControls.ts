@@ -5,7 +5,6 @@ import type {
   GameState,
   GameAction,
   GameActionType,
-  ReplayInput,
   ControlsConfig,
   GameStatus,
 } from '@/types/game';
@@ -30,11 +29,6 @@ const isResumableState = (status: GameStatus): boolean => {
 
 export interface UseControlsOptions {
   /**
-   * Whether to record all inputs for replay functionality
-   */
-  recording?: boolean;
-
-  /**
    * Custom control key mappings (optional)
    */
   controlsConfig?: ControlsConfig;
@@ -54,51 +48,9 @@ export interface UseControlsOptions {
    * Repeat delay in milliseconds for held keys (default: 150ms)
    */
   keyRepeatDelay?: number;
-
-  /**
-   * How often to update UI with recorded inputs (default: every 5 inputs)
-   * Set to 1 for immediate updates, higher for better performance
-   */
-  uiUpdateBatchSize?: number;
 }
 
 export interface UseControlsReturn {
-  /**
-   * Whether input recording is active
-   */
-  isRecording: boolean;
-
-  /**
-   * All recorded inputs (for replay system)
-   * Note: May be slightly behind actual recordings for performance reasons
-   */
-  recordedInputs: ReplayInput[];
-
-  /**
-   * Get current recorded inputs count (always up-to-date)
-   */
-  recordedInputsCount: number;
-
-  /**
-   * Force refresh of recorded inputs UI
-   */
-  refreshRecordedInputs: () => void;
-
-  /**
-   * Start recording inputs
-   */
-  startRecording: () => void;
-
-  /**
-   * Stop recording inputs
-   */
-  stopRecording: () => void;
-
-  /**
-   * Clear all recorded inputs
-   */
-  clearRecording: () => void;
-
   /**
    * Currently pressed keys (for UI feedback)
    */
@@ -106,13 +58,7 @@ export interface UseControlsReturn {
 }
 
 /**
- * Controls hook for keyboard input handling and replay recording
- *
- * PERFORMANCE OPTIMIZATION:
- * Uses a hybrid approach with useRef + useState to avoid lag:
- * - useRef stores actual data (no re-renders on every input)
- * - useState triggers UI updates in batches or on demand
- * - recordedInputsCount provides real-time count without array updates
+ * Controls hook for keyboard input handling
  */
 export function useControls(
   gameState: GameState,
@@ -120,20 +66,11 @@ export function useControls(
   options: UseControlsOptions = {}
 ): UseControlsReturn {
   const {
-    recording = false,
     controlsConfig = DEFAULT_CONTROLS,
     debugMode = false,
     enableKeyRepeat = false,
     keyRepeatDelay = 150,
-    uiUpdateBatchSize = 5, // Update UI every 5 inputs by default
   } = options;
-
-  // Recording state - hybrid approach
-  const [isRecording, setIsRecording] = useState(recording);
-  const recordedInputsRef = useRef<ReplayInput[]>([]); // Actual data storage
-  const [recordedInputsUI, setRecordedInputsUI] = useState<ReplayInput[]>([]); // UI display copy
-  const [recordedInputsCount, setRecordedInputsCount] = useState(0); // Always up-to-date count
-  const uiUpdateCounter = useRef(0); // Track when to update UI
 
   // Key state tracking
   const pressedKeysRef = useRef<Set<string>>(new Set());
@@ -166,12 +103,7 @@ export function useControls(
     keyToActionMap.current = newMap;
   }, [controlsConfig]);
 
-  // Force refresh of UI from ref data
-  const refreshRecordedInputs = useCallback(() => {
-    setRecordedInputsUI([...recordedInputsRef.current]);
-  }, []);
-
-  // Dispatch action and record if needed
+  // Dispatch action
   const dispatchAction = useCallback(
     (actionType: GameActionType, payload?: unknown) => {
       const action: GameAction = {
@@ -180,31 +112,9 @@ export function useControls(
         payload,
       };
 
-      // Record input for replay system
-      if (isRecording) {
-        const replayInput: ReplayInput = {
-          type: actionType,
-          frame: gameState.frame,
-          payload,
-        };
-
-        // Always update the ref (no performance cost)
-        recordedInputsRef.current.push(replayInput);
-
-        // Always update count (minimal re-render cost)
-        setRecordedInputsCount(recordedInputsRef.current.length);
-
-        // Batch UI updates to avoid lag
-        uiUpdateCounter.current++;
-        if (uiUpdateCounter.current >= uiUpdateBatchSize) {
-          setRecordedInputsUI([...recordedInputsRef.current]);
-          uiUpdateCounter.current = 0;
-        }
-      }
-
       dispatch(action);
     },
-    [gameState.frame, dispatch, isRecording, uiUpdateBatchSize]
+    [gameState.frame, dispatch]
   );
 
   // Handle key press
@@ -310,28 +220,6 @@ export function useControls(
     }
   }, []);
 
-  // Recording control functions
-  const startRecording = useCallback(() => {
-    setIsRecording(true);
-    recordedInputsRef.current = [];
-    setRecordedInputsUI([]);
-    setRecordedInputsCount(0);
-    uiUpdateCounter.current = 0;
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    setIsRecording(false);
-    // Ensure UI is up-to-date when stopping
-    refreshRecordedInputs();
-  }, [refreshRecordedInputs]);
-
-  const clearRecording = useCallback(() => {
-    recordedInputsRef.current = [];
-    setRecordedInputsUI([]);
-    setRecordedInputsCount(0);
-    uiUpdateCounter.current = 0;
-  }, []);
-
   // Set up keyboard event listeners
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -365,13 +253,6 @@ export function useControls(
   }, []);
 
   return {
-    isRecording,
-    recordedInputs: recordedInputsUI, // UI-optimized copy
-    recordedInputsCount, // Always up-to-date count
-    refreshRecordedInputs,
-    startRecording,
-    stopRecording,
-    clearRecording,
     pressedKeys,
   };
 }

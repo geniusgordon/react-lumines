@@ -29,7 +29,7 @@ export function QuickStats(props: QuickStatsProps) {
         <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
           Status
         </div>
-        <div className={`text-lg font-semibold ${getStatusColor(status)}`}>
+        <div className={`text-sm font-semibold ${getStatusColor(status)}`}>
           {status}
         </div>
       </div>
@@ -37,7 +37,7 @@ export function QuickStats(props: QuickStatsProps) {
         <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
           Score
         </div>
-        <div className="text-lg font-semibold text-blue-400">
+        <div className="text-sm font-semibold text-blue-400">
           {score.toLocaleString()}
         </div>
       </div>
@@ -46,7 +46,7 @@ export function QuickStats(props: QuickStatsProps) {
           <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
             Scale
           </div>
-          <div className="text-lg font-semibold text-purple-400">
+          <div className="text-sm font-semibold text-purple-400">
             {(scale * 100).toFixed(0)}%
           </div>
         </div>

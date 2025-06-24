@@ -49,68 +49,12 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
             <h3 className="text-lg font-semibold">Controls State</h3>
             <div className="space-y-1 rounded bg-gray-800 p-3 font-mono text-sm">
               <div>
-                Recording:{' '}
-                <span className="text-blue-400">
-                  {controlsReturn.isRecording ? 'ON' : 'OFF'}
-                </span>
-              </div>
-              <div>
-                Recorded Count:{' '}
-                <span className="text-green-400">
-                  {controlsReturn.recordedInputsCount}
-                </span>
-                <span className="ml-2 text-gray-500">
-                  (UI: {controlsReturn.recordedInputs.length})
-                </span>
-              </div>
-              <div>
                 Pressed Keys:{' '}
                 <span className="text-yellow-400">
                   {controlsReturn.pressedKeys.size}
                 </span>
               </div>
-              <div className="mt-2 text-xs text-gray-400">
-                Batch Size: {options?.uiUpdateBatchSize || 5}
-              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Control Actions */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Recording Controls</h3>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={controlsReturn.startRecording}
-              disabled={controlsReturn.isRecording}
-              className="rounded bg-green-600 px-4 py-2 text-sm disabled:bg-gray-600"
-            >
-              Start Recording
-            </button>
-            <button
-              onClick={controlsReturn.stopRecording}
-              disabled={!controlsReturn.isRecording}
-              className="rounded bg-red-600 px-4 py-2 text-sm disabled:bg-gray-600"
-            >
-              Stop Recording
-            </button>
-            <button
-              onClick={controlsReturn.clearRecording}
-              className="rounded bg-orange-600 px-4 py-2 text-sm"
-            >
-              Clear ({controlsReturn.recordedInputsCount})
-            </button>
-            <button
-              onClick={controlsReturn.refreshRecordedInputs}
-              className="rounded bg-blue-600 px-4 py-2 text-sm"
-              title="Force refresh UI to show latest recorded inputs"
-            >
-              Refresh UI
-            </button>
-          </div>
-          <div className="text-xs text-gray-400">
-            💡 The count updates immediately, but the input list updates in
-            batches for performance
           </div>
         </div>
 
@@ -159,39 +103,14 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
           </div>
         </div>
 
-        {/* Recorded Inputs */}
-        {controlsReturn.recordedInputs.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Recorded Inputs (Last 10)</h3>
-            <div className="max-h-64 overflow-y-auto rounded bg-gray-800 p-3">
-              <div className="space-y-1 font-mono text-xs">
-                {controlsReturn.recordedInputs
-                  .slice(-10)
-                  .map((input, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-blue-400">Frame {input.frame}</span>
-                      <span className="text-green-400">{input.type}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Instructions */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Instructions</h3>
           <div className="space-y-2 rounded bg-gray-800 p-4 text-sm">
             <p>🎮 Try the controls and watch the state update in real-time!</p>
-            <p>📼 Start recording to capture inputs for replay functionality</p>
-            <p>
-              ⚡ Notice how the count updates immediately but UI batches for
-              performance
-            </p>
             <p>
               🔧 Switch between different configurations to see behavior changes
             </p>
-            <p>🔄 Use "Refresh UI" to force-update the input list display</p>
             <p>
               ⌨️ All keyboard events are captured and processed
               deterministically
@@ -259,11 +178,6 @@ Proper cleanup of event listeners and timers to prevent memory leaks.
 // Basic usage
 const controls = useControls(gameState, dispatch);
 
-// With recording enabled
-const controls = useControls(gameState, dispatch, {
-  recording: true
-});
-
 // With key repeat for rapid movement
 const controls = useControls(gameState, dispatch, {
   enableKeyRepeat: true,
@@ -274,13 +188,6 @@ const controls = useControls(gameState, dispatch, {
 const controls = useControls(gameState, dispatch, {
   debugMode: true,
   controlsConfig: customControls
-});
-
-// Performance optimized for rapid input
-const controls = useControls(gameState, dispatch, {
-  recording: true,
-  uiUpdateBatchSize: 10, // Update UI every 10 inputs
-  enableKeyRepeat: true
 });
 \`\`\`
 
@@ -328,15 +235,6 @@ export const Default: Story = {
   },
 };
 
-// With recording enabled
-export const WithRecording: Story = {
-  args: {
-    options: {
-      recording: true,
-    },
-  },
-};
-
 // With key repeat enabled
 export const WithKeyRepeat: Story = {
   args: {
@@ -352,7 +250,6 @@ export const DebugMode: Story = {
   args: {
     options: {
       debugMode: true,
-      recording: true,
     },
   },
 };
@@ -378,28 +275,13 @@ export const FastKeyRepeat: Story = {
     options: {
       enableKeyRepeat: true,
       keyRepeatDelay: 50, // Very fast repeat
-      recording: true,
-      uiUpdateBatchSize: 10, // Less frequent UI updates for performance
     },
   },
 };
 
-// Performance demonstration - immediate UI updates
-export const ImmediateUpdates: Story = {
+// Basic controls demonstration
+export const BasicControlsOnly: Story = {
   args: {
-    options: {
-      recording: true,
-      uiUpdateBatchSize: 1, // Update UI on every input
-    },
-  },
-};
-
-// Performance demonstration - batched updates
-export const BatchedUpdates: Story = {
-  args: {
-    options: {
-      recording: true,
-      uiUpdateBatchSize: 20, // Update UI every 20 inputs
-    },
+    options: {},
   },
 };

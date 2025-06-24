@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import {
   GameLayout,
@@ -7,11 +7,7 @@ import {
   Countdown,
 } from '@/components/Game';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
-import { useControls, useGameLoop } from '@/hooks';
-import {
-  gameReducerWithDebug,
-  createInitialGameState,
-} from '@/reducers/gameReducer';
+import { useControls, useGameWithReplay } from '@/hooks';
 
 import { DebugPanel } from '../DebugPanel';
 
@@ -30,20 +26,18 @@ export const Game: React.FC<GameProps> = ({ scale }) => {
     return urlParams.get('seed') ?? Date.now().toString();
   }, []);
 
-  const [gameState, dispatch] = useReducer(
-    gameReducerWithDebug,
-    createInitialGameState(seed, showDebugPanel)
+  const { gameState, gameLoop, dispatch } = useGameWithReplay(
+    seed,
+    showDebugPanel
   );
 
+  const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
+    gameLoop;
+
   const controls = useControls(gameState, dispatch, {
-    recording: true,
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
-    uiUpdateBatchSize: 10,
   });
-
-  const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
-    useGameLoop(gameState, dispatch, { debugMode: gameState.debugMode });
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">
