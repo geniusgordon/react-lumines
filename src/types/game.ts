@@ -133,16 +133,10 @@ export interface ReplayInput {
   payload?: unknown;
 }
 
-export interface ReplayCheckpoint {
-  frame: number;
-  state: GameState;
-}
-
 export interface ReplayData {
   version: string;
   seed: number;
   inputs: ReplayInput[];
-  checkpoints: ReplayCheckpoint[];
   finalScore: number;
   duration: number; // Total frames
   metadata?: {
@@ -185,49 +179,3 @@ export interface GameConfig {
 
 // Utility types for validation
 export type ValidMove = 'valid' | 'invalid' | 'collision' | 'out_of_bounds';
-
-// Hook return types
-export interface UseGameLoopReturn {
-  gameState: GameState;
-  dispatch: React.Dispatch<GameAction>;
-  isRunning: boolean;
-  fps: number;
-}
-
-export interface UseControlsReturn {
-  isRecording: boolean;
-  recordedInputs: ReplayInput[];
-  startRecording: () => void;
-  stopRecording: () => void;
-  clearRecording: () => void;
-}
-
-export interface UseSeededRNGReturn {
-  next: () => number;
-  nextInt: (max: number) => number;
-  nextFloat: () => number;
-  reset: (seed?: number) => void;
-  getSeed: () => number;
-  getState: () => number;
-}
-
-// Error types
-export class GameError extends Error {
-  code: string;
-
-  constructor(message: string, code: string) {
-    super(message);
-    this.name = 'GameError';
-    this.code = code;
-  }
-}
-
-export class ReplayError extends Error {
-  code: string;
-
-  constructor(message: string, code: string) {
-    super(message);
-    this.name = 'ReplayError';
-    this.code = code;
-  }
-}

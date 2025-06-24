@@ -28,12 +28,12 @@ describe('Block Placement', () => {
   it('should find correct drop position', () => {
     board[8][5] = 1; // Obstacle at bottom
 
-    const dropPos = findDropPosition(board, block, { x: 5, y: 0 });
+    const dropPos = findDropPosition(board, block, { x: 5, y: 0 }, []);
     expect(dropPos).toEqual({ x: 5, y: 6 }); // Should stop above obstacle
   });
 
   it('should drop to bottom when no obstacles', () => {
-    const dropPos = findDropPosition(board, block, { x: 5, y: 0 });
+    const dropPos = findDropPosition(board, block, { x: 5, y: 0 }, []);
     expect(dropPos).toEqual({ x: 5, y: 8 }); // Bottom of board
   });
 
