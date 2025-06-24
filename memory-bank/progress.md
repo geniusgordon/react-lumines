@@ -125,6 +125,7 @@
 - **Block Mechanics**: Complete falling block system
   - ✅ Block Falling: Automatic dropping every 48 frames (~0.8s at 60 FPS)
   - ✅ Collision Detection: Blocks stop when hitting board bottom or other blocks
+  - ✅ **Falling Columns Awareness**: Block movement and placement now considers falling cells ✅ **NEW!**
   - ✅ Block Placement: Automatic placement when blocks can't fall further
   - ✅ Movement & Rotation: Left/right movement and clockwise/counter-clockwise rotation
   - ✅ Soft/Hard Drop: Manual dropping with S key and Space/Down arrow
@@ -166,6 +167,23 @@
   - ✅ **Icon Integration**: Uses Lucide React icons (Play, RotateCcw, Home)
   - ✅ **Accessibility**: Focus management and proper button styling
   - ✅ **Integration**: Seamlessly overlays existing game screen without disruption
+
+#### Falling Columns Collision System ✅ **NEW!**
+- **Enhanced Collision Detection**: `isValidPosition()` now checks for collisions with falling cells
+  - ✅ **Falling Cell Tracking**: Maintains Set-based lookup of all falling cell positions
+  - ✅ **Pattern Collision Check**: Validates block pattern against falling cells
+  - ✅ **Backward Compatibility**: Optional parameter maintains existing API compatibility
+- **Movement Integration**: All block movement operations consider falling columns
+  - ✅ **Left/Right Movement**: `handleBlockMovement()` passes fallingColumns to validation
+  - ✅ **Rotation**: `handleBlockRotation()` respects falling cells during rotation
+  - ✅ **Soft Drop**: `handleSoftDrop()` considers falling cells when dropping
+  - ✅ **Hard Drop**: `findDropPosition()` finds lowest valid position considering falling cells
+  - ✅ **Auto Drop**: `handleBlockDrop()` validates against falling cells during auto-drop
+- **Performance Optimized**: Efficient Set-based collision detection for fast lookups
+- **Comprehensive Testing**: New test cases verify collision detection with falling columns
+  - ✅ **Multiple Scenarios**: Tests collision detection at various positions
+  - ✅ **Edge Cases**: Verifies behavior when fallingColumns parameter is undefined  
+  - ✅ **Integration**: All 123 tests passing including new collision tests
 
 ### Known Issues
 

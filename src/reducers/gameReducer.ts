@@ -113,7 +113,12 @@ function handleBlockMovement(
   };
 
   if (
-    isValidPosition(state.board, state.currentBlock, newPosition) === 'valid'
+    isValidPosition(
+      state.board,
+      state.currentBlock,
+      newPosition,
+      state.fallingColumns
+    ) === 'valid'
   ) {
     return {
       ...state,
@@ -170,8 +175,12 @@ function handleSoftDrop(
   };
 
   if (
-    isValidPosition(state.board, state.currentBlock, softDropPosition) ===
-    'valid'
+    isValidPosition(
+      state.board,
+      state.currentBlock,
+      softDropPosition,
+      state.fallingColumns
+    ) === 'valid'
   ) {
     return {
       ...state,
@@ -200,7 +209,8 @@ function handleHardDrop(
   const dropPosition = findDropPosition(
     state.board,
     state.currentBlock,
-    state.blockPosition
+    state.blockPosition,
+    state.fallingColumns
   );
   const newState = {
     ...state,
@@ -331,8 +341,12 @@ function handleBlockDrop(
 
     // Try to move block down
     if (
-      isValidPosition(newState.board, newState.currentBlock, dropPosition) ===
-      'valid'
+      isValidPosition(
+        newState.board,
+        newState.currentBlock,
+        dropPosition,
+        newState.fallingColumns
+      ) === 'valid'
     ) {
       // Block can drop normally
       newState.blockPosition = dropPosition;
