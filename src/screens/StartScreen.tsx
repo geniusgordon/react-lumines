@@ -2,15 +2,18 @@ import { Play, ChartNoAxesColumn } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { KeyboardShortcuts } from '@/components/DebugPanel';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
-
-import { KeyboardShortcuts } from '../DebugPanel';
 
 export const StartScreen: React.FC = () => {
   const navigate = useNavigate();
 
   const handleStartGame = () => {
     navigate('/play');
+  };
+
+  const handleRankings = () => {
+    navigate('/leaderboard');
   };
 
   return (
@@ -34,7 +37,10 @@ export const StartScreen: React.FC = () => {
             <span className="text-lg">Start Game</span>
           </button>
 
-          <button className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 font-medium text-gray-200 shadow-lg transition-all duration-200 hover:from-gray-600 hover:to-gray-700 hover:shadow-xl focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none">
+          <button
+            onClick={handleRankings}
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 font-medium text-gray-200 shadow-lg transition-all duration-200 hover:from-gray-600 hover:to-gray-700 hover:shadow-xl focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none"
+          >
             <ChartNoAxesColumn className="h-5 w-5 transition-transform" />
             <span className="text-lg">Rankings</span>
           </button>

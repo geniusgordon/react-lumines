@@ -1,6 +1,11 @@
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 
-import { StartScreen, GameScreen } from '@/components/Game';
+import {
+  StartScreen,
+  GameScreen,
+  LeaderboardScreen,
+  ReplayScreen,
+} from '@/screens';
 
 function App() {
   return (
@@ -8,6 +13,8 @@ function App() {
       <Routes>
         <Route path="/" element={<StartScreen />} />
         <Route path="/play" element={<GameScreen />} />
+        <Route path="/leaderboard" element={<LeaderboardScreen />} />
+        <Route path="/replays/:id" element={<ReplayScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

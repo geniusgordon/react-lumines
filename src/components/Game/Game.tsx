@@ -1,84 +1,33 @@
-import { useMemo } from 'react';
+import { useResponsiveScale } from '@/hooks';
+import type { ReplayData } from '@/types/replay';
 
-import {
-  GameLayout,
-  PauseMenu,
-  GameOverMenu,
-  Countdown,
-} from '@/components/Game';
-import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
-import { useControls, useGameWithReplay } from '@/hooks';
-
-import { DebugPanel } from '../DebugPanel';
+import { GameCore } from './GameCore';
 
 interface GameProps {
-  scale: number;
+  replayMode?: boolean;
+  replayData?: ReplayData;
 }
 
-export const Game: React.FC<GameProps> = ({ scale }) => {
-  const showDebugPanel = useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('debug') === 'true';
-  }, []);
-
-  const seed = useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('seed') ?? Date.now().toString();
-  }, []);
-
-  const { gameState, gameLoop, dispatch } = useGameWithReplay(
-    seed,
-    showDebugPanel
-  );
-
-  const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
-    gameLoop;
-
-  const controls = useControls(gameState, dispatch, {
-    enableKeyRepeat: false,
-    keyRepeatDelay: 100,
+export const Game: React.FC<GameProps> = ({
+  replayMode = false,
+  replayData,
+}) => {
+  const { scale, ready } = useResponsiveScale({
+    baseWidth: 704,
+    minScale: 0.4,
+    maxScale: 1.5,
+    padding: 20,
   });
 
-  return (
-    <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">
-      {showDebugPanel && (
-        <DebugPanel
-          gameState={gameState}
-          dispatch={dispatch}
-          frameCount={frameCount}
-          currentFPS={currentFPS}
-          isRunning={isRunning}
-          isDebugMode={isDebugMode}
-          manualStep={manualStep}
-          controls={controls}
-          scale={scale}
-        />
-      )}
-
-      <div className="flex w-full flex-1 items-center justify-center">
-        <div
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: 'center top',
-          }}
-        >
-          <GameLayout gameState={gameState} />
-        </div>
+  if (!ready) {
+    return (
+      <div className="bg-game-background flex h-full w-full items-center justify-center">
+        <p className="text-2xl font-bold text-white">Loading...</p>
       </div>
+    );
+  }
 
-      <Countdown gameState={gameState} />
-
-      <PauseMenu
-        gameState={gameState}
-        controlsConfig={DEFAULT_CONTROLS}
-        dispatch={dispatch}
-      />
-
-      <GameOverMenu
-        gameState={gameState}
-        controlsConfig={DEFAULT_CONTROLS}
-        dispatch={dispatch}
-      />
-    </div>
+  return (
+    <GameCore scale={scale} replayMode={replayMode} replayData={replayData} />
   );
 };
