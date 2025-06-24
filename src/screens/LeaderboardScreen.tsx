@@ -1,6 +1,8 @@
+import { ArrowLeft, Trophy, Clock } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
+import { Button } from '@/components/Button';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 
 export function LeaderboardScreen() {
@@ -8,35 +10,18 @@ export function LeaderboardScreen() {
   const [searchParams] = useSearchParams();
   const { savedReplays } = useSaveLoadReplay();
 
-  const filter = searchParams.get('filter') || 'all';
+  const filter = searchParams.get('filter') || 'score';
 
   const filteredReplays = useMemo(() => {
-    let replays = [...savedReplays];
+    const replays = [...savedReplays];
 
     // Apply filters
     switch (filter) {
-      case 'score':
-        replays = replays.filter(
-          r => r.data.metadata?.finalScore !== undefined
-        );
-        replays.sort(
-          (a, b) =>
-            (b.data.metadata?.finalScore || 0) -
-            (a.data.metadata?.finalScore || 0)
-        );
-        break;
-      case 'duration':
-        replays = replays.filter(r => r.data.metadata?.duration !== undefined);
-        replays.sort(
-          (a, b) =>
-            (b.data.metadata?.duration || 0) - (a.data.metadata?.duration || 0)
-        );
-        break;
       case 'recent':
         replays.sort((a, b) => b.savedAt - a.savedAt);
         break;
       default:
-        // 'all' - sort by score if available, then by date
+        // 'score' - sort by score, then by date
         replays.sort((a, b) => {
           const scoreA = a.data.metadata?.finalScore || 0;
           const scoreB = b.data.metadata?.finalScore || 0;
@@ -60,94 +45,120 @@ export function LeaderboardScreen() {
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
   return (
-    <div className="min-h-screen bg-black p-8 text-white">
-      <div className="mx-auto max-w-4xl">
+    <div className="bg-game-background flex h-full w-full flex-col items-center justify-center p-4">
+      <div className="w-full max-w-2xl rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8 shadow-2xl backdrop-blur-sm">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-4xl font-bold text-purple-400">Leaderboard</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="rounded bg-gray-800 px-4 py-2 transition-colors hover:bg-gray-700"
-          >
-            Back to Menu
-          </button>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-4xl font-bold tracking-tight text-white">
+            Rankings
+          </h1>
+          <p className="text-sm text-gray-400">
+            {filteredReplays.length}{' '}
+            {filteredReplays.length === 1 ? 'replay' : 'replays'}
+          </p>
         </div>
 
         {/* Filter Tabs */}
-        <div className="mb-6 flex gap-4">
-          {[
-            { key: 'all', label: 'All' },
-            { key: 'score', label: 'High Score' },
-            { key: 'duration', label: 'Duration' },
-            { key: 'recent', label: 'Recent' },
-          ].map(({ key, label }) => (
-            <Link
-              key={key}
-              to={`/leaderboard${key === 'all' ? '' : `?filter=${key}`}`}
-              className={`rounded px-4 py-2 transition-colors ${
-                filter === key
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
+        <div className="mb-6 flex w-full gap-2">
+          <Button
+            onClick={() => navigate('/leaderboard')}
+            variant={
+              !searchParams.get('filter') ||
+              searchParams.get('filter') === 'score'
+                ? 'primary'
+                : 'secondary'
+            }
+            icon={Trophy}
+            fullWidth
+          >
+            High Score
+          </Button>
+          <Button
+            onClick={() => navigate('/leaderboard?filter=recent')}
+            variant={
+              searchParams.get('filter') === 'recent' ? 'primary' : 'secondary'
+            }
+            icon={Clock}
+            fullWidth
+          >
+            Recent
+          </Button>
         </div>
 
         {/* Replay List */}
-        {filteredReplays.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="mb-4 text-lg text-gray-400">No replays found</p>
-            <button
-              onClick={() => navigate('/play')}
-              className="rounded bg-purple-600 px-6 py-3 transition-colors hover:bg-purple-700"
-            >
-              Play Game
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredReplays.map((replay, index) => (
-              <Link
-                key={replay.id}
-                to={`/replays/${replay.id}`}
-                className="block rounded-lg border border-gray-700 bg-gray-900 p-4 transition-colors hover:bg-gray-800"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 text-2xl font-bold text-purple-400">
-                      #{index + 1}
+        <div className="mb-6 max-h-96 overflow-y-auto">
+          {filteredReplays.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="mb-4 text-gray-400">No replays found</p>
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => navigate('/play')}
+                  variant="primary"
+                  className="w-auto"
+                >
+                  Start Playing
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredReplays.map((replay, index) => (
+                <Link
+                  key={replay.id}
+                  to={`/replays/${replay.id}`}
+                  className="block rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 transition-all duration-200 hover:border-gray-600/50 hover:bg-gray-700/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold text-gray-300">
+                        #{index + 1}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white">
+                          {replay.name}
+                        </h3>
+                        <p className="text-xs text-gray-400">
+                          {replay.data.metadata?.playerName || 'Anonymous'} •{' '}
+                          {formatDate(replay.savedAt)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{replay.name}</h3>
-                      <p className="text-sm text-gray-400">
-                        {replay.data.metadata?.playerName || 'Anonymous'} •{' '}
-                        {formatDate(replay.savedAt)}
-                      </p>
+                    <div className="text-right">
+                      {replay.data.metadata?.finalScore && (
+                        <div className="font-bold text-white">
+                          {replay.data.metadata.finalScore.toLocaleString()}
+                        </div>
+                      )}
+                      {replay.data.metadata?.duration && (
+                        <div className="text-xs text-gray-400">
+                          {formatDuration(replay.data.metadata.duration)}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    {replay.data.metadata?.finalScore && (
-                      <div className="text-xl font-bold text-yellow-400">
-                        {replay.data.metadata.finalScore.toLocaleString()}
-                      </div>
-                    )}
-                    {replay.data.metadata?.duration && (
-                      <div className="text-sm text-gray-400">
-                        {formatDuration(replay.data.metadata.duration)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Back Button */}
+        <Button
+          onClick={() => navigate('/')}
+          variant="secondary"
+          icon={ArrowLeft}
+          fullWidth
+        >
+          Back to Menu
+        </Button>
       </div>
     </div>
   );

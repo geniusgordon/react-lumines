@@ -1,5 +1,6 @@
 import { Bug, Play, SkipForward } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../Button';
 
 interface PrimaryControlsProps {
   debugMode: boolean;
@@ -30,26 +31,15 @@ export function PrimaryControls({
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
           onClick={onToggleDebugMode}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 font-medium transition-all ${
-            debugMode
-              ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg hover:from-orange-500 hover:to-red-500'
-              : 'bg-gradient-to-r from-gray-600 to-gray-700 text-gray-100 hover:from-gray-500 hover:to-gray-600'
-          }`}
-          title={
-            debugMode
-              ? 'Disable debug mode and resume normal gameplay'
-              : 'Enable debug mode for frame-by-frame analysis'
-          }
+          variant={debugMode ? 'warning' : 'secondary'}
+          size="md"
+          icon={debugMode ? Play : Bug}
+          fullWidth
         >
-          {debugMode ? (
-            <Play className="h-4 w-4" />
-          ) : (
-            <Bug className="h-4 w-4" />
-          )}
           {debugMode ? 'Exit Debug' : 'Debug Mode'}
-        </button>
+        </Button>
       </div>
 
       {debugMode && gameStatus === 'playing' && (
@@ -68,14 +58,15 @@ export function PrimaryControls({
               className="w-16 rounded border border-gray-600 bg-gray-800 px-2 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
               title="Number of frames to advance"
             />
-            <button
+            <Button
               onClick={() => onManualStep(stepCount)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-2 font-medium text-white shadow-lg transition-all hover:from-blue-500 hover:to-indigo-500"
-              title={`Advance ${stepCount} frame${stepCount === 1 ? '' : 's'} (${(stepCount * 16.67).toFixed(1)}ms)`}
+              variant="primary"
+              size="md"
+              icon={SkipForward}
+              className="flex-1"
             >
-              <SkipForward className="h-4 w-4" />
               Step {stepCount}
-            </button>
+            </Button>
           </div>
 
           <div className="flex gap-1">

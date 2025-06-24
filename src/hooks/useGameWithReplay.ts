@@ -106,10 +106,13 @@ function validateReplayData(replayData: ReplayData): {
   return { valid: errors.length === 0, errors };
 }
 
-export function useGameWithReplay(initialSeed?: string, debugMode = false) {
+export function useGameWithReplay(
+  initialSeed?: string,
+  defaultDebugMode = false
+) {
   const [gameState, dispatchGame] = useReducer(
     gameReducerWithDebug,
-    createInitialGameState(initialSeed, debugMode)
+    createInitialGameState(initialSeed, defaultDebugMode)
   );
 
   const {
@@ -191,7 +194,7 @@ export function useGameWithReplay(initialSeed?: string, debugMode = false) {
   // Use the game loop with the unified dispatch function
   const gameLoop = useGameLoop(gameState, dispatch, {
     enabled: true,
-    debugMode,
+    debugMode: gameState.debugMode,
   });
 
   // Start recording when a new game starts

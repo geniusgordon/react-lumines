@@ -2,6 +2,7 @@ import { Play, ChartNoAxesColumn } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/Button';
 import { KeyboardShortcuts } from '@/components/DebugPanel';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 
@@ -29,21 +30,23 @@ export const StartScreen: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          <button
+          <Button
             onClick={handleStartGame}
-            className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-500 hover:to-blue-600 hover:shadow-xl focus:ring-2 focus:ring-blue-400/50 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none"
+            variant="primary"
+            icon={Play}
+            fullWidth
           >
-            <Play className="h-5 w-5 transition-transform" />
-            <span className="text-lg">Start Game</span>
-          </button>
+            Start Game
+          </Button>
 
-          <button
+          <Button
             onClick={handleRankings}
-            className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 font-medium text-gray-200 shadow-lg transition-all duration-200 hover:from-gray-600 hover:to-gray-700 hover:shadow-xl focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none"
+            variant="secondary"
+            icon={ChartNoAxesColumn}
+            fullWidth
           >
-            <ChartNoAxesColumn className="h-5 w-5 transition-transform" />
-            <span className="text-lg">Rankings</span>
-          </button>
+            Rankings
+          </Button>
         </div>
 
         <div className="mt-8 space-y-4">
