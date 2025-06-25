@@ -23,7 +23,6 @@ export interface ReplayState {
   isPlayback: boolean;
   currentReplay: ReplayData | null;
   recordedInputs: ReplayInput[];
-  playbackInputMap: Map<number, ReplayInput>; // Frame -> Input mapping for O(1) lookup
 }
 
 export interface SavedReplay {

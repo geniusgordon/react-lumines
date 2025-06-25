@@ -16,10 +16,9 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
   describe('Game tick progression', () => {
     it('should increment frame and drop timer on tick', () => {
-      const action: GameAction = { type: 'TICK', frame: 10 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(playingState, action);
 
-      expect(newState.frame).toBe(10);
       expect(newState.dropTimer).toBe(playingState.dropTimer + 1);
     });
 
@@ -29,7 +28,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         dropTimer: playingState.dropInterval - 1,
       };
 
-      const action: GameAction = { type: 'TICK', frame: 100 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(stateNearDrop, action);
 
       expect(newState.blockPosition.y).toBe(-1); // Should drop
@@ -49,7 +48,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         },
       };
 
-      const action: GameAction = { type: 'TICK', frame: 100 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(timelineState, action);
 
       expect(newState.timeline.x).toBe(6); // 5 + 1 (moved one column)
@@ -70,7 +69,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         },
       };
 
-      const action: GameAction = { type: 'TICK', frame: 100 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(timelineState, action);
 
       expect(newState.timeline.x).toBe(5); // No movement yet
@@ -91,7 +90,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         },
       };
 
-      const action: GameAction = { type: 'TICK', frame: 100 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(timelineState, action);
 
       expect(newState.timeline.active).toBe(true); // Timeline stays active for continuous sweep
@@ -101,7 +100,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
     it('should not tick when game is not playing', () => {
       const pausedState = { ...initialState, status: 'paused' as const };
-      const action: GameAction = { type: 'TICK', frame: 100 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(pausedState, action);
 
       expect(newState.frame).toBe(pausedState.frame); // Frame should not update
@@ -148,51 +147,13 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         blockPosition: { x: 5, y: 8 }, // Position for immediate placement
       };
 
-      const action: GameAction = { type: 'SOFT_DROP', frame: 100 };
+      const action: GameAction = { type: 'SOFT_DROP' };
       const newState = gameReducer(stateWithFloatingAndFallingBlock, action);
 
       // Should have placed block and spawned new one
       expect(newState.currentBlock.id).not.toBe(
         stateWithFloatingAndFallingBlock.currentBlock.id
       );
-      expect(newState.frame).toBe(100);
-    });
-
-    it('should handle complex gravity scenarios through timeline mechanics', () => {
-      // Note: Complex gravity scenarios are tested directly in gameLogic.test.ts
-      // This integration test verifies gravity works within the full game system
-      const complexBoard = createEmptyBoard();
-      complexBoard[6][3] = 1; // Create a pattern that will be cleared
-      complexBoard[6][4] = 1;
-      complexBoard[7][3] = 1;
-      complexBoard[7][4] = 1;
-      complexBoard[4][3] = 2; // Floating blocks above
-      complexBoard[5][3] = 1;
-
-      const complexState = {
-        ...playingState,
-        board: complexBoard,
-        timeline: {
-          x: 5, // Timeline will clear the pattern
-          sweepInterval: 1,
-          timer: 0,
-          active: true,
-          holdingScore: 0,
-        },
-        detectedPatterns: [{ x: 3, y: 6, color: 1 as const }],
-        markedCells: [
-          { x: 3, y: 6, color: 1 as const },
-          { x: 3, y: 7, color: 1 as const },
-          { x: 4, y: 6, color: 1 as const },
-          { x: 4, y: 7, color: 1 as const },
-        ],
-      };
-
-      const action: GameAction = { type: 'TICK', frame: 100 };
-      const newState = gameReducer(complexState, action);
-
-      // Timeline should have processed and gravity should be applied
-      expect(newState.frame).toBe(100);
     });
 
     it('should not process game mechanics when game is not playing', () => {
@@ -200,7 +161,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         ...stateWithFloatingBlocks,
         status: 'paused' as const,
       };
-      const action: GameAction = { type: 'TICK', frame: 100 };
+      const action: GameAction = { type: 'TICK' };
       const newState = gameReducer(pausedState, action);
 
       expect(newState).toBe(pausedState); // State should be unchanged when paused
@@ -236,7 +197,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       };
 
       // Perform a game tick
-      const result = gameReducer(stateWithPattern, { type: 'TICK', frame: 1 });
+      const result = gameReducer(stateWithPattern, { type: 'TICK' });
 
       // Should detect the 2x2 pattern
       expect(result.detectedPatterns).toHaveLength(1);
@@ -282,7 +243,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         board: boardWithPatterns,
       };
 
-      const result = gameReducer(stateWithPatterns, { type: 'TICK', frame: 1 });
+      const result = gameReducer(stateWithPatterns, { type: 'TICK' });
 
       expect(result.detectedPatterns).toHaveLength(2);
       expect(result.detectedPatterns).toContainEqual({
@@ -335,7 +296,6 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
       const result = gameReducer(stateWithLargePattern, {
         type: 'TICK',
-        frame: 1,
       });
 
       expect(result.detectedPatterns).toHaveLength(2);
@@ -363,7 +323,6 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       // Perform tick on empty board (no patterns)
       const result = gameReducer(stateWithOldPatterns, {
         type: 'TICK',
-        frame: 1,
       });
 
       expect(result.detectedPatterns).toHaveLength(0);
@@ -400,7 +359,6 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
       const result = gameReducer(stateWithMismatchedColors, {
         type: 'TICK',
-        frame: 1,
       });
 
       expect(result.detectedPatterns).toHaveLength(0);
@@ -415,7 +373,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         blockPosition: { x: 7, y: 8 },
       };
 
-      const action: GameAction = { type: 'SOFT_DROP', frame: 100 };
+      const action: GameAction = { type: 'SOFT_DROP' };
       const newState = gameReducer(bottomState, action);
 
       // Should generate new block
@@ -435,7 +393,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
         blockPosition: { x: 7, y: 8 },
       };
 
-      const action: GameAction = { type: 'SOFT_DROP', frame: 100 };
+      const action: GameAction = { type: 'SOFT_DROP' };
       const newState = gameReducer(stateToPlace, action);
 
       // Check that block was placed on board (implementation dependent)
@@ -484,54 +442,12 @@ describe('Game Reducer - Gameplay Mechanics', () => {
        */
 
       // Try to drop the block - it should be placed and gravity should settle everything
-      const action: GameAction = { type: 'SOFT_DROP', frame: 100 };
+      const action: GameAction = { type: 'SOFT_DROP' };
       const newState = gameReducer(stateWithGap, action);
 
       // Verify the block was placed and a new block was spawned
       expect(newState.currentBlock.id).not.toBe(stateWithGap.currentBlock.id);
       expect(newState.blockPosition).toEqual({ x: 7, y: -2 }); // Reset position
-    });
-
-    it('should handle gravity through timeline clearing mechanics', () => {
-      // This is an integration test showing gravity works in the full game flow
-      // when patterns are cleared by the timeline sweep
-      const stateWithPattern = {
-        ...playingState,
-        board: [
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 0
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 1
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 2
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 3
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 4
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 5
-          [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 6 - floating block
-          [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 7 - floating block
-          [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 8 - pattern to clear
-          [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 9 - pattern to clear
-        ] as GameBoard,
-        timeline: {
-          x: 5, // Timeline will clear the pattern
-          sweepInterval: 1,
-          timer: 0,
-          active: true,
-          holdingScore: 0,
-        },
-        detectedPatterns: [{ x: 3, y: 8, color: 1 as const }],
-        markedCells: [
-          { x: 3, y: 8, color: 1 as const },
-          { x: 3, y: 9, color: 1 as const },
-          { x: 4, y: 8, color: 1 as const },
-          { x: 4, y: 9, color: 1 as const },
-        ],
-      };
-
-      // The TICK action should process timeline and apply gravity
-      const action: GameAction = { type: 'TICK', frame: 100 };
-      const newState = gameReducer(stateWithPattern, action);
-
-      // Pattern should be cleared and floating blocks should fall
-      // (Exact assertions depend on timeline clearing implementation)
-      expect(newState.frame).toBe(100);
     });
   });
 });

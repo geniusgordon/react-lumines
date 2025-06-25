@@ -1,7 +1,10 @@
+import { useMemo } from 'react';
+
 import { useResponsiveScale } from '@/hooks';
 import type { ReplayData } from '@/types/replay';
 
-import { GameCore } from './GameCore';
+import { GamePlayer } from './GamePlayer';
+import { ReplayPlayer } from './ReplayPlayer';
 
 interface GameProps {
   replayMode?: boolean;
@@ -19,6 +22,12 @@ export const Game: React.FC<GameProps> = ({
     padding: 20,
   });
 
+  // Check if debug panel should be shown
+  const showDebugPanel = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('debug') === 'true';
+  }, []);
+
   if (!ready) {
     return (
       <div className="bg-game-background flex h-full w-full items-center justify-center">
@@ -27,7 +36,16 @@ export const Game: React.FC<GameProps> = ({
     );
   }
 
-  return (
-    <GameCore scale={scale} replayMode={replayMode} replayData={replayData} />
-  );
+  // Conditionally render appropriate player component
+  if (replayMode && replayData) {
+    return (
+      <ReplayPlayer
+        scale={scale}
+        replayData={replayData}
+        showDebugPanel={showDebugPanel}
+      />
+    );
+  }
+
+  return <GamePlayer scale={scale} showDebugPanel={showDebugPanel} />;
 };

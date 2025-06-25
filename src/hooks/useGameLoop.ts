@@ -103,12 +103,10 @@ export function useGameLoop(
 
   // Fixed timestep update function
   const gameUpdate = useCallback(() => {
-    const currentFrame = gameState.frame + 1;
     dispatch({
       type: 'TICK',
-      frame: currentFrame,
     });
-  }, [gameState.frame, dispatch]);
+  }, [dispatch]);
 
   // Manual frame stepping function for debug mode
   const manualStep = useCallback(
@@ -118,15 +116,13 @@ export function useGameLoop(
         (gameState.status === 'playing' || gameState.status === 'countdown')
       ) {
         for (let i = 0; i < steps; i++) {
-          const currentFrame = gameState.frame + 1 + i;
           dispatch({
             type: 'TICK',
-            frame: currentFrame,
           });
         }
       }
     },
-    [debugMode, gameState.status, gameState.frame, dispatch]
+    [debugMode, gameState.status, dispatch]
   );
 
   // Main game loop with fixed timestep

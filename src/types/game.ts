@@ -81,7 +81,6 @@ export type GameActionType =
 // Game action structure
 export interface GameAction {
   type: GameActionType;
-  frame: number; // Frame when action occurred (for determinism)
   payload?: unknown; // Additional action data
 }
 
@@ -130,7 +129,7 @@ export interface GameState {
 // Replay system types
 export interface ReplayInput {
   type: GameActionType;
-  frame: number;
+  frame: number; // Frame when input should be applied
   payload?: unknown;
 }
 

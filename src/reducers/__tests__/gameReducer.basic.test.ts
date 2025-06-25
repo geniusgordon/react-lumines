@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { TIMER_CONFIG } from '@/constants/gameConfig';
+import { TIMER_CONFIG } from '@/constants';
 import type { GameState, GameAction, GameActionType } from '@/types/game';
 import { createEmptyBoard } from '@/utils/gameLogic';
 
@@ -47,7 +47,7 @@ describe('Game Reducer - Basic Functionality', () => {
 
   describe('Game flow actions', () => {
     it('should start game', () => {
-      const action: GameAction = { type: 'START_GAME', frame: 0 };
+      const action: GameAction = { type: 'START_GAME' };
       const newState = gameReducer(initialState, action);
 
       expect(newState.status).toBe('countdown');
@@ -58,20 +58,18 @@ describe('Game Reducer - Basic Functionality', () => {
 
     it('should pause game', () => {
       const playingState = { ...initialState, status: 'playing' as const };
-      const action: GameAction = { type: 'PAUSE', frame: 100 };
+      const action: GameAction = { type: 'PAUSE' };
       const newState = gameReducer(playingState, action);
 
       expect(newState.status).toBe('paused');
-      expect(newState.frame).toBe(100);
     });
 
     it('should resume game', () => {
       const pausedState = { ...initialState, status: 'paused' as const };
-      const action: GameAction = { type: 'RESUME', frame: 150 };
+      const action: GameAction = { type: 'RESUME' };
       const newState = gameReducer(pausedState, action);
 
       expect(newState.status).toBe('playing');
-      expect(newState.frame).toBe(150);
     });
 
     it('should restart game', () => {
@@ -82,7 +80,7 @@ describe('Game Reducer - Basic Functionality', () => {
         frame: 500,
       };
 
-      const action: GameAction = { type: 'RESTART', frame: 0 };
+      const action: GameAction = { type: 'RESTART' };
       const newState = gameReducer(gameOverState, action);
 
       expect(newState.status).toBe('initial');
@@ -94,30 +92,26 @@ describe('Game Reducer - Basic Functionality', () => {
     it('should toggle debug mode', () => {
       const action: GameAction = {
         type: 'SET_DEBUG_MODE',
-        frame: 50,
         payload: true,
       };
       const newState = gameReducer(initialState, action);
 
       expect(newState.debugMode).toBe(true);
-      expect(newState.frame).toBe(50);
 
       // Test toggle off
       const offAction: GameAction = {
         type: 'SET_DEBUG_MODE',
-        frame: 60,
         payload: false,
       };
       const offState = gameReducer(newState, offAction);
 
       expect(offState.debugMode).toBe(false);
-      expect(offState.frame).toBe(60);
     });
   });
 
   describe('Countdown functionality', () => {
     it('should start with countdown of 3', () => {
-      const action: GameAction = { type: 'START_GAME', frame: 0 };
+      const action: GameAction = { type: 'START_GAME' };
       const newState = gameReducer(initialState, action);
 
       expect(newState.status).toBe('countdown');
@@ -125,45 +119,48 @@ describe('Game Reducer - Basic Functionality', () => {
     });
 
     it('should countdown from 3 to 2 to 1', () => {
-      const startAction: GameAction = { type: 'START_GAME', frame: 0 };
+      const startAction: GameAction = { type: 'START_GAME' };
       let state = gameReducer(initialState, startAction);
 
       // First countdown (3 -> 2)
-      const tick1: GameAction = {
-        type: 'TICK',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
-      };
-      state = gameReducer(state, tick1);
-      expect(state.countdown).toBe(2);
+      for (let i = 1; i <= TIMER_CONFIG.COUNTDOWN_DURATION; i++) {
+        const tick1: GameAction = {
+          type: 'TICK',
+        };
+        state = gameReducer(state, tick1);
+      }
+      expect(state.countdown).toBe(TIMER_CONFIG.COUNTDOWN_START - 1);
       expect(state.status).toBe('countdown');
 
       // Second countdown (2 -> 1)
-      const tick2: GameAction = {
-        type: 'TICK',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION * 2,
-      };
-      state = gameReducer(state, tick2);
-      expect(state.countdown).toBe(1);
+      for (let i = 1; i <= TIMER_CONFIG.COUNTDOWN_DURATION; i++) {
+        const tick2: GameAction = {
+          type: 'TICK',
+        };
+        state = gameReducer(state, tick2);
+      }
+      expect(state.countdown).toBe(TIMER_CONFIG.COUNTDOWN_START - 2);
       expect(state.status).toBe('countdown');
 
       // Final countdown (1 -> 0, start playing)
-      const tick3: GameAction = {
-        type: 'TICK',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION * 3,
-      };
-      state = gameReducer(state, tick3);
-      expect(state.countdown).toBe(0);
+      for (let i = 1; i <= TIMER_CONFIG.COUNTDOWN_DURATION; i++) {
+        const tick3: GameAction = {
+          type: 'TICK',
+        };
+        state = gameReducer(state, tick3);
+      }
+      expect(state.countdown).toBe(TIMER_CONFIG.COUNTDOWN_START - 3);
       expect(state.status).toBe('playing');
     });
 
     it('should handle game timer countdown', () => {
       // Start game and get to playing state
-      const startAction: GameAction = { type: 'START_GAME', frame: 0 };
+      const startAction: GameAction = { type: 'START_GAME' };
       let state = gameReducer(initialState, startAction);
 
       // Fast forward through countdown
-      for (let i = 1; i <= 3; i++) {
-        const tick: GameAction = { type: 'TICK', frame: i * 60 };
+      for (let i = 1; i <= TIMER_CONFIG.COUNTDOWN_DURATION * 3; i++) {
+        const tick: GameAction = { type: 'TICK' };
         state = gameReducer(state, tick);
       }
 
@@ -171,7 +168,7 @@ describe('Game Reducer - Basic Functionality', () => {
       const initialGameTimer = state.gameTimer;
 
       // Game timer should count down during play
-      const playTick: GameAction = { type: 'TICK', frame: 181 };
+      const playTick: GameAction = { type: 'TICK' };
       state = gameReducer(state, playTick);
       expect(state.gameTimer).toBe(initialGameTimer - 1);
     });
@@ -184,7 +181,7 @@ describe('Game Reducer - Basic Functionality', () => {
         gameTimer: 1,
       };
 
-      const tick: GameAction = { type: 'TICK', frame: 3600 };
+      const tick: GameAction = { type: 'TICK' };
       const finalState = gameReducer(almostExpiredState, tick);
 
       expect(finalState.status).toBe('gameOver');
@@ -193,22 +190,22 @@ describe('Game Reducer - Basic Functionality', () => {
 
     it('should pause countdown and resume correctly', () => {
       // Start game with countdown
-      const startAction: GameAction = { type: 'START_GAME', frame: 0 };
+      const startAction: GameAction = { type: 'START_GAME' };
       let state = gameReducer(initialState, startAction);
       expect(state.status).toBe('countdown');
 
       // Advance to frame 30 (halfway through first countdown)
-      const tick1: GameAction = {
-        type: 'TICK',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
-      };
-      state = gameReducer(state, tick1);
+      for (let i = 1; i <= TIMER_CONFIG.COUNTDOWN_DURATION; i++) {
+        const tick1: GameAction = {
+          type: 'TICK',
+        };
+        state = gameReducer(state, tick1);
+      }
       expect(state.countdown).toBe(2);
 
       // Pause during countdown
       const pauseAction: GameAction = {
         type: 'PAUSE',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
       };
       state = gameReducer(state, pauseAction);
       expect(state.status).toBe('countdownPaused');
@@ -216,17 +213,17 @@ describe('Game Reducer - Basic Functionality', () => {
       // Resume - since useGameLoop stops during pause, frame doesn't advance
       const resumeAction: GameAction = {
         type: 'RESUME',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION,
       };
       state = gameReducer(state, resumeAction);
       expect(state.status).toBe('countdown');
 
       // Continue ticking from where we left off
-      const tick2: GameAction = {
-        type: 'TICK',
-        frame: TIMER_CONFIG.COUNTDOWN_DURATION * 2,
-      };
-      state = gameReducer(state, tick2);
+      for (let i = 1; i <= TIMER_CONFIG.COUNTDOWN_DURATION; i++) {
+        const tick2: GameAction = {
+          type: 'TICK',
+        };
+        state = gameReducer(state, tick2);
+      }
       expect(state.countdown).toBe(1);
     });
   });
@@ -235,7 +232,6 @@ describe('Game Reducer - Basic Functionality', () => {
     it('should ignore invalid actions', () => {
       const invalidAction = {
         type: 'INVALID_ACTION' as GameActionType,
-        frame: 10,
       };
       const newState = gameReducer(initialState, invalidAction);
 
@@ -244,7 +240,7 @@ describe('Game Reducer - Basic Functionality', () => {
 
     it('should not process actions when game is over', () => {
       const gameOverState = { ...initialState, status: 'gameOver' as const };
-      const action: GameAction = { type: 'MOVE_LEFT', frame: 10 };
+      const action: GameAction = { type: 'MOVE_LEFT' };
       const newState = gameReducer(gameOverState, action);
 
       expect(newState).toEqual(gameOverState);
@@ -252,7 +248,7 @@ describe('Game Reducer - Basic Functionality', () => {
 
     it('should not process movement actions when paused', () => {
       const pausedState = { ...initialState, status: 'paused' as const };
-      const action: GameAction = { type: 'MOVE_LEFT', frame: 10 };
+      const action: GameAction = { type: 'MOVE_LEFT' };
       const newState = gameReducer(pausedState, action);
 
       expect(newState).toEqual(pausedState);
@@ -262,7 +258,7 @@ describe('Game Reducer - Basic Functionality', () => {
   describe('State immutability', () => {
     it('should not mutate original state', () => {
       const originalState = { ...initialState };
-      const action: GameAction = { type: 'START_GAME', frame: 0 };
+      const action: GameAction = { type: 'START_GAME' };
 
       gameReducer(initialState, action);
 
@@ -270,14 +266,14 @@ describe('Game Reducer - Basic Functionality', () => {
     });
 
     it('should create new board instance', () => {
-      const action: GameAction = { type: 'START_GAME', frame: 0 };
+      const action: GameAction = { type: 'START_GAME' };
       const newState = gameReducer(initialState, action);
 
       expect(newState.board).not.toBe(initialState.board);
     });
 
     it('should create new block instances', () => {
-      const action: GameAction = { type: 'ROTATE_CW', frame: 10 };
+      const action: GameAction = { type: 'ROTATE_CW' };
       const playingState = { ...initialState, status: 'playing' as const };
       const newState = gameReducer(playingState, action);
 

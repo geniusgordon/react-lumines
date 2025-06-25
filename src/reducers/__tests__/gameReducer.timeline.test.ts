@@ -52,7 +52,6 @@ describe('Game Reducer - Timeline Processing', () => {
       // Simulate timeline moving to column 4 (which triggers processing of column 4)
       const result = gameReducer(stateWithPattern, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should accumulate holding score (1 point per pattern)
@@ -128,7 +127,7 @@ describe('Game Reducer - Timeline Processing', () => {
         board: boardWithMarkedBlocks,
       };
 
-      const result = gameReducer(finalState, { type: 'TICK', frame: 1 });
+      const result = gameReducer(finalState, { type: 'TICK' });
 
       // Should clear holding score by adding to main score
       expect(result.score).toBe(playingState.score + 3);
@@ -199,7 +198,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithEnteringPatterns, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should NOT clear because column 5 (being entered) has patterns
@@ -262,7 +260,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithMultiplePatterns, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should accumulate score for both patterns
@@ -310,7 +307,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithNoPatterns, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Timeline should move but no clearing should happen
@@ -350,7 +346,7 @@ describe('Game Reducer - Timeline Processing', () => {
         markedCells: [{ x: 14, y: 8, color: 1 as const }],
       };
 
-      const result = gameReducer(stateAtEdge, { type: 'TICK', frame: 1 });
+      const result = gameReducer(stateAtEdge, { type: 'TICK' });
 
       // Timeline should wrap to column 0
       expect(result.timeline.x).toBe(0);
@@ -398,7 +394,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithEnteringPattern, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should mark cells and add score for the pattern in the entering column
@@ -435,7 +430,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithPattern, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Timeline should move and process the entering column
@@ -459,7 +453,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithPattern, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Timeline should not move, just increment timer
@@ -507,7 +500,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithEdgePattern, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should process normally even at edge
@@ -532,7 +524,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateAtRightEdge, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should wrap around to column 0
@@ -583,7 +574,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(stateWithComplexMarking, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should clear all marked cells and apply score
@@ -610,7 +600,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(slowTimelineState, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should move after 30 frames
@@ -633,7 +622,6 @@ describe('Game Reducer - Timeline Processing', () => {
 
       const result = gameReducer(fastTimelineState, {
         type: 'TICK',
-        frame: 1,
       });
 
       // Should move every frame

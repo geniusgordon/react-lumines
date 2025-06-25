@@ -25,7 +25,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   }
 
   const handlePlayAgain = () => {
-    dispatch({ type: 'RESTART', frame: gameState.frame });
+    dispatch({ type: 'RESTART' });
   };
 
   const handleQuit = () => {

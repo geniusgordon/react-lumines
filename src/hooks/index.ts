@@ -6,4 +6,6 @@ export type { UseControlsOptions, UseControlsReturn } from './useControls';
 
 export { useResponsiveScale } from './useResponsiveScale';
 
-export { useGameWithReplay } from './useGameWithReplay';
+export { useGame } from './useGame';
+export { useGamePlayer } from './useGamePlayer';
+export { useReplayPlayer } from './useReplayPlayer';

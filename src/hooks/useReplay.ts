@@ -7,17 +7,14 @@ export function useReplay(gameState: GameState) {
   // Use refs to avoid re-renders during recording
   const recordedInputsRef = useRef<ReplayInput[]>([]);
   const currentReplayRef = useRef<ReplayData | null>(null);
-  const playbackInputMapRef = useRef<Map<number, ReplayInput>>(new Map());
 
   // Only use state for flags that actually need to trigger re-renders
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayback, setIsPlayback] = useState(false);
 
   const startRecording = useCallback(() => {
-    console.log('startRecording');
     recordedInputsRef.current = [];
     currentReplayRef.current = null;
-    playbackInputMapRef.current = new Map();
     setIsRecording(true);
     setIsPlayback(false);
   }, []);
@@ -32,71 +29,44 @@ export function useReplay(gameState: GameState) {
         return;
       }
 
-      // Only record user input actions
-      const recordableActions: GameAction['type'][] = [
-        'MOVE_LEFT',
-        'MOVE_RIGHT',
-        'ROTATE_CW',
-        'ROTATE_CCW',
-        'SOFT_DROP',
-        'HARD_DROP',
-        'PAUSE',
-        'RESUME',
-      ];
-
-      if (recordableActions.includes(gameAction.type)) {
-        const replayInput: ReplayInput = {
-          type: gameAction.type,
-          frame: gameAction.frame,
-          payload: gameAction.payload,
-        };
-        // Direct push to ref - no re-render
-        recordedInputsRef.current.push(replayInput);
-      }
+      // Record ALL actions (including TICK) - we'll compact later
+      const replayInput: ReplayInput = {
+        type: gameAction.type,
+        frame: 0, // Frame will be calculated during compaction
+        payload: gameAction.payload,
+      };
+      // Direct push to ref - no re-render
+      recordedInputsRef.current.push(replayInput);
     },
     [isRecording]
   );
-
-  const startPlayback = useCallback((replayData: ReplayData) => {
-    // Build frame -> input map for O(1) lookup during playback
-    const inputMap = new Map<number, ReplayInput>();
-    replayData.inputs.forEach(input => {
-      inputMap.set(input.frame, input);
-    });
-
-    currentReplayRef.current = replayData;
-    playbackInputMapRef.current = inputMap;
-    setIsRecording(false);
-    setIsPlayback(true);
-  }, []);
-
-  const stopPlayback = useCallback(() => {
-    currentReplayRef.current = null;
-    playbackInputMapRef.current = new Map();
-    setIsPlayback(false);
-  }, []);
-
-  const getNextPlaybackInput = useCallback((): ReplayInput | null => {
-    if (!isPlayback || !currentReplayRef.current) {
-      return null;
-    }
-
-    if (playbackInputMapRef.current.size === 0) {
-      return null;
-    }
-
-    const input = playbackInputMapRef.current.get(gameState.frame);
-    return input || null;
-  }, [isPlayback, gameState.frame]);
 
   const exportReplay = useCallback((): ReplayData | null => {
     if (!recordedInputsRef.current.length) {
       return null;
     }
 
+    // Compact the recorded actions: filter out TICKs and calculate frame numbers
+    const compactInputs: ReplayInput[] = [];
+    let currentFrame = 0;
+
+    for (const action of recordedInputsRef.current) {
+      if (action.type === 'TICK') {
+        // TICK actions advance the frame counter
+        currentFrame++;
+      } else {
+        // User input actions get recorded with current frame
+        compactInputs.push({
+          type: action.type,
+          frame: currentFrame,
+          payload: action.payload,
+        });
+      }
+    }
+
     return {
       seed: gameState.seed,
-      inputs: [...recordedInputsRef.current], // Create a copy
+      inputs: compactInputs,
       gameConfig: {
         version: '1.0.0',
         timestamp: Date.now(),
@@ -104,20 +74,102 @@ export function useReplay(gameState: GameState) {
     };
   }, [gameState.seed]);
 
+  // Reverse compaction: expand compact replay data into full action sequence
+  const expandReplayData = useCallback(
+    (replayData: ReplayData): GameAction[] => {
+      const expandedActions: GameAction[] = [];
+      let currentFrame = 0;
+
+      // Find the maximum frame number to know when to stop
+      const maxFrame =
+        replayData.inputs.length > 0
+          ? Math.max(...replayData.inputs.map(input => input.frame))
+          : 0;
+
+      // Generate sequence of actions with TICK actions inserted
+      while (currentFrame <= maxFrame) {
+        // Check if there's a user input at this frame
+        const inputAtFrame = replayData.inputs.find(
+          input => input.frame === currentFrame
+        );
+
+        if (inputAtFrame) {
+          // Add user input action first
+          expandedActions.push({
+            type: inputAtFrame.type as any, // Type assertion needed for GameActionType
+            payload: inputAtFrame.payload,
+          });
+        }
+
+        // Always add TICK action (except for the very last frame to avoid extra tick)
+        if (currentFrame <= maxFrame) {
+          expandedActions.push({
+            type: 'TICK',
+          });
+        }
+
+        currentFrame++;
+      }
+
+      return expandedActions;
+    },
+    []
+  );
+
+  // New playback mechanism using sequenced actions
+  const playbackActionsRef = useRef<GameAction[]>([]);
+  const playbackIndexRef = useRef<number>(0);
+
+  const startSequencedPlayback = useCallback(
+    (replayData: ReplayData) => {
+      // Expand replay data into full action sequence
+      const expandedActions = expandReplayData(replayData);
+
+      // Store the sequence and reset index
+      playbackActionsRef.current = expandedActions;
+      playbackIndexRef.current = 0;
+
+      currentReplayRef.current = replayData;
+      setIsRecording(false);
+      setIsPlayback(true);
+    },
+    [expandReplayData]
+  );
+
+  const getNextSequencedAction = useCallback((): GameAction | null => {
+    if (
+      !isPlayback ||
+      playbackIndexRef.current >= playbackActionsRef.current.length
+    ) {
+      return null;
+    }
+
+    const action = playbackActionsRef.current[playbackIndexRef.current];
+    playbackIndexRef.current++;
+    return action;
+  }, [isPlayback]);
+
+  const stopSequencedPlayback = useCallback(() => {
+    playbackActionsRef.current = [];
+    playbackIndexRef.current = 0;
+    currentReplayRef.current = null;
+    setIsPlayback(false);
+  }, []);
+
   return {
     replayState: {
       isRecording,
       isPlayback,
       currentReplay: currentReplayRef.current,
       recordedInputs: recordedInputsRef.current,
-      playbackInputMap: playbackInputMapRef.current,
     },
     startRecording,
     stopRecording,
     recordInput,
-    startPlayback,
-    stopPlayback,
-    getNextPlaybackInput,
     exportReplay,
+    expandReplayData,
+    startSequencedPlayback,
+    getNextSequencedAction,
+    stopSequencedPlayback,
   };
 }

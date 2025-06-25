@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import {
   GameLayout,
   PauseMenu,
@@ -7,49 +5,37 @@ import {
   Countdown,
 } from '@/components/Game';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
-import { useControls, useGameWithReplay } from '@/hooks';
-import type { ReplayData } from '@/types/replay';
+import type { UseControlsReturn, UseGameLoopReturn } from '@/hooks';
+import type { GameState } from '@/types/game';
 
 import { DebugPanel } from '../DebugPanel';
 
 interface GameCoreProps {
+  gameState: GameState;
+  dispatch: (action: any) => void;
+  controls: UseControlsReturn;
+  gameLoop?: UseGameLoopReturn | null;
+  showDebugPanel: boolean;
   scale: number;
-  replayMode?: boolean;
-  replayData?: ReplayData;
 }
 
 export const GameCore: React.FC<GameCoreProps> = ({
+  gameState,
+  dispatch,
+  controls,
+  gameLoop,
+  showDebugPanel,
   scale,
-  replayMode = false,
-  replayData,
 }) => {
-  const showDebugPanel = useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('debug') === 'true';
-  }, []);
-
-  const seed = useMemo(() => {
-    if (replayMode && replayData) {
-      return replayData.seed;
-    }
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('seed') ?? Date.now().toString();
-  }, [replayMode, replayData]);
-
-  const { gameState, gameLoop, dispatch } = useGameWithReplay(
-    seed,
-    showDebugPanel,
-    replayMode,
-    replayData
-  );
-
+  // Extract game loop properties (with fallbacks for replay mode)
   const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
-    gameLoop;
-
-  const controls = useControls(gameState, dispatch, {
-    enableKeyRepeat: false,
-    keyRepeatDelay: 100,
-  });
+    gameLoop || {
+      isRunning: false,
+      currentFPS: 0,
+      frameCount: 0,
+      manualStep: () => {},
+      isDebugMode: false,
+    };
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">

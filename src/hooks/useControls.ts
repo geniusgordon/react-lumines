@@ -108,13 +108,12 @@ export function useControls(
     (actionType: GameActionType, payload?: unknown) => {
       const action: GameAction = {
         type: actionType,
-        frame: gameState.frame,
         payload,
       };
 
       dispatch(action);
     },
-    [gameState.frame, dispatch]
+    [dispatch]
   );
 
   // Handle key press

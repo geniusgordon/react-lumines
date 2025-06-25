@@ -25,11 +25,11 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
   }
 
   const handleResume = () => {
-    dispatch({ type: 'RESUME', frame: gameState.frame });
+    dispatch({ type: 'RESUME' });
   };
 
   const handleRestart = () => {
-    dispatch({ type: 'RESTART', frame: gameState.frame });
+    dispatch({ type: 'RESTART' });
   };
 
   const handleQuit = () => {

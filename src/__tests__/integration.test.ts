@@ -19,12 +19,12 @@ describe('Integration Tests', () => {
 
       // Simulate identical game sequences
       const actions: GameAction[] = [
-        { type: 'START_GAME', frame: 0 },
-        { type: 'MOVE_LEFT', frame: 10 },
-        { type: 'ROTATE_CW', frame: 20 },
-        { type: 'HARD_DROP', frame: 30 },
-        { type: 'MOVE_RIGHT', frame: 40 },
-        { type: 'HARD_DROP', frame: 50 },
+        { type: 'START_GAME' },
+        { type: 'MOVE_LEFT' },
+        { type: 'ROTATE_CW' },
+        { type: 'HARD_DROP' },
+        { type: 'MOVE_RIGHT' },
+        { type: 'HARD_DROP' },
       ];
 
       let finalState1 = state1;
@@ -52,7 +52,7 @@ describe('Integration Tests', () => {
 
       // Simulate multiple ticks without reaching drop interval
       for (let i = 1; i < dropInterval; i++) {
-        currentState = gameReducer(currentState, { type: 'TICK', frame: i });
+        currentState = gameReducer(currentState, { type: 'TICK' });
         expect(currentState.frame).toBe(i);
         expect(currentState.dropTimer).toBe(i);
         expect(currentState.blockPosition).toEqual(initialPosition);
@@ -61,7 +61,6 @@ describe('Integration Tests', () => {
       // Next tick should trigger a drop
       currentState = gameReducer(currentState, {
         type: 'TICK',
-        frame: dropInterval,
       });
 
       expect(currentState.blockPosition.y).toBe(initialPosition.y + 1);
@@ -118,7 +117,6 @@ describe('Integration Tests', () => {
       // Try to place a new block (should trigger game over since no space exists for spawn)
       const finalState = gameReducer(currentState, {
         type: 'HARD_DROP',
-        frame: 100,
       });
 
       expect(finalState.status).toBe('gameOver');
@@ -137,7 +135,6 @@ describe('Integration Tests', () => {
       for (let i = 0; i < TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL; i++) {
         currentState = gameReducer(currentState, {
           type: 'TICK',
-          frame: i * TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL,
         });
 
         if (i === TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL - 1) {
@@ -164,7 +161,6 @@ describe('Integration Tests', () => {
 
       currentState = gameReducer(currentState, {
         type: 'TICK',
-        frame: TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL * 2,
       });
 
       expect(currentState.timeline.active).toBe(true); // Timeline stays active for continuous sweep
@@ -182,7 +178,7 @@ describe('Integration Tests', () => {
 
       // Process 1000 tick actions
       for (let i = 1; i <= 1000; i++) {
-        currentState = gameReducer(currentState, { type: 'TICK', frame: i });
+        currentState = gameReducer(currentState, { type: 'TICK' });
       }
 
       const endTime = performance.now();
@@ -211,13 +207,10 @@ describe('Integration Tests', () => {
         'TICK',
       ];
 
-      let frame = 0;
       for (const operation of operations) {
-        frame += 10;
         const previousState = { ...currentState };
         currentState = gameReducer(currentState, {
           type: operation as GameActionType,
-          frame,
         });
 
         // Verify immutability
@@ -227,31 +220,11 @@ describe('Integration Tests', () => {
         }
       }
 
-      expect(currentState.frame).toBe(frame);
       expect(currentState.status).toBe('playing');
     });
   });
 
   describe('Error resilience', () => {
-    it('should handle invalid frame numbers gracefully', () => {
-      const state = createInitialGameState('12345');
-      const playingState = { ...state, status: 'playing' as GameStatus };
-
-      // Test negative frame
-      const result1 = gameReducer(playingState, {
-        type: 'MOVE_LEFT',
-        frame: -10,
-      });
-      expect(result1.frame).toBe(-10); // Should still update frame but not break
-
-      // Test very large frame
-      const result2 = gameReducer(playingState, {
-        type: 'MOVE_RIGHT',
-        frame: 999999,
-      });
-      expect(result2.frame).toBe(999999);
-    });
-
     it('should maintain valid board state after all operations', () => {
       const state = createInitialGameState('12345');
       let currentState = { ...state, status: 'playing' as GameStatus };
@@ -269,8 +242,7 @@ describe('Integration Tests', () => {
       for (let i = 0; i < 50; i++) {
         const action = rng.choice(actions);
         currentState = gameReducer(currentState, {
-          type: action as any,
-          frame: i,
+          type: action as GameActionType,
         });
 
         // Verify board integrity

@@ -14,12 +14,12 @@ export function logDebugAction(
   action: GameAction,
   newState?: GameState
 ) {
-  if (!state.debugMode) {
+  if (action.type === 'TICK') {
     return;
   }
 
   const timestamp = new Date().toLocaleTimeString();
-  const frameInfo = `Frame ${action.frame}`;
+  const frameInfo = `Frame ${state.frame}`;
 
   console.groupCollapsed(`🐛 [${timestamp}] ${frameInfo} - ${action.type}`);
 
@@ -28,7 +28,7 @@ export function logDebugAction(
 
   // Log relevant state changes
   if (newState) {
-    const stateChanges: Record<string, { from: any; to: any }> = {};
+    const stateChanges: Record<string, any> = {};
 
     // Track key state changes
     if (state.status !== newState.status) {

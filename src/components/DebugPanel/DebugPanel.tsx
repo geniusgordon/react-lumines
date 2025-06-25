@@ -38,7 +38,6 @@ export function DebugPanel({
   const handleToggleDebugMode = () => {
     dispatch({
       type: 'SET_DEBUG_MODE',
-      frame: frameCount,
       payload: !gameState.debugMode,
     });
   };

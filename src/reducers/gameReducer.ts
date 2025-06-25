@@ -99,7 +99,7 @@ export function createInitialGameState(
  */
 function handleBlockMovement(
   state: GameState,
-  action: GameAction,
+  _action: GameAction,
   direction: 'left' | 'right'
 ): GameState {
   if (state.status !== 'playing') {
@@ -123,7 +123,6 @@ function handleBlockMovement(
     return {
       ...state,
       blockPosition: newPosition,
-      frame: action.frame,
     };
   }
 
@@ -135,7 +134,7 @@ function handleBlockMovement(
  */
 function handleBlockRotation(
   state: GameState,
-  action: GameAction,
+  _action: GameAction,
   direction: 'cw' | 'ccw'
 ): GameState {
   if (state.status !== 'playing') {
@@ -153,18 +152,13 @@ function handleBlockRotation(
       rotation: newRotation,
       pattern: getRotatedPattern(state.currentBlock, newRotation),
     },
-    frame: action.frame,
   };
 }
 
 /**
  * Handle soft drop logic
  */
-function handleSoftDrop(
-  state: GameState,
-  action: GameAction,
-  rng: SeededRNGType
-): GameState {
+function handleSoftDrop(state: GameState, rng: SeededRNGType): GameState {
   if (state.status !== 'playing') {
     return state;
   }
@@ -186,22 +180,17 @@ function handleSoftDrop(
       ...state,
       blockPosition: softDropPosition,
       dropTimer: 0, // Reset drop timer
-      frame: action.frame,
     };
   }
 
   // If can't drop, place block and apply gravity
-  return placeBlockAndApplyPhysics(state, action.frame, rng);
+  return placeBlockAndApplyPhysics(state, state.frame, rng);
 }
 
 /**
  * Handle hard drop logic
  */
-function handleHardDrop(
-  state: GameState,
-  action: GameAction,
-  rng: SeededRNGType
-): GameState {
+function handleHardDrop(state: GameState, rng: SeededRNGType): GameState {
   if (state.status !== 'playing') {
     return state;
   }
@@ -215,9 +204,8 @@ function handleHardDrop(
   const newState = {
     ...state,
     blockPosition: dropPosition,
-    frame: action.frame,
   };
-  return placeBlockAndApplyPhysics(newState, action.frame, rng);
+  return placeBlockAndApplyPhysics(newState, newState.frame, rng);
 }
 
 /**
@@ -236,15 +224,13 @@ function updatePatternDetection(state: GameState): GameState {
 /**
  * Handle countdown and timer logic
  */
-function handleCountdownAndTimer(
-  state: GameState,
-  action: GameAction
-): GameState {
+function handleCountdownAndTimer(state: GameState): GameState {
   // Handle countdown state
   if (state.status === 'countdown') {
     // Simple countdown logic - every 60 frames decrements countdown
+    const nextFrame = state.frame + 1;
     const countdownStep = Math.floor(
-      action.frame / TIMER_CONFIG.COUNTDOWN_DURATION
+      nextFrame / TIMER_CONFIG.COUNTDOWN_DURATION
     );
     const newCountdown = TIMER_CONFIG.COUNTDOWN_START - countdownStep;
 
@@ -254,14 +240,14 @@ function handleCountdownAndTimer(
         ...state,
         status: 'playing',
         countdown: 0,
-        frame: action.frame,
+        frame: nextFrame,
       };
     } else {
       // Continue countdown
       return {
         ...state,
         countdown: newCountdown,
-        frame: action.frame,
+        frame: nextFrame,
       };
     }
   }
@@ -276,14 +262,14 @@ function handleCountdownAndTimer(
         ...state,
         status: 'gameOver',
         gameTimer: 0,
-        frame: action.frame,
+        frame: state.frame + 1,
       };
     }
 
     return {
       ...state,
       gameTimer: newGameTimer,
-      frame: action.frame,
+      frame: state.frame + 1,
     };
   }
 
@@ -293,13 +279,9 @@ function handleCountdownAndTimer(
 /**
  * Handle game tick - main game loop logic
  */
-function handleGameTick(
-  state: GameState,
-  action: GameAction,
-  rng: SeededRNGType
-): GameState {
+function handleGameTick(state: GameState, rng: SeededRNGType): GameState {
   // First handle countdown and timer logic
-  let newState = handleCountdownAndTimer(state, action);
+  let newState = handleCountdownAndTimer(state);
 
   // Only process game logic if we're in playing state
   if (newState.status !== 'playing') {
@@ -307,7 +289,7 @@ function handleGameTick(
   }
 
   // Handle block dropping and placement
-  newState = handleBlockDrop(newState, action.frame, rng);
+  newState = handleBlockDrop(newState, newState.frame, rng);
 
   // Update pattern detection (only once per tick)
   newState = updatePatternDetection(newState);
@@ -602,25 +584,24 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...createInitialGameState(state.seed),
         status: 'countdown',
-        frame: action.frame,
         debugMode: state.debugMode,
       };
     }
 
     case 'PAUSE': {
       if (state.status === 'playing') {
-        return { ...state, status: 'paused', frame: action.frame };
+        return { ...state, status: 'paused' };
       } else if (state.status === 'countdown') {
-        return { ...state, status: 'countdownPaused', frame: action.frame };
+        return { ...state, status: 'countdownPaused' };
       }
       return state;
     }
 
     case 'RESUME': {
       if (state.status === 'paused') {
-        return { ...state, status: 'playing', frame: action.frame };
+        return { ...state, status: 'playing' };
       } else if (state.status === 'countdownPaused') {
-        return { ...state, status: 'countdown', frame: action.frame };
+        return { ...state, status: 'countdown' };
       }
       return state;
     }
@@ -635,7 +616,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         debugMode: newDebugMode,
-        frame: action.frame,
       };
     }
 
@@ -653,13 +633,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handleBlockRotation(state, action, 'ccw');
 
     case 'SOFT_DROP':
-      return handleSoftDrop(state, action, getRNG());
+      return handleSoftDrop(state, getRNG());
 
     case 'HARD_DROP':
-      return handleHardDrop(state, action, getRNG());
+      return handleHardDrop(state, getRNG());
 
     case 'TICK':
-      return handleGameTick(state, action, getRNG());
+      return handleGameTick(state, getRNG());
 
     default:
       if (state.debugMode) {
@@ -679,9 +659,9 @@ export function gameReducerWithDebug(
   const newState = gameReducer(state, action);
 
   // Log the final state changes if debug mode is enabled
-  if (state.debugMode) {
-    logDebugAction(state, action, newState);
-  }
+  // if (state.debugMode) {
+  logDebugAction(state, action, newState);
+  // }
 
   return newState;
 }
