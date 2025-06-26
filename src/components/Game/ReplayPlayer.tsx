@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-
 import { useControls, useReplayPlayer } from '@/hooks';
 import type { ReplayData } from '@/types/replay';
 
@@ -17,9 +15,8 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   showDebugPanel = false,
 }) => {
   // Use replay processing hook
-  const { gameState, processReplay, isProcessing } = useReplayPlayer(
-    replayData.seed
-  );
+  const { gameState, pauseReplay, resumeReplay, startNewGame, restartReplay } =
+    useReplayPlayer(replayData);
 
   // Setup controls (disabled for replay mode)
   const emptyActions = {
@@ -29,24 +26,17 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
     rotateCCW: () => {},
     softDrop: () => {},
     hardDrop: () => {},
-    pause: () => {},
-    resume: () => {},
+    pause: pauseReplay,
+    resume: resumeReplay,
     tick: () => {},
-    startNewGame: () => {},
-    restartGame: () => {},
+    startNewGame: startNewGame,
+    restartGame: restartReplay,
     setDebugMode: () => {},
   };
   const controls = useControls(gameState, emptyActions, {
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
   });
-
-  // Process replay when component mounts or replay data changes
-  useEffect(() => {
-    if (replayData && !isProcessing) {
-      processReplay(replayData);
-    }
-  }, [replayData, processReplay, isProcessing]);
 
   return (
     <GameCore

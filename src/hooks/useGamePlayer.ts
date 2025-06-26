@@ -4,7 +4,7 @@ import type { GameAction } from '@/types/game';
 
 import { useGame } from './useGame';
 import { useGameLoop } from './useGameLoop';
-import { useReplay } from './useReplay';
+import { useReplayRecorder } from './useReplayRecorder';
 import { useSaveLoadReplay } from './useSaveLoadReplay';
 
 export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
@@ -19,7 +19,7 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
     stopRecording,
     recordInput,
     exportReplay,
-  } = useReplay(gameState);
+  } = useReplayRecorder(gameState);
 
   const { saveReplay } = useSaveLoadReplay();
 
@@ -33,7 +33,7 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
       gameState.status === 'gameOver'
     ) {
       // Only stop recording and save if we're currently recording
-      if (replayState.isRecording && !replayState.isPlayback) {
+      if (replayState.isRecording) {
         stopRecording();
 
         // Export and save the replay
@@ -62,7 +62,6 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
     gameState.status,
     gameState.score,
     replayState.isRecording,
-    replayState.isPlayback,
     stopRecording,
     exportReplay,
     saveReplay,

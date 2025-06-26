@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 
+import { FRAME_INTERVAL_MS } from '@/constants/gameConfig';
 import type { GameAction, GameActionType } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 
@@ -101,9 +102,16 @@ function validateReplayData(replayData: ReplayData): {
   return { valid: errors.length === 0, errors };
 }
 
-// Reverse compaction: expand compact replay data into full action sequence
-function expandReplayData(replayData: ReplayData): GameAction[] {
-  const expandedActions: GameAction[] = [];
+// Frame-based action structure
+interface FrameActions {
+  frame: number;
+  userActions: GameAction[];
+  hasTick: boolean;
+}
+
+// Reverse compaction: expand compact replay data into frame-based structure
+function expandReplayData(replayData: ReplayData): FrameActions[] {
+  const frameActions: FrameActions[] = [];
   let currentFrame = 0;
 
   // Find the maximum frame number to know when to stop
@@ -112,52 +120,134 @@ function expandReplayData(replayData: ReplayData): GameAction[] {
       ? Math.max(...replayData.inputs.map(input => input.frame))
       : 0;
 
-  // Generate sequence of actions with TICK actions inserted
+  // Generate sequence of frame-based actions
   while (currentFrame <= maxFrame) {
-    // Check if there's a user input at this frame
-    const inputAtFrame = replayData.inputs.find(
+    // Find all user inputs at this frame
+    const inputsAtFrame = replayData.inputs.filter(
       input => input.frame === currentFrame
     );
 
-    if (inputAtFrame) {
-      // Add user input action first
-      expandedActions.push({
-        type: inputAtFrame.type as any, // Type assertion needed for GameActionType
-        payload: inputAtFrame.payload,
-      });
-    }
+    const userActions: GameAction[] = inputsAtFrame.map(input => ({
+      type: input.type as any, // Type assertion needed for GameActionType
+      payload: input.payload,
+    }));
 
-    // Always add TICK action (except for the very last frame to avoid extra tick)
-    if (currentFrame <= maxFrame) {
-      expandedActions.push({
-        type: 'TICK',
-      });
-    }
+    // Every frame has a TICK action
+    frameActions.push({
+      frame: currentFrame,
+      userActions,
+      hasTick: true,
+    });
 
     currentFrame++;
+  }
+
+  return frameActions;
+}
+
+// Legacy function for backward compatibility
+function expandReplayDataLegacy(replayData: ReplayData): GameAction[] {
+  const frameActions = expandReplayData(replayData);
+  const expandedActions: GameAction[] = [];
+
+  for (const frame of frameActions) {
+    // Add user actions first
+    expandedActions.push(...frame.userActions);
+    // Then add TICK if present
+    if (frame.hasTick) {
+      expandedActions.push({ type: 'TICK' });
+    }
   }
 
   return expandedActions;
 }
 
-export function useReplayPlayer(initialSeed?: string) {
-  const { gameState, actions, _dispatch } = useGame(initialSeed, false);
-  const [isProcessing, setIsProcessing] = useState(false);
+// Replay control state interface
+interface ReplayControlState {
+  isPlaying: boolean;
+  isPaused: boolean;
+  totalActions: number;
+  currentReplayData: ReplayData | null;
+}
+
+export function useReplayPlayer(replayData?: ReplayData) {
+  const { gameState, actions, _dispatch } = useGame(replayData?.seed, false);
+
+  // Replay control state
+  const [replayControl, setReplayControl] = useState<ReplayControlState>({
+    isPlaying: false,
+    isPaused: false,
+    totalActions: 0,
+    currentReplayData: null,
+  });
+
+  // Timer reference for cleanup
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const frameActionsRef = useRef<FrameActions[]>([]);
+  const currentFrameRef = useRef<number>(0);
 
   // Error handling for replay issues
   const handleReplayError = useCallback(
     (error: string, action?: GameAction) => {
       console.error(`Replay error: ${error}`, action);
-      setIsProcessing(false);
     },
     []
   );
 
-  // Process replay data sequentially
-  const processReplay = useCallback(
+  // Clear timer helper
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  // Dispatch all actions for current frame
+  const dispatchFrameActions = useCallback(() => {
+    const currentFrame = currentFrameRef.current;
+    const frameActions = frameActionsRef.current;
+
+    if (currentFrame >= frameActions.length) {
+      // Replay finished
+      setReplayControl(prev => ({
+        ...prev,
+        isPlaying: false,
+        isPaused: false,
+      }));
+      return;
+    }
+
+    const frameData = frameActions[currentFrame];
+
+    // Dispatch user actions immediately (they happen at frame start)
+    for (const userAction of frameData.userActions) {
+      _dispatch(userAction);
+    }
+
+    // Always dispatch TICK action last (maintains 60 FPS rhythm)
+    if (frameData.hasTick) {
+      _dispatch({ type: 'TICK' });
+    }
+
+    // Update frame number (no re-render needed)
+    currentFrameRef.current = currentFrame + 1;
+
+    // Schedule next frame by checking current state
+    setReplayControl(prev => {
+      if (prev.isPlaying && !prev.isPaused) {
+        timerRef.current = setTimeout(() => {
+          dispatchFrameActions();
+        }, FRAME_INTERVAL_MS);
+      }
+      return prev; // No state change needed
+    });
+  }, [_dispatch]);
+
+  // Start replay from beginning
+  const startReplay = useCallback(
     (replayData: ReplayData) => {
       try {
-        setIsProcessing(true);
+        clearTimer();
 
         // Comprehensive validation of entire replay data
         const validation = validateReplayData(replayData);
@@ -174,29 +264,122 @@ export function useReplayPlayer(initialSeed?: string) {
           payload: { isPlayback: true, replayData },
         });
 
-        // Expand replay data into full action sequence
-        const expandedActions = expandReplayData(replayData);
+        // Expand replay data into frame-based structure
+        const frameActions = expandReplayData(replayData);
+        frameActionsRef.current = frameActions;
 
-        // Process all actions in sequence
-        for (const action of expandedActions) {
-          _dispatch(action);
-        }
+        // Reset frame index
+        currentFrameRef.current = 0;
 
-        setIsProcessing(false);
+        // Set replay control state and start timer
+        setReplayControl(prev => {
+          const newState = {
+            ...prev,
+            isPlaying: true,
+            isPaused: false,
+            totalActions: frameActions.length,
+            currentReplayData: replayData,
+          };
+
+          // Start dispatching frame actions with proper timing
+          timerRef.current = setTimeout(() => {
+            dispatchFrameActions();
+          }, FRAME_INTERVAL_MS);
+
+          return newState;
+        });
       } catch (error) {
         handleReplayError(
-          `Failed to process replay: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to start replay: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       }
     },
-    [_dispatch, handleReplayError]
+    [_dispatch, handleReplayError, clearTimer, dispatchFrameActions]
   );
+
+  // Pause replay
+  const pauseReplay = useCallback(() => {
+    clearTimer();
+    setReplayControl(prev => ({
+      ...prev,
+      isPlaying: false,
+      isPaused: true,
+    }));
+  }, [clearTimer]);
+
+  // Resume replay
+  const resumeReplay = useCallback(() => {
+    if (!replayControl.isPaused) {
+      return;
+    }
+
+    setReplayControl(prev => ({
+      ...prev,
+      isPlaying: true,
+      isPaused: false,
+    }));
+
+    // Continue from current position
+    timerRef.current = setTimeout(() => {
+      dispatchFrameActions();
+    }, FRAME_INTERVAL_MS);
+  }, [replayControl.isPaused, dispatchFrameActions]);
+
+  // Restart replay
+  const restartReplay = useCallback(() => {
+    if (!replayControl.currentReplayData) {
+      return;
+    }
+
+    clearTimer();
+    startReplay(replayControl.currentReplayData);
+  }, [replayControl.currentReplayData, clearTimer, startReplay]);
+
+  // Stop replay
+  const stopReplay = useCallback(() => {
+    clearTimer();
+    setReplayControl({
+      isPlaying: false,
+      isPaused: false,
+      totalActions: 0,
+      currentReplayData: null,
+    });
+    frameActionsRef.current = [];
+    currentFrameRef.current = 0;
+  }, [clearTimer]);
+
+  // Auto-start replay when game state is initial
+  useEffect(() => {
+    if (gameState.status === 'initial' && replayData) {
+      startReplay(replayData);
+    }
+  }, [gameState.status, replayData, startReplay]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
+  }, [clearTimer]);
 
   return {
     gameState,
-    processReplay,
-    isProcessing,
-    expandReplayData,
+    startReplay,
+    pauseReplay,
+    resumeReplay,
+    restartReplay,
+    stopReplay,
+    replayControl,
+    expandReplayData: expandReplayDataLegacy,
     startNewGame: actions.startNewGame,
+    // Expose current progress for UI if needed
+    getCurrentProgress: () => ({
+      currentFrame: currentFrameRef.current,
+      totalFrames: replayControl.totalActions,
+      progress:
+        replayControl.totalActions > 0
+          ? currentFrameRef.current / replayControl.totalActions
+          : 0,
+    }),
   };
 }

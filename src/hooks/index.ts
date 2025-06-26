@@ -10,3 +10,4 @@ export { useGame } from './useGame';
 export type { UseGameActions, UseGameReturn } from './useGame';
 export { useGamePlayer } from './useGamePlayer';
 export { useReplayPlayer } from './useReplayPlayer';
+export { useReplayRecorder } from './useReplayRecorder';
