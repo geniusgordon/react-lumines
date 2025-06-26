@@ -1,10 +1,10 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 
-import { FRAME_INTERVAL_MS } from '@/constants/gameConfig';
 import type { GameAction, GameActionType } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 
 import { useGame } from './useGame';
+import { useReplayLoop } from './useReplayLoop';
 
 // Type guard to validate replay input actions
 function isValidReplayAction(type: string): type is GameActionType {
@@ -145,23 +145,6 @@ function expandReplayData(replayData: ReplayData): FrameActions[] {
   return frameActions;
 }
 
-// Legacy function for backward compatibility
-function expandReplayDataLegacy(replayData: ReplayData): GameAction[] {
-  const frameActions = expandReplayData(replayData);
-  const expandedActions: GameAction[] = [];
-
-  for (const frame of frameActions) {
-    // Add user actions first
-    expandedActions.push(...frame.userActions);
-    // Then add TICK if present
-    if (frame.hasTick) {
-      expandedActions.push({ type: 'TICK' });
-    }
-  }
-
-  return expandedActions;
-}
-
 // Replay control state interface
 interface ReplayControlState {
   isPlaying: boolean;
@@ -181,8 +164,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
     currentReplayData: null,
   });
 
-  // Timer reference for cleanup
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Replay data references
   const frameActionsRef = useRef<FrameActions[]>([]);
   const currentFrameRef = useRef<number>(0);
 
@@ -194,21 +176,13 @@ export function useReplayPlayer(replayData?: ReplayData) {
     []
   );
 
-  // Clear timer helper
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
   // Dispatch all actions for current frame
   const dispatchFrameActions = useCallback(() => {
     const currentFrame = currentFrameRef.current;
     const frameActions = frameActionsRef.current;
 
     if (currentFrame >= frameActions.length) {
-      // Replay finished
+      // Replay finished - useReplayLoop will handle stopping
       setReplayControl(prev => ({
         ...prev,
         isPlaying: false,
@@ -231,23 +205,18 @@ export function useReplayPlayer(replayData?: ReplayData) {
 
     // Update frame number (no re-render needed)
     currentFrameRef.current = currentFrame + 1;
-
-    // Schedule next frame by checking current state
-    setReplayControl(prev => {
-      if (prev.isPlaying && !prev.isPaused) {
-        timerRef.current = setTimeout(() => {
-          dispatchFrameActions();
-        }, FRAME_INTERVAL_MS);
-      }
-      return prev; // No state change needed
-    });
   }, [_dispatch]);
+
+  // Use replay loop hook for RAF timing
+  const shouldRunReplay = replayControl.isPlaying && !replayControl.isPaused;
+  const replayLoop = useReplayLoop(shouldRunReplay, dispatchFrameActions);
 
   // Start replay from beginning
   const startReplay = useCallback(
     (replayData: ReplayData) => {
       try {
-        clearTimer();
+        // Stop any existing replay loop
+        replayLoop.stop();
 
         // Comprehensive validation of entire replay data
         const validation = validateReplayData(replayData);
@@ -268,22 +237,12 @@ export function useReplayPlayer(replayData?: ReplayData) {
         // Reset frame index
         currentFrameRef.current = 0;
 
-        // Set replay control state and start timer
-        setReplayControl(prev => {
-          const newState = {
-            ...prev,
-            isPlaying: true,
-            isPaused: false,
-            totalActions: frameActions.length,
-            currentReplayData: replayData,
-          };
-
-          // Start dispatching frame actions with proper timing
-          timerRef.current = setTimeout(() => {
-            dispatchFrameActions();
-          }, FRAME_INTERVAL_MS);
-
-          return newState;
+        // Set replay control state
+        setReplayControl({
+          isPlaying: true,
+          isPaused: false,
+          totalActions: frameActions.length,
+          currentReplayData: replayData,
         });
       } catch (error) {
         handleReplayError(
@@ -291,13 +250,11 @@ export function useReplayPlayer(replayData?: ReplayData) {
         );
       }
     },
-    [_dispatch, handleReplayError, clearTimer, dispatchFrameActions]
+    [_dispatch, handleReplayError, replayLoop]
   );
 
   // Pause replay
   const pauseReplay = useCallback(() => {
-    clearTimer();
-
     // Dispatch PAUSE action to update game state
     _dispatch({ type: 'PAUSE' });
 
@@ -306,7 +263,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
       isPlaying: false,
       isPaused: true,
     }));
-  }, [clearTimer, _dispatch]);
+  }, [_dispatch]);
 
   // Resume replay
   const resumeReplay = useCallback(() => {
@@ -322,12 +279,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
       isPlaying: true,
       isPaused: false,
     }));
-
-    // Continue from current position
-    timerRef.current = setTimeout(() => {
-      dispatchFrameActions();
-    }, FRAME_INTERVAL_MS);
-  }, [replayControl.isPaused, dispatchFrameActions, _dispatch]);
+  }, [replayControl.isPaused, _dispatch]);
 
   // Restart replay
   const restartReplay = useCallback(() => {
@@ -335,7 +287,8 @@ export function useReplayPlayer(replayData?: ReplayData) {
       return;
     }
 
-    clearTimer();
+    // Stop current replay loop
+    replayLoop.stop();
 
     // Reset game state to initial before starting replay
     _dispatch({
@@ -356,11 +309,11 @@ export function useReplayPlayer(replayData?: ReplayData) {
 
     // Start the replay from beginning
     startReplay(replayControl.currentReplayData);
-  }, [replayControl.currentReplayData, clearTimer, startReplay, _dispatch]);
+  }, [replayControl.currentReplayData, replayLoop, startReplay, _dispatch]);
 
   // Stop replay
   const stopReplay = useCallback(() => {
-    clearTimer();
+    replayLoop.stop();
     setReplayControl({
       isPlaying: false,
       isPaused: false,
@@ -369,7 +322,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
     });
     frameActionsRef.current = [];
     currentFrameRef.current = 0;
-  }, [clearTimer]);
+  }, [replayLoop]);
 
   // Auto-start replay when game state is initial
   useEffect(() => {
@@ -378,12 +331,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
     }
   }, [gameState.status, replayData, startReplay]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearTimer();
-    };
-  }, [clearTimer]);
+  // Cleanup is handled by useReplayLoop
 
   // Create actions object similar to useGamePlayer pattern
   const replayActions = useMemo(
@@ -420,7 +368,6 @@ export function useReplayPlayer(replayData?: ReplayData) {
     gameState,
     actions: replayActions,
     replayControl,
-    expandReplayData: expandReplayDataLegacy,
     // Expose current progress for UI if needed
     getCurrentProgress: () => ({
       currentFrame: currentFrameRef.current,
