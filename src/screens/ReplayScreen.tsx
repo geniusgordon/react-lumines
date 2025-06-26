@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { Game } from '@/components/Game/Game';
+import { ReplayHeader } from '@/components/ReplayHeader';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 import type { SavedReplay } from '@/types/replay';
 
@@ -54,18 +55,6 @@ export function ReplayScreen() {
     }
   };
 
-  const formatDuration = (ms: number | undefined) => {
-    if (!ms) {
-      return 'N/A';
-    }
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`;
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
-  };
 
   if (!replay) {
     return (
@@ -79,57 +68,12 @@ export function ReplayScreen() {
 
   return (
     <div className="bg-game-background h-screen text-white">
-      <div className="absolute top-0 right-0 left-0 z-60 border-b border-gray-700 bg-gray-900 p-4">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-purple-400">
-              {replay.name}
-            </h1>
-            <div className="mt-1 text-sm text-gray-400">
-              <span>{replay.data.metadata?.playerName || 'Anonymous'}</span>
-              <span className="mx-2">•</span>
-              <span>{formatDate(replay.savedAt)}</span>
-              {replay.data.metadata?.finalScore && (
-                <>
-                  <span className="mx-2">•</span>
-                  <span className="font-semibold text-yellow-400">
-                    Score: {replay.data.metadata.finalScore.toLocaleString()}
-                  </span>
-                </>
-              )}
-              {replay.data.metadata?.duration && (
-                <>
-                  <span className="mx-2">•</span>
-                  <span>
-                    Duration: {formatDuration(replay.data.metadata.duration)}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleExport}
-              className="rounded bg-blue-600 px-3 py-2 text-sm transition-colors hover:bg-blue-700"
-            >
-              Export
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="rounded bg-red-600 px-3 py-2 text-sm transition-colors hover:bg-red-700"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => navigate('/leaderboard')}
-              className="rounded bg-gray-700 px-3 py-2 text-sm transition-colors hover:bg-gray-600"
-            >
-              Back
-            </button>
-          </div>
-        </div>
-      </div>
+      <ReplayHeader
+        replay={replay}
+        onExport={handleExport}
+        onDelete={() => setShowDeleteConfirm(true)}
+        onBack={() => navigate('/leaderboard')}
+      />
 
       {/* Game Container */}
       <div className="flex h-full w-full items-center justify-center">
