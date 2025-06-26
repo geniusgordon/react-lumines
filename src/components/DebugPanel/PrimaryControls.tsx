@@ -82,7 +82,7 @@ export function PrimaryControls({
             value={seedInput}
             onChange={handleSeedInputChange}
             placeholder="Enter seed (optional)"
-            className="flex-1 rounded border border-gray-600 bg-gray-800 px-2 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            className="w-12 rounded-md bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
             title="Enter custom seed or leave empty for random"
           />
           <Button
@@ -109,7 +109,7 @@ export function PrimaryControls({
               max="999"
               value={stepCount}
               onChange={handleStepCountChange}
-              className="w-16 rounded border border-gray-600 bg-gray-800 px-2 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-24 rounded-md bg-gray-800 px-4 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
               title="Number of frames to advance"
             />
             <Button

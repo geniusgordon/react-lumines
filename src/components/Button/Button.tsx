@@ -29,8 +29,8 @@ export const Button: React.FC<ButtonProps> = ({
     'flex items-center justify-center font-medium shadow-lg transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none cursor-pointer';
 
   const sizeClasses = {
-    sm: 'gap-1 px-2 py-1 text-sm rounded-sm',
-    md: 'gap-2 px-4 py-2 text-md rounded-md',
+    sm: 'gap-1 px-2 py-2 text-xs rounded-md',
+    md: 'gap-2 px-4 py-2 text-sm rounded-md',
     lg: 'gap-3 px-8 py-4 text-lg rounded-xl',
   };
 
