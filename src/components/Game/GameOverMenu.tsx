@@ -11,12 +11,14 @@ interface GameOverMenuProps {
   gameState: GameState;
   actions: UseGameActions;
   controlsConfig: ControlsConfig;
+  replayMode?: boolean;
 }
 
 export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   gameState,
   actions,
   controlsConfig,
+  replayMode = false,
 }) => {
   const navigate = useNavigate();
   const { status, score } = gameState;
@@ -30,7 +32,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   };
 
   const handleQuit = () => {
-    navigate('/');
+    navigate(replayMode ? '/leaderboard' : '/');
   };
 
   return (
@@ -73,7 +75,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
             icon={Home}
             fullWidth
           >
-            Quit to Menu
+            {replayMode ? 'Go Back' : 'Quit to Menu'}
           </Button>
         </div>
 

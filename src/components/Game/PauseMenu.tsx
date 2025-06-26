@@ -11,12 +11,14 @@ interface PauseMenuProps {
   gameState: GameState;
   actions: UseGameActions;
   controlsConfig: ControlsConfig;
+  replayMode?: boolean;
 }
 
 export const PauseMenu: React.FC<PauseMenuProps> = ({
   gameState,
   actions,
   controlsConfig,
+  replayMode = false,
 }) => {
   const navigate = useNavigate();
   const { status } = gameState;
@@ -34,7 +36,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
   };
 
   const handleQuit = () => {
-    navigate('/');
+    navigate(replayMode ? '/leaderboard' : '/');
   };
 
   return (
@@ -81,7 +83,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
             icon={Home}
             fullWidth
           >
-            Quit to Menu
+            {replayMode ? 'Go Back' : 'Quit to Menu'}
           </Button>
         </div>
 

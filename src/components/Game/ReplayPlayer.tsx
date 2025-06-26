@@ -15,25 +15,10 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   showDebugPanel = false,
 }) => {
   // Use replay processing hook
-  const { gameState, pauseReplay, resumeReplay, startNewGame, restartReplay } =
-    useReplayPlayer(replayData);
+  const { gameState, actions } = useReplayPlayer(replayData);
 
   // Setup controls (disabled for replay mode)
-  const emptyActions = {
-    moveLeft: () => {},
-    moveRight: () => {},
-    rotateCW: () => {},
-    rotateCCW: () => {},
-    softDrop: () => {},
-    hardDrop: () => {},
-    pause: pauseReplay,
-    resume: resumeReplay,
-    tick: () => {},
-    startNewGame: startNewGame,
-    restartGame: restartReplay,
-    setDebugMode: () => {},
-  };
-  const controls = useControls(gameState, emptyActions, {
+  const controls = useControls(gameState, actions, {
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
   });
@@ -41,11 +26,12 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   return (
     <GameCore
       gameState={gameState}
-      actions={emptyActions} // No user input in replay mode
+      actions={actions} // Actions include no-ops for game actions and replay controls
       controls={controls}
       gameLoop={null} // No game loop for replay
       showDebugPanel={showDebugPanel}
       scale={scale}
+      replayMode={true}
     />
   );
 };

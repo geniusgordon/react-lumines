@@ -35,6 +35,7 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
       gameLoop={gameLoop}
       showDebugPanel={showDebugPanel}
       scale={scale}
+      replayMode={false}
     />
   );
 };

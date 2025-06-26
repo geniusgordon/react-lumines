@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 
 import { FRAME_INTERVAL_MS } from '@/constants/gameConfig';
 import type { GameAction, GameActionType } from '@/types/game';
@@ -259,10 +259,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
         }
 
         // Initialize game with replay seed first
-        _dispatch({
-          type: 'START_GAME',
-          payload: { isPlayback: true, replayData },
-        });
+        _dispatch({ type: 'START_GAME' });
 
         // Expand replay data into frame-based structure
         const frameActions = expandReplayData(replayData);
@@ -300,18 +297,25 @@ export function useReplayPlayer(replayData?: ReplayData) {
   // Pause replay
   const pauseReplay = useCallback(() => {
     clearTimer();
+
+    // Dispatch PAUSE action to update game state
+    _dispatch({ type: 'PAUSE' });
+
     setReplayControl(prev => ({
       ...prev,
       isPlaying: false,
       isPaused: true,
     }));
-  }, [clearTimer]);
+  }, [clearTimer, _dispatch]);
 
   // Resume replay
   const resumeReplay = useCallback(() => {
     if (!replayControl.isPaused) {
       return;
     }
+
+    // Dispatch RESUME action to update game state
+    _dispatch({ type: 'RESUME' });
 
     setReplayControl(prev => ({
       ...prev,
@@ -323,7 +327,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
     timerRef.current = setTimeout(() => {
       dispatchFrameActions();
     }, FRAME_INTERVAL_MS);
-  }, [replayControl.isPaused, dispatchFrameActions]);
+  }, [replayControl.isPaused, dispatchFrameActions, _dispatch]);
 
   // Restart replay
   const restartReplay = useCallback(() => {
@@ -332,8 +336,27 @@ export function useReplayPlayer(replayData?: ReplayData) {
     }
 
     clearTimer();
+
+    // Reset game state to initial before starting replay
+    _dispatch({
+      type: 'RESTART',
+      payload: replayControl.currentReplayData.seed,
+    });
+
+    // Reset replay control state
+    setReplayControl(prev => ({
+      ...prev,
+      isPlaying: false,
+      isPaused: false,
+    }));
+
+    // Reset frame counters
+    frameActionsRef.current = [];
+    currentFrameRef.current = 0;
+
+    // Start the replay from beginning
     startReplay(replayControl.currentReplayData);
-  }, [replayControl.currentReplayData, clearTimer, startReplay]);
+  }, [replayControl.currentReplayData, clearTimer, startReplay, _dispatch]);
 
   // Stop replay
   const stopReplay = useCallback(() => {
@@ -362,16 +385,42 @@ export function useReplayPlayer(replayData?: ReplayData) {
     };
   }, [clearTimer]);
 
+  // Create actions object similar to useGamePlayer pattern
+  const replayActions = useMemo(
+    () => ({
+      // Game actions (no-ops for replay mode)
+      moveLeft: () => {},
+      moveRight: () => {},
+      rotateCW: () => {},
+      rotateCCW: () => {},
+      softDrop: () => {},
+      hardDrop: () => {},
+      tick: () => {},
+      startNewGame: actions.startNewGame,
+      restartGame: restartReplay,
+      setDebugMode: actions.setDebugMode,
+      // Replay-specific actions
+      pause: pauseReplay,
+      resume: resumeReplay,
+      startReplay,
+      stopReplay,
+    }),
+    [
+      actions.startNewGame,
+      actions.setDebugMode,
+      restartReplay,
+      pauseReplay,
+      resumeReplay,
+      startReplay,
+      stopReplay,
+    ]
+  );
+
   return {
     gameState,
-    startReplay,
-    pauseReplay,
-    resumeReplay,
-    restartReplay,
-    stopReplay,
+    actions: replayActions,
     replayControl,
     expandReplayData: expandReplayDataLegacy,
-    startNewGame: actions.startNewGame,
     // Expose current progress for UI if needed
     getCurrentProgress: () => ({
       currentFrame: currentFrameRef.current,
