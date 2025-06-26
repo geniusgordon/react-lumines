@@ -1,88 +1,118 @@
-# Game Logic Tests Organization
+# Utils Tests Organization
 
-This directory contains focused test files for the game logic utilities. The original monolithic `gameLogic.test.ts` file has been broken down into smaller, more focused test files for better maintainability and clarity.
+This directory contains organized test files for all utility functions in the Lumines game project. Tests are organized into focused subdirectories for better maintainability and clarity.
 
-## Test File Structure
+## Directory Structure
 
-### Core Test Files
+```
+src/utils/__tests__/
+├── gameLogic/               # Game logic tests (30 tests)
+│   ├── gameLogic.board.test.ts
+│   ├── gameLogic.fallingCells.test.ts
+│   ├── gameLogic.generation.test.ts
+│   ├── gameLogic.gravity.test.ts
+│   ├── gameLogic.patterns.test.ts
+│   ├── gameLogic.placement.test.ts
+│   ├── gameLogic.rotation.test.ts
+│   ├── gameLogic.validation.test.ts
+│   └── README.md
+├── replayUtils/             # Replay system tests (25 tests)
+│   ├── replayUtils.validation.test.ts
+│   ├── replayUtils.expansion.test.ts
+│   ├── replayUtils.compaction.test.ts
+│   ├── replayUtils.creation.test.ts
+│   ├── replayUtils.integration.test.ts
+│   └── README.md
+├── seededRNG.test.ts        # Random number generator tests (15 tests)
+└── README.md               # This file
+```
 
-1. **`gameLogic.board.test.ts`** - Board Operations
-   - Empty board creation
-   - Board copying and deep copy validation
+## Test Categories
 
-2. **`gameLogic.rotation.test.ts`** - Block Rotation
-   - Clockwise and counter-clockwise rotation
-   - Pattern rotation for different block types
+### Game Logic Tests (30 tests)
+Core game mechanics testing including:
+- Board operations and state management
+- Block rotation and positioning
+- Collision detection and validation
+- Block placement and drop mechanics
+- Pattern detection (2x2 squares)
+- Gravity application and clearing
+- Random block generation
 
-3. **`gameLogic.validation.test.ts`** - Position Validation
-   - Valid position checking
-   - Out-of-bounds detection
-   - Collision detection
+### Replay Utils Tests (25 tests)
+Replay system functionality testing including:
+- Replay data validation
+- Data expansion (compact → frame-based)
+- Data compaction (recorded → compact)
+- Replay data creation
+- End-to-end integration scenarios
 
-4. **`gameLogic.placement.test.ts`** - Block Placement
-   - Drop position calculation
-   - Partial placement scenarios
-   - Game over conditions
-
-5. **`gameLogic.generation.test.ts`** - Random Block Generation
-   - Deterministic block generation with seeded RNG
-   - Block validity validation
-
-6. **`gameLogic.patterns.test.ts`** - Pattern Detection
-   - 2x2 square detection
-   - Overlapping pattern detection
-   - Multiple pattern scenarios
-
-7. **`gameLogic.gravity.test.ts`** - Gravity and Clearing
-   - Basic gravity application
-   - Complex gravity scenarios with gaps
-   - Square clearing with gravity
-
-### Supporting Files
-
-- **`gameLogic.index.test.ts`** - Main index file that imports all test suites
-- **`seededRNG.test.ts`** - Tests for the seeded random number generator
+### Seeded RNG Tests (15 tests)
+Deterministic random number generation testing including:
+- Seed consistency and reproducibility
+- Statistical distribution validation
+- Edge case handling
 
 ## Running Tests
 
-### Run All Game Logic Tests
+### Run All Utils Tests
 ```bash
-npm test -- src/utils/__tests__/gameLogic.index.test.ts
+pnpm test src/utils/__tests__/
 ```
 
-### Run Individual Test Suites
+### Run Tests by Category
 ```bash
-npm test -- src/utils/__tests__/gameLogic.board.test.ts
-npm test -- src/utils/__tests__/gameLogic.rotation.test.ts
-npm test -- src/utils/__tests__/gameLogic.validation.test.ts
-npm test -- src/utils/__tests__/gameLogic.placement.test.ts
-npm test -- src/utils/__tests__/gameLogic.generation.test.ts
-npm test -- src/utils/__tests__/gameLogic.patterns.test.ts
-npm test -- src/utils/__tests__/gameLogic.gravity.test.ts
+# Game logic tests only
+pnpm test src/utils/__tests__/gameLogic/
+
+# Replay utils tests only
+pnpm test src/utils/__tests__/replayUtils/
+
+# Seeded RNG tests only
+pnpm test src/utils/__tests__/seededRNG.test.ts
 ```
 
-### Run All Tests in Directory
+### Run Specific Test Files
 ```bash
-npm test -- src/utils/__tests__/
+pnpm test src/utils/__tests__/gameLogic/gameLogic.patterns.test.ts
+pnpm test src/utils/__tests__/replayUtils/replayUtils.validation.test.ts
 ```
 
 ## Benefits of This Organization
 
-1. **Focused Testing** - Each file tests a specific aspect of game logic
-2. **Easier Maintenance** - Smaller files are easier to understand and modify
-3. **Faster Development** - Can run specific test suites during development
-4. **Better Documentation** - Test file names clearly indicate what they test
-5. **Modular Structure** - Follows the project's component-based architecture
+1. **Logical Grouping** - Related tests are grouped together in subdirectories
+2. **Focused Development** - Work on specific functionality without running unrelated tests
+3. **Easier Navigation** - Clear directory structure makes finding tests simple
+4. **Better Maintenance** - Smaller, focused files are easier to understand and modify
+5. **Modular Testing** - Can run test suites independently during development
+6. **Clear Documentation** - Each subdirectory has its own README explaining the tests
 
-## Test Coverage
+## Test Coverage Summary
 
-All 30 original tests have been preserved and organized into logical groupings:
-- Board Operations: 2 tests
-- Block Rotation: 3 tests  
-- Position Validation: 4 tests
-- Block Placement: 4 tests
-- Random Block Generation: 2 tests
-- Pattern Detection: 8 tests
-- Gravity and Clearing: 7 tests
+| Category | Tests | Coverage |
+|----------|-------|----------|
+| Game Logic | 30 | Core game mechanics |
+| Replay Utils | 25 | Replay system functionality |
+| Seeded RNG | 15 | Deterministic randomization |
+| **Total** | **70** | **Complete utils coverage** |
 
-Total: **30 tests** maintaining 100% coverage from the original file. 
+## Integration with Project
+
+These utility tests ensure the reliability of core systems:
+
+- **Deterministic Gameplay**: Game logic tests ensure consistent behavior
+- **Replay Functionality**: Replay utils tests guarantee accurate recording/playback
+- **Reproducibility**: Seeded RNG tests ensure deterministic random generation
+
+All tests maintain the project's focus on deterministic, frame-based gameplay suitable for competitive play and replay analysis.
+
+## Development Workflow
+
+When working on utilities:
+
+1. **Run relevant test suite** during development
+2. **Add tests** for new functionality in appropriate subdirectory
+3. **Update README** files when adding new test categories
+4. **Run full suite** before committing changes
+
+This organization supports efficient development while maintaining comprehensive test coverage.

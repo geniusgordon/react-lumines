@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import type { GameBoard } from '@/types/game';
 
-import { createEmptyBoard, detectPatterns } from '../gameLogic';
+import { createEmptyBoard, detectPatterns } from '../../gameLogic';
 
 describe('Pattern Detection', () => {
   let board: GameBoard;

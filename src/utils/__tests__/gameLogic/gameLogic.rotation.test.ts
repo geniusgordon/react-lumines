@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import type { Block, CellValue } from '@/types/game';
 
-import { rotateBlockPattern, getRotatedPattern } from '../gameLogic';
+import { rotateBlockPattern, getRotatedPattern } from '../../gameLogic';
 
 describe('Block Rotation', () => {
   it('should rotate 2x2 pattern clockwise', () => {

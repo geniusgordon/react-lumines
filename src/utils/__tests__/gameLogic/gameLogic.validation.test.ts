@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import type { GameBoard, Block, FallingColumn } from '@/types/game';
 
-import { createEmptyBoard, isValidPosition } from '../gameLogic';
+import { createEmptyBoard, isValidPosition } from '../../gameLogic';
 
 describe('Position validation', () => {
   let board: GameBoard;

@@ -7,7 +7,7 @@ import {
   findDropPosition,
   placeBlockOnBoard,
   canPlaceAnyPartOfBlock,
-} from '../gameLogic';
+} from '../../gameLogic';
 
 describe('Block Placement', () => {
   let board: GameBoard;

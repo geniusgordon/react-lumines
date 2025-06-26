@@ -2,6 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 
 import type { GameAction, GameState } from '@/types/game';
 import type { ReplayInput, ReplayData } from '@/types/replay';
+import { createReplayData } from '@/utils/replayUtils';
 
 export function useReplayRecorder(gameState: GameState) {
   // Use refs to avoid re-renders during recording
@@ -42,32 +43,7 @@ export function useReplayRecorder(gameState: GameState) {
       return null;
     }
 
-    // Compact the recorded actions: filter out TICKs and calculate frame numbers
-    const compactInputs: ReplayInput[] = [];
-    let currentFrame = 0;
-
-    for (const action of recordedInputsRef.current) {
-      if (action.type === 'TICK') {
-        // TICK actions advance the frame counter
-        currentFrame++;
-      } else {
-        // User input actions get recorded with current frame
-        compactInputs.push({
-          type: action.type,
-          frame: currentFrame,
-          payload: action.payload,
-        });
-      }
-    }
-
-    return {
-      seed: gameState.seed,
-      inputs: compactInputs,
-      gameConfig: {
-        version: '1.0.0',
-        timestamp: Date.now(),
-      },
-    };
+    return createReplayData(recordedInputsRef.current, gameState.seed);
   }, [gameState.seed]);
 
   return {

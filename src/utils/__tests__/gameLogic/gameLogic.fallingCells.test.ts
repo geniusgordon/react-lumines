@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import type { GameBoard } from '@/types/game';
 
-import { createEmptyBoard, createFallingColumns } from '../gameLogic';
-import { SeededRNGMock } from '../seededRNG';
+import { createEmptyBoard, createFallingColumns } from '../../gameLogic';
+import { SeededRNGMock } from '../../seededRNG';
 
 describe('Falling cells', () => {
   let board: GameBoard;

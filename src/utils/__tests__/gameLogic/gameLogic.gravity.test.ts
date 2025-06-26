@@ -7,8 +7,8 @@ import {
   createEmptyBoard,
   clearMarkedCellsAndApplyGravity,
   applyGravity,
-} from '../gameLogic';
-import { SeededRNGMock } from '../seededRNG';
+} from '../../gameLogic';
+import { SeededRNGMock } from '../../seededRNG';
 
 describe('Gravity and Clearing', () => {
   let board: GameBoard;
