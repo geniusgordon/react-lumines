@@ -126,6 +126,12 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
     actions.startNewGame();
   }, [actions, startRecording]);
 
+  useEffect(() => {
+    if (gameState.status === 'initial') {
+      startNewGame();
+    }
+  }, [gameState.status, startNewGame]);
+
   return {
     gameState,
     replayState,

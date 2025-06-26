@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useControls, useGamePlayer } from '@/hooks';
 
@@ -26,12 +26,6 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
   });
-
-  useEffect(() => {
-    if (gameState.status === 'initial') {
-      actions.startNewGame();
-    }
-  }, [gameState.status, actions]);
 
   return (
     <GameCore
