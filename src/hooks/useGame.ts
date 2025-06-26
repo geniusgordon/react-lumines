@@ -17,8 +17,9 @@ export interface UseGameActions {
   resume: () => void;
   tick: () => void;
   startNewGame: () => void;
-  restartGame: () => void;
+  restartGame: (seed?: string) => void;
   setDebugMode: (enabled: boolean) => void;
+  skipCountdown: () => void;
 }
 
 export interface UseGameReturn {
@@ -81,14 +82,21 @@ export function useGame(
     dispatch({ type: 'START_GAME' });
   }, []);
 
-  const restartGame = useCallback(() => {
-    const seed = initialSeed ?? Date.now().toString();
-    dispatch({ type: 'RESTART', payload: seed });
-  }, [initialSeed]);
+  const restartGame = useCallback(
+    (seed?: string) => {
+      const finalSeed = seed ?? initialSeed ?? Date.now().toString();
+      dispatch({ type: 'RESTART', payload: finalSeed });
+    },
+    [initialSeed]
+  );
 
   // Debug actions
   const setDebugMode = useCallback((enabled: boolean) => {
     dispatch({ type: 'SET_DEBUG_MODE', payload: enabled });
+  }, []);
+
+  const skipCountdown = useCallback(() => {
+    dispatch({ type: 'SKIP_COUNTDOWN' });
   }, []);
 
   const actions: UseGameActions = {
@@ -104,6 +112,7 @@ export function useGame(
     startNewGame,
     restartGame,
     setDebugMode,
+    skipCountdown,
   };
 
   return {

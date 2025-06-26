@@ -1,11 +1,12 @@
 interface QuickStatsProps {
   status: string;
   score: number;
+  seed: string;
   scale?: number;
 }
 
 export function QuickStats(props: QuickStatsProps) {
-  const { score, scale } = props;
+  const { score, seed, scale } = props;
   const status = props.status === 'countdownPaused' ? 'paused' : props.status;
 
   const getStatusColor = (status: string) => {
@@ -24,7 +25,7 @@ export function QuickStats(props: QuickStatsProps) {
   };
 
   return (
-    <div className={`grid gap-3 ${scale ? 'grid-cols-3' : 'grid-cols-2'}`}>
+    <div className={`grid gap-3 ${scale ? 'grid-cols-4' : 'grid-cols-3'}`}>
       <div className="rounded-md bg-gray-800/50 p-3">
         <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
           Status
@@ -39,6 +40,14 @@ export function QuickStats(props: QuickStatsProps) {
         </div>
         <div className="text-sm font-semibold text-blue-400">
           {score.toLocaleString()}
+        </div>
+      </div>
+      <div className="rounded-md bg-gray-800/50 p-3">
+        <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+          Seed
+        </div>
+        <div className="text-sm font-semibold text-orange-400" title={seed}>
+          {seed.length > 8 ? `${seed.substring(0, 8)}...` : seed}
         </div>
       </div>
       {scale && (

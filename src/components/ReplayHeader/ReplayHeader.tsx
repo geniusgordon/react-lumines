@@ -31,9 +31,7 @@ export function ReplayHeader({
     <div className="absolute top-0 right-0 left-0 z-60 border-b border-gray-700 bg-gray-900 p-4">
       <div className="mx-auto flex max-w-4xl items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-purple-400">
-            {replay.name}
-          </h1>
+          <h1 className="text-2xl font-bold text-purple-400">{replay.name}</h1>
           <div className="mt-1 text-sm text-gray-400">
             <span>{replay.data.metadata?.playerName || 'Anonymous'}</span>
             <span className="mx-2">•</span>

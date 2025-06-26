@@ -76,7 +76,8 @@ export type GameActionType =
   | 'RESUME'
   | 'RESTART'
   | 'START_GAME'
-  | 'SET_DEBUG_MODE'; // Toggle debug mode and logging
+  | 'SET_DEBUG_MODE' // Toggle debug mode and logging
+  | 'SKIP_COUNTDOWN'; // Skip countdown and start game immediately
 
 // Game action structure
 export interface GameAction {

@@ -110,6 +110,7 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
       startNewGame: actions.startNewGame, // Special handling below
       restartGame: recordAndExecute('RESTART', actions.restartGame),
       setDebugMode: actions.setDebugMode, // Debug actions don't need recording
+      skipCountdown: recordAndExecute('SKIP_COUNTDOWN', actions.skipCountdown),
     };
   }, [actions, replayState.isRecording, recordInput]);
 

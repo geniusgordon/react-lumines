@@ -610,6 +610,17 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return createInitialGameState(seed, state.debugMode);
     }
 
+    case 'SKIP_COUNTDOWN': {
+      if (state.status === 'countdown' || state.status === 'countdownPaused') {
+        return {
+          ...state,
+          status: 'playing',
+          countdown: 0,
+        };
+      }
+      return state;
+    }
+
     case 'SET_DEBUG_MODE': {
       const newDebugMode = action.payload as boolean;
       return {

@@ -53,6 +53,7 @@ export function DebugPanel({
             <QuickStats
               status={gameState.status}
               score={gameState.score}
+              seed={gameState.seed}
               scale={scale}
             />
 
@@ -69,6 +70,8 @@ export function DebugPanel({
               gameStatus={gameState.status}
               onToggleDebugMode={handleToggleDebugMode}
               onManualStep={manualStep}
+              onRestartGame={actions.restartGame}
+              onSkipCountdown={actions.skipCountdown}
             />
 
             <AdvancedSection

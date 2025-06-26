@@ -31,6 +31,7 @@ export const StartScreen: React.FC = () => {
 
         <div className="space-y-3">
           <Button
+            size="lg"
             onClick={handleStartGame}
             variant="primary"
             icon={Play}
@@ -40,6 +41,7 @@ export const StartScreen: React.FC = () => {
           </Button>
 
           <Button
+            size="lg"
             onClick={handleRankings}
             variant="secondary"
             icon={ChartNoAxesColumn}

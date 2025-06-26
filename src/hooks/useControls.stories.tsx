@@ -31,6 +31,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         dispatch({ type: 'SET_DEBUG_MODE', payload: enabled }),
       []
     ),
+    skipCountdown: useCallback(() => dispatch({ type: 'SKIP_COUNTDOWN' }), []),
   };
 
   const controlsReturn = useControls(gameState, actions, options);

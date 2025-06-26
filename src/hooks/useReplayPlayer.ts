@@ -213,6 +213,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
       startNewGame: actions.startNewGame,
       restartGame: restartReplay,
       setDebugMode: actions.setDebugMode,
+      skipCountdown: () => {},
       // Replay-specific actions
       pause: pauseReplay,
       resume: resumeReplay,
