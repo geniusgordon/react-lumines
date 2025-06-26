@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { ReplayData } from '@/types/replay';
+
 import { validateReplayData } from '../../replayUtils';
 
 describe('replayUtils - validation', () => {

@@ -129,16 +129,9 @@ export function LeaderboardScreen() {
                       </div>
                     </div>
                     <div className="text-right">
-                      {replay.data.metadata?.finalScore && (
-                        <div className="font-bold text-white">
-                          {replay.data.metadata.finalScore.toLocaleString()}
-                        </div>
-                      )}
-                      {replay.data.metadata?.duration && (
-                        <div className="text-xs text-gray-400">
-                          {formatDuration(replay.data.metadata.duration)}
-                        </div>
-                      )}
+                      <div className="font-bold text-white">
+                        {replay.data.metadata?.finalScore?.toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 </Link>

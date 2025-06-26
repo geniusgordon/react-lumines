@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { ReplayInput } from '@/types/replay';
+
 import { compactReplayInputs } from '../../replayUtils';
 
 describe('replayUtils - compaction', () => {

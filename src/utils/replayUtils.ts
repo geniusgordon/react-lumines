@@ -167,7 +167,8 @@ export function compactReplayInputs(
 // Create replay data from recorded inputs and seed
 export function createReplayData(
   recordedInputs: ReplayInput[],
-  seed: string
+  seed: string,
+  finalScore?: number
 ): ReplayData {
   return {
     seed,
@@ -176,5 +177,6 @@ export function createReplayData(
       version: '1.0.0',
       timestamp: Date.now(),
     },
+    metadata: finalScore !== undefined ? { finalScore } : undefined,
   };
 }

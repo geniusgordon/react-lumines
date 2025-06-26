@@ -126,26 +126,6 @@ export interface GameState {
   debugMode: boolean; // Enable debug logging and manual stepping
 }
 
-// Replay system types
-export interface ReplayInput {
-  type: GameActionType;
-  frame: number; // Frame when input should be applied
-  payload?: unknown;
-}
-
-export interface ReplayData {
-  version: string;
-  seed: number;
-  inputs: ReplayInput[];
-  finalScore: number;
-  duration: number; // Total frames
-  metadata?: {
-    playerName?: string;
-    timestamp?: string;
-    gameVersion?: string;
-  };
-}
-
 // Control mapping
 export interface ControlsConfig {
   moveLeft: string[];

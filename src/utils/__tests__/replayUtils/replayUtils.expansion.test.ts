@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { ReplayData } from '@/types/replay';
+
 import { expandReplayData } from '../../replayUtils';
 
 describe('replayUtils - expansion', () => {
