@@ -141,7 +141,7 @@ function expandReplayData(replayData: ReplayData): GameAction[] {
 }
 
 export function useReplayPlayer(initialSeed?: string) {
-  const { gameState, dispatch, startNewGame } = useGame(initialSeed, false);
+  const { gameState, actions, _dispatch } = useGame(initialSeed, false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Error handling for replay issues
@@ -169,7 +169,7 @@ export function useReplayPlayer(initialSeed?: string) {
         }
 
         // Initialize game with replay seed first
-        dispatch({
+        _dispatch({
           type: 'START_GAME',
           payload: { isPlayback: true, replayData },
         });
@@ -179,7 +179,7 @@ export function useReplayPlayer(initialSeed?: string) {
 
         // Process all actions in sequence
         for (const action of expandedActions) {
-          dispatch(action);
+          _dispatch(action);
         }
 
         setIsProcessing(false);
@@ -189,7 +189,7 @@ export function useReplayPlayer(initialSeed?: string) {
         );
       }
     },
-    [dispatch, handleReplayError]
+    [_dispatch, handleReplayError]
   );
 
   return {
@@ -197,6 +197,6 @@ export function useReplayPlayer(initialSeed?: string) {
     processReplay,
     isProcessing,
     expandReplayData,
-    startNewGame,
+    startNewGame: actions.startNewGame,
   };
 }

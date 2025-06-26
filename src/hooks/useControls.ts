@@ -3,11 +3,12 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import type {
   GameState,
-  GameAction,
   GameActionType,
   ControlsConfig,
   GameStatus,
 } from '@/types/game';
+
+import type { UseGameActions } from './useGame';
 
 const isRestartableState = (status: GameStatus): boolean => {
   return (
@@ -62,7 +63,7 @@ export interface UseControlsReturn {
  */
 export function useControls(
   gameState: GameState,
-  dispatch: React.Dispatch<GameAction>,
+  actions: UseGameActions,
   options: UseControlsOptions = {}
 ): UseControlsReturn {
   const {
@@ -103,18 +104,27 @@ export function useControls(
     keyToActionMap.current = newMap;
   }, [controlsConfig]);
 
-  // Dispatch action
-  const dispatchAction = useCallback(
-    (actionType: GameActionType, payload?: unknown) => {
-      const action: GameAction = {
-        type: actionType,
-        payload,
-      };
+  // Action mapping
+  const actionMap = useRef<Map<GameActionType, () => void>>(new Map());
 
-      dispatch(action);
-    },
-    [dispatch]
-  );
+  // Build action mapping
+  useEffect(() => {
+    const newMap = new Map<GameActionType, () => void>();
+    newMap.set('MOVE_LEFT', actions.moveLeft);
+    newMap.set('MOVE_RIGHT', actions.moveRight);
+    newMap.set('ROTATE_CW', actions.rotateCW);
+    newMap.set('ROTATE_CCW', actions.rotateCCW);
+    newMap.set('SOFT_DROP', actions.softDrop);
+    newMap.set('HARD_DROP', actions.hardDrop);
+    newMap.set('PAUSE', actions.pause);
+    newMap.set('RESTART', actions.restartGame);
+    newMap.set('SET_DEBUG_MODE', () =>
+      actions.setDebugMode(!gameState.debugMode)
+    );
+    newMap.set('TICK', actions.tick);
+
+    actionMap.current = newMap;
+  }, [actions, gameState.debugMode]);
 
   // Handle key press
   const handleKeyDown = useCallback(
@@ -141,7 +151,7 @@ export function useControls(
       // Handle restart action (available in all restartable states)
       if (gameAction === 'RESTART') {
         if (isRestartableState(gameState.status)) {
-          dispatchAction('RESTART');
+          actions.restartGame();
         }
         return;
       }
@@ -149,9 +159,9 @@ export function useControls(
       // Handle pause action (available in all playing states)
       if (gameAction === 'PAUSE') {
         if (isPausableState(gameState.status)) {
-          dispatchAction('PAUSE');
+          actions.pause();
         } else if (isResumableState(gameState.status)) {
-          dispatchAction('RESUME');
+          actions.resume();
         }
         return;
       }
@@ -166,36 +176,33 @@ export function useControls(
 
       // Handle game actions only when playing
       if (gameState.status === 'playing' && gameAction) {
-        dispatchAction(gameAction);
+        const actionFn = actionMap.current.get(gameAction);
+        if (actionFn) {
+          actionFn();
 
-        // Set up key repeat if enabled
-        if (enableKeyRepeat && !keyRepeatTimers.current.has(key)) {
-          const timer = setTimeout(() => {
-            const repeatTimer = setInterval(() => {
-              if (
-                pressedKeysRef.current.has(key) &&
-                gameState.status === 'playing'
-              ) {
-                dispatchAction(gameAction);
-              } else {
-                clearInterval(repeatTimer);
-              }
+          // Set up key repeat if enabled
+          if (enableKeyRepeat && !keyRepeatTimers.current.has(key)) {
+            const timer = setTimeout(() => {
+              const repeatTimer = setInterval(() => {
+                if (
+                  pressedKeysRef.current.has(key) &&
+                  gameState.status === 'playing'
+                ) {
+                  actionFn();
+                } else {
+                  clearInterval(repeatTimer);
+                }
+              }, keyRepeatDelay);
+
+              keyRepeatTimers.current.set(key, repeatTimer);
             }, keyRepeatDelay);
 
-            keyRepeatTimers.current.set(key, repeatTimer);
-          }, keyRepeatDelay);
-
-          keyRepeatTimers.current.set(key, timer);
+            keyRepeatTimers.current.set(key, timer);
+          }
         }
       }
     },
-    [
-      gameState.status,
-      debugMode,
-      enableKeyRepeat,
-      keyRepeatDelay,
-      dispatchAction,
-    ]
+    [gameState.status, debugMode, enableKeyRepeat, keyRepeatDelay, actions]
   );
 
   // Handle key release

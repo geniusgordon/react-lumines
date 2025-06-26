@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useReducer } from 'react';
+import { useReducer, useCallback } from 'react';
 
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
@@ -13,7 +13,27 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
     createInitialGameState('12345', options?.debugMode)
   );
 
-  const controlsReturn = useControls(gameState, dispatch, options);
+  // Create mock actions that dispatch to the reducer
+  const actions = {
+    moveLeft: useCallback(() => dispatch({ type: 'MOVE_LEFT' }), []),
+    moveRight: useCallback(() => dispatch({ type: 'MOVE_RIGHT' }), []),
+    rotateCW: useCallback(() => dispatch({ type: 'ROTATE_CW' }), []),
+    rotateCCW: useCallback(() => dispatch({ type: 'ROTATE_CCW' }), []),
+    softDrop: useCallback(() => dispatch({ type: 'SOFT_DROP' }), []),
+    hardDrop: useCallback(() => dispatch({ type: 'HARD_DROP' }), []),
+    pause: useCallback(() => dispatch({ type: 'PAUSE' }), []),
+    resume: useCallback(() => dispatch({ type: 'RESUME' }), []),
+    tick: useCallback(() => dispatch({ type: 'TICK' }), []),
+    startNewGame: useCallback(() => dispatch({ type: 'START_GAME' }), []),
+    restartGame: useCallback(() => dispatch({ type: 'RESTART' }), []),
+    setDebugMode: useCallback(
+      (enabled: boolean) =>
+        dispatch({ type: 'SET_DEBUG_MODE', payload: enabled }),
+      []
+    ),
+  };
+
+  const controlsReturn = useControls(gameState, actions, options);
 
   return (
     <div className="min-h-screen space-y-6 bg-gray-900 p-6 text-white">

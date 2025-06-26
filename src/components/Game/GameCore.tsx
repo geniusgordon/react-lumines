@@ -5,14 +5,18 @@ import {
   Countdown,
 } from '@/components/Game';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
-import type { UseControlsReturn, UseGameLoopReturn } from '@/hooks';
+import type {
+  UseControlsReturn,
+  UseGameLoopReturn,
+  UseGameActions,
+} from '@/hooks';
 import type { GameState } from '@/types/game';
 
 import { DebugPanel } from '../DebugPanel';
 
 interface GameCoreProps {
   gameState: GameState;
-  dispatch: (action: any) => void;
+  actions: UseGameActions;
   controls: UseControlsReturn;
   gameLoop?: UseGameLoopReturn | null;
   showDebugPanel: boolean;
@@ -21,7 +25,7 @@ interface GameCoreProps {
 
 export const GameCore: React.FC<GameCoreProps> = ({
   gameState,
-  dispatch,
+  actions,
   controls,
   gameLoop,
   showDebugPanel,
@@ -42,7 +46,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
       {showDebugPanel && (
         <DebugPanel
           gameState={gameState}
-          dispatch={dispatch}
+          actions={actions}
           frameCount={frameCount}
           currentFPS={currentFPS}
           isRunning={isRunning}
@@ -67,13 +71,13 @@ export const GameCore: React.FC<GameCoreProps> = ({
       <PauseMenu
         gameState={gameState}
         controlsConfig={DEFAULT_CONTROLS}
-        dispatch={dispatch}
+        actions={actions}
       />
 
       <GameOverMenu
         gameState={gameState}
         controlsConfig={DEFAULT_CONTROLS}
-        dispatch={dispatch}
+        actions={actions}
       />
     </div>
   );

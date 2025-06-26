@@ -269,7 +269,8 @@ describe('Game Reducer - Basic Functionality', () => {
       const action: GameAction = { type: 'START_GAME' };
       const newState = gameReducer(initialState, action);
 
-      expect(newState.board).not.toBe(initialState.board);
+      expect(newState.board).toBe(initialState.board);
+      expect(newState.status).toBe('countdown');
     });
 
     it('should create new block instances', () => {

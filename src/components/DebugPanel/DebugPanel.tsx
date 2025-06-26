@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import type { UseControlsReturn } from '@/hooks';
-import type { GameState, GameAction } from '@/types/game';
+import type { UseControlsReturn, UseGameActions } from '@/hooks';
+import type { GameState } from '@/types/game';
 
 import { AdvancedSection } from './AdvancedSection';
 import { ControlsInfo } from './ControlsInfo';
@@ -13,7 +13,7 @@ import { QuickStats } from './QuickStats';
 
 export interface DebugPanelProps {
   gameState: GameState;
-  dispatch: React.Dispatch<GameAction>;
+  actions: UseGameActions;
   frameCount: number;
   currentFPS: number;
   isRunning: boolean;
@@ -25,7 +25,7 @@ export interface DebugPanelProps {
 
 export function DebugPanel({
   gameState,
-  dispatch,
+  actions,
   frameCount,
   currentFPS,
   isRunning,
@@ -36,10 +36,7 @@ export function DebugPanel({
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleToggleDebugMode = () => {
-    dispatch({
-      type: 'SET_DEBUG_MODE',
-      payload: !gameState.debugMode,
-    });
+    actions.setDebugMode(!gameState.debugMode);
   };
 
   return (

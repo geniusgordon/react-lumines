@@ -582,9 +582,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_GAME': {
       return {
-        ...createInitialGameState(state.seed),
+        ...state,
         status: 'countdown',
-        debugMode: state.debugMode,
       };
     }
 
@@ -607,8 +606,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESTART': {
-      const newSeed = Date.now().toString();
-      return createInitialGameState(newSeed, state.debugMode);
+      const seed = action.payload
+        ? (action.payload as string)
+        : Date.now().toString();
+      return createInitialGameState(seed, state.debugMode);
     }
 
     case 'SET_DEBUG_MODE': {
@@ -659,9 +660,9 @@ export function gameReducerWithDebug(
   const newState = gameReducer(state, action);
 
   // Log the final state changes if debug mode is enabled
-  // if (state.debugMode) {
-  logDebugAction(state, action, newState);
-  // }
+  if (state.debugMode) {
+    logDebugAction(state, action, newState);
+  }
 
   return newState;
 }

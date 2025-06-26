@@ -1,4 +1,6 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useMemo } from 'react';
+
+import type { GameAction } from '@/types/game';
 
 import { useGame } from './useGame';
 import { useGameLoop } from './useGameLoop';
@@ -6,11 +8,10 @@ import { useReplay } from './useReplay';
 import { useSaveLoadReplay } from './useSaveLoadReplay';
 
 export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
-  const {
-    gameState,
-    dispatch,
-    startNewGame: baseStartNewGame,
-  } = useGame(initialSeed, defaultDebugMode);
+  const { gameState, actions, _dispatch } = useGame(
+    initialSeed,
+    defaultDebugMode
+  );
 
   const {
     replayState,
@@ -69,17 +70,49 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
 
   // Enhanced dispatch that includes recording
   const enhancedDispatch = useCallback(
-    (action: any) => {
+    (action: GameAction) => {
       // Record input if we're recording
       if (replayState.isRecording) {
         recordInput(action);
       }
 
-      // Always dispatch the action to game reducer
-      dispatch(action);
+      // Dispatch to the game reducer
+      _dispatch(action);
     },
-    [replayState.isRecording, recordInput, dispatch]
+    [replayState.isRecording, recordInput, _dispatch]
   );
+
+  // Create enhanced actions that include recording
+  const enhancedActions = useMemo(() => {
+    const recordAndExecute = (
+      actionType: GameAction['type'],
+      originalAction: () => void
+    ) => {
+      return () => {
+        // Record the action if recording
+        if (replayState.isRecording) {
+          recordInput({ type: actionType });
+        }
+        // Execute the original action
+        originalAction();
+      };
+    };
+
+    return {
+      moveLeft: recordAndExecute('MOVE_LEFT', actions.moveLeft),
+      moveRight: recordAndExecute('MOVE_RIGHT', actions.moveRight),
+      rotateCW: recordAndExecute('ROTATE_CW', actions.rotateCW),
+      rotateCCW: recordAndExecute('ROTATE_CCW', actions.rotateCCW),
+      softDrop: recordAndExecute('SOFT_DROP', actions.softDrop),
+      hardDrop: recordAndExecute('HARD_DROP', actions.hardDrop),
+      pause: recordAndExecute('PAUSE', actions.pause),
+      resume: recordAndExecute('RESUME', actions.resume),
+      tick: recordAndExecute('TICK', actions.tick),
+      startNewGame: actions.startNewGame, // Special handling below
+      restartGame: recordAndExecute('RESTART', actions.restartGame),
+      setDebugMode: actions.setDebugMode, // Debug actions don't need recording
+    };
+  }, [actions, replayState.isRecording, recordInput]);
 
   // Use the game loop with the enhanced dispatch function
   const gameLoop = useGameLoop(gameState, enhancedDispatch, {
@@ -90,14 +123,14 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
   // Start recording when a new game starts
   const startNewGame = useCallback(() => {
     startRecording();
-    baseStartNewGame();
-  }, [baseStartNewGame, startRecording]);
+    actions.startNewGame();
+  }, [actions, startRecording]);
 
   return {
     gameState,
     replayState,
     gameLoop,
-    dispatch: enhancedDispatch,
+    actions: enhancedActions,
     startNewGame,
     exportReplay,
     stopRecording,

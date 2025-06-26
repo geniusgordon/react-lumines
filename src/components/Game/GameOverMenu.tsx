@@ -3,18 +3,19 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/Button';
-import type { GameState, GameAction, ControlsConfig } from '@/types/game';
+import type { UseGameActions } from '@/hooks';
+import type { GameState, ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
 
 interface GameOverMenuProps {
   gameState: GameState;
-  dispatch: React.Dispatch<GameAction>;
+  actions: UseGameActions;
   controlsConfig: ControlsConfig;
 }
 
 export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   gameState,
-  dispatch,
+  actions,
   controlsConfig,
 }) => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   }
 
   const handlePlayAgain = () => {
-    dispatch({ type: 'RESTART' });
+    actions.restartGame();
   };
 
   const handleQuit = () => {
