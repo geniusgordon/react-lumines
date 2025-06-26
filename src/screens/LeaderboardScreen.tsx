@@ -35,15 +35,6 @@ export function LeaderboardScreen() {
     return replays;
   }, [savedReplays, filter]);
 
-  const formatDuration = (ms: number | undefined) => {
-    if (!ms) {
-      return 'N/A';
-    }
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`;
-  };
-
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short',
