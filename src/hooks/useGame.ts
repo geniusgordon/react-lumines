@@ -4,7 +4,7 @@ import {
   gameReducerWithDebug,
   createInitialGameState,
 } from '@/reducers/gameReducer';
-import type { GameAction } from '@/types/game';
+import type { GameAction, GameState } from '@/types/game';
 
 export interface UseGameActions {
   moveLeft: () => void;
@@ -22,7 +22,7 @@ export interface UseGameActions {
 }
 
 export interface UseGameReturn {
-  gameState: ReturnType<typeof createInitialGameState>;
+  gameState: GameState;
   actions: UseGameActions;
   // Internal dispatch for advanced usage (game loop, replay system)
   _dispatch: React.Dispatch<GameAction>;
@@ -82,7 +82,8 @@ export function useGame(
   }, []);
 
   const restartGame = useCallback(() => {
-    dispatch({ type: 'RESTART', payload: initialSeed });
+    const seed = initialSeed ?? Date.now().toString();
+    dispatch({ type: 'RESTART', payload: seed });
   }, [initialSeed]);
 
   // Debug actions

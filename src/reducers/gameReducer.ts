@@ -606,9 +606,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESTART': {
-      const seed = action.payload
-        ? (action.payload as string)
-        : Date.now().toString();
+      const seed = action.payload as string;
       return createInitialGameState(seed, state.debugMode);
     }
 
