@@ -19,7 +19,6 @@ interface GameCoreProps {
   actions: UseGameActions;
   controls: UseControlsReturn;
   gameLoop?: UseGameLoopReturn | null;
-  showDebugPanel: boolean;
   scale: number;
   replayMode?: boolean;
 }
@@ -29,7 +28,6 @@ export const GameCore: React.FC<GameCoreProps> = ({
   actions,
   controls,
   gameLoop,
-  showDebugPanel,
   scale,
   replayMode = false,
 }) => {

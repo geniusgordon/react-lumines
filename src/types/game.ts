@@ -15,13 +15,9 @@ export interface Position {
   y: number;
 }
 
-// Block rotation states
-export type Rotation = 0 | 1 | 2 | 3;
-
 // Block representation
 export interface Block {
   pattern: BlockPattern;
-  rotation: Rotation;
   id: string;
 }
 

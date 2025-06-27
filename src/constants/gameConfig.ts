@@ -51,50 +51,87 @@ export const GAME_CONFIG: GameConfig = {
   controls: DEFAULT_CONTROLS,
 };
 
-// Block patterns (2x2 grids with different color combinations)
+// Block patterns (2x2 grids with all 16 possible color combinations)
 export const BLOCK_PATTERNS = [
-  // All light
+  // Pattern 0: 0000 (binary) - All light
   [
     [1, 1],
     [1, 1],
   ],
-  // All dark
-  [
-    [2, 2],
-    [2, 2],
-  ],
-  // Mixed patterns
-  [
-    [1, 2],
-    [1, 2],
-  ], // Vertical split
-  [
-    [1, 1],
-    [2, 2],
-  ], // Horizontal split
-  [
-    [1, 2],
-    [2, 1],
-  ], // Diagonal
-  [
-    [2, 1],
-    [1, 2],
-  ], // Reverse diagonal
-  [
-    [1, 2],
-    [1, 1],
-  ], // L-shape variants
-  [
-    [2, 1],
-    [2, 2],
-  ],
+  // Pattern 1: 0001 (binary)
   [
     [1, 1],
     [1, 2],
   ],
+  // Pattern 2: 0010 (binary)
+  [
+    [1, 1],
+    [2, 1],
+  ],
+  // Pattern 3: 0011 (binary)
+  [
+    [1, 1],
+    [2, 2],
+  ],
+  // Pattern 4: 0100 (binary)
+  [
+    [1, 2],
+    [1, 1],
+  ],
+  // Pattern 5: 0101 (binary)
+  [
+    [1, 2],
+    [1, 2],
+  ],
+  // Pattern 6: 0110 (binary)
+  [
+    [1, 2],
+    [2, 1],
+  ],
+  // Pattern 7: 0111 (binary)
+  [
+    [1, 2],
+    [2, 2],
+  ],
+  // Pattern 8: 1000 (binary)
+  [
+    [2, 1],
+    [1, 1],
+  ],
+  // Pattern 9: 1001 (binary)
+  [
+    [2, 1],
+    [1, 2],
+  ],
+  // Pattern 10: 1010 (binary)
+  [
+    [2, 1],
+    [2, 1],
+  ],
+  // Pattern 11: 1011 (binary)
+  [
+    [2, 1],
+    [2, 2],
+  ],
+  // Pattern 12: 1100 (binary)
+  [
+    [2, 2],
+    [1, 1],
+  ],
+  // Pattern 13: 1101 (binary)
+  [
+    [2, 2],
+    [1, 2],
+  ],
+  // Pattern 14: 1110 (binary)
   [
     [2, 2],
     [2, 1],
+  ],
+  // Pattern 15: 1111 (binary) - All dark
+  [
+    [2, 2],
+    [2, 2],
   ],
 ];
 

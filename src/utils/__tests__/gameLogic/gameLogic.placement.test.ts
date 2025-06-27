@@ -20,7 +20,6 @@ describe('Block Placement', () => {
         [1, 2],
         [1, 2],
       ],
-      rotation: 0,
       id: 'test',
     };
   });
@@ -47,7 +46,6 @@ describe('Block Placement', () => {
         [2, 2],
         [2, 2],
       ],
-      rotation: 0,
       id: 'test',
     };
 

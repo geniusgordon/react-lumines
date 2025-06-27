@@ -14,7 +14,6 @@ import type {
   CellValue,
   Square,
   BlockPattern,
-  Rotation,
   ValidMove,
   FallingColumn,
   FallingCell,
@@ -54,23 +53,6 @@ export function rotateBlockPattern(
   }
 
   return rotated;
-}
-
-/**
- * Get block pattern after rotation
- */
-export function getRotatedPattern(
-  block: Block,
-  rotation: Rotation
-): BlockPattern {
-  let pattern = block.pattern;
-  const rotations = (rotation - block.rotation + 4) % 4;
-
-  for (let i = 0; i < rotations; i++) {
-    pattern = rotateBlockPattern(pattern, true);
-  }
-
-  return pattern;
 }
 
 /**
@@ -193,7 +175,6 @@ export function generateRandomBlock(rng: SeededRNGType): Block {
 
   return {
     pattern,
-    rotation: 0,
     id: rng.generateId(),
   };
 }
@@ -307,12 +288,10 @@ export function canPlaceAnyPartOfBlock(
 export function placeBlockOnBoard(
   board: GameBoard,
   block: Block,
-  position: Position,
-  rotation?: Rotation
+  position: Position
 ): GameBoard {
   const newBoard = board.map(row => [...row]);
-  const pattern =
-    rotation !== undefined ? getRotatedPattern(block, rotation) : block.pattern;
+  const pattern = block.pattern;
 
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[y].length; x++) {

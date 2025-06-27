@@ -23,7 +23,6 @@ describe('Random Block Generation', () => {
 
       expect(block.pattern).toHaveLength(2);
       expect(block.pattern[0]).toHaveLength(2);
-      expect(block.rotation).toBe(0);
       expect(block.id).toHaveLength(8);
 
       // Pattern should contain valid cell values

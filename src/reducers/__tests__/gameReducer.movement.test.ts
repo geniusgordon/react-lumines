@@ -64,19 +64,21 @@ describe('Game Reducer - Block Movement', () => {
 
   describe('Block rotation', () => {
     it('should rotate block clockwise', () => {
-      const originalRotation = playingState.currentBlock.rotation;
+      const originalPattern = playingState.currentBlock.pattern;
       const action: GameAction = { type: 'ROTATE_CW' };
       const newState = gameReducer(playingState, action);
 
-      expect(newState.currentBlock.rotation).toBe((originalRotation + 1) % 4);
+      // Pattern should change when rotating
+      expect(newState.currentBlock.pattern).not.toEqual(originalPattern);
     });
 
     it('should rotate block counter-clockwise', () => {
-      const originalRotation = playingState.currentBlock.rotation;
+      const originalPattern = playingState.currentBlock.pattern;
       const action: GameAction = { type: 'ROTATE_CCW' };
       const newState = gameReducer(playingState, action);
 
-      expect(newState.currentBlock.rotation).toBe((originalRotation + 3) % 4);
+      // Pattern should change when rotating
+      expect(newState.currentBlock.pattern).not.toEqual(originalPattern);
     });
 
     it('should update block pattern when rotating', () => {
@@ -93,14 +95,14 @@ describe('Game Reducer - Block Movement', () => {
 
       const cwAction: GameAction = { type: 'ROTATE_CW' };
       const cwResult = gameReducer(pausedState, cwAction);
-      expect(cwResult.currentBlock.rotation).toBe(
-        pausedState.currentBlock.rotation
+      expect(cwResult.currentBlock.pattern).toEqual(
+        pausedState.currentBlock.pattern
       );
 
       const ccwAction: GameAction = { type: 'ROTATE_CCW' };
       const ccwResult = gameReducer(pausedState, ccwAction);
-      expect(ccwResult.currentBlock.rotation).toBe(
-        pausedState.currentBlock.rotation
+      expect(ccwResult.currentBlock.pattern).toEqual(
+        pausedState.currentBlock.pattern
       );
     });
   });

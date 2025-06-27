@@ -18,7 +18,7 @@ import {
   isValidPosition,
   placeBlockOnBoard,
   findDropPosition,
-  getRotatedPattern,
+  rotateBlockPattern,
   detectPatterns,
   getPatternsByLeftColumn,
   markColumnCells,
@@ -141,18 +141,30 @@ function handleBlockRotation(
     return state;
   }
 
-  const rotationOffset = direction === 'cw' ? 1 : -1;
-  const newRotation = ((state.currentBlock.rotation + rotationOffset + 4) %
-    4) as 0 | 1 | 2 | 3;
+  const clockwise = direction === 'cw';
+  const newPattern = rotateBlockPattern(state.currentBlock.pattern, clockwise);
 
-  return {
-    ...state,
-    currentBlock: {
-      ...state.currentBlock,
-      rotation: newRotation,
-      pattern: getRotatedPattern(state.currentBlock, newRotation),
-    },
+  // Test if the rotated block can be placed at current position
+  const testBlock = {
+    ...state.currentBlock,
+    pattern: newPattern,
   };
+
+  if (
+    isValidPosition(
+      state.board,
+      testBlock,
+      state.blockPosition,
+      state.fallingColumns
+    ) === 'valid'
+  ) {
+    return {
+      ...state,
+      currentBlock: testBlock,
+    };
+  }
+
+  return state;
 }
 
 /**

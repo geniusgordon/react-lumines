@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import type { Block, CellValue } from '@/types/game';
+import type { CellValue } from '@/types/game';
 
-import { rotateBlockPattern, getRotatedPattern } from '../../gameLogic';
+import { rotateBlockPattern } from '../../gameLogic';
 
 describe('Block Rotation', () => {
   it('should rotate 2x2 pattern clockwise', () => {
@@ -30,25 +30,6 @@ describe('Block Rotation', () => {
     const expected: CellValue[][] = [
       [2, 1],
       [1, 0],
-    ];
-
-    expect(rotated).toEqual(expected);
-  });
-
-  it('should get rotated pattern for block', () => {
-    const block: Block = {
-      pattern: [
-        [1, 2],
-        [0, 1],
-      ] as CellValue[][],
-      rotation: 0,
-      id: 'test',
-    };
-
-    const rotated = getRotatedPattern(block, 1);
-    const expected: CellValue[][] = [
-      [0, 1],
-      [1, 2],
     ];
 
     expect(rotated).toEqual(expected);

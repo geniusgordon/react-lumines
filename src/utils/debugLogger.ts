@@ -129,7 +129,6 @@ export function logCurrentBlock(
   // Block state
   console.groupCollapsed('🧱 Current Block State');
   console.log('📍 Position:', `(${blockPosition.x}, ${blockPosition.y})`);
-  console.log('🔄 Rotation:', currentBlock.rotation);
   console.log('🆔 Block ID:', currentBlock.id);
 
   // Visual pattern representation
@@ -305,7 +304,7 @@ export function logGameState(gameState: GameState): void {
 
   gameState.queue.forEach((block, index) => {
     console.log(
-      `📦 ${index + 1}. Block ID: ${block.id} (Rotation: ${block.rotation})`
+      `📦 ${index + 1}. Block ID: ${block.id}`
     );
 
     // Visual pattern for each queued block
