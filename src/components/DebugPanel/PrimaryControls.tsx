@@ -81,8 +81,8 @@ export function PrimaryControls({
             type="text"
             value={seedInput}
             onChange={handleSeedInputChange}
-            placeholder="Enter seed (optional)"
-            className="flex-1 rounded-md bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            placeholder="Seed (optional)"
+            className="w-36 rounded-md bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
             title="Enter custom seed or leave empty for random"
           />
           <Button
@@ -90,6 +90,7 @@ export function PrimaryControls({
             variant="secondary"
             size="md"
             icon={Shuffle}
+            className="flex-1"
           >
             Restart
           </Button>

@@ -45,7 +45,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">
-      {showDebugPanel && (
+      {gameState.debugMode && (
         <DebugPanel
           gameState={gameState}
           actions={actions}

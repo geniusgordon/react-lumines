@@ -22,7 +22,7 @@ export function useReplayRecorder(gameState: GameState) {
 
   const recordInput = useCallback(
     (gameAction: GameAction) => {
-      if (!isRecording) {
+      if (!isRecording || gameState.status !== 'playing') {
         return;
       }
 
@@ -35,7 +35,7 @@ export function useReplayRecorder(gameState: GameState) {
       // Direct push to ref - no re-render
       recordedInputsRef.current.push(replayInput);
     },
-    [isRecording]
+    [isRecording, gameState.status]
   );
 
   const exportReplay = useCallback((): ReplayData | null => {
