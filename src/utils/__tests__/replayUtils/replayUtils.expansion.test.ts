@@ -18,7 +18,6 @@ describe('replayUtils - expansion', () => {
       expect(result[0]).toEqual({
         frame: 0,
         userActions: [],
-        hasTick: true,
       });
     });
 
@@ -35,19 +34,16 @@ describe('replayUtils - expansion', () => {
       expect(result[0]).toEqual({
         frame: 0,
         userActions: [],
-        hasTick: true,
       });
 
       expect(result[1]).toEqual({
         frame: 1,
         userActions: [],
-        hasTick: true,
       });
 
       expect(result[2]).toEqual({
         frame: 2,
         userActions: [{ type: 'MOVE_LEFT' }],
-        hasTick: true,
       });
     });
 
@@ -68,7 +64,6 @@ describe('replayUtils - expansion', () => {
       expect(result[0]).toEqual({
         frame: 0,
         userActions: [],
-        hasTick: true,
       });
 
       expect(result[1]).toEqual({
@@ -77,19 +72,16 @@ describe('replayUtils - expansion', () => {
           { type: 'MOVE_LEFT' },
           { type: 'ROTATE_CW', payload: 'test' },
         ],
-        hasTick: true,
       });
 
       expect(result[2]).toEqual({
         frame: 2,
         userActions: [],
-        hasTick: true,
       });
 
       expect(result[3]).toEqual({
         frame: 3,
         userActions: [{ type: 'HARD_DROP' }],
-        hasTick: true,
       });
     });
 

@@ -19,7 +19,10 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
   }, []);
 
   // Use live gameplay hook
-  const { gameState, gameLoop, actions } = useGamePlayer(seed, showDebugPanel);
+  const { gameState, gameLoop, actions, exportReplay } = useGamePlayer(
+    seed,
+    showDebugPanel
+  );
 
   // Setup controls for user input
   const controls = useControls(gameState, actions, {
@@ -33,9 +36,9 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
       actions={actions}
       controls={controls}
       gameLoop={gameLoop}
-      showDebugPanel={showDebugPanel}
       scale={scale}
       replayMode={false}
+      exportReplay={exportReplay}
     />
   );
 };

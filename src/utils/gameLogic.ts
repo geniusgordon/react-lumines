@@ -221,9 +221,12 @@ export function createFallingColumns(
     // Find any cells that need to fall in this column
     const fallingCells = findFallingCellsInColumn(newBoard, x, rng);
 
-    if (fallingCells.length > 0) {
+    // Check for existing falling cells in this column
+    const existingColumn = fallingColumns.find(col => col.x === x);
+
+    // Include column if it has new falling cells OR existing falling cells
+    if (fallingCells.length > 0 || existingColumn) {
       // Merge with any existing falling cells in this column
-      const existingColumn = fallingColumns.find(col => col.x === x);
       const mergedCells = existingColumn
         ? [...existingColumn.cells, ...fallingCells]
         : fallingCells;

@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 import { useControls, useReplayPlayer } from '@/hooks';
 import type { ReplayData } from '@/types/replay';
 
@@ -12,7 +14,6 @@ interface ReplayPlayerProps {
 export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   scale,
   replayData,
-  showDebugPanel = false,
 }) => {
   // Use replay processing hook
   const { gameState, actions } = useReplayPlayer(replayData);
@@ -23,15 +24,19 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
     keyRepeatDelay: 100,
   });
 
+  const exportReplay = useCallback(() => {
+    return replayData;
+  }, [replayData]);
+
   return (
     <GameCore
       gameState={gameState}
       actions={actions} // Actions include no-ops for game actions and replay controls
       controls={controls}
       gameLoop={null} // No game loop for replay
-      showDebugPanel={showDebugPanel}
       scale={scale}
       replayMode={true}
+      exportReplay={exportReplay}
     />
   );
 };

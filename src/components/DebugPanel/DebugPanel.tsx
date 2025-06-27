@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { UseControlsReturn, UseGameActions } from '@/hooks';
 import type { GameState } from '@/types/game';
+import type { ReplayData } from '@/types/replay';
 
 import { AdvancedSection } from './AdvancedSection';
 import { ControlsInfo } from './ControlsInfo';
@@ -18,9 +19,10 @@ export interface DebugPanelProps {
   currentFPS: number;
   isRunning: boolean;
   isDebugMode: boolean;
-  manualStep: (steps?: number) => void;
   controls: UseControlsReturn;
   scale?: number;
+  manualStep: (steps?: number) => void;
+  exportReplay: () => ReplayData | null;
 }
 
 export function DebugPanel({
@@ -29,9 +31,10 @@ export function DebugPanel({
   frameCount,
   currentFPS,
   isRunning,
-  manualStep,
   controls,
   scale,
+  manualStep,
+  exportReplay,
 }: DebugPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -79,6 +82,7 @@ export function DebugPanel({
               frameCount={frameCount}
               currentFPS={currentFPS}
               isRunning={isRunning}
+              exportReplay={exportReplay}
             />
           </div>
         )}

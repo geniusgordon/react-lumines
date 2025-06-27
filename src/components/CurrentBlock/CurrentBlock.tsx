@@ -24,7 +24,7 @@ export const CurrentBlock: React.FC<CurrentBlockProps> = ({
         }}
       />
       <div
-        className="pointer-events-none absolute z-20"
+        className="pointer-events-none absolute z-30"
         style={{
           left: `calc(${blockPosition.x} * var(--spacing-block-size))`,
           top: `calc(${blockPosition.y} * var(--spacing-block-size))`,

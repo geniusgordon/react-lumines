@@ -303,9 +303,7 @@ export function logGameState(gameState: GameState): void {
   console.log('📋 Next blocks in order:\n');
 
   gameState.queue.forEach((block, index) => {
-    console.log(
-      `📦 ${index + 1}. Block ID: ${block.id}`
-    );
+    console.log(`📦 ${index + 1}. Block ID: ${block.id}`);
 
     // Visual pattern for each queued block
     const queuePatternDisplay = block.pattern

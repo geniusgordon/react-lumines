@@ -70,9 +70,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
     }
 
     // Always dispatch TICK action last (maintains 60 FPS rhythm)
-    if (frameData.hasTick) {
-      _dispatch({ type: 'TICK' });
-    }
+    _dispatch({ type: 'TICK' });
 
     // Update frame number (no re-render needed)
     currentFrameRef.current = currentFrame + 1;

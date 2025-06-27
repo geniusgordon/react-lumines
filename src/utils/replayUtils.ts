@@ -101,7 +101,6 @@ export function validateReplayData(replayData: ReplayData): {
 export interface FrameActions {
   frame: number;
   userActions: GameAction[];
-  hasTick: boolean;
 }
 
 // Reverse compaction: expand compact replay data into frame-based structure
@@ -131,7 +130,6 @@ export function expandReplayData(replayData: ReplayData): FrameActions[] {
     frameActions.push({
       frame: currentFrame,
       userActions,
-      hasTick: true,
     });
 
     currentFrame++;

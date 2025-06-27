@@ -19,8 +19,8 @@ const FallingBlocks = ({ fallingColumns }: FallingBlocksProps) => {
             key={`falling-block-${cell.id}`}
             className="absolute z-20"
             style={{
-              top: `calc(${cell.y + percent} * var(--spacing-block-size))`,
-              left: `calc(${column.x} * var(--spacing-block-size))`,
+              top: `calc(${cell.y + percent} * var(--spacing-block-size) + 1px)`,
+              left: `calc(${column.x} * var(--spacing-block-size) + 1px)`,
             }}
           >
             <GridCell value={cell.color} x={column.x} y={cell.y} />

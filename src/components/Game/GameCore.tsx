@@ -11,6 +11,7 @@ import type {
   UseGameActions,
 } from '@/hooks';
 import type { GameState } from '@/types/game';
+import type { ReplayData } from '@/types/replay';
 
 import { DebugPanel } from '../DebugPanel';
 
@@ -21,6 +22,7 @@ interface GameCoreProps {
   gameLoop?: UseGameLoopReturn | null;
   scale: number;
   replayMode?: boolean;
+  exportReplay: () => ReplayData | null;
 }
 
 export const GameCore: React.FC<GameCoreProps> = ({
@@ -30,6 +32,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
   gameLoop,
   scale,
   replayMode = false,
+  exportReplay,
 }) => {
   // Extract game loop properties (with fallbacks for replay mode)
   const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
@@ -54,6 +57,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
           manualStep={manualStep}
           controls={controls}
           scale={scale}
+          exportReplay={exportReplay}
         />
       )}
 

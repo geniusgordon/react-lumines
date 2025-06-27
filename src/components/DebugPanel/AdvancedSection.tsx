@@ -2,6 +2,7 @@ import { ChevronDown, ClipboardList, Copy } from 'lucide-react';
 import { useState } from 'react';
 
 import type { GameState } from '@/types/game';
+import type { ReplayData } from '@/types/replay';
 import { logGameState } from '@/utils/debugLogger';
 
 interface AdvancedSectionProps {
@@ -9,6 +10,7 @@ interface AdvancedSectionProps {
   frameCount: number;
   currentFPS: number;
   isRunning: boolean;
+  exportReplay: () => ReplayData | null;
 }
 
 export function AdvancedSection({
@@ -16,6 +18,7 @@ export function AdvancedSection({
   frameCount,
   currentFPS,
   isRunning,
+  exportReplay,
 }: AdvancedSectionProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -47,6 +50,29 @@ export function AdvancedSection({
       .catch(err => {
         console.error('❌ Failed to copy debug data:', err);
       });
+  };
+
+  const handleLogReplay = () => {
+    const replayData = exportReplay();
+    if (replayData) {
+      console.log('🎬 Replay data:', replayData);
+    } else {
+      console.log('🎬 No replay data available');
+    }
+  };
+
+  const handleCopyReplay = () => {
+    const replayData = exportReplay();
+    if (replayData) {
+      navigator.clipboard
+        ?.writeText(JSON.stringify(replayData, null, 2))
+        .then(() => {
+          console.log('🎬 Replay data copied to clipboard');
+        })
+        .catch(err => {
+          console.error('❌ Failed to copy replay data:', err);
+        });
+    }
   };
 
   return (
@@ -114,6 +140,30 @@ export function AdvancedSection({
                 <div className="flex items-center justify-center gap-1">
                   <Copy className="h-3 w-3" />
                   Copy Data
+                </div>
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleLogReplay}
+                className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
+                title="Log replay data to console"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <ClipboardList className="h-3 w-3" />
+                  Log Replay
+                </div>
+              </button>
+
+              <button
+                onClick={handleCopyReplay}
+                className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
+                title="Copy replay data to clipboard"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Copy className="h-3 w-3" />
+                  Copy Replay
                 </div>
               </button>
             </div>

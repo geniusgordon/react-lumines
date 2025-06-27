@@ -37,17 +37,14 @@ describe('replayUtils - integration', () => {
       expect(frameActions[0]).toEqual({
         frame: 0,
         userActions: [{ type: 'MOVE_LEFT' }],
-        hasTick: true,
       });
       expect(frameActions[1]).toEqual({
         frame: 1,
         userActions: [{ type: 'ROTATE_CW', payload: 'test' }],
-        hasTick: true,
       });
       expect(frameActions[2]).toEqual({
         frame: 2,
         userActions: [{ type: 'HARD_DROP' }],
-        hasTick: true,
       });
     });
 
