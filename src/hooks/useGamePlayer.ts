@@ -83,17 +83,17 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
 
   // Create enhanced actions that include recording
   const enhancedActions = useMemo(() => {
-    const recordAndExecute = (
+    const recordAndExecute = <T extends any[]>(
       actionType: GameAction['type'],
-      originalAction: () => void
+      originalAction: (...args: T) => void
     ) => {
-      return () => {
+      return (...args: T) => {
         // Record the action if recording
         if (replayState.isRecording) {
           recordInput({ type: actionType });
         }
-        // Execute the original action
-        originalAction();
+        // Execute the original action with arguments
+        originalAction(...args);
       };
     };
 

@@ -15,7 +15,7 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
 }) => {
   const seed = useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('seed') ?? Date.now().toString();
+    return urlParams.get('seed') || undefined;
   }, []);
 
   // Use live gameplay hook

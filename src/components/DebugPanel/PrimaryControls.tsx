@@ -82,7 +82,7 @@ export function PrimaryControls({
             value={seedInput}
             onChange={handleSeedInputChange}
             placeholder="Enter seed (optional)"
-            className="w-12 rounded-md bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            className="flex-1 rounded-md bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
             title="Enter custom seed or leave empty for random"
           />
           <Button
