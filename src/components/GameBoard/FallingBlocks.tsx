@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 
 import { TIMER_CONFIG } from '@/constants/gameConfig';
+import { GAME_FIELD_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
 import type { FallingColumn } from '@/types/game';
 
 import { GridCell } from '../GridCell/GridCell';
@@ -17,7 +18,7 @@ const FallingBlocks = ({ fallingColumns }: FallingBlocksProps) => {
         {column.cells.map(cell => (
           <div
             key={`falling-block-${cell.id}`}
-            className="absolute z-20"
+            className={`absolute ${getZIndexClass(GAME_FIELD_Z_INDEX.BOARD_BASE)}`}
             style={{
               top: `calc(${cell.y + percent} * var(--spacing-block-size) + 1px)`,
               left: `calc(${column.x} * var(--spacing-block-size) + 1px)`,

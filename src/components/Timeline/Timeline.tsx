@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 
+import { GAME_FIELD_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
 import type { Timeline as TimelineType } from '@/types/game';
 
 export interface TimelineProps {
@@ -22,7 +23,7 @@ export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
 
   return (
     <div
-      className="bg-game-timeline absolute top-0 z-30 h-full w-0.5"
+      className={`bg-game-timeline absolute top-0 ${getZIndexClass(GAME_FIELD_Z_INDEX.ACTIVE_ELEMENTS)} h-full w-0.5`}
       style={{
         left: `calc(${interpolatedX} * var(--spacing-block-size))`,
       }}

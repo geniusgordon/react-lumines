@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { UI_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
 import type { UseControlsReturn, UseGameActions } from '@/hooks';
 import type { GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
@@ -43,7 +44,9 @@ export function DebugPanel({
   };
 
   return (
-    <div className="fixed top-4 right-4 z-60 w-80 select-none">
+    <div
+      className={`fixed top-4 right-4 ${getZIndexClass(UI_Z_INDEX.SYSTEM_OVERLAY)} w-80 select-none`}
+    >
       <DebugModeBanner isVisible={gameState.debugMode} />
       <div className="flex max-h-[calc(100vh-10rem)] flex-col rounded-lg border border-gray-600/50 bg-gray-900/95 shadow-xl backdrop-blur-sm">
         <DebugPanelHeader

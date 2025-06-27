@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
+import { GAME_FIELD_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
 import type { GameBoard as GameBoardType } from '@/types/game';
 
 import { GridCell } from '../GridCell';
@@ -24,7 +25,11 @@ export const BoardGrid: React.FC<BoardGridProps> = ({ board }) => {
         cells.push(
           <div
             key={`grid-cell-${x}-${y}`}
-            className={cellValue === 0 ? '' : 'z-20'}
+            className={
+              cellValue === 0
+                ? ''
+                : getZIndexClass(GAME_FIELD_Z_INDEX.BOARD_BASE)
+            }
           >
             <GridCell value={cellValue} x={x} y={y} />
           </div>

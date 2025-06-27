@@ -1,3 +1,4 @@
+import { UI_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
 import type { GameState } from '@/types/game';
 
 export interface CountdownProps {
@@ -13,7 +14,9 @@ export const Countdown: React.FC<CountdownProps> = props => {
   }
 
   return (
-    <div className="fixed top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-black/30">
+    <div
+      className={`fixed top-0 left-0 ${getZIndexClass(UI_Z_INDEX.MODALS)} flex h-full w-full items-center justify-center bg-black/30`}
+    >
       <div className="text-center">
         <div className="text-game-text animate-pulse text-8xl font-bold">
           {countdown > 0 ? countdown : 'GO!'}
