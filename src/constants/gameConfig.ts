@@ -11,9 +11,9 @@ export const FRAME_INTERVAL_MS = 1000 / TARGET_FPS; // 16.67ms per frame
 
 // Timer constants
 export const TIMER_CONFIG = {
-  FIXED_DROP_INTERVAL: 60, // Constant drop speed (frames between drops)
+  FIXED_DROP_INTERVAL: 90, // Constant drop speed (frames between drops)
   COUNTDOWN_START: 3, // Start countdown from 3
-  COUNTDOWN_DURATION: 20, // 20 frames per countdown
+  COUNTDOWN_DURATION: 30, // 30 frames per countdown
   GAME_DURATION_FRAMES: 60 * TARGET_FPS, // 60 seconds * 60 FPS = 3600 frames
   GAME_DURATION_SECONDS: 60, // 60 seconds total game time
   TIMELINE_SWEEP_INTERVAL: (60 * TARGET_FPS) / 15 / BOARD_WIDTH, // Timeline frames per column (15 rounds for 60 seconds)

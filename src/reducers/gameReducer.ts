@@ -240,7 +240,7 @@ function handleCountdownAndTimer(state: GameState): GameState {
         ...state,
         status: 'playing',
         countdown: 0,
-        frame: nextFrame,
+        frame: 0, // Reset frame counter to 0 when gameplay begins
       };
     } else {
       // Continue countdown

@@ -35,6 +35,12 @@ export function useReplayLoop(
   const lastUpdateTime = useRef<number>(0);
   const accumulator = useRef<number>(0);
   const isRunningRef = useRef<boolean>(false);
+  const onFrameRef = useRef<() => void>(onFrame);
+
+  // Update ref when onFrame changes
+  useEffect(() => {
+    onFrameRef.current = onFrame;
+  }, [onFrame]);
 
   // Clear RAF helper
   const clearRAF = useCallback(() => {
@@ -68,7 +74,7 @@ export function useReplayLoop(
 
       // Fixed timestep updates - exactly 60 FPS for deterministic replay
       while (accumulator.current >= FRAME_INTERVAL_MS) {
-        onFrame();
+        onFrameRef.current();
         accumulator.current -= FRAME_INTERVAL_MS;
 
         // Check if we should continue after frame callback
@@ -81,7 +87,7 @@ export function useReplayLoop(
       // Schedule next frame
       animationFrameId.current = requestAnimationFrame(replayLoop);
     },
-    [shouldRun, onFrame, clearRAF]
+    [shouldRun, clearRAF]
   );
 
   // Start the replay loop

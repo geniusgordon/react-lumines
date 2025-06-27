@@ -28,27 +28,27 @@ body {
     sans-serif;
 }
 
-/* Custom scrollbar styles for debug panel */
-.debug-panel-scrollbar {
+/* Custom scrollbar styles */
+.scrollbar {
   /* Webkit scrollbar styles */
   scrollbar-width: thin;
   scrollbar-color: #4b5563 #1f2937;
 }
 
-.debug-panel-scrollbar::-webkit-scrollbar {
+.scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
-.debug-panel-scrollbar::-webkit-scrollbar-track {
+.scrollbar::-webkit-scrollbar-track {
   background: #1f2937;
   border-radius: 3px;
 }
 
-.debug-panel-scrollbar::-webkit-scrollbar-thumb {
+.scrollbar::-webkit-scrollbar-thumb {
   background: #4b5563;
   border-radius: 3px;
 }
 
-.debug-panel-scrollbar::-webkit-scrollbar-thumb:hover {
+.scrollbar::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
 }

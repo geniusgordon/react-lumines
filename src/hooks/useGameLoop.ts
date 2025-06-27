@@ -101,6 +101,14 @@ export function useGameLoop(
     (gameState.status === 'playing' || gameState.status === 'countdown') &&
     !debugMode;
 
+  // Store current shouldRun state to avoid closure issues
+  const shouldRunRef = useRef<boolean>(shouldRun);
+
+  // Update ref when shouldRun changes
+  useEffect(() => {
+    shouldRunRef.current = shouldRun;
+  }, [shouldRun]);
+
   // Fixed timestep update function
   const gameUpdate = useCallback(() => {
     dispatch({
@@ -128,7 +136,7 @@ export function useGameLoop(
   // Main game loop with fixed timestep
   const gameLoop = useCallback(
     (currentTime: number) => {
-      if (!shouldRun) {
+      if (!shouldRunRef.current) {
         animationFrameId.current = null;
         return;
       }
@@ -175,7 +183,7 @@ export function useGameLoop(
       // Schedule next frame
       animationFrameId.current = requestAnimationFrame(gameLoop);
     },
-    [shouldRun, gameUpdate, maxFrameSkip]
+    [gameUpdate, maxFrameSkip]
   );
 
   // Start/stop game loop based on game state

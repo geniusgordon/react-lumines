@@ -49,7 +49,7 @@ export function DebugPanel({
         />
 
         {isExpanded && (
-          <div className="debug-panel-scrollbar max-h-[calc(100vh-10rem)] space-y-4 overflow-y-auto p-4">
+          <div className="scrollbar max-h-[calc(100vh-10rem)] space-y-4 overflow-y-auto p-4">
             <QuickStats
               status={gameState.status}
               score={gameState.score}

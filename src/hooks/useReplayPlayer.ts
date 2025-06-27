@@ -44,6 +44,11 @@ export function useReplayPlayer(replayData?: ReplayData) {
 
   // Dispatch all actions for current frame
   const dispatchFrameActions = useCallback(() => {
+    if (gameState.status === 'countdown') {
+      _dispatch({ type: 'TICK' });
+      return;
+    }
+
     const currentFrame = currentFrameRef.current;
     const frameActions = frameActionsRef.current;
 
@@ -71,7 +76,7 @@ export function useReplayPlayer(replayData?: ReplayData) {
 
     // Update frame number (no re-render needed)
     currentFrameRef.current = currentFrame + 1;
-  }, [_dispatch]);
+  }, [_dispatch, gameState.status]);
 
   // Use replay loop hook for RAF timing
   const shouldRunReplay = replayControl.isPlaying && !replayControl.isPaused;
@@ -196,8 +201,6 @@ export function useReplayPlayer(replayData?: ReplayData) {
       startReplay(replayData);
     }
   }, [gameState.status, replayData, startReplay]);
-
-  // Cleanup is handled by useReplayLoop
 
   // Create actions object similar to useGamePlayer pattern
   const replayActions = useMemo(

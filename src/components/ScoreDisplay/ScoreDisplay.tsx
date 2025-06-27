@@ -27,7 +27,7 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
       <div>
         <div className="text-xs">Time</div>
         {gameStatus === 'countdown' || gameStatus === 'countdownPaused' ? (
-          <div className="animate-pulse text-center text-4xl font-bold">
+          <div className="animate-pulse text-4xl font-bold">
             {countdown > 0 ? countdown : 'GO!'}
           </div>
         ) : (
