@@ -2,11 +2,7 @@ import { useCallback, useRef, useEffect, useMemo } from 'react';
 
 import type { GameAction, GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
-import {
-  validateReplayData,
-  expandReplayData,
-  type FrameActions,
-} from '@/utils/replayUtils';
+import { validateReplayData, expandReplayData } from '@/utils/replayUtils';
 
 import { useGame, type UseGameActions } from './useGame';
 import { useGameLoop, type UseGameLoopReturn } from './useGameLoop';
@@ -21,8 +17,10 @@ export interface UseReplayPlayerReturn {
 export function useReplayPlayer(replayData: ReplayData): UseReplayPlayerReturn {
   const { gameState, actions, _dispatch } = useGame(replayData?.seed, false);
 
-  // Replay data references
-  const frameActionsRef = useRef<FrameActions[]>([]);
+  const frameActions = useMemo(() => {
+    return expandReplayData(replayData);
+  }, [replayData]);
+
   const currentFrameRef = useRef<number>(0);
 
   // Error handling for replay issues
@@ -41,18 +39,18 @@ export function useReplayPlayer(replayData: ReplayData): UseReplayPlayerReturn {
     }
 
     const currentFrame = currentFrameRef.current;
-    const frameActions = frameActionsRef.current;
-
     const frameData = frameActions[currentFrame];
 
-    for (const userAction of frameData.userActions) {
-      _dispatch(userAction);
+    if (frameData) {
+      for (const userAction of frameData.userActions) {
+        _dispatch(userAction);
+      }
     }
 
     _dispatch({ type: 'TICK' });
 
     currentFrameRef.current = currentFrame + 1;
-  }, [_dispatch, gameState.status]);
+  }, [_dispatch, gameState.status, frameActions]);
 
   const gameLoop = useGameLoop(dispatchFrameActions, {
     enabled: gameState.status === 'playing' || gameState.status === 'countdown',
@@ -69,10 +67,6 @@ export function useReplayPlayer(replayData: ReplayData): UseReplayPlayerReturn {
             `Replay validation failed:\n${validation.errors.join('\n')}`
           );
         }
-
-        // Expand replay data into frame-based structure
-        const frameActions = expandReplayData(replayData);
-        frameActionsRef.current = frameActions;
 
         // Reset frame index
         currentFrameRef.current = 0;
