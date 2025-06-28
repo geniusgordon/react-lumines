@@ -35,14 +35,11 @@ export const GameCore: React.FC<GameCoreProps> = ({
   exportReplay,
 }) => {
   // Extract game loop properties (with fallbacks for replay mode)
-  const { isRunning, currentFPS, frameCount, manualStep, isDebugMode } =
-    gameLoop || {
-      isRunning: false,
-      currentFPS: 0,
-      frameCount: 0,
-      manualStep: () => {},
-      isDebugMode: false,
-    };
+  const { isRunning, currentFPS, manualStep } = gameLoop || {
+    isRunning: false,
+    currentFPS: 0,
+    manualStep: () => {},
+  };
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">
@@ -50,10 +47,9 @@ export const GameCore: React.FC<GameCoreProps> = ({
         <DebugPanel
           gameState={gameState}
           actions={actions}
-          frameCount={frameCount}
+          frameCount={gameState.frame}
           currentFPS={currentFPS}
           isRunning={isRunning}
-          isDebugMode={isDebugMode}
           manualStep={manualStep}
           controls={controls}
           scale={scale}

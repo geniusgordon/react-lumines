@@ -1,25 +1,32 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 
-import type { GameAction } from '@/types/game';
+import type { GameAction, GameState } from '@/types/game';
+import type { ReplayData } from '@/types/replay';
 
-import { useGame } from './useGame';
-import { useGameLoop } from './useGameLoop';
+import { useGame, type UseGameActions } from './useGame';
+import { useGameLoop, type UseGameLoopReturn } from './useGameLoop';
 import { useReplayRecorder } from './useReplayRecorder';
 import { useSaveLoadReplay } from './useSaveLoadReplay';
 
-export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
+// Return type for useReplayPlayer hook
+export interface UseGamePlayerReturn {
+  gameState: GameState;
+  actions: UseGameActions;
+  gameLoop: UseGameLoopReturn;
+  exportReplay: () => ReplayData | null;
+}
+
+export function useGamePlayer(
+  initialSeed?: string,
+  defaultDebugMode = false
+): UseGamePlayerReturn {
   const { gameState, actions, _dispatch } = useGame(
     initialSeed,
     defaultDebugMode
   );
 
-  const {
-    replayState,
-    startRecording,
-    stopRecording,
-    recordInput,
-    exportReplay,
-  } = useReplayRecorder(gameState);
+  const { startRecording, recordInput, exportReplay } =
+    useReplayRecorder(gameState);
 
   const { saveReplay } = useSaveLoadReplay();
 
@@ -32,53 +39,36 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
       prevGameStatus.current !== 'gameOver' &&
       gameState.status === 'gameOver'
     ) {
-      // Only stop recording and save if we're currently recording
-      if (replayState.isRecording) {
-        stopRecording();
+      // Export and save the replay
+      const replayData = exportReplay();
+      if (replayData) {
+        // Generate a descriptive name with timestamp and score
+        const timestamp = new Date().toLocaleString();
+        const replayName = `Game ${timestamp} - Score: ${gameState.score}`;
 
-        // Export and save the replay
-        const replayData = exportReplay();
-        if (replayData) {
-          // Generate a descriptive name with timestamp and score
-          const timestamp = new Date().toLocaleString();
-          const replayName = `Game ${timestamp} - Score: ${gameState.score}`;
+        const saveResult = saveReplay(replayData, replayName);
 
-          const saveResult = saveReplay(replayData, replayName);
-
-          if (saveResult.success) {
-            console.log(`Game Over - Replay saved: "${replayName}"`);
-          } else {
-            console.error('Failed to save replay:', saveResult.error?.message);
-          }
+        if (saveResult.success) {
+          console.log(`Game Over - Replay saved: "${replayName}"`);
         } else {
-          console.warn('Game Over - No replay data to save');
+          console.error('Failed to save replay:', saveResult.error?.message);
         }
+      } else {
+        console.warn('Game Over - No replay data to save');
       }
     }
 
     // Update previous status
     prevGameStatus.current = gameState.status;
-  }, [
-    gameState.status,
-    gameState.score,
-    replayState.isRecording,
-    stopRecording,
-    exportReplay,
-    saveReplay,
-  ]);
+  }, [gameState.status, gameState.score, exportReplay, saveReplay]);
 
   // Enhanced dispatch that includes recording
   const enhancedDispatch = useCallback(
     (action: GameAction) => {
-      // Record input if we're recording
-      if (replayState.isRecording) {
-        recordInput(action);
-      }
-
-      // Dispatch to the game reducer
+      recordInput(action);
       _dispatch(action);
     },
-    [replayState.isRecording, recordInput, _dispatch]
+    [recordInput, _dispatch]
   );
 
   // Create enhanced actions that include recording
@@ -88,11 +78,7 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
       originalAction: (...args: T) => void
     ) => {
       return (...args: T) => {
-        // Record the action if recording
-        if (replayState.isRecording) {
-          recordInput({ type: actionType });
-        }
-        // Execute the original action with arguments
+        recordInput({ type: actionType });
         originalAction(...args);
       };
     };
@@ -104,19 +90,29 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
       rotateCCW: recordAndExecute('ROTATE_CCW', actions.rotateCCW),
       softDrop: recordAndExecute('SOFT_DROP', actions.softDrop),
       hardDrop: recordAndExecute('HARD_DROP', actions.hardDrop),
-      pause: recordAndExecute('PAUSE', actions.pause),
-      resume: recordAndExecute('RESUME', actions.resume),
       tick: recordAndExecute('TICK', actions.tick),
-      startNewGame: actions.startNewGame, // Special handling below
-      restartGame: recordAndExecute('RESTART', actions.restartGame),
-      setDebugMode: actions.setDebugMode, // Debug actions don't need recording
-      skipCountdown: recordAndExecute('SKIP_COUNTDOWN', actions.skipCountdown),
+      pause: actions.pause,
+      resume: actions.resume,
+      startNewGame: actions.startNewGame,
+      restartGame: (seed?: string) => {
+        console.log('restartGame');
+        actions.restartGame(seed);
+      },
+      setDebugMode: actions.setDebugMode,
+      skipCountdown: actions.skipCountdown,
     };
-  }, [actions, replayState.isRecording, recordInput]);
+  }, [actions, recordInput]);
 
-  // Use the game loop with the enhanced dispatch function
-  const gameLoop = useGameLoop(gameState, enhancedDispatch, {
-    enabled: true,
+  // Create onFrame callback that dispatches TICK actions
+  const onFrame = useCallback(() => {
+    enhancedDispatch({
+      type: 'TICK',
+    });
+  }, [enhancedDispatch]);
+
+  // Use the game loop with the onFrame callback
+  const gameLoop = useGameLoop(onFrame, {
+    enabled: gameState.status === 'playing' || gameState.status === 'countdown',
     debugMode: gameState.debugMode,
   });
 
@@ -134,11 +130,8 @@ export function useGamePlayer(initialSeed?: string, defaultDebugMode = false) {
 
   return {
     gameState,
-    replayState,
     gameLoop,
     actions: enhancedActions,
-    startNewGame,
     exportReplay,
-    stopRecording,
   };
 }

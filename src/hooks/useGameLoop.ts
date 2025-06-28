@@ -1,7 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 
 import { FRAME_INTERVAL_MS } from '@/constants/gameConfig';
-import type { GameState, GameAction } from '@/types/game';
 
 export interface UseGameLoopOptions {
   enabled?: boolean; // Whether the game loop should run
@@ -42,18 +41,12 @@ export interface UseGameLoopOptions {
 export interface UseGameLoopReturn {
   isRunning: boolean;
   currentFPS: number;
-  frameCount: number;
 
   /**
    * Manually advance frames (only available in debug mode)
    * Perfect for step-by-step debugging of game logic
    */
   manualStep: (steps?: number) => void;
-
-  /**
-   * Whether manual stepping mode is active
-   */
-  isDebugMode: boolean;
 }
 
 /**
@@ -78,8 +71,7 @@ export interface UseGameLoopReturn {
  * - Essential for replay system accuracy
  */
 export function useGameLoop(
-  gameState: GameState,
-  dispatch: React.Dispatch<GameAction>,
+  onFrame: () => void,
   options: UseGameLoopOptions = {}
 ): UseGameLoopReturn {
   const { enabled = true, maxFrameSkip = 5, debugMode = false } = options;
@@ -96,10 +88,7 @@ export function useGameLoop(
 
   // Determine if game loop should be running
   // In debug mode, we don't auto-run the loop - only manual stepping
-  const shouldRun =
-    enabled &&
-    (gameState.status === 'playing' || gameState.status === 'countdown') &&
-    !debugMode;
+  const shouldRun = enabled && !debugMode;
 
   // Store current shouldRun state to avoid closure issues
   const shouldRunRef = useRef<boolean>(shouldRun);
@@ -109,28 +98,24 @@ export function useGameLoop(
     shouldRunRef.current = shouldRun;
   }, [shouldRun]);
 
-  // Fixed timestep update function
-  const gameUpdate = useCallback(() => {
-    dispatch({
-      type: 'TICK',
-    });
-  }, [dispatch]);
+  // Store onFrame ref to avoid stale closures
+  const onFrameRef = useRef<() => void>(onFrame);
+
+  // Update ref when onFrame changes
+  useEffect(() => {
+    onFrameRef.current = onFrame;
+  }, [onFrame]);
 
   // Manual frame stepping function for debug mode
   const manualStep = useCallback(
     (steps: number = 1) => {
-      if (
-        debugMode &&
-        (gameState.status === 'playing' || gameState.status === 'countdown')
-      ) {
+      if (debugMode) {
         for (let i = 0; i < steps; i++) {
-          dispatch({
-            type: 'TICK',
-          });
+          onFrameRef.current();
         }
       }
     },
-    [debugMode, gameState.status, dispatch]
+    [debugMode]
   );
 
   // Main game loop with fixed timestep
@@ -165,7 +150,7 @@ export function useGameLoop(
         accumulator.current >= FRAME_INTERVAL_MS &&
         updatesThisFrame < maxFrameSkip
       ) {
-        gameUpdate(); // EXACTLY 60 FPS game logic update
+        onFrameRef.current(); // EXACTLY 60 FPS game logic update
         accumulator.current -= FRAME_INTERVAL_MS; // "Pay back" 16.67ms of debt
         updatesThisFrame++; // Track updates to prevent spiral of death
       }
@@ -183,7 +168,7 @@ export function useGameLoop(
       // Schedule next frame
       animationFrameId.current = requestAnimationFrame(gameLoop);
     },
-    [gameUpdate, maxFrameSkip]
+    [maxFrameSkip]
   );
 
   // Start/stop game loop based on game state
@@ -208,24 +193,9 @@ export function useGameLoop(
     };
   }, [shouldRun, gameLoop]);
 
-  // Reset timing when game state changes dramatically
-  useEffect(() => {
-    if (gameState.status === 'countdown' || gameState.status === 'playing') {
-      lastUpdateTime.current = 0;
-      accumulator.current = 0;
-      fpsTracker.current = {
-        frameCount: 0,
-        lastFPSTime: 0,
-        currentFPS: 0,
-      };
-    }
-  }, [gameState.status]);
-
   return {
     isRunning: shouldRun && animationFrameId.current !== null,
     currentFPS: Math.round(fpsTracker.current.currentFPS),
-    frameCount: gameState.frame,
     manualStep,
-    isDebugMode: debugMode,
   };
 }

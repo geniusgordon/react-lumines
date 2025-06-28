@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 
 import type { GameAction, GameState } from '@/types/game';
 import type { ReplayInput, ReplayData } from '@/types/replay';
@@ -8,21 +8,13 @@ export function useReplayRecorder(gameState: GameState) {
   // Use refs to avoid re-renders during recording
   const recordedInputsRef = useRef<ReplayInput[]>([]);
 
-  // Only use state for flags that actually need to trigger re-renders
-  const [isRecording, setIsRecording] = useState(false);
-
   const startRecording = useCallback(() => {
     recordedInputsRef.current = [];
-    setIsRecording(true);
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    setIsRecording(false);
   }, []);
 
   const recordInput = useCallback(
     (gameAction: GameAction) => {
-      if (!isRecording || gameState.status !== 'playing') {
+      if (gameState.status !== 'playing') {
         return;
       }
 
@@ -34,8 +26,10 @@ export function useReplayRecorder(gameState: GameState) {
       };
       // Direct push to ref - no re-render
       recordedInputsRef.current.push(replayInput);
+
+      // console.log('recordedInputsRef:', recordedInputsRef.current);
     },
-    [isRecording, gameState.status]
+    [gameState.status]
   );
 
   const exportReplay = useCallback((): ReplayData | null => {
@@ -51,12 +45,7 @@ export function useReplayRecorder(gameState: GameState) {
   }, [gameState.seed, gameState.score]);
 
   return {
-    replayState: {
-      isRecording,
-      recordedInputs: recordedInputsRef.current,
-    },
     startRecording,
-    stopRecording,
     recordInput,
     exportReplay,
   };

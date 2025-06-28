@@ -19,7 +19,6 @@ export interface DebugPanelProps {
   frameCount: number;
   currentFPS: number;
   isRunning: boolean;
-  isDebugMode: boolean;
   controls: UseControlsReturn;
   scale?: number;
   manualStep: (steps?: number) => void;
