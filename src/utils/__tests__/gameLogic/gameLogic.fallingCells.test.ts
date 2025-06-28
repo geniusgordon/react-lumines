@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { BOARD_HEIGHT } from '@/constants';
 import type { GameBoard } from '@/types/game';
-
-import { createEmptyBoard, createFallingColumns } from '../../gameLogic';
-import { SeededRNGMock } from '../../seededRNG';
+import { createEmptyBoard, createFallingColumns } from '@/utils/gameLogic';
+import { SeededRNGMock } from '@/utils/seededRNG';
 
 describe('Falling cells', () => {
   let board: GameBoard;
@@ -17,8 +17,8 @@ describe('Falling cells', () => {
     board[4][3] = 1; // Stack of blocks
     board[5][3] = 2;
     board[6][3] = 1;
-    board[9][3] = 2;
-    board[9][4] = 1;
+    board[BOARD_HEIGHT - 1][3] = 2;
+    board[BOARD_HEIGHT - 1][4] = 1;
     board[2][7] = 1; // Isolated floating block
 
     /*
@@ -60,8 +60,8 @@ describe('Falling cells', () => {
     expect(newBoard[4][3]).toBe(0);
     expect(newBoard[5][3]).toBe(0);
     expect(newBoard[6][3]).toBe(0);
-    expect(newBoard[9][3]).toBe(2);
-    expect(newBoard[9][4]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 1][3]).toBe(2);
+    expect(newBoard[BOARD_HEIGHT - 1][4]).toBe(1);
     expect(newBoard[2][7]).toBe(0);
   });
 
@@ -69,8 +69,8 @@ describe('Falling cells', () => {
     // Create a state with complex floating blocks pattern
     board[5][3] = 2;
     board[6][3] = 1;
-    board[9][3] = 2;
-    board[9][4] = 1;
+    board[BOARD_HEIGHT - 1][3] = 2;
+    board[BOARD_HEIGHT - 1][4] = 1;
     board[2][7] = 1; // Isolated floating block
 
     /*
@@ -122,8 +122,8 @@ describe('Falling cells', () => {
     expect(newBoard[4][3]).toBe(0);
     expect(newBoard[5][3]).toBe(0);
     expect(newBoard[6][3]).toBe(0);
-    expect(newBoard[9][3]).toBe(2);
-    expect(newBoard[9][4]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 1][3]).toBe(2);
+    expect(newBoard[BOARD_HEIGHT - 1][4]).toBe(1);
     expect(newBoard[2][7]).toBe(0);
   });
 });

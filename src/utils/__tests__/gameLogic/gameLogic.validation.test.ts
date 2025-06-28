@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { BOARD_HEIGHT } from '@/constants';
 import type { GameBoard, Block, FallingColumn } from '@/types/game';
-
-import { createEmptyBoard, isValidPosition } from '../../gameLogic';
+import { createEmptyBoard, isValidPosition } from '@/utils/gameLogic';
 
 describe('Position validation', () => {
   let board: GameBoard;
@@ -33,9 +33,9 @@ describe('Position validation', () => {
       'out_of_bounds'
     );
 
-    expect(isValidPosition(board, block, { x: 0, y: 9 }, [])).toBe(
-      'out_of_bounds'
-    );
+    expect(
+      isValidPosition(board, block, { x: 0, y: BOARD_HEIGHT - 1 }, [])
+    ).toBe('out_of_bounds');
   });
 
   it('should detect collisions with placed blocks', () => {

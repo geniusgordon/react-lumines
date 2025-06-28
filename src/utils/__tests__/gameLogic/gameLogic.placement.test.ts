@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { BOARD_HEIGHT } from '@/constants';
 import type { Block, GameBoard } from '@/types/game';
-
 import {
   createEmptyBoard,
   findDropPosition,
   placeBlockOnBoard,
   canPlaceAnyPartOfBlock,
-} from '../../gameLogic';
+} from '@/utils/gameLogic';
 
 describe('Block Placement', () => {
   let board: GameBoard;
@@ -33,7 +33,7 @@ describe('Block Placement', () => {
 
   it('should drop to bottom when no obstacles', () => {
     const dropPos = findDropPosition(board, block, { x: 5, y: 0 }, []);
-    expect(dropPos).toEqual({ x: 5, y: 8 }); // Bottom of board
+    expect(dropPos).toEqual({ x: 5, y: BOARD_HEIGHT - 2 }); // Bottom of board
   });
 
   it('should allow partial placement when only one column has space', () => {

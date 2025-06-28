@@ -2,7 +2,7 @@ import type { GameConfig, ControlsConfig } from '@/types/game';
 
 // Core game dimensions
 export const BOARD_WIDTH = 16;
-export const BOARD_HEIGHT = 10;
+export const BOARD_HEIGHT = 12;
 export const BLOCK_SIZE = 2;
 
 // Timing constants (deterministic frame-based)

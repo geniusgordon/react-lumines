@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { generateRandomBlock } from '../../gameLogic';
-import { SeededRNG } from '../../seededRNG';
+import { generateRandomBlock } from '@/utils/gameLogic';
+import { SeededRNG } from '@/utils/seededRNG';
 
 describe('Random Block Generation', () => {
   it('should generate deterministic blocks', () => {

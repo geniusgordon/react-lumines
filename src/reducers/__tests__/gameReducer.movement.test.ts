@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import { BOARD_HEIGHT } from '@/constants';
 import type { GameState, GameAction } from '@/types/game';
 
 import { gameReducer, createInitialGameState } from '../gameReducer';
@@ -129,7 +130,7 @@ describe('Game Reducer - Block Movement', () => {
       // Position block near bottom
       const nearBottomState = {
         ...playingState,
-        blockPosition: { x: 7, y: 8 }, // Near bottom of 10-high board
+        blockPosition: { x: 7, y: BOARD_HEIGHT - 2 }, // Near bottom of 10-high board
       };
 
       const action: GameAction = { type: 'SOFT_DROP' };

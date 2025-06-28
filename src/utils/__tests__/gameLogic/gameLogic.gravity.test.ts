@@ -2,13 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { BOARD_HEIGHT, BOARD_WIDTH } from '@/constants/gameConfig';
 import type { GameBoard, CellValue } from '@/types/game';
-
 import {
   createEmptyBoard,
   clearMarkedCellsAndApplyGravity,
   applyGravity,
-} from '../../gameLogic';
-import { SeededRNGMock } from '../../seededRNG';
+} from '@/utils/gameLogic';
+import { SeededRNGMock } from '@/utils/seededRNG';
 
 describe('Gravity and Clearing', () => {
   let board: GameBoard;
@@ -25,13 +24,13 @@ describe('Gravity and Clearing', () => {
     const newBoard = applyGravity(board);
 
     // Column 3: blocks should fall to bottom
-    expect(newBoard[8][3]).toBe(1); // Was at 7, now at bottom
-    expect(newBoard[9][3]).toBe(2); // Was at 5, now at bottom
+    expect(newBoard[BOARD_HEIGHT - 2][3]).toBe(1); // Was at 7, now at bottom
+    expect(newBoard[BOARD_HEIGHT - 1][3]).toBe(2); // Was at 5, now at bottom
     expect(newBoard[5][3]).toBe(0); // Original position cleared
     expect(newBoard[7][3]).toBe(0); // Original position cleared
 
     // Column 5: single block should fall
-    expect(newBoard[9][5]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 1][5]).toBe(1);
     expect(newBoard[2][5]).toBe(0);
   });
 
@@ -74,16 +73,16 @@ describe('Gravity and Clearing', () => {
      * 8   . . . 1 . . . . . .  ← stack bottom (was at row 6)
      * 9   . . . 2 . . . 1 . .  ← floating block fell + isolated block fell
      */
-    expect(newBoard[6][3]).toBe(1); // Bottom of stack
-    expect(newBoard[7][3]).toBe(2);
-    expect(newBoard[8][3]).toBe(1);
-    expect(newBoard[9][3]).toBe(2); // Blocks fell to fill the gap
-    expect(newBoard[9][7]).toBe(1); // Isolated block fell to bottom
+    expect(newBoard[BOARD_HEIGHT - 4][3]).toBe(1); // Bottom of stack
+    expect(newBoard[BOARD_HEIGHT - 3][3]).toBe(2);
+    expect(newBoard[BOARD_HEIGHT - 2][3]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 1][3]).toBe(2); // Blocks fell to fill the gap
+    expect(newBoard[BOARD_HEIGHT - 1][7]).toBe(1); // Isolated block fell to bottom
 
     // Original positions should be cleared
     expect(newBoard[4][3]).toBe(0);
     expect(newBoard[5][3]).toBe(0);
-    expect(newBoard[6][3]).toBe(1); // This one stayed in place (already at bottom of stack)
+    expect(newBoard[BOARD_HEIGHT - 4][3]).toBe(1); // This one stayed in place (already at bottom of stack)
     expect(newBoard[2][7]).toBe(0);
   });
 
@@ -99,35 +98,35 @@ describe('Gravity and Clearing', () => {
     const newBoard = applyGravity(board);
 
     // Column 1: two blocks should stack at bottom
-    expect(newBoard[8][1]).toBe(1); // Was at 6
-    expect(newBoard[9][1]).toBe(2); // Was at 3
+    expect(newBoard[BOARD_HEIGHT - 2][1]).toBe(1); // Was at 6
+    expect(newBoard[BOARD_HEIGHT - 1][1]).toBe(2); // Was at 3
     expect(newBoard[3][1]).toBe(0); // Original position cleared
     expect(newBoard[6][1]).toBe(0); // Original position cleared
 
     // Column 5: three blocks should stack at bottom
-    expect(newBoard[7][5]).toBe(2); // Was at 2
-    expect(newBoard[8][5]).toBe(1); // Was at 4
-    expect(newBoard[9][5]).toBe(1); // Was at 7, already at bottom
+    expect(newBoard[BOARD_HEIGHT - 3][5]).toBe(2); // Was at 2
+    expect(newBoard[BOARD_HEIGHT - 2][5]).toBe(1); // Was at 4
+    expect(newBoard[BOARD_HEIGHT - 1][5]).toBe(1); // Was at 7, already at bottom
     expect(newBoard[2][5]).toBe(0); // Original position cleared
     expect(newBoard[4][5]).toBe(0); // Original position cleared
 
     // Column 9: single block should fall to bottom
-    expect(newBoard[9][9]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 1][9]).toBe(1);
     expect(newBoard[1][9]).toBe(0); // Original position cleared
   });
 
   it('should preserve stacked blocks correctly', () => {
     // Create a tower of blocks that are already properly stacked
-    board[7][4] = 1;
-    board[8][4] = 2;
-    board[9][4] = 1;
+    board[BOARD_HEIGHT - 3][4] = 1;
+    board[BOARD_HEIGHT - 2][4] = 2;
+    board[BOARD_HEIGHT - 1][4] = 1;
 
     const newBoard = applyGravity(board);
 
     // Should remain in the same positions since they're already stacked
-    expect(newBoard[7][4]).toBe(1);
-    expect(newBoard[8][4]).toBe(2);
-    expect(newBoard[9][4]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 3][4]).toBe(1);
+    expect(newBoard[BOARD_HEIGHT - 2][4]).toBe(2);
+    expect(newBoard[BOARD_HEIGHT - 1][4]).toBe(1);
   });
 
   it('should handle empty board', () => {

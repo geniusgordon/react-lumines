@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import type { GameState, GameAction, GameBoard } from '@/types/game';
+import { BOARD_HEIGHT } from '@/constants';
+import type { GameState, GameAction } from '@/types/game';
 import { createEmptyBoard } from '@/utils/gameLogic';
 
 import { gameReducer, createInitialGameState } from '../gameReducer';
@@ -144,7 +145,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       // Direct gravity testing is done in utils/__tests__/gameLogic.test.ts
       const stateWithFloatingAndFallingBlock = {
         ...stateWithFloatingBlocks,
-        blockPosition: { x: 5, y: 8 }, // Position for immediate placement
+        blockPosition: { x: 5, y: BOARD_HEIGHT - 2 }, // Position for immediate placement
       };
 
       const action: GameAction = { type: 'SOFT_DROP' };
@@ -370,7 +371,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       // Position block at bottom
       const bottomState = {
         ...playingState,
-        blockPosition: { x: 7, y: 8 },
+        blockPosition: { x: 7, y: BOARD_HEIGHT - 2 },
       };
 
       const action: GameAction = { type: 'SOFT_DROP' };
@@ -390,7 +391,7 @@ describe('Game Reducer - Gameplay Mechanics', () => {
       // Create state where block will be placed
       const stateToPlace = {
         ...playingState,
-        blockPosition: { x: 7, y: 8 },
+        blockPosition: { x: 7, y: BOARD_HEIGHT - 2 },
       };
 
       const action: GameAction = { type: 'SOFT_DROP' };
@@ -409,21 +410,16 @@ describe('Game Reducer - Gameplay Mechanics', () => {
 
     it('should apply gravity when blocks are placed during gameplay', () => {
       // Create a state with a placed block creating a gap
+      const board = createEmptyBoard();
+      board[BOARD_HEIGHT - 2][3] = 1;
+      board[BOARD_HEIGHT - 2][4] = 2;
+      board[BOARD_HEIGHT - 1][3] = 2;
+      board[BOARD_HEIGHT - 1][4] = 1;
+
       const stateWithGap = {
         ...playingState,
-        board: [
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 0
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 1
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 2
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 3
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 4
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 5
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 6
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 7
-          [0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 8 - base blocks
-          [0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // row 9 - base blocks
-        ] as GameBoard,
-        blockPosition: { x: 3, y: 6 }, // Position block above the gap
+        board,
+        blockPosition: { x: 3, y: BOARD_HEIGHT - 4 }, // Position block above the gap
       };
 
       /*

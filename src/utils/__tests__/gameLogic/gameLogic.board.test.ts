@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
-
-import { createEmptyBoard, copyBoard } from '../../gameLogic';
+import { createEmptyBoard, copyBoard } from '@/utils/gameLogic';
 
 describe('Board Operations', () => {
   it('should create empty board with correct dimensions', () => {

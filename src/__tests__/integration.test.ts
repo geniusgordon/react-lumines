@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { BOARD_WIDTH, TIMER_CONFIG } from '@/constants';
+import { BOARD_HEIGHT, BOARD_WIDTH, TIMER_CONFIG } from '@/constants';
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 import type {
   GameAction,
@@ -246,8 +246,8 @@ describe('Integration Tests', () => {
         });
 
         // Verify board integrity
-        expect(currentState.board).toHaveLength(10);
-        expect(currentState.board[0]).toHaveLength(16);
+        expect(currentState.board).toHaveLength(BOARD_HEIGHT);
+        expect(currentState.board[0]).toHaveLength(BOARD_WIDTH);
 
         // Verify all cells contain valid values
         for (let y = 0; y < 10; y++) {
@@ -258,9 +258,9 @@ describe('Integration Tests', () => {
 
         // Verify position bounds
         expect(currentState.blockPosition.x).toBeGreaterThanOrEqual(0);
-        expect(currentState.blockPosition.x).toBeLessThan(16);
+        expect(currentState.blockPosition.x).toBeLessThan(BOARD_WIDTH);
         expect(currentState.blockPosition.y).toBeGreaterThanOrEqual(-2);
-        expect(currentState.blockPosition.y).toBeLessThan(10);
+        expect(currentState.blockPosition.y).toBeLessThan(BOARD_HEIGHT);
       }
     });
   });
