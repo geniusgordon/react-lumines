@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/Button';
-import { UI_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
+import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import type { UseGameActions } from '@/hooks';
 import type { GameState, ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
@@ -38,7 +38,8 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 ${getZIndexClass(UI_Z_INDEX.MODALS)} flex items-center justify-center`}
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ ...getZIndexStyle(UI_Z_INDEX.MODALS) }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-md" />
 

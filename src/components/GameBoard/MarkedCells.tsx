@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { GAME_FIELD_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
+import { GAME_FIELD_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import type { Square, Timeline } from '@/types/game';
 
 export interface MarkedCellsProps {
@@ -21,13 +21,14 @@ export const MarkedCells: React.FC<MarkedCellsProps> = ({
     return (
       <div
         key={`marked-cell-${cell.x}-${cell.y}`}
-        className={`absolute ${getZIndexClass(GAME_FIELD_Z_INDEX.GAME_EFFECTS)}`}
+        className="absolute"
         style={{
           left: `calc(${cell.x} * var(--spacing-block-size))`,
           top: `calc(${cell.y} * var(--spacing-block-size))`,
           width: `calc(${width} * var(--spacing-block-size))`,
           height: `var(--spacing-block-size)`,
           backgroundColor: 'var(--color-block-marked)',
+          ...getZIndexStyle(GAME_FIELD_Z_INDEX.GAME_EFFECTS),
         }}
       />
     );

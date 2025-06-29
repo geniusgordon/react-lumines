@@ -1,4 +1,4 @@
-import { GAME_FIELD_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
+import { GAME_FIELD_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import type { Square } from '@/types/game';
 
 export interface DetectedPatternsProps {
@@ -12,7 +12,7 @@ export const DetectedPatterns: React.FC<DetectedPatternsProps> = ({
     return (
       <div
         key={`detected-pattern-${pattern.x}-${pattern.y}`}
-        className={`absolute ${getZIndexClass(GAME_FIELD_Z_INDEX.GAME_EFFECTS)} border-2 border-solid border-white`}
+        className="absolute border-2 border-solid border-white"
         style={{
           left: `calc(${pattern.x} * var(--spacing-block-size))`,
           top: `calc(${pattern.y} * var(--spacing-block-size))`,
@@ -22,6 +22,7 @@ export const DetectedPatterns: React.FC<DetectedPatternsProps> = ({
             pattern.color === 1
               ? 'var(--color-block-light-detected)'
               : 'var(--color-block-dark-detected)',
+          ...getZIndexStyle(GAME_FIELD_Z_INDEX.GAME_EFFECTS),
         }}
       />
     );

@@ -1,5 +1,5 @@
 import { Button } from '@/components/Button/Button';
-import { UI_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
+import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import type { SavedReplay } from '@/types/replay';
 
 export interface ReplayHeaderProps {
@@ -30,7 +30,8 @@ export function ReplayHeader({
 
   return (
     <div
-      className={`absolute top-0 right-0 left-0 ${getZIndexClass(UI_Z_INDEX.SYSTEM_OVERLAY)} border-b border-gray-700 bg-gray-900 p-4`}
+      className="absolute top-0 right-0 left-0 border-b border-gray-700 bg-gray-900 p-4"
+      style={{ ...getZIndexStyle(UI_Z_INDEX.SYSTEM_OVERLAY) }}
     >
       <div className="mx-auto flex max-w-4xl items-center justify-between">
         <div>

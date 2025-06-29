@@ -71,9 +71,11 @@ export const Z_INDEX = {
 } as const;
 
 /**
- * Utility function to generate Tailwind z-index class names
+ * Utility function to generate z-index style object
  */
-export const getZIndexClass = (zIndex: number): string => `z-${zIndex}`;
+export const getZIndexStyle = (zIndex: number): { zIndex: number } => ({
+  zIndex,
+});
 
 /**
  * Type definitions for z-index layers

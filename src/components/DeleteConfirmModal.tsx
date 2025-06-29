@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Button } from '@/components/Button';
-import { UI_Z_INDEX, getZIndexClass } from '@/constants/zIndex';
+import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -24,7 +24,8 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 ${getZIndexClass(UI_Z_INDEX.MODALS)} flex items-center justify-center`}
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ ...getZIndexStyle(UI_Z_INDEX.MODALS) }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-md" />
 
