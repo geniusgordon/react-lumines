@@ -346,17 +346,8 @@ export function placeBlockOnBoard(
         }
 
         const boardX = position.x + x;
-        const boardY = position.y + y;
-
-        // Only place if within bounds and position is empty
-        if (
-          boardX >= 0 &&
-          boardX < BOARD_WIDTH &&
-          boardY >= 0 &&
-          boardY < BOARD_HEIGHT &&
-          newBoard[boardY][boardX] === 0
-        ) {
-          newBoard[boardY][boardX] = pattern[y][x];
+        if (boardX >= 0 && boardX < BOARD_WIDTH && newBoard[y][boardX] === 0) {
+          newBoard[y][boardX] = pattern[y][x];
         }
       }
     }

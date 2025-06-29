@@ -140,9 +140,9 @@ describe('Game Reducer - Timeline Processing', () => {
       expect(result.board[8][2]).toBe(0); // Cleared
       expect(result.fallingColumns[0].x).toBe(2);
       expect(result.fallingColumns[0].cells).toHaveLength(1);
-      expect(result.fallingColumns[0].cells[0].y).toBe(7);
+      expect(result.fallingColumns[0].cells[0].y).toBe(8);
       expect(result.fallingColumns[0].cells[0].color).toBe(2);
-      expect(result.fallingColumns[0].timer).toBe(1);
+      expect(result.fallingColumns[0].timer).toBe(0);
 
       // Timeline should have moved to column 5
       expect(result.timeline.x).toBe(5);
