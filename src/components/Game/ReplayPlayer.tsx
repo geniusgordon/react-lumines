@@ -16,7 +16,7 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   replayData,
 }) => {
   // Use replay processing hook
-  const { gameState, actions } = useReplayPlayer(replayData);
+  const { gameState, gameLoop, actions } = useReplayPlayer(replayData);
 
   // Setup controls (disabled for replay mode)
   const controls = useControls(gameState, actions, {
@@ -33,7 +33,7 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
       gameState={gameState}
       actions={actions} // Actions include no-ops for game actions and replay controls
       controls={controls}
-      gameLoop={null} // No game loop for replay
+      gameLoop={gameLoop} // No game loop for replay
       scale={scale}
       replayMode={true}
       exportReplay={exportReplay}

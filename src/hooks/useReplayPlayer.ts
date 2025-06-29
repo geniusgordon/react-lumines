@@ -14,7 +14,10 @@ export interface UseReplayPlayerReturn {
   gameLoop: UseGameLoopReturn;
 }
 
-export function useReplayPlayer(replayData: ReplayData): UseReplayPlayerReturn {
+export function useReplayPlayer(
+  replayData: ReplayData,
+  speed: number = 1.0
+): UseReplayPlayerReturn {
   const { gameState, actions, _dispatch } = useGame(replayData?.seed, false);
 
   const frameActions = useMemo(() => {
@@ -54,6 +57,8 @@ export function useReplayPlayer(replayData: ReplayData): UseReplayPlayerReturn {
 
   const gameLoop = useGameLoop(dispatchFrameActions, {
     enabled: gameState.status === 'playing' || gameState.status === 'countdown',
+    debugMode: gameState.debugMode,
+    speed,
   });
 
   const startReplay = useCallback(

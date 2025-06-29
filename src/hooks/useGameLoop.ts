@@ -36,6 +36,19 @@ export interface UseGameLoopOptions {
    * - Useful for testing specific game scenarios frame by frame
    */
   debugMode?: boolean;
+
+  /**
+   * Speed multiplier for game loop (default: 1.0)
+   *
+   * Controls how fast the game runs:
+   * - 1.0 = normal speed (60 FPS, 16.67ms intervals)
+   * - 2.0 = 2x faster (120 FPS equivalent, 8.33ms intervals)
+   * - 0.5 = 2x slower (30 FPS equivalent, 33.33ms intervals)
+   *
+   * Maintains deterministic behavior - same seed produces same results
+   * regardless of speed setting.
+   */
+  speed?: number;
 }
 
 export interface UseGameLoopReturn {
@@ -74,7 +87,15 @@ export function useGameLoop(
   onFrame: () => void,
   options: UseGameLoopOptions = {}
 ): UseGameLoopReturn {
-  const { enabled = true, maxFrameSkip = 5, debugMode = false } = options;
+  const {
+    enabled = true,
+    maxFrameSkip = 5,
+    debugMode = false,
+    speed = 1.0,
+  } = options;
+
+  // Calculate dynamic frame interval based on speed
+  const frameInterval = FRAME_INTERVAL_MS / speed;
 
   // Refs for timing precision
   const animationFrameId = useRef<number | null>(null);
@@ -138,20 +159,17 @@ export function useGameLoop(
       // Add to accumulator (capped to prevent spiral of death)
       // Cap deltaTime to maxFrameSkip worth of frames to prevent huge debt accumulation
       // Example: If browser freezes for 2000ms, we only add ~83ms of debt (5 frames)
-      accumulator.current += Math.min(
-        deltaTime,
-        FRAME_INTERVAL_MS * maxFrameSkip
-      );
+      accumulator.current += Math.min(deltaTime, frameInterval * maxFrameSkip);
 
       // Fixed timestep updates with frame skip protection
-      // Always run game logic at exactly 16.67ms intervals, regardless of display refresh rate
+      // Always run game logic at speed-adjusted intervals, regardless of display refresh rate
       let updatesThisFrame = 0;
       while (
-        accumulator.current >= FRAME_INTERVAL_MS &&
+        accumulator.current >= frameInterval &&
         updatesThisFrame < maxFrameSkip
       ) {
-        onFrameRef.current(); // EXACTLY 60 FPS game logic update
-        accumulator.current -= FRAME_INTERVAL_MS; // "Pay back" 16.67ms of debt
+        onFrameRef.current(); // Speed-adjusted game logic update
+        accumulator.current -= frameInterval; // "Pay back" frame interval of debt
         updatesThisFrame++; // Track updates to prevent spiral of death
       }
 
@@ -168,7 +186,7 @@ export function useGameLoop(
       // Schedule next frame
       animationFrameId.current = requestAnimationFrame(gameLoop);
     },
-    [maxFrameSkip]
+    [maxFrameSkip, frameInterval]
   );
 
   // Start/stop game loop based on game state

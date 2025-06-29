@@ -19,7 +19,7 @@ interface GameCoreProps {
   gameState: GameState;
   actions: UseGameActions;
   controls: UseControlsReturn;
-  gameLoop?: UseGameLoopReturn | null;
+  gameLoop: UseGameLoopReturn;
   scale: number;
   replayMode?: boolean;
   exportReplay: () => ReplayData | null;
@@ -34,12 +34,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
   replayMode = false,
   exportReplay,
 }) => {
-  // Extract game loop properties (with fallbacks for replay mode)
-  const { isRunning, currentFPS, manualStep } = gameLoop || {
-    isRunning: false,
-    currentFPS: 0,
-    manualStep: () => {},
-  };
+  const { isRunning, currentFPS, manualStep } = gameLoop;
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">
