@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { BOARD_HEIGHT } from '@/constants';
-import type { Block, GameBoard } from '@/types/game';
+import type { Block, GameBoard, CellValue } from '@/types/game';
 import {
   createEmptyBoard,
   findDropPosition,
@@ -17,7 +17,7 @@ describe('Block Placement', () => {
     board = createEmptyBoard();
     block = {
       pattern: [
-        [1, 2],
+        [2, 1],
         [1, 2],
       ],
       id: 'test',
@@ -50,7 +50,7 @@ describe('Block Placement', () => {
     };
 
     // Try to place block at position (0, 0) - column 0 is free, column 1 is blocked
-    const newBoard = placeBlockOnBoard(board, testBlock, {
+    const newBoard = placeBlockOnBoard(board, [], testBlock, {
       x: 0,
       y: 0,
     });
@@ -87,5 +87,165 @@ describe('Block Placement', () => {
 
     // With top 3 rows filled and spawn at y=-2, no visible part can be placed
     expect(canPlaceAnyPartOfBlock(board, { x: 14, y: 0 })).toBe(false);
+  });
+
+  describe('Block placement above board (position.y < 0)', () => {
+    it('should place full block when spawning above empty board', () => {
+      const newBoard = placeBlockOnBoard(board, [], block, { x: 5, y: -2 });
+
+      // Block should be placed in rows 0 and 1
+      expect(newBoard[0][5]).toBe(2);
+      expect(newBoard[1][5]).toBe(1);
+      expect(newBoard[0][6]).toBe(1);
+      expect(newBoard[1][6]).toBe(2);
+    });
+
+    it('should place full block when spawning at y=-1', () => {
+      const newBoard = placeBlockOnBoard(board, [], block, { x: 5, y: -1 });
+
+      // Block should be placed in rows 0 and 1
+      expect(newBoard[0][5]).toBe(2);
+      expect(newBoard[1][5]).toBe(1);
+      expect(newBoard[0][6]).toBe(1);
+      expect(newBoard[1][6]).toBe(2);
+    });
+
+    it('should partially place block when one row is blocked', () => {
+      // Block row 1 (second row)
+      board[1][5] = 2;
+      board[1][6] = 2;
+
+      const newBoard = placeBlockOnBoard(board, [], block, { x: 5, y: -2 });
+
+      // Only top row should be placed
+      expect(newBoard[0][5]).toBe(1);
+      expect(newBoard[0][6]).toBe(2);
+      // Bottom row should remain blocked
+      expect(newBoard[1][5]).toBe(2);
+      expect(newBoard[1][6]).toBe(2);
+    });
+
+    it('should partially place block when one column is blocked', () => {
+      // Block column 6 (right side)
+      board[0][6] = 1;
+      board[1][6] = 1;
+
+      const newBoard = placeBlockOnBoard(board, [], block, { x: 5, y: -2 });
+
+      // Only left column should be placed
+      expect(newBoard[0][5]).toBe(2);
+      expect(newBoard[1][5]).toBe(1);
+      // Right column should remain blocked
+      expect(newBoard[0][6]).toBe(1);
+      expect(newBoard[1][6]).toBe(1);
+    });
+
+    it('should not place block when spawn area is completely blocked', () => {
+      // Block entire spawn area
+      board[0][5] = 1;
+      board[1][5] = 1;
+      board[0][6] = 1;
+      board[1][6] = 1;
+
+      const newBoard = placeBlockOnBoard(board, [], block, { x: 5, y: -2 });
+
+      // No changes should occur
+      expect(newBoard[0][5]).toBe(1);
+      expect(newBoard[1][5]).toBe(1);
+      expect(newBoard[0][6]).toBe(1);
+      expect(newBoard[1][6]).toBe(1);
+    });
+
+    it('should respect falling columns when placing above board', () => {
+      const fallingColumns = [
+        {
+          x: 6,
+          cells: [{ id: 'fall1', y: 1, color: 2 as CellValue }],
+          timer: 0,
+        },
+      ];
+
+      const newBoard = placeBlockOnBoard(board, fallingColumns, block, {
+        x: 5,
+        y: -2,
+      });
+
+      // Left column should place normally
+      expect(newBoard[0][5]).toBe(2);
+      expect(newBoard[1][5]).toBe(1);
+      // Right column blocked by falling cell at y=1, should only place in row 0
+      expect(newBoard[0][6]).toBe(2);
+      expect(newBoard[1][6]).toBe(0); // Should remain empty due to falling cell
+    });
+
+    it('should handle falling columns at different heights', () => {
+      const fallingColumns = [
+        {
+          x: 5,
+          cells: [{ id: 'fall1', y: 0, color: 1 as CellValue }],
+          timer: 0,
+        },
+      ];
+
+      const newBoard = placeBlockOnBoard(board, fallingColumns, block, {
+        x: 5,
+        y: -2,
+      });
+
+      // Left column blocked by falling cell at y=0, no placement possible
+      expect(newBoard[0][5]).toBe(0);
+      expect(newBoard[1][5]).toBe(0);
+      // Right column should place normally
+      expect(newBoard[0][6]).toBe(1);
+      expect(newBoard[1][6]).toBe(2);
+    });
+
+    it('should handle multiple falling columns', () => {
+      const fallingColumns = [
+        {
+          x: 5,
+          cells: [{ id: 'fall1', y: 1, color: 1 as CellValue }],
+          timer: 0,
+        },
+        {
+          x: 6,
+          cells: [{ id: 'fall2', y: 0, color: 2 as CellValue }],
+          timer: 0,
+        },
+      ];
+
+      const newBoard = placeBlockOnBoard(board, fallingColumns, block, {
+        x: 5,
+        y: -2,
+      });
+
+      // Left column: falling cell at y=1, can place in row 0
+      expect(newBoard[0][5]).toBe(1);
+      expect(newBoard[1][5]).toBe(0); // Blocked by falling cell
+      // Right column: falling cell at y=0, no placement possible
+      expect(newBoard[0][6]).toBe(0);
+      expect(newBoard[1][6]).toBe(0);
+    });
+
+    it('should place block when falling columns have cells below spawn area', () => {
+      const fallingColumns = [
+        {
+          x: 5,
+          cells: [{ id: 'fall1', y: 3, color: 1 as CellValue }],
+          timer: 0,
+        },
+      ];
+
+      const newBoard = placeBlockOnBoard(board, fallingColumns, block, {
+        x: 5,
+        y: -2,
+      });
+
+      // Falling cell is below spawn area, should not interfere
+      expect(newBoard[0][5]).toBe(2);
+      expect(newBoard[1][5]).toBe(1);
+      expect(newBoard[0][6]).toBe(1);
+      expect(newBoard[1][6]).toBe(2);
+    });
   });
 });

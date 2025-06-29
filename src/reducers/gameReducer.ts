@@ -711,6 +711,7 @@ function placeCurrentBlock(
 
   const newBoard = placeBlockOnBoard(
     state.board,
+    state.fallingColumns,
     state.currentBlock,
     state.blockPosition
   );
