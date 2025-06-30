@@ -76,7 +76,7 @@ export function ProgressBar({
     setHoverProgress(null);
   }, []);
 
-  const displayProgress = progress; // isDragging ? progress : (hoverProgress ?? progress);
+  const displayProgress = isDragging ? progress : (hoverProgress ?? progress);
   const currentDisplayFrame = Math.floor(displayProgress * totalFrames);
 
   const formatTime = (frame: number) => {
@@ -97,18 +97,17 @@ export function ProgressBar({
         onMouseLeave={handleMouseLeave}
       >
         {/* Background Progress */}
-        <div className="h-full rounded-full bg-gray-600">
-          {/* Filled Progress */}
-        </div>
+        <div className="h-full rounded-full bg-gray-600" />
 
+        {/* Filled Progress */}
         <div
-          className="absolute top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
-          style={{ left: `${displayProgress * 100}%` }}
+          className="absolute top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
+          style={{ width: `${displayProgress * 100}%` }}
         />
 
         {/* Progress Handle */}
         <div
-          className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-lg transition-all ${
+          className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-lg transition-transform ${
             isDragging || hoverProgress !== null
               ? 'scale-110 opacity-100'
               : 'scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100'
@@ -119,7 +118,7 @@ export function ProgressBar({
         {/* Hover Tooltip */}
         {hoverProgress !== null && !isDragging && (
           <div
-            className="absolute bottom-6 -translate-x-1/2 rounded bg-black/80 px-2 py-1 text-xs text-white"
+            className="absolute bottom-6 min-w-[120px] -translate-x-1/2 rounded bg-black/80 px-2 py-1 text-xs text-white"
             style={{ left: `${hoverProgress * 100}%` }}
           >
             <div className="text-center">

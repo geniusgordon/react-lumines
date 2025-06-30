@@ -38,6 +38,7 @@ export function useReplayPlayer(
   const { gameState, actions, _dispatch } = useGame(replayData?.seed, false);
   const [speed, setSpeed] = useState(initialSpeed);
   const [isPlaying, setIsPlaying] = useState(false);
+  const isSeekingRef = useRef<boolean>(false);
 
   const frameActions = useMemo(() => {
     return expandReplayData(replayData);
@@ -127,6 +128,8 @@ export function useReplayPlayer(
   // Controller Actions
   const seek = useCallback(
     (targetFrame: number) => {
+      isSeekingRef.current = true;
+
       const clampedFrame = Math.max(0, Math.min(totalFrames - 1, targetFrame));
 
       // Reset game to beginning
@@ -134,6 +137,8 @@ export function useReplayPlayer(
         type: 'RESTART',
         payload: replayData.seed,
       });
+      _dispatch({ type: 'START_GAME' });
+      _dispatch({ type: 'SKIP_COUNTDOWN' });
 
       // Fast-forward to target frame
       currentFrameRef.current = 0;
@@ -152,6 +157,7 @@ export function useReplayPlayer(
       }
 
       currentFrameRef.current = clampedFrame;
+      isSeekingRef.current = false;
     },
     [_dispatch, replayData.seed, frameActions, totalFrames]
   );
@@ -182,6 +188,10 @@ export function useReplayPlayer(
 
   // Auto-start replay when game state is initial
   useEffect(() => {
+    if (isSeekingRef.current) {
+      return;
+    }
+
     if (gameState.status === 'initial') {
       startReplay(replayData);
       setIsPlaying(true);
