@@ -17,9 +17,9 @@ export const Game: React.FC<GameProps> = ({
 }) => {
   const scale = useResponsiveScale({
     baseWidth: 704,
-    minScale: 0.4,
-    maxScale: 1.2,
-    padding: 20,
+    minScale: 0.5,
+    maxScale: 2,
+    padding: 40,
   });
 
   // Check if debug panel should be shown

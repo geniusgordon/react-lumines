@@ -61,7 +61,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
 
       <div
         style={{
-          transform: `scale(${scale})`,
+          transform: `scale(${scale.scale})`,
           transformOrigin: 'center center',
         }}
       >
