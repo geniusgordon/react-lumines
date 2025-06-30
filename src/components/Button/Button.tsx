@@ -12,6 +12,7 @@ export interface ButtonProps {
   icon?: LucideIcon;
   fullWidth?: boolean;
   className?: string;
+  iconClassName?: string;
   disabled?: boolean;
 }
 
@@ -23,13 +24,14 @@ export const Button: React.FC<ButtonProps> = ({
   icon: Icon,
   fullWidth = false,
   className = '',
+  iconClassName = '',
   disabled = false,
 }) => {
   const baseClasses =
     'flex items-center justify-center font-medium shadow-lg transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none cursor-pointer';
 
   const sizeClasses = {
-    sm: 'gap-1 px-2 py-2 text-xs rounded-md',
+    sm: 'gap-1 px-4 py-2 text-xs rounded-md',
     md: 'gap-2 px-4 py-2 text-sm rounded-md',
     lg: 'gap-3 px-8 py-4 text-lg rounded-xl',
   };
@@ -56,7 +58,9 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button onClick={onClick} className={buttonClasses} disabled={disabled}>
       {Icon && (
-        <Icon className={`${iconSizeClasses[size]} transition-transform`} />
+        <Icon
+          className={`${iconSizeClasses[size]} ${iconClassName} transition-transform`}
+        />
       )}
       {children && <span>{children}</span>}
     </button>
