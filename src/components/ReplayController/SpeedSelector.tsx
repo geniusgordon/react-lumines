@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 import { getZIndexStyle, UI_Z_INDEX } from '@/constants/zIndex';

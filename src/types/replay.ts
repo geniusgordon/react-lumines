@@ -1,7 +1,14 @@
+import type { GameAction, GameState } from './game';
+
 export interface ReplayInput {
   type: string;
   frame: number;
   payload?: unknown;
+}
+
+export interface StateSnapshot {
+  frame: number;
+  gameState: GameState;
 }
 
 export interface ReplayData {
@@ -17,6 +24,18 @@ export interface ReplayData {
     playerName?: string;
   };
 }
+
+// Frame-based action structure
+export interface FrameActions {
+  frame: number;
+  userActions: GameAction[];
+}
+
+// Enhanced replay data with snapshots for seeking optimization
+export type ExpandedReplayData = ReplayData & {
+  frameActions: FrameActions[];
+  snapshots: StateSnapshot[];
+};
 
 export interface ReplayState {
   isRecording: boolean;

@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 
 import { useResponsiveScale } from '@/hooks';
-import type { ReplayData } from '@/types/replay';
+import type { ExpandedReplayData } from '@/types/replay';
 
 import { GamePlayer } from './GamePlayer';
 import { ReplayPlayer } from './ReplayPlayer';
 
 interface GameProps {
   replayMode?: boolean;
-  replayData?: ReplayData;
+  replayData?: ExpandedReplayData;
 }
 
 export const Game: React.FC<GameProps> = ({

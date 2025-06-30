@@ -4,13 +4,13 @@ import { ReplayController } from '@/components/ReplayController';
 import { useControls, useReplayPlayer } from '@/hooks';
 import { useReplayKeyboardControls } from '@/hooks/useReplayKeyboardControls';
 import type { UseResponsiveScaleReturn } from '@/hooks/useResponsiveScale';
-import type { ReplayData } from '@/types/replay';
+import type { ExpandedReplayData } from '@/types/replay';
 
 import { GameCore } from './GameCore';
 
 interface ReplayPlayerProps {
   scale: UseResponsiveScaleReturn;
-  replayData: ReplayData;
+  replayData: ExpandedReplayData;
   showDebugPanel?: boolean;
 }
 

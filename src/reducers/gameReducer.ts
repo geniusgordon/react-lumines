@@ -641,6 +641,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
+    case 'RESTORE_STATE': {
+      const restoredState = action.payload as GameState;
+      // Preserve debug mode from current state
+      return {
+        ...restoredState,
+        debugMode: state.debugMode,
+      };
+    }
+
     // Complex cases use extracted handlers
     case 'MOVE_LEFT':
       return handleBlockMovement(state, action, 'left');

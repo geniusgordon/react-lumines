@@ -73,7 +73,8 @@ export type GameActionType =
   | 'RESTART'
   | 'START_GAME'
   | 'SET_DEBUG_MODE' // Toggle debug mode and logging
-  | 'SKIP_COUNTDOWN'; // Skip countdown and start game immediately
+  | 'SKIP_COUNTDOWN' // Skip countdown and start game immediately
+  | 'RESTORE_STATE'; // Restore game state from snapshot
 
 // Game action structure
 export interface GameAction {

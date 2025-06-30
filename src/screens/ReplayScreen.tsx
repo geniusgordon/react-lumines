@@ -5,7 +5,9 @@ import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { Game } from '@/components/Game/Game';
 import { ReplayHeader } from '@/components/ReplayHeader';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
-import type { SavedReplay } from '@/types/replay';
+import type { ExpandedReplayData, SavedReplay } from '@/types/replay';
+
+import { expandReplayDataWithSnapshots } from '../utils/replayUtils';
 
 export function ReplayScreen() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +16,7 @@ export function ReplayScreen() {
     useSaveLoadReplay();
 
   const [replay, setReplay] = useState<SavedReplay | null>(null);
+  const [replayData, setReplayData] = useState<ExpandedReplayData | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -29,6 +32,8 @@ export function ReplayScreen() {
     }
 
     setReplay(foundReplay);
+    const replayData = expandReplayDataWithSnapshots(foundReplay.data);
+    setReplayData(replayData);
   }, [id, savedReplays, navigate]);
 
   const handleDelete = () => {
@@ -55,12 +60,10 @@ export function ReplayScreen() {
     }
   };
 
-  if (!replay) {
+  if (!replay || !replayData) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <p className="mb-4 text-lg text-gray-400">Loading replay...</p>
-        </div>
+      <div className="bg-game-background flex h-full w-full items-center justify-center">
+        <p className="text-2xl font-bold text-white">Loading...</p>
       </div>
     );
   }
@@ -76,7 +79,7 @@ export function ReplayScreen() {
 
       {/* Game Container */}
       <div className="flex h-full w-full items-center justify-center">
-        <Game replayMode={true} replayData={replay.data} />
+        <Game replayMode={true} replayData={replayData} />
       </div>
 
       <DeleteConfirmModal

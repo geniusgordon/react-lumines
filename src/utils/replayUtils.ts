@@ -1,5 +1,12 @@
-import type { GameAction, GameActionType } from '@/types/game';
-import type { ReplayData, ReplayInput } from '@/types/replay';
+import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
+import type { GameAction, GameActionType, GameState } from '@/types/game';
+import type {
+  ExpandedReplayData,
+  FrameActions,
+  ReplayData,
+  ReplayInput,
+  StateSnapshot,
+} from '@/types/replay';
 
 // Type guard to validate replay input actions
 function isValidReplayAction(type: string): type is GameActionType {
@@ -97,12 +104,6 @@ export function validateReplayData(replayData: ReplayData): {
   return { valid: errors.length === 0, errors };
 }
 
-// Frame-based action structure
-export interface FrameActions {
-  frame: number;
-  userActions: GameAction[];
-}
-
 // Reverse compaction: expand compact replay data into frame-based structure
 export function expandReplayData(replayData: ReplayData): FrameActions[] {
   const frameActions: FrameActions[] = [];
@@ -136,6 +137,20 @@ export function expandReplayData(replayData: ReplayData): FrameActions[] {
   }
 
   return frameActions;
+}
+
+// Enhanced expansion: create both frame actions and snapshots upfront
+export function expandReplayDataWithSnapshots(
+  replayData: ReplayData
+): ExpandedReplayData {
+  const frameActions = expandReplayData(replayData);
+  const snapshots = createSnapshotsForReplay(replayData.seed, frameActions);
+
+  return {
+    ...replayData,
+    frameActions,
+    snapshots,
+  };
 }
 
 // Compact recorded actions: filter out TICKs and calculate frame numbers
@@ -177,4 +192,82 @@ export function createReplayData(
     },
     metadata: finalScore !== undefined ? { finalScore } : undefined,
   };
+}
+
+// Constants for snapshot optimization
+export const SNAPSHOT_INTERVAL = 300; // Create snapshot every 300 frames (5 seconds at 60fps)
+
+// Helper function to determine snapshot frames
+export function getSnapshotFrames(maxFrame: number): number[] {
+  const snapshotFrames: number[] = [];
+  for (let frame = 0; frame <= maxFrame; frame += SNAPSHOT_INTERVAL) {
+    snapshotFrames.push(frame);
+  }
+  return snapshotFrames;
+}
+
+// Find the best snapshot to use for seeking to a target frame
+export function findBestSnapshot(
+  snapshots: StateSnapshot[],
+  targetFrame: number
+): StateSnapshot | null {
+  if (snapshots.length === 0) {
+    return null;
+  }
+
+  // Find the latest snapshot that's before or at the target frame
+  let bestSnapshot: StateSnapshot | null = null;
+  for (const snapshot of snapshots) {
+    if (snapshot.frame <= targetFrame) {
+      if (!bestSnapshot || snapshot.frame > bestSnapshot.frame) {
+        bestSnapshot = snapshot;
+      }
+    }
+  }
+
+  return bestSnapshot;
+}
+
+// Create all snapshots upfront by simulating the entire replay
+export function createSnapshotsForReplay(
+  seed: string,
+  frameActions: FrameActions[]
+): StateSnapshot[] {
+  const snapshots: StateSnapshot[] = [];
+
+  // Create initial game state with replay seed
+  let gameState: GameState = createInitialGameState(seed, false);
+
+  // Start the game and skip countdown
+  gameState = gameReducer(gameState, { type: 'START_GAME' });
+  gameState = gameReducer(gameState, { type: 'SKIP_COUNTDOWN' });
+
+  // Create snapshot at frame 0 (initial state)
+  snapshots.push({
+    frame: 0,
+    gameState: JSON.parse(JSON.stringify(gameState)), // Deep clone
+  });
+
+  // Simulate each frame and create snapshots at intervals
+  for (let frameIndex = 0; frameIndex < frameActions.length; frameIndex++) {
+    const frameData = frameActions[frameIndex];
+
+    // Apply user actions for this frame
+    for (const userAction of frameData.userActions) {
+      gameState = gameReducer(gameState, userAction);
+    }
+
+    // Apply tick to advance game state
+    gameState = gameReducer(gameState, { type: 'TICK' });
+
+    // Create snapshot at regular intervals
+    if ((frameIndex + 1) % SNAPSHOT_INTERVAL === 0) {
+      snapshots.push({
+        frame: frameIndex + 1,
+        gameState: JSON.parse(JSON.stringify(gameState)), // Deep clone
+      });
+    }
+  }
+
+  return snapshots;
 }

@@ -1,8 +1,15 @@
-import { useCallback, useRef, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 
 import type { GameAction, GameState } from '@/types/game';
-import type { ReplayData } from '@/types/replay';
-import { validateReplayData, expandReplayData } from '@/utils/replayUtils';
+import type { ExpandedReplayData, ReplayData } from '@/types/replay';
+import { validateReplayData, findBestSnapshot } from '@/utils/replayUtils';
 
 import { TARGET_FPS, TIMER_CONFIG } from '../constants';
 
@@ -28,21 +35,21 @@ export interface UseReplayPlayerReturn {
   totalFrames: number;
   speed: number;
   isPlaying: boolean;
+  isSeeking: boolean;
   controllerActions: ReplayControllerActions;
 }
 
 export function useReplayPlayer(
-  replayData: ReplayData,
+  replayData: ExpandedReplayData,
   initialSpeed: number = 1.0
 ): UseReplayPlayerReturn {
   const { gameState, actions, _dispatch } = useGame(replayData?.seed, false);
   const [speed, setSpeed] = useState(initialSpeed);
   const [isPlaying, setIsPlaying] = useState(false);
   const isSeekingRef = useRef<boolean>(false);
+  const [isPending, startTransition] = useTransition();
 
-  const frameActions = useMemo(() => {
-    return expandReplayData(replayData);
-  }, [replayData]);
+  const { frameActions, snapshots } = replayData;
 
   const currentFrameRef = useRef<number>(0);
   const totalFrames = useMemo(() => {
@@ -78,9 +85,8 @@ export function useReplayPlayer(
     }
 
     _dispatch({ type: 'TICK' });
-
     currentFrameRef.current = currentFrame + 1;
-  }, [_dispatch, gameState.status, frameActions]);
+  }, [_dispatch, frameActions, gameState.status]);
 
   const isGameStatusActive =
     gameState.status === 'playing' || gameState.status === 'countdown';
@@ -128,38 +134,65 @@ export function useReplayPlayer(
   // Controller Actions
   const seek = useCallback(
     (targetFrame: number) => {
-      isSeekingRef.current = true;
-
       const clampedFrame = Math.max(0, Math.min(totalFrames - 1, targetFrame));
 
-      // Reset game to beginning
-      _dispatch({
-        type: 'RESTART',
-        payload: replayData.seed,
-      });
-      _dispatch({ type: 'START_GAME' });
-      _dispatch({ type: 'SKIP_COUNTDOWN' });
+      startTransition(() => {
+        isSeekingRef.current = true;
 
-      // Fast-forward to target frame
-      currentFrameRef.current = 0;
+        // Find best snapshot to start from (using pre-created snapshots)
+        const bestSnapshot = findBestSnapshot(snapshots, clampedFrame);
 
-      // Process all frames up to target in a loop
-      for (let frame = 0; frame < clampedFrame; frame++) {
-        const frameData = frameActions[frame];
+        let startFrame = 0;
 
-        if (frameData) {
-          for (const userAction of frameData.userActions) {
-            _dispatch(userAction);
-          }
+        if (bestSnapshot && bestSnapshot.frame < clampedFrame) {
+          // Restore from snapshot for optimized seeking
+          _dispatch({
+            type: 'RESTORE_STATE',
+            payload: bestSnapshot.gameState,
+          });
+          startFrame = bestSnapshot.frame;
+        } else {
+          // No useful snapshot, start from beginning
+          _dispatch({
+            type: 'RESTART',
+            payload: replayData.seed,
+          });
+          _dispatch({ type: 'START_GAME' });
+          _dispatch({ type: 'SKIP_COUNTDOWN' });
+          startFrame = 0;
         }
 
-        _dispatch({ type: 'TICK' });
-      }
+        currentFrameRef.current = startFrame;
 
-      currentFrameRef.current = clampedFrame;
-      isSeekingRef.current = false;
+        // Fast-forward remaining frames to target
+        for (
+          let frame = currentFrameRef.current;
+          frame < clampedFrame;
+          frame++
+        ) {
+          const frameData = frameActions[frame];
+
+          if (frameData) {
+            for (const userAction of frameData.userActions) {
+              _dispatch(userAction);
+            }
+          }
+
+          _dispatch({ type: 'TICK' });
+        }
+
+        currentFrameRef.current = clampedFrame;
+        isSeekingRef.current = false;
+      });
     },
-    [_dispatch, replayData.seed, frameActions, totalFrames]
+    [
+      _dispatch,
+      replayData.seed,
+      frameActions,
+      snapshots,
+      totalFrames,
+      startTransition,
+    ]
   );
 
   const stepFrames = useCallback(
@@ -252,6 +285,7 @@ export function useReplayPlayer(
     totalFrames,
     speed,
     isPlaying,
+    isSeeking: isPending || isSeekingRef.current,
     controllerActions,
   };
 }
