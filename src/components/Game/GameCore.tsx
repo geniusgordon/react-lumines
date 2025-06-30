@@ -10,6 +10,7 @@ import type {
   UseGameLoopReturn,
   UseGameActions,
 } from '@/hooks';
+import type { UseResponsiveScaleReturn } from '@/hooks/useResponsiveScale';
 import type { GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 
@@ -20,7 +21,7 @@ interface GameCoreProps {
   actions: UseGameActions;
   controls: UseControlsReturn;
   gameLoop: UseGameLoopReturn;
-  scale: number;
+  scale: UseResponsiveScaleReturn;
   replayMode?: boolean;
   exportReplay: () => ReplayData | null;
 }
@@ -37,7 +38,13 @@ export const GameCore: React.FC<GameCoreProps> = ({
   const { isRunning, currentFPS, manualStep } = gameLoop;
 
   return (
-    <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden">
+    <div
+      className="bg-game-background isolate flex flex-col items-center justify-center"
+      style={{
+        width: scale.scaledWidth,
+        height: scale.scaledHeight,
+      }}
+    >
       {gameState.debugMode && (
         <DebugPanel
           gameState={gameState}
@@ -47,7 +54,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
           isRunning={isRunning}
           manualStep={manualStep}
           controls={controls}
-          scale={scale}
+          scale={scale.scale}
           exportReplay={exportReplay}
         />
       )}

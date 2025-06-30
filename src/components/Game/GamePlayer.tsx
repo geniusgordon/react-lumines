@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 
 import { useControls, useGamePlayer } from '@/hooks';
+import type { UseResponsiveScaleReturn } from '@/hooks/useResponsiveScale';
 
 import { GameCore } from './GameCore';
 
 interface GamePlayerProps {
-  scale: number;
+  scale: UseResponsiveScaleReturn;
   showDebugPanel?: boolean;
 }
 
@@ -31,14 +32,17 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
   });
 
   return (
-    <GameCore
-      gameState={gameState}
-      actions={actions}
-      controls={controls}
-      gameLoop={gameLoop}
-      scale={scale}
-      replayMode={false}
-      exportReplay={exportReplay}
-    />
+    <div className="flex h-full w-full items-center justify-center">
+      <GameCore
+        key={gameState.seed}
+        gameState={gameState}
+        actions={actions}
+        controls={controls}
+        gameLoop={gameLoop}
+        scale={scale}
+        replayMode={false}
+        exportReplay={exportReplay}
+      />
+    </div>
   );
 };

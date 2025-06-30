@@ -16,13 +16,7 @@ export interface GameLayoutProps {
  */
 export const GameLayout: React.FC<GameLayoutProps> = ({ gameState }) => {
   return (
-    <div
-      className="bg-game-background gap-block-size relative flex flex-row"
-      style={{
-        paddingTop: 'calc(var(--spacing-block-size) * 2)',
-        paddingBottom: 'calc(var(--spacing-block-size) * 2)',
-      }}
-    >
+    <div className="bg-game-background gap-block-size relative flex flex-row">
       <div style={{ width: 'calc(2 * var(--spacing-block-size))' }}>
         <Queue queue={gameState.queue} />
       </div>

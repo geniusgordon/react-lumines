@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import { BLOCK_SIZE, BOARD_HEIGHT, BOARD_WIDTH } from '../constants';
+
 interface UseResponsiveScaleOptions {
   baseWidth?: number; // Base width of the game area in pixels
   minScale?: number; // Minimum scale factor
@@ -7,7 +9,7 @@ interface UseResponsiveScaleOptions {
   padding?: number; // Padding around the game area
 }
 
-interface UseResponsiveScaleReturn {
+export interface UseResponsiveScaleReturn {
   scale: number;
   scaledWidth: number;
   scaledHeight: number;
@@ -22,7 +24,7 @@ export const useResponsiveScale = (
   options: UseResponsiveScaleOptions = {}
 ): UseResponsiveScaleReturn => {
   const {
-    baseWidth = 704, // GameBoard (16*32) + Queue/Score areas (3*32 on each side)
+    baseWidth = BOARD_WIDTH * BLOCK_SIZE + 3 * BLOCK_SIZE + 3 * BLOCK_SIZE, // GameBoard (16*32) + Queue/Score areas (3*32 on each side)
     minScale = 0.5,
     maxScale = 2.0,
     padding = 40, // Padding on both sides
@@ -56,7 +58,7 @@ export const useResponsiveScale = (
   }, [baseWidth, minScale, maxScale, padding]);
 
   const scaledWidth = baseWidth * scale;
-  const scaledHeight = 320 * scale; // Base GameBoard height (10 * 32px)
+  const scaledHeight = (BOARD_HEIGHT + 2) * BLOCK_SIZE * scale; // Base GameBoard height (10 * 32px)
 
   return {
     scale,

@@ -5,7 +5,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'warning';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onClick: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -58,7 +58,7 @@ export const Button: React.FC<ButtonProps> = ({
       {Icon && (
         <Icon className={`${iconSizeClasses[size]} transition-transform`} />
       )}
-      <span>{children}</span>
+      {children && <span>{children}</span>}
     </button>
   );
 };

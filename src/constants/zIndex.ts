@@ -43,6 +43,7 @@ export const GAME_FIELD_Z_INDEX = {
  * UI overlay z-index layers - controls application-level interface elements
  */
 export const UI_Z_INDEX = {
+  DROPDOWN: 40,
   /**
    * Modal overlays and game state screens
    * - Game over menu

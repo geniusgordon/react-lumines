@@ -39,4 +39,25 @@ export type ReplayAction =
   | { type: 'STOP_PLAYBACK' }
   | { type: 'RECORD_INPUT'; input: ReplayInput }
   | { type: 'ADVANCE_PLAYBACK' }
-  | { type: 'RESET_REPLAY' };
+  | { type: 'RESET_REPLAY' }
+  | { type: 'SEEK_TO_FRAME'; frame: number }
+  | { type: 'SET_SPEED'; speed: number }
+  | { type: 'STEP_FRAMES'; delta: number };
+
+// Controller state for replay playback
+export interface ReplayControllerState {
+  isPlaying: boolean;
+  currentFrame: number;
+  totalFrames: number;
+  speed: number;
+  isBuffering: boolean;
+}
+
+// Controller action handlers
+export interface ReplayControllerHandlers {
+  onPlayPause: () => void;
+  onRestart: () => void;
+  onSeek: (frame: number) => void;
+  onSpeedChange: (speed: number) => void;
+  onStepFrames: (delta: number) => void;
+}
