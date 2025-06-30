@@ -7,6 +7,7 @@ export { DebugPanel } from './DebugPanel';
 export { GameBoard } from './GameBoard';
 export { PauseMenu } from './Game';
 export { GameOverMenu } from './Game';
+export { Portal } from './Portal';
 export { ReplayHeader } from './ReplayHeader';
 export { ReplayController } from './ReplayController';
 export { Timeline } from './Timeline';
