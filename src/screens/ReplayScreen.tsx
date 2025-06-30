@@ -78,7 +78,7 @@ export function ReplayScreen() {
       />
 
       {/* Game Container */}
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="flex h-full w-full items-center justify-center pt-[96px]">
         <Game replayMode={true} replayData={replayData} />
       </div>
 

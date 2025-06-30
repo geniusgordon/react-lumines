@@ -16,7 +16,6 @@ export const Game: React.FC<GameProps> = ({
   replayData,
 }) => {
   const scale = useResponsiveScale({
-    baseWidth: 704,
     minScale: 0.5,
     maxScale: 2,
     padding: 40,
