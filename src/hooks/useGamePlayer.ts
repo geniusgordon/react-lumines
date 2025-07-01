@@ -95,7 +95,6 @@ export function useGamePlayer(
       resume: actions.resume,
       startNewGame: actions.startNewGame,
       restartGame: (seed?: string) => {
-        console.log('restartGame');
         actions.restartGame(seed);
       },
       setDebugMode: actions.setDebugMode,

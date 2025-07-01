@@ -26,8 +26,6 @@ export function useReplayRecorder(gameState: GameState) {
       };
       // Direct push to ref - no re-render
       recordedInputsRef.current.push(replayInput);
-
-      // console.log('recordedInputsRef:', recordedInputsRef.current);
     },
     [gameState.status]
   );
