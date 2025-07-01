@@ -45,7 +45,7 @@ export function LeaderboardScreen() {
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden p-4">
-      <div className="scrollbar w-full max-w-2xl overflow-auto rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8">
+      <div className="w-full max-w-2xl rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8">
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-4xl font-bold tracking-tight text-white">
             Leaderboard
@@ -82,7 +82,7 @@ export function LeaderboardScreen() {
           </Button>
         </div>
 
-        <div className="mb-6 max-h-96 overflow-y-auto">
+        <div className="scrollbar mb-6 max-h-96 overflow-y-auto">
           {filteredReplays.length === 0 ? (
             <div className="py-16 text-center">
               <p className="mb-4 text-gray-400">No replays found</p>

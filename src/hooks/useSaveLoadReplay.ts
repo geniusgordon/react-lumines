@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { v7 } from 'uuid';
 
 import type { ReplayData, SavedReplay } from '@/types/replay';
 
@@ -50,7 +51,7 @@ export function useSaveLoadReplay() {
 
         // Create new saved replay
         const savedReplay: SavedReplay = {
-          id: `replay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: v7(),
           name: name.trim() || `Replay ${new Date().toLocaleString()}`,
           data: replayData,
           savedAt: Date.now(),

@@ -23,8 +23,9 @@ export const Timeline: React.FC<TimelineProps> = ({ timeline }) => {
 
   return (
     <div
-      className="bg-game-timeline absolute top-0 h-full w-0.5"
+      className="bg-game-timeline absolute top-0 w-0.5"
       style={{
+        height: 'calc(100% + 1px)',
         left: `calc(${interpolatedX} * var(--spacing-block-size))`,
         ...getZIndexStyle(GAME_FIELD_Z_INDEX.ACTIVE_ELEMENTS),
       }}
