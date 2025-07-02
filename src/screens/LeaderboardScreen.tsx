@@ -1,5 +1,5 @@
-import { ArrowLeft, Trophy, Clock } from 'lucide-react';
-import { useMemo } from 'react';
+import { ArrowLeft, Trophy, Clock, Upload } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
 import { Button } from '@/components/Button';
@@ -8,7 +8,9 @@ import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 export function LeaderboardScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { savedReplays } = useSaveLoadReplay();
+  const { savedReplays, importReplayFromFile } = useSaveLoadReplay();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   const filter = searchParams.get('filter') || 'score';
 
@@ -41,6 +43,39 @@ export function LeaderboardScreen() {
       day: 'numeric',
       year: 'numeric',
     });
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setImportMessage(null);
+
+    try {
+      const result = await importReplayFromFile(file);
+      if (result.success) {
+        setImportMessage('Replay imported successfully!');
+        setTimeout(() => setImportMessage(null), 3000);
+      } else {
+        setImportMessage(`Import failed: ${result.error}`);
+        setTimeout(() => setImportMessage(null), 5000);
+      }
+    } catch {
+      setImportMessage('Import failed: An unexpected error occurred');
+      setTimeout(() => setImportMessage(null), 5000);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -81,6 +116,36 @@ export function LeaderboardScreen() {
             Recent
           </Button>
         </div>
+
+        <div className="mb-6 flex w-full">
+          <Button
+            onClick={handleUploadClick}
+            variant="secondary"
+            icon={Upload}
+            fullWidth
+          >
+            Upload Replay
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </div>
+
+        {importMessage && (
+          <div
+            className={`mb-4 rounded-lg p-3 text-center text-sm ${
+              importMessage.includes('success')
+                ? 'border border-green-700/50 bg-green-900/50 text-green-300'
+                : 'border border-red-700/50 bg-red-900/50 text-red-300'
+            }`}
+          >
+            {importMessage}
+          </div>
+        )}
 
         <div className="scrollbar mb-6 max-h-96 overflow-y-auto">
           {filteredReplays.length === 0 ? (
