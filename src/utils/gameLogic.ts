@@ -2,6 +2,8 @@
  * Game Logic - Core game mechanics for Lumines
  */
 
+import { v7 } from 'uuid';
+
 import {
   BOARD_WIDTH,
   BOARD_HEIGHT,
@@ -210,8 +212,7 @@ export function applyGravity(board: GameBoard): GameBoard {
  */
 export function createFallingColumns(
   board: GameBoard,
-  fallingColumns: FallingColumn[],
-  rng: SeededRNGType
+  fallingColumns: FallingColumn[]
 ): { newFallingColumns: FallingColumn[]; newBoard: GameBoard } {
   const newBoard = board.map(row => [...row]);
   const newFallingColumns: FallingColumn[] = [];
@@ -219,7 +220,7 @@ export function createFallingColumns(
   // Process each column
   for (let x = 0; x < BOARD_WIDTH; x++) {
     // Find any cells that need to fall in this column
-    const fallingCells = findFallingCellsInColumn(newBoard, x, rng);
+    const fallingCells = findFallingCellsInColumn(newBoard, x);
 
     // Check for existing falling cells in this column
     const existingColumn = fallingColumns.find(col => col.x === x);
@@ -243,11 +244,7 @@ export function createFallingColumns(
   return { newFallingColumns, newBoard };
 }
 
-function findFallingCellsInColumn(
-  board: GameBoard,
-  x: number,
-  rng: SeededRNGType
-): FallingCell[] {
+function findFallingCellsInColumn(board: GameBoard, x: number): FallingCell[] {
   const cells: FallingCell[] = [];
   let foundGap = false;
 
@@ -258,7 +255,7 @@ function findFallingCellsInColumn(
       foundGap = true;
     } else if (foundGap) {
       cells.push({
-        id: rng.generateId(),
+        id: v7(),
         y,
         color: cell,
       });
@@ -470,8 +467,7 @@ export function markColumnCells(
 export function clearMarkedCellsAndApplyGravity(
   board: GameBoard,
   markedCells: Square[],
-  fallingColumns: FallingColumn[],
-  rng: SeededRNGType
+  fallingColumns: FallingColumn[]
 ): { newBoard: GameBoard; newFallingColumns: FallingColumn[] } {
   // Create a copy of the board to avoid mutation
   const newBoard = board.map(row => [...row]);
@@ -491,5 +487,5 @@ export function clearMarkedCellsAndApplyGravity(
     }
   }
 
-  return createFallingColumns(newBoard, fallingColumns, rng);
+  return createFallingColumns(newBoard, fallingColumns);
 }

@@ -252,7 +252,7 @@ export function useReplayPlayer(
       startNewGame: actions.startNewGame,
       restartGame: restartReplay,
       setDebugMode: actions.setDebugMode,
-      skipCountdown: () => {},
+      skipCountdown: actions.skipCountdown,
       pause: actions.pause,
       resume: actions.resume,
     }),
@@ -261,6 +261,7 @@ export function useReplayPlayer(
       actions.setDebugMode,
       actions.pause,
       actions.resume,
+      actions.skipCountdown,
       restartReplay,
     ]
   );

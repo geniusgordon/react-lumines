@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { BOARD_HEIGHT } from '@/constants';
 import type { GameBoard } from '@/types/game';
 import { createEmptyBoard, createFallingColumns } from '@/utils/gameLogic';
-import { SeededRNGMock } from '@/utils/seededRNG';
 
 describe('Falling cells', () => {
   let board: GameBoard;
@@ -36,24 +35,20 @@ describe('Falling cells', () => {
      * 9   . . . 2 1 . . . . .  ← ground level
      */
 
-    const { newFallingColumns, newBoard } = createFallingColumns(
-      board,
-      [],
-      new SeededRNGMock([1, 2, 3, 4, 5, 6, 7, 8, 9])
-    );
+    const { newFallingColumns, newBoard } = createFallingColumns(board, []);
 
     expect(newFallingColumns[0]).toEqual({
       x: 3,
       cells: [
-        { y: 6, color: 1, id: '1' },
-        { y: 5, color: 2, id: '2' },
-        { y: 4, color: 1, id: '3' },
+        { y: 6, color: 1, id: newFallingColumns[0].cells[0].id },
+        { y: 5, color: 2, id: newFallingColumns[0].cells[1].id },
+        { y: 4, color: 1, id: newFallingColumns[0].cells[2].id },
       ],
       timer: 0,
     });
     expect(newFallingColumns[1]).toEqual({
       x: 7,
-      cells: [{ y: 2, color: 1, id: '4' }],
+      cells: [{ y: 2, color: 1, id: newFallingColumns[1].cells[0].id }],
       timer: 0,
     });
 
@@ -88,26 +83,22 @@ describe('Falling cells', () => {
      * 9   . . . 2 1 . . . . .  ← ground level
      */
 
-    const { newFallingColumns, newBoard } = createFallingColumns(
-      board,
-      [
-        {
-          x: 3,
-          cells: [
-            { y: 4, color: 1, id: '1' },
-            { y: 3, color: 1, id: '2' },
-          ],
-          timer: 0,
-        },
-      ],
-      new SeededRNGMock([3, 4, 5, 6, 7, 8, 9])
-    );
+    const { newFallingColumns, newBoard } = createFallingColumns(board, [
+      {
+        x: 3,
+        cells: [
+          { y: 4, color: 1, id: '1' },
+          { y: 3, color: 1, id: '2' },
+        ],
+        timer: 0,
+      },
+    ]);
 
     expect(newFallingColumns[0]).toEqual({
       x: 3,
       cells: [
-        { y: 6, color: 1, id: '3' },
-        { y: 5, color: 2, id: '4' },
+        { y: 6, color: 1, id: newFallingColumns[0].cells[0].id },
+        { y: 5, color: 2, id: newFallingColumns[0].cells[1].id },
         { y: 4, color: 1, id: '1' },
         { y: 3, color: 1, id: '2' },
       ],
@@ -115,7 +106,7 @@ describe('Falling cells', () => {
     });
     expect(newFallingColumns[1]).toEqual({
       x: 7,
-      cells: [{ y: 2, color: 1, id: '5' }],
+      cells: [{ y: 2, color: 1, id: newFallingColumns[1].cells[0].id }],
       timer: 0,
     });
 

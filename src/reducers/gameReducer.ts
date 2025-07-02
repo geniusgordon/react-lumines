@@ -307,7 +307,7 @@ function handleGameTick(state: GameState, rng: SeededRNGType): GameState {
   newState = updatePatternDetection(newState);
 
   // Handle timeline progression and clearing
-  newState = updateTimeline(newState, rng);
+  newState = updateTimeline(newState);
 
   // Update falling columns
   newState = updateFallingColumns(newState);
@@ -369,8 +369,7 @@ function placeBlockAndApplyPhysics(
 
   const { newFallingColumns, newBoard } = createFallingColumns(
     placedState.board,
-    placedState.fallingColumns,
-    rng
+    placedState.fallingColumns
   );
 
   // Apply gravity to settle all blocks
@@ -432,7 +431,7 @@ function updateFallingColumns(state: GameState): GameState {
 /**
  * Update timeline sweep progression with column-based clearing logic
  */
-function updateTimeline(state: GameState, rng: SeededRNGType): GameState {
+function updateTimeline(state: GameState): GameState {
   if (state.status !== 'playing') {
     return state;
   }
@@ -441,7 +440,7 @@ function updateTimeline(state: GameState, rng: SeededRNGType): GameState {
 
   // Check if it's time to move timeline one column
   if (newTimer >= state.timeline.sweepInterval) {
-    return advanceTimelineToNextColumn(state, rng);
+    return advanceTimelineToNextColumn(state);
   }
 
   // Just increment timer
@@ -457,15 +456,12 @@ function updateTimeline(state: GameState, rng: SeededRNGType): GameState {
 /**
  * Advance timeline to next column and process the current column
  */
-function advanceTimelineToNextColumn(
-  state: GameState,
-  rng: SeededRNGType
-): GameState {
+function advanceTimelineToNextColumn(state: GameState): GameState {
   const currentColumn = state.timeline.x;
   const nextColumn = (currentColumn + 1) % GAME_CONFIG.board.width;
 
   // Process the current column before moving
-  const processedState = processTimelineColumn(state, nextColumn, rng);
+  const processedState = processTimelineColumn(state, nextColumn);
 
   return {
     ...processedState,
@@ -480,11 +476,7 @@ function advanceTimelineToNextColumn(
 /**
  * Process a single column when timeline passes through it
  */
-function processTimelineColumn(
-  state: GameState,
-  column: number,
-  rng: SeededRNGType
-): GameState {
+function processTimelineColumn(state: GameState, column: number): GameState {
   const patternsInColumn = getPatternsByLeftColumn(
     state.detectedPatterns,
     column
@@ -510,7 +502,7 @@ function processTimelineColumn(
     state.markedCells.length > 0;
 
   if (shouldClear) {
-    return clearMarkedCellsAndScore(state, rng);
+    return clearMarkedCellsAndScore(state);
   }
 
   return state;
@@ -551,15 +543,11 @@ function markCellsForClearing(
 /**
  * Clear marked cells and update score
  */
-function clearMarkedCellsAndScore(
-  state: GameState,
-  rng: SeededRNGType
-): GameState {
+function clearMarkedCellsAndScore(state: GameState): GameState {
   const { newBoard, newFallingColumns } = clearMarkedCellsAndApplyGravity(
     state.board,
     state.markedCells,
-    state.fallingColumns,
-    rng
+    state.fallingColumns
   );
   const detectedPatterns = detectPatterns(newBoard);
 

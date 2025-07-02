@@ -7,7 +7,6 @@ import {
   clearMarkedCellsAndApplyGravity,
   applyGravity,
 } from '@/utils/gameLogic';
-import { SeededRNGMock } from '@/utils/seededRNG';
 
 describe('Gravity and Clearing', () => {
   let board: GameBoard;
@@ -177,8 +176,7 @@ describe('Gravity and Clearing', () => {
     const { newBoard, newFallingColumns } = clearMarkedCellsAndApplyGravity(
       board,
       squares,
-      [],
-      new SeededRNGMock([1, 2, 3, 4, 5, 6, 7, 8, 9])
+      []
     );
 
     // Square should be cleared
@@ -189,8 +187,8 @@ describe('Gravity and Clearing', () => {
       {
         x: 5,
         cells: [
-          { y: 3, color: 2, id: '1' },
-          { y: 2, color: 1, id: '2' },
+          { y: 3, color: 2, id: newFallingColumns[0].cells[0].id },
+          { y: 2, color: 1, id: newFallingColumns[0].cells[1].id },
         ],
         timer: 0,
       },

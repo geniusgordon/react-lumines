@@ -1,5 +1,6 @@
 import type {
   Block,
+  FallingCell,
   GameAction,
   GameState,
   Position,
@@ -171,32 +172,18 @@ export function logGameBoard(gameState: GameState, message: string): void {
     detectedPatterns,
     markedCells,
     timeline,
+    fallingColumns,
   } = gameState;
 
   // Board visualization
   console.groupCollapsed(`🗂️ Current Board State - ${message}`);
 
-  // Board statistics
-  const filledCells = board.flat().filter(cell => cell !== 0).length;
-  const totalCells = board.length * board[0].length;
-  const fillPercentage = ((filledCells / totalCells) * 100).toFixed(1);
-
-  console.log('📊 Board Stats:');
-  console.log(`   📏 Dimensions: ${board[0].length}×${board.length}`);
-  console.log(`   📈 Fill: ${filledCells}/${totalCells} (${fillPercentage}%)`);
-  console.log(
-    `   🔄 Timeline: Column ${timeline.x} (Timer: ${timeline.timer}/${timeline.sweepInterval})`
-  );
-  console.log(`   💰 Holding Score: ${timeline.holdingScore}`);
-  console.log(`   🎯 Detected Patterns: ${detectedPatterns.length}`);
-  console.log(`   ❌ Marked Cells: ${markedCells.length}`);
-
   // Create visual board representation
   console.log(
-    '\n🎯 Visual Board (with current block, patterns, and timeline):'
+    '\n🎯 Visual Board (with current block, patterns, timeline, and falling cells):'
   );
   console.log(
-    'Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block, {X}=Detected, <X>=Marked, |=Timeline\n'
+    'Legend: ·=Empty, 1=Light, 2=Dark, [X]=Current Block, {X}=Detected, <X>=Marked, |=Timeline, ↓X↓=Falling\n'
   );
 
   // Create a string-based visual representation
@@ -237,6 +224,14 @@ export function logGameBoard(gameState: GameState, message: string): void {
     markedPositions.add(`${cell.y},${cell.x}`);
   });
 
+  // Track falling cell positions
+  const fallingPositions = new Map<string, FallingCell>();
+  fallingColumns.forEach(column => {
+    column.cells.forEach(cell => {
+      fallingPositions.set(`${cell.y},${column.x}`, cell);
+    });
+  });
+
   // Display the board with proper formatting
   const boardString = board
     .map((row, rowIndex) => {
@@ -246,12 +241,16 @@ export function logGameBoard(gameState: GameState, message: string): void {
           const isCurrentBlock = currentBlockPositions.has(posKey);
           const isDetected = detectedPositions.has(posKey);
           const isMarked = markedPositions.has(posKey);
+          const fallingCell = fallingPositions.get(posKey);
 
           if (isCurrentBlock) {
             const patternY = rowIndex - blockY;
             const patternX = colIndex - blockX;
             const patternValue = pattern[patternY][patternX];
             return `[${patternValue}]`; // Current block
+          }
+          if (fallingCell) {
+            return `↓${fallingCell.color}↓`; // Falling cell
           }
           if (isMarked && cell !== 0) {
             return `<${cell}>`; // Marked cell
