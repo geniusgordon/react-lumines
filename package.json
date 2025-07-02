@@ -18,6 +18,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.2",
     "lucide-react": "^0.518.0",
     "polished": "^4.3.1",
     "random-seed": "^0.3.0",
