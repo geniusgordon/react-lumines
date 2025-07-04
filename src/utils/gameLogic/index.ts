@@ -1,5 +1,16 @@
+// Helper utilities
+export {
+  BLOCK_HEIGHT,
+  isPlayingState,
+  createPosition,
+  copyBoard,
+  isInBounds,
+  coordToString,
+  validateAndApplyMove,
+} from './helpers';
+
 // Board operations
-export { createEmptyBoard, copyBoard, applyGravity } from './board';
+export { createEmptyBoard, applyGravity } from './board';
 
 // Block mechanics
 export {

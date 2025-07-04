@@ -1,6 +1,10 @@
 import type { GameState, GameAction } from '@/types/game';
 import { rotateBlockPattern } from '@/utils/gameLogic/blocks';
 import { isValidPosition } from '@/utils/gameLogic/collision';
+import {
+  validateAndApplyMove,
+  createPosition,
+} from '@/utils/gameLogic/helpers';
 
 /**
  * Handle block movement (left/right)
@@ -10,31 +14,24 @@ export function handleBlockMovement(
   _action: GameAction,
   direction: 'left' | 'right'
 ): GameState {
-  if (state.status !== 'playing') {
-    return state;
-  }
-
   const offset = direction === 'left' ? -1 : 1;
-  const newPosition = {
-    x: state.blockPosition.x + offset,
-    y: state.blockPosition.y,
-  };
+  const newPosition = createPosition(
+    state.blockPosition.x + offset,
+    state.blockPosition.y
+  );
 
-  if (
+  const isValid =
     isValidPosition(
       state.board,
       state.currentBlock,
       newPosition,
       state.fallingColumns
-    ) === 'valid'
-  ) {
-    return {
-      ...state,
-      blockPosition: newPosition,
-    };
-  }
+    ) === 'valid';
 
-  return state;
+  return validateAndApplyMove(state, isValid, state => ({
+    ...state,
+    blockPosition: newPosition,
+  }));
 }
 
 /**
@@ -45,10 +42,6 @@ export function handleBlockRotation(
   _action: GameAction,
   direction: 'cw' | 'ccw'
 ): GameState {
-  if (state.status !== 'playing') {
-    return state;
-  }
-
   const clockwise = direction === 'cw';
   const newPattern = rotateBlockPattern(state.currentBlock.pattern, clockwise);
 
@@ -58,19 +51,16 @@ export function handleBlockRotation(
     pattern: newPattern,
   };
 
-  if (
+  const isValid =
     isValidPosition(
       state.board,
       testBlock,
       state.blockPosition,
       state.fallingColumns
-    ) === 'valid'
-  ) {
-    return {
-      ...state,
-      currentBlock: testBlock,
-    };
-  }
+    ) === 'valid';
 
-  return state;
+  return validateAndApplyMove(state, isValid, state => ({
+    ...state,
+    currentBlock: testBlock,
+  }));
 }

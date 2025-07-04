@@ -1,6 +1,7 @@
 import { GAME_CONFIG } from '@/constants/gameConfig';
 import type { GameState, Square } from '@/types/game';
 
+import { isPlayingState } from './helpers';
 import {
   detectPatterns,
   getPatternsByLeftColumn,
@@ -12,7 +13,7 @@ import { clearMarkedCellsAndApplyGravity } from './physics';
  * Update timeline sweep progression with column-based clearing logic
  */
 export function updateTimeline(state: GameState): GameState {
-  if (state.status !== 'playing') {
+  if (!isPlayingState(state)) {
     return state;
   }
 
@@ -99,28 +100,21 @@ export function markCellsForClearing(
   column: number,
   patternsInColumn: Square[]
 ): GameState {
-  let newState = { ...state };
-
-  // Add holding score for patterns in current column
-  if (patternsInColumn.length > 0) {
-    const holdingPoints = patternsInColumn.length;
-    newState = {
-      ...newState,
-      timeline: {
-        ...newState.timeline,
-        holdingScore: state.timeline.holdingScore + holdingPoints,
-      },
-    };
-  }
+  // Calculate holding points for patterns in current column
+  const holdingPoints = patternsInColumn.length;
 
   // Mark cells in this column for clearing
   const newMarkedCells = markColumnCells(column, state.detectedPatterns);
-  newState = {
-    ...newState,
+
+  // Single state update with all changes
+  return {
+    ...state,
+    timeline: {
+      ...state.timeline,
+      holdingScore: state.timeline.holdingScore + holdingPoints,
+    },
     markedCells: [...state.markedCells, ...newMarkedCells],
   };
-
-  return newState;
 }
 
 /**

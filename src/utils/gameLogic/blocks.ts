@@ -8,6 +8,8 @@ import type {
 } from '@/types/game';
 import type { SeededRNGType } from '@/utils/seededRNG';
 
+import { BLOCK_HEIGHT, copyBoard, isInBounds } from './helpers';
+
 /**
  * Generate random block using seeded RNG
  */
@@ -53,8 +55,6 @@ function getAvailableSpaces(
   fallingColumns: FallingColumn[],
   board: GameBoard
 ): number {
-  const BLOCK_HEIGHT = 2;
-
   // Check space blocked by falling columns
   let spacesByFalling = BLOCK_HEIGHT;
   const existingColumn = fallingColumns.find(col => col.x === boardX);
@@ -84,32 +84,72 @@ export function placeBlockOnBoard(
   block: Block,
   position: Position
 ): GameBoard {
-  const newBoard = board.map(row => [...row]);
-  const pattern = block.pattern;
+  const newBoard = copyBoard(board);
 
   if (position.y < 0) {
-    const BLOCK_HEIGHT = 2;
-
-    for (let x = 0; x < BLOCK_HEIGHT; x++) {
-      const boardX = position.x + x;
-      const availableSpaces = getAvailableSpaces(boardX, fallingColumns, board);
-
-      // Place cells from bottom up, only as many as fit
-      for (let y = 1; y >= BLOCK_HEIGHT - availableSpaces; y--) {
-        newBoard[y - (BLOCK_HEIGHT - availableSpaces)][boardX] = pattern[y][x];
-      }
-    }
+    return placeBlockAboveBoard(
+      newBoard,
+      block,
+      position,
+      fallingColumns,
+      board
+    );
   } else {
-    for (let y = 0; y < pattern.length; y++) {
-      for (let x = 0; x < pattern[y].length; x++) {
-        if (pattern[y][x] === 0) {
-          continue;
-        }
+    return placeBlockNormally(newBoard, block, position);
+  }
+}
 
-        const boardX = position.x + x;
-        if (boardX >= 0 && boardX < BOARD_WIDTH && newBoard[y][boardX] === 0) {
-          newBoard[y][boardX] = pattern[y][x];
-        }
+/**
+ * Place block when position is above the board (y < 0)
+ */
+function placeBlockAboveBoard(
+  newBoard: GameBoard,
+  block: Block,
+  position: Position,
+  fallingColumns: FallingColumn[],
+  originalBoard: GameBoard
+): GameBoard {
+  const pattern = block.pattern;
+
+  for (let x = 0; x < BLOCK_HEIGHT; x++) {
+    const boardX = position.x + x;
+    const availableSpaces = getAvailableSpaces(
+      boardX,
+      fallingColumns,
+      originalBoard
+    );
+
+    // Place cells from bottom up, only as many as fit
+    for (let y = 1; y >= BLOCK_HEIGHT - availableSpaces; y--) {
+      newBoard[y - (BLOCK_HEIGHT - availableSpaces)][boardX] = pattern[y][x];
+    }
+  }
+
+  return newBoard;
+}
+
+/**
+ * Place block normally when position is within board bounds
+ */
+function placeBlockNormally(
+  newBoard: GameBoard,
+  block: Block,
+  position: Position
+): GameBoard {
+  const pattern = block.pattern;
+
+  for (let y = 0; y < pattern.length; y++) {
+    for (let x = 0; x < pattern[y].length; x++) {
+      if (pattern[y][x] === 0) {
+        continue;
+      }
+
+      const boardX = position.x + x;
+      if (
+        isInBounds(boardX, y, BOARD_WIDTH, newBoard.length) &&
+        newBoard[y][boardX] === 0
+      ) {
+        newBoard[y][boardX] = pattern[y][x];
       }
     }
   }

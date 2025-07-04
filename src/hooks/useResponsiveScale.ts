@@ -70,7 +70,15 @@ export const useResponsiveScale = (
     window.addEventListener('resize', calculateScale);
 
     return () => window.removeEventListener('resize', calculateScale);
-  }, [baseWidth, baseHeight, minScale, maxScale, padding, headerHeight]);
+  }, [
+    baseWidth,
+    baseHeight,
+    minScale,
+    maxScale,
+    padding,
+    headerHeight,
+    footerHeight,
+  ]);
 
   const scaledWidth = baseWidth * scale;
   const scaledHeight = baseHeight * scale;

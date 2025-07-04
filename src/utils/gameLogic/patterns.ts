@@ -1,6 +1,8 @@
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
 import type { GameBoard, Square, CellValue } from '@/types/game';
 
+import { coordToString } from './helpers';
+
 /**
  * Detect all 2x2 same-colored patterns on the board
  * Returns an array of Square objects representing detected patterns
@@ -67,7 +69,7 @@ export function markColumnCells(
   const markedSet = new Set<string>();
 
   const markCell = (x: number, y: number, color: CellValue) => {
-    const cell = `${x},${y}`;
+    const cell = coordToString(x, y);
     if (!markedSet.has(cell)) {
       markedCells.push({ x, y, color });
       markedSet.add(cell);

@@ -1,6 +1,7 @@
 import { TIMER_CONFIG } from '@/constants/gameConfig';
 import type { GameState } from '@/types/game';
 import { isValidPosition } from '@/utils/gameLogic/collision';
+import { createPosition } from '@/utils/gameLogic/helpers';
 import { detectPatterns } from '@/utils/gameLogic/patterns';
 import { updateFallingColumns } from '@/utils/gameLogic/physics';
 import { updateTimeline } from '@/utils/gameLogic/timeline';
@@ -9,55 +10,65 @@ import type { SeededRNGType } from '@/utils/seededRNG';
 import { placeBlockAndApplyPhysics } from './placement';
 
 /**
+ * Handle countdown state logic
+ */
+function handleCountdown(state: GameState): GameState {
+  // Simple countdown logic - every 60 frames decrements countdown
+  const nextFrame = state.frame + 1;
+  const countdownStep = Math.floor(nextFrame / TIMER_CONFIG.COUNTDOWN_DURATION);
+  const newCountdown = TIMER_CONFIG.COUNTDOWN_START - countdownStep;
+
+  if (newCountdown <= 0) {
+    // Countdown finished, start playing
+    return {
+      ...state,
+      status: 'playing',
+      countdown: 0,
+      frame: 0, // Reset frame counter to 0 when gameplay begins
+    };
+  }
+
+  // Continue countdown
+  return {
+    ...state,
+    countdown: newCountdown,
+    frame: nextFrame,
+  };
+}
+
+/**
+ * Handle game timer for playing state
+ */
+function handleGameTimer(state: GameState): GameState {
+  const newGameTimer = state.gameTimer - 1;
+
+  // Check if time is up
+  if (newGameTimer <= 0) {
+    return {
+      ...state,
+      status: 'gameOver',
+      gameTimer: 0,
+      frame: state.frame + 1,
+    };
+  }
+
+  return {
+    ...state,
+    gameTimer: newGameTimer,
+    frame: state.frame + 1,
+  };
+}
+
+/**
  * Handle countdown and timer logic
  */
 export function handleCountdownAndTimer(state: GameState): GameState {
-  // Handle countdown state
   if (state.status === 'countdown') {
-    // Simple countdown logic - every 60 frames decrements countdown
-    const nextFrame = state.frame + 1;
-    const countdownStep = Math.floor(
-      nextFrame / TIMER_CONFIG.COUNTDOWN_DURATION
-    );
-    const newCountdown = TIMER_CONFIG.COUNTDOWN_START - countdownStep;
-
-    if (newCountdown <= 0) {
-      // Countdown finished, start playing
-      return {
-        ...state,
-        status: 'playing',
-        countdown: 0,
-        frame: 0, // Reset frame counter to 0 when gameplay begins
-      };
-    } else {
-      // Continue countdown
-      return {
-        ...state,
-        countdown: newCountdown,
-        frame: nextFrame,
-      };
-    }
+    return handleCountdown(state);
   }
 
-  // Handle game timer for playing state
   if (state.status === 'playing') {
-    const newGameTimer = state.gameTimer - 1;
-
-    // Check if time is up
-    if (newGameTimer <= 0) {
-      return {
-        ...state,
-        status: 'gameOver',
-        gameTimer: 0,
-        frame: state.frame + 1,
-      };
-    }
-
-    return {
-      ...state,
-      gameTimer: newGameTimer,
-      frame: state.frame + 1,
-    };
+    return handleGameTimer(state);
   }
 
   return state;
@@ -71,37 +82,42 @@ export function handleBlockDrop(
   frame: number,
   rng: SeededRNGType
 ): GameState {
-  const newState = { ...state };
-  newState.dropTimer++;
+  const newDropTimer = state.dropTimer + 1;
 
   // Check if block should drop
-  if (newState.dropTimer >= newState.dropInterval) {
-    const dropPosition = {
-      x: newState.blockPosition.x,
-      y: newState.blockPosition.y + 1,
-    };
+  if (newDropTimer >= state.dropInterval) {
+    const dropPosition = createPosition(
+      state.blockPosition.x,
+      state.blockPosition.y + 1
+    );
 
     // Try to move block down
     if (
       isValidPosition(
-        newState.board,
-        newState.currentBlock,
+        state.board,
+        state.currentBlock,
         dropPosition,
-        newState.fallingColumns
+        state.fallingColumns
       ) === 'valid'
     ) {
       // Block can drop normally
-      newState.blockPosition = dropPosition;
-      newState.dropTimer = 0;
-      return newState;
+      return {
+        ...state,
+        blockPosition: dropPosition,
+        dropTimer: 0,
+      };
     } else {
       // Can't drop, place block and apply physics
-      return placeBlockAndApplyPhysics(newState, frame, rng);
+      const stateWithUpdatedTimer = { ...state, dropTimer: newDropTimer };
+      return placeBlockAndApplyPhysics(stateWithUpdatedTimer, frame, rng);
     }
   }
 
   // Timer hasn't reached drop interval yet
-  return newState;
+  return {
+    ...state,
+    dropTimer: newDropTimer,
+  };
 }
 
 /**

@@ -12,6 +12,8 @@ import type {
   FallingCell,
 } from '@/types/game';
 
+import { copyBoard, coordToString } from './helpers';
+
 /**
  * Create falling cells from board
  */
@@ -19,7 +21,7 @@ export function createFallingColumns(
   board: GameBoard,
   fallingColumns: FallingColumn[]
 ): { newFallingColumns: FallingColumn[]; newBoard: GameBoard } {
-  const newBoard = board.map(row => [...row]);
+  const newBoard = copyBoard(board);
   const newFallingColumns: FallingColumn[] = [];
 
   // Process each column
@@ -84,7 +86,7 @@ export function updateFallingColumns(
   board: GameBoard,
   fallingColumns: FallingColumn[]
 ): { newBoard: GameBoard; newFallingColumns: FallingColumn[] } {
-  const newBoard = board.map(row => [...row]);
+  const newBoard = copyBoard(board);
   const newFallingColumns: FallingColumn[] = [];
 
   for (const column of fallingColumns) {
@@ -131,18 +133,18 @@ export function clearMarkedCellsAndApplyGravity(
   fallingColumns: FallingColumn[]
 ): { newBoard: GameBoard; newFallingColumns: FallingColumn[] } {
   // Create a copy of the board to avoid mutation
-  const newBoard = board.map(row => [...row]);
+  const newBoard = copyBoard(board);
 
   // Create a set of positions to clear for efficient lookup
-  const cellsToClare = new Set<string>();
+  const cellsToClear = new Set<string>();
   for (const cell of markedCells) {
-    cellsToClare.add(`${cell.x},${cell.y}`);
+    cellsToClear.add(coordToString(cell.x, cell.y));
   }
 
   // Clear all marked cells
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
-      if (cellsToClare.has(`${x},${y}`)) {
+      if (cellsToClear.has(coordToString(x, y))) {
         newBoard[y][x] = 0;
       }
     }
