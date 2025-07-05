@@ -1,6 +1,5 @@
 interface LeaderboardEntryProps {
   rank: number;
-  name: string;
   playerName: string;
   score: number;
   date: string;
@@ -10,7 +9,6 @@ interface LeaderboardEntryProps {
 
 export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({
   rank,
-  name,
   playerName,
   score,
   date,
@@ -33,10 +31,8 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({
             #{rank}
           </div>
           <div>
-            <h3 className="font-semibold text-white">{name}</h3>
-            <p className="text-xs text-gray-400">
-              {playerName} • {date}
-            </p>
+            <h3 className="font-semibold text-white">{playerName}</h3>
+            <p className="text-left text-xs text-gray-400">{date}</p>
           </div>
         </div>
         <div className="text-right">

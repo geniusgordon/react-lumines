@@ -63,7 +63,6 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
         <LeaderboardEntry
           key={entry.id}
           rank={index + 1}
-          name={entry.replay_name}
           playerName={entry.player_name}
           score={entry.score}
           date={formatDate(entry.achieved_at)}

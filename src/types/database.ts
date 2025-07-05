@@ -15,7 +15,6 @@ export interface Profile {
 export interface DatabaseReplay {
   id: string; // UUID
   user_id?: string; // UUID, null for anonymous
-  name: string;
   player_name?: string;
   seed: string;
   inputs: ReplayData['inputs']; // JSONB - Array of ReplayInput objects
@@ -49,12 +48,10 @@ export interface TopLeaderboardEntry {
   is_anonymous: boolean;
   achieved_at: string;
   replay_id: string;
-  replay_name: string;
 }
 
 export interface RecentReplayEntry {
   id: string;
-  name: string;
   player_name?: string;
   final_score?: number;
   duration_ms?: number;
@@ -65,7 +62,6 @@ export interface RecentReplayEntry {
 
 // Database operation types
 export interface CreateReplayInput {
-  name: string;
   player_name?: string;
   seed: string;
   inputs: ReplayData['inputs'];

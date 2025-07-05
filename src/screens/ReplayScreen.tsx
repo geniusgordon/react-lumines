@@ -90,7 +90,10 @@ export function ReplayScreen() {
         message={
           <>
             Are you sure you want to delete{' '}
-            <span className="font-semibold text-purple-400">{replay.name}</span>
+            <span className="font-semibold text-purple-400">
+              {replay.data.metadata?.playerName || 'Anonymous'}'s Game -{' '}
+              {replay.data.metadata?.finalScore?.toLocaleString() || 'N/A'}
+            </span>
             ? This action cannot be undone.
           </>
         }

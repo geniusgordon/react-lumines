@@ -46,7 +46,6 @@ export interface ReplayState {
 
 export interface SavedReplay {
   id: string;
-  name: string;
   data: ReplayData;
   savedAt: number;
 }

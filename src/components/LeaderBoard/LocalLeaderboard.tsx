@@ -38,7 +38,6 @@ export const LocalLeaderboard: React.FC<LocalLeaderboardProps> = ({
         <Link key={replay.id} to={`/replays/${replay.id}`} className="block">
           <LeaderboardEntry
             rank={index + 1}
-            name={replay.name}
             playerName={replay.data.metadata?.playerName || 'Anonymous'}
             score={replay.data.metadata?.finalScore || 0}
             date={formatDate(replay.savedAt)}

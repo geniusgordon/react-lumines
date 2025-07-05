@@ -32,7 +32,6 @@ export function useScoreSubmission(): UseScoreSubmissionResult {
         const duration = replayData.metadata?.duration || 0;
 
         const createReplayInput: CreateReplayInput = {
-          name: `${playerName || 'Anonymous'}'s Game - ${finalScore.toLocaleString()}`,
           player_name: playerName || 'Anonymous',
           seed: replayData.seed,
           inputs: replayData.inputs,
