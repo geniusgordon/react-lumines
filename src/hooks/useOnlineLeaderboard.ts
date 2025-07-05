@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import { supabase } from '@/lib/supabase';
-import type { TopLeaderboardEntry, CreateReplayInput } from '@/types/database';
+import type { TopLeaderboardEntry, InsertReplayInput } from '@/types/database';
 
 interface UseOnlineLeaderboardResult {
   leaderboard: TopLeaderboardEntry[];
@@ -9,7 +9,7 @@ interface UseOnlineLeaderboardResult {
   error: string | null;
   refresh: () => Promise<void>;
   submitScore: (
-    replayData: CreateReplayInput
+    replayData: InsertReplayInput
   ) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -44,7 +44,7 @@ export function useOnlineLeaderboard(): UseOnlineLeaderboardResult {
     }
   };
 
-  const submitScore = async (replayData: CreateReplayInput) => {
+  const submitScore = async (replayData: InsertReplayInput) => {
     try {
       const { error: supabaseError } = await supabase
         .from('replays')

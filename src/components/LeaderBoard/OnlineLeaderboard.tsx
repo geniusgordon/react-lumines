@@ -19,7 +19,11 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
   onRetry,
   onEmptyAction,
 }) => {
-  const formatDate = (timestamp: string) => {
+  const formatDate = (timestamp: string | null) => {
+    if (!timestamp) {
+      return '-';
+    }
+
     return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -59,16 +63,21 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
 
   return (
     <div className="space-y-2">
-      {leaderboard.map((entry, index) => (
-        <LeaderboardEntry
-          key={entry.id}
-          replayId={entry.replay_id}
-          rank={index + 1}
-          playerName={entry.player_name}
-          score={entry.score}
-          date={formatDate(entry.achieved_at)}
-        />
-      ))}
+      {leaderboard.map((entry, index) => {
+        if (!entry.replay_id) {
+          return null;
+        }
+        return (
+          <LeaderboardEntry
+            key={entry.id}
+            replayId={entry.replay_id}
+            rank={index + 1}
+            playerName={entry.player_name || 'Anonymous'}
+            score={entry.score || 0}
+            date={formatDate(entry.achieved_at)}
+          />
+        );
+      })}
     </div>
   );
 };

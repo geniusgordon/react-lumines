@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:watch": "vitest watch",
+    "gen-types": "supabase gen types typescript --linked > src/types/database.gen.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

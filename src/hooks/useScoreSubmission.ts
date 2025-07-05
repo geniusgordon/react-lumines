@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 
-import type { CreateReplayInput } from '@/types/database';
+import type { InsertReplayInput } from '@/types/database';
 import type { ReplayData } from '@/types/replay';
+
+import type { Json } from '../types/database.gen';
 
 import { useOnlineLeaderboard } from './useOnlineLeaderboard';
 
@@ -31,10 +33,10 @@ export function useScoreSubmission(): UseScoreSubmissionResult {
         const finalScore = replayData.metadata?.finalScore || 0;
         const duration = replayData.metadata?.duration || 0;
 
-        const createReplayInput: CreateReplayInput = {
+        const createReplayInput: InsertReplayInput = {
           player_name: playerName || 'Anonymous',
           seed: replayData.seed,
-          inputs: replayData.inputs,
+          inputs: replayData.inputs as unknown as Json[],
           game_config: replayData.gameConfig,
           metadata: {
             ...replayData.metadata,

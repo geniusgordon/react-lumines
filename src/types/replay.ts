@@ -37,13 +37,6 @@ export type ExpandedReplayData = ReplayData & {
   snapshots: StateSnapshot[];
 };
 
-export interface ReplayState {
-  isRecording: boolean;
-  isPlayback: boolean;
-  currentReplay: ReplayData | null;
-  recordedInputs: ReplayInput[];
-}
-
 export interface SavedReplay {
   id: string;
   data: ReplayData;

@@ -1,58 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { Game } from '@/components/Game/Game';
 import { ReplayHeader } from '@/components/ReplayHeader';
-import { useOnlineReplay } from '@/hooks/useOnlineReplay';
+import { useReplayData } from '@/hooks/useReplayData';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
-import type { ExpandedReplayData, SavedReplay } from '@/types/replay';
-
-import { expandReplayDataWithSnapshots } from '../utils/replayUtils';
 
 export function ReplayScreen() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { savedReplays, deleteReplay, exportReplayToFile } =
-    useSaveLoadReplay();
+  const { deleteReplay, exportReplayToFile } = useSaveLoadReplay();
+  const { replay, replayData, isOnlineReplay, loading, error } =
+    useReplayData(id);
 
-  const [replay, setReplay] = useState<SavedReplay | null>(null);
-  const [replayData, setReplayData] = useState<ExpandedReplayData | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isOnlineReplay, setIsOnlineReplay] = useState(false);
-
-  // Only fetch online replay if ID is not found in local replays
-  const shouldFetchOnline = id && !savedReplays.find(r => r.id === id);
-  const {
-    replayData: onlineReplayData,
-    loading: onlineLoading,
-    error: onlineError,
-  } = useOnlineReplay(shouldFetchOnline ? id : null);
-
-  useEffect(() => {
-    if (!id) {
-      navigate('/leaderboard');
-      return;
-    }
-
-    // First try to find local replay
-    const foundReplay = savedReplays.find(r => r.id === id);
-    if (foundReplay) {
-      setReplay(foundReplay);
-      setIsOnlineReplay(false);
-      const replayData = expandReplayDataWithSnapshots(foundReplay.data);
-      setReplayData(replayData);
-    } else if (onlineReplayData) {
-      // Handle online replay data
-      setReplay(null);
-      setIsOnlineReplay(true);
-      const replayData = expandReplayDataWithSnapshots(onlineReplayData);
-      setReplayData(replayData);
-    } else if (onlineError) {
-      // Navigate back if online replay not found
-      navigate('/leaderboard');
-    }
-  }, [id, savedReplays, onlineReplayData, onlineError, navigate]);
 
   const handleDelete = () => {
     if (!replay) {
@@ -78,12 +40,20 @@ export function ReplayScreen() {
     }
   };
 
-  if (onlineLoading || (!replay && !onlineReplayData) || !replayData) {
+  if (loading || !replayData) {
     return (
       <div className="bg-game-background flex h-full w-full items-center justify-center">
         <p className="text-2xl font-bold text-white">
-          {onlineLoading ? 'Loading online replay...' : 'Loading...'}
+          {loading ? 'Loading replay...' : 'Loading...'}
         </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-game-background flex h-full w-full items-center justify-center">
+        <p className="text-2xl font-bold text-red-400">Error: {error}</p>
       </div>
     );
   }
@@ -93,7 +63,7 @@ export function ReplayScreen() {
       <ReplayHeader
         isOnlineReplay={isOnlineReplay}
         savedAt={replay?.savedAt || new Date().getTime()}
-        replayData={replay?.data || onlineReplayData}
+        replayData={replayData}
         onExport={isOnlineReplay ? undefined : handleExport}
         onDelete={isOnlineReplay ? undefined : () => setShowDeleteConfirm(true)}
         onBack={() => navigate('/leaderboard')}
