@@ -8,6 +8,8 @@ import type {
   StateSnapshot,
 } from '@/types/replay';
 
+import { TARGET_FPS } from '../constants';
+
 // Type guard to validate replay input actions
 function isValidReplayAction(type: string): type is GameActionType {
   const validActions: GameActionType[] = [
@@ -180,17 +182,19 @@ export function compactReplayInputs(
 // Create replay data from recorded inputs and seed
 export function createReplayData(
   recordedInputs: ReplayInput[],
-  seed: string,
-  finalScore?: number
+  gameState: GameState
 ): ReplayData {
   return {
-    seed,
+    seed: gameState.seed,
     inputs: compactReplayInputs(recordedInputs),
     gameConfig: {
       version: '1.0.0',
       timestamp: Date.now(),
     },
-    metadata: finalScore !== undefined ? { finalScore } : undefined,
+    metadata: {
+      finalScore: gameState.score,
+      duration: Math.floor((gameState.frame / TARGET_FPS) * 1000),
+    },
   };
 }
 

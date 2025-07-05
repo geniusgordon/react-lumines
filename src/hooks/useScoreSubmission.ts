@@ -30,8 +30,8 @@ export function useScoreSubmission(): UseScoreSubmissionResult {
       setSubmissionError(null);
 
       try {
-        const finalScore = replayData.metadata?.finalScore || 0;
-        const duration = replayData.metadata?.duration || 0;
+        const finalScore = replayData.metadata.finalScore;
+        const duration = replayData.metadata.duration || 0;
 
         const createReplayInput: InsertReplayInput = {
           player_name: playerName || 'Anonymous',

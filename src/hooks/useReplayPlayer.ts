@@ -57,7 +57,7 @@ export function useReplayPlayer(
       replayData.metadata?.duration ||
       TIMER_CONFIG.GAME_DURATION_SECONDS * 1000;
 
-    return (duration * TARGET_FPS) / 1000;
+    return Math.ceil((duration * TARGET_FPS) / 1000);
   }, [replayData]);
 
   // Error handling for replay issues

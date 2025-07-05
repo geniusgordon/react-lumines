@@ -18,8 +18,8 @@ export interface ReplayData {
     version: string;
     timestamp: number;
   };
-  metadata?: {
-    finalScore?: number;
+  metadata: {
+    finalScore: number;
     duration?: number;
     playerName?: string;
   };
