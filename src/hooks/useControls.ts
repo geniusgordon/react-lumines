@@ -131,9 +131,13 @@ export function useControls(
     (event: KeyboardEvent) => {
       const key = event.code;
 
-      // Prevent default browser behavior for game keys
+      // Check modifiers
+      const isShift = event.shiftKey;
+      const isCtrl = event.ctrlKey || event.metaKey;
+
+      // Prevent default browser behavior for game keys (only when no modifiers)
       const gameAction = keyToActionMap.current.get(key);
-      if (gameAction) {
+      if (gameAction && !isShift && !isCtrl) {
         event.preventDefault();
       }
 

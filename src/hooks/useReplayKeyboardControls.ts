@@ -86,41 +86,42 @@ export function useReplayKeyboardControls({
       const isShift = event.shiftKey;
       const isCtrl = event.ctrlKey || event.metaKey;
 
-      // Prevent default browser behavior for replay keys
-      const isReplayKey =
-        controls.playPause.includes(key) ||
-        controls.restart.includes(key) ||
-        controls.speedUp.includes(key) ||
-        controls.speedDown.includes(key) ||
-        controls.seekBackward.includes(key) ||
-        controls.seekForward.includes(key) ||
-        key in controls.speedPresets;
-
-      if (isReplayKey) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
       // Handle play/pause
       if (controls.playPause.includes(key)) {
+        if (!isShift && !isCtrl) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         controllerActions.togglePlayPause();
         return;
       }
 
       // Handle restart
       if (controls.restart.includes(key)) {
+        if (!isShift && !isCtrl) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         controllerActions.restart();
         return;
       }
 
       // Handle speed controls
       if (controls.speedUp.includes(key)) {
+        if (!isShift && !isCtrl) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         const newSpeed = getSpeedStep(true);
         controllerActions.setSpeed(newSpeed);
         return;
       }
 
       if (controls.speedDown.includes(key)) {
+        if (!isShift && !isCtrl) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         const newSpeed = getSpeedStep(false);
         controllerActions.setSpeed(newSpeed);
         return;
@@ -128,6 +129,10 @@ export function useReplayKeyboardControls({
 
       // Handle speed presets
       if (key in controls.speedPresets) {
+        if (!isShift && !isCtrl) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         const speed = controls.speedPresets[key];
         controllerActions.setSpeed(speed);
         return;
@@ -136,6 +141,7 @@ export function useReplayKeyboardControls({
       // Handle seeking with modifiers
       if (controls.seekBackward.includes(key)) {
         event.preventDefault();
+        event.stopPropagation();
 
         if (isShift) {
           // Step backward 1 frame
@@ -152,6 +158,7 @@ export function useReplayKeyboardControls({
 
       if (controls.seekForward.includes(key)) {
         event.preventDefault();
+        event.stopPropagation();
 
         if (isShift) {
           // Step forward 1 frame
