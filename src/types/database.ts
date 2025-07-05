@@ -118,6 +118,15 @@ export interface ReplayFilters {
 }
 
 // Utility types for database operations
-export type DatabaseReplayWithoutId = Omit<DatabaseReplay, 'id' | 'created_at' | 'updated_at'>;
-export type ProfileWithoutTimestamps = Omit<Profile, 'created_at' | 'updated_at'>;
-export type LeaderboardEntryWithoutId = Omit<LeaderboardEntry, 'id' | 'achieved_at'>;
+export type DatabaseReplayWithoutId = Omit<
+  DatabaseReplay,
+  'id' | 'created_at' | 'updated_at'
+>;
+export type ProfileWithoutTimestamps = Omit<
+  Profile,
+  'created_at' | 'updated_at'
+>;
+export type LeaderboardEntryWithoutId = Omit<
+  LeaderboardEntry,
+  'id' | 'achieved_at'
+>;

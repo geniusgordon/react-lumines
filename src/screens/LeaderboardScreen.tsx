@@ -1,27 +1,49 @@
-import { ArrowLeft, Trophy, Clock, Upload } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/Button';
+import {
+  TabNavigation,
+  ReplayImport,
+  LocalLeaderboard,
+  OnlineLeaderboard,
+} from '@/components/LeaderBoard';
+import { useOnlineLeaderboard } from '@/hooks/useOnlineLeaderboard';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 
 export function LeaderboardScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { savedReplays, importReplayFromFile } = useSaveLoadReplay();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { leaderboard, loading, error, refresh } = useOnlineLeaderboard();
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
-  const filter = searchParams.get('filter') || 'score';
+  // Map URL params to view states
+  const getViewFromParams = () => {
+    const view = searchParams.get('view');
+
+    if (view === 'online') {
+      return 'online';
+    }
+    if (view === 'recent') {
+      return 'local-recent';
+    }
+
+    return 'local-score'; // default
+  };
+
+  const currentView = getViewFromParams();
 
   const filteredReplays = useMemo(() => {
     const replays = [...savedReplays];
 
-    // Apply filters
-    switch (filter) {
-      case 'recent':
+    // Apply filters based on current view
+    switch (currentView) {
+      case 'local-recent':
         replays.sort((a, b) => b.savedAt - a.savedAt);
         break;
+      case 'local-score':
       default:
         // 'score' - sort by score, then by date
         replays.sort((a, b) => {
@@ -35,28 +57,25 @@ export function LeaderboardScreen() {
     }
 
     return replays;
-  }, [savedReplays, filter]);
+  }, [savedReplays, currentView]);
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
+  const handleViewChange = (view: string) => {
+    switch (view) {
+      case 'local-score':
+        navigate('/leaderboard');
+        break;
+      case 'local-recent':
+        navigate('/leaderboard?view=recent');
+        break;
+      case 'online':
+        navigate('/leaderboard?view=online');
+        break;
+      default:
+        navigate('/leaderboard');
     }
+  };
 
+  const handleFileImport = async (file: File) => {
     setImportMessage(null);
 
     try {
@@ -72,10 +91,10 @@ export function LeaderboardScreen() {
       setImportMessage('Import failed: An unexpected error occurred');
       setTimeout(() => setImportMessage(null), 5000);
     }
+  };
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+  const handlePlayNavigation = () => {
+    navigate('/play');
   };
 
   return (
@@ -86,114 +105,50 @@ export function LeaderboardScreen() {
             Leaderboard
           </h1>
           <p className="text-sm text-gray-400">
-            {filteredReplays.length}{' '}
-            {filteredReplays.length === 1 ? 'replay' : 'replays'}
+            {currentView !== 'online' ? (
+              <>
+                {filteredReplays.length}{' '}
+                {filteredReplays.length === 1 ? 'replay' : 'replays'}
+              </>
+            ) : (
+              <>
+                {loading
+                  ? 'Loading...'
+                  : `${leaderboard.length} ${leaderboard.length === 1 ? 'entry' : 'entries'}`}
+              </>
+            )}
           </p>
         </div>
 
-        <div className="mb-6 flex w-full gap-2">
-          <Button
-            onClick={() => navigate('/leaderboard')}
-            variant={
-              !searchParams.get('filter') ||
-              searchParams.get('filter') === 'score'
-                ? 'primary'
-                : 'secondary'
-            }
-            icon={Trophy}
-            fullWidth
-          >
-            High Score
-          </Button>
-          <Button
-            onClick={() => navigate('/leaderboard?filter=recent')}
-            variant={
-              searchParams.get('filter') === 'recent' ? 'primary' : 'secondary'
-            }
-            icon={Clock}
-            fullWidth
-          >
-            Recent
-          </Button>
-        </div>
+        <TabNavigation
+          currentView={currentView}
+          onViewChange={handleViewChange}
+        />
 
-        <div className="mb-6 flex w-full">
-          <Button
-            onClick={handleUploadClick}
-            variant="secondary"
-            icon={Upload}
-            fullWidth
-          >
-            Upload Replay
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
-
-        {importMessage && (
-          <div
-            className={`mb-4 rounded-lg p-3 text-center text-sm ${
-              importMessage.includes('success')
-                ? 'border border-green-700/50 bg-green-900/50 text-green-300'
-                : 'border border-red-700/50 bg-red-900/50 text-red-300'
-            }`}
-          >
-            {importMessage}
-          </div>
-        )}
-
-        <div className="scrollbar mb-6 max-h-96 overflow-y-auto">
-          {filteredReplays.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="mb-4 text-gray-400">No replays found</p>
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => navigate('/play')}
-                  variant="primary"
-                  className="w-auto"
-                >
-                  Start Playing
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredReplays.map((replay, index) => (
-                <Link
-                  key={replay.id}
-                  to={`/replays/${replay.id}`}
-                  className="block rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 transition-all duration-200 hover:border-gray-600/50 hover:bg-gray-700/50"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold text-gray-300">
-                        #{index + 1}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-white">
-                          {replay.name}
-                        </h3>
-                        <p className="text-xs text-gray-400">
-                          {replay.data.metadata?.playerName || 'Anonymous'} •{' '}
-                          {formatDate(replay.savedAt)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-white">
-                        {replay.data.metadata?.finalScore?.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        <div className="mb-6 flex h-96 flex-col overflow-hidden">
+          {currentView !== 'online' && (
+            <ReplayImport
+              onFileImport={handleFileImport}
+              importMessage={importMessage}
+            />
           )}
+
+          <div className="scrollbar overflow-y-auto">
+            {currentView !== 'online' ? (
+              <LocalLeaderboard
+                replays={filteredReplays}
+                onEmptyAction={handlePlayNavigation}
+              />
+            ) : (
+              <OnlineLeaderboard
+                leaderboard={leaderboard}
+                loading={loading}
+                error={error}
+                onRetry={refresh}
+                onEmptyAction={handlePlayNavigation}
+              />
+            )}
+          </div>
         </div>
 
         <Button

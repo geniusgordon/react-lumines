@@ -1,12 +1,14 @@
-import { RotateCcw, Home, Trophy } from 'lucide-react';
-import React from 'react';
+import { RotateCcw, Home, Trophy, Upload, Check } from 'lucide-react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/Button';
 import { Portal } from '@/components/Portal';
 import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import type { UseGameActions } from '@/hooks';
+import { useScoreSubmission } from '@/hooks/useScoreSubmission';
 import type { GameState, ControlsConfig } from '@/types/game';
+import type { ReplayData } from '@/types/replay';
 import { formatKey } from '@/utils/keyboard';
 
 interface GameOverMenuProps {
@@ -14,6 +16,7 @@ interface GameOverMenuProps {
   actions: UseGameActions;
   controlsConfig: ControlsConfig;
   replayMode?: boolean;
+  exportReplay?: () => ReplayData | null;
 }
 
 export const GameOverMenu: React.FC<GameOverMenuProps> = ({
@@ -21,9 +24,13 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   actions,
   controlsConfig,
   replayMode = false,
+  exportReplay,
 }) => {
   const navigate = useNavigate();
   const { status, score } = gameState;
+  const [playerName, setPlayerName] = useState('');
+  const { isSubmitting, hasSubmitted, submissionError, submitScore } =
+    useScoreSubmission();
 
   if (status !== 'gameOver') {
     return null;
@@ -37,6 +44,28 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
     navigate(replayMode ? '/leaderboard' : '/');
   };
 
+  const handleSubmitScore = async () => {
+    if (replayMode || !exportReplay) {
+      return;
+    }
+
+    const replayData = exportReplay();
+
+    if (!replayData || !replayData.inputs.length) {
+      return;
+    }
+
+    try {
+      await submitScore(replayData, playerName.trim() || 'Anonymous');
+    } catch (error) {
+      console.error('Failed to submit score:', error);
+    }
+  };
+
+  const handleViewLeaderboard = () => {
+    navigate('/leaderboard?tab=online');
+  };
+
   return (
     <Portal>
       <div
@@ -45,7 +74,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
       >
         <div className="absolute inset-0 bg-black/50 backdrop-blur-md" />
 
-        <div className="mx-4 max-w-md min-w-[320px] rounded-2xl border border-gray-600/50 bg-gray-900/95 p-8 shadow-xl backdrop-blur-md">
+        <div className="mx-4 max-w-md min-w-md rounded-2xl border border-gray-600/50 bg-gray-900/95 p-8 shadow-xl backdrop-blur-md">
           <div className="mb-8 text-center">
             <div className="mb-4 flex justify-center">
               <div className="rounded-full bg-red-500/20 p-3">
@@ -73,6 +102,67 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
             >
               Play Again
             </Button>
+
+            {/* Score submission section - only in game mode */}
+            {!replayMode && (
+              <>
+                {!hasSubmitted && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-300">
+                        Your Name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={playerName}
+                        onChange={e => setPlayerName(e.target.value)}
+                        placeholder="Anonymous"
+                        className="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+                        maxLength={50}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleSubmitScore}
+                      variant="secondary"
+                      size="lg"
+                      icon={Upload}
+                      fullWidth
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting
+                        ? 'Submitting...'
+                        : 'Submit to Online Leaderboard'}
+                    </Button>
+                  </div>
+                )}
+
+                {hasSubmitted && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-center gap-2 text-green-400">
+                      <Check className="h-5 w-5" />
+                      <span className="text-sm">
+                        Score submitted successfully!
+                      </span>
+                    </div>
+                    <Button
+                      onClick={handleViewLeaderboard}
+                      variant="secondary"
+                      size="lg"
+                      icon={Trophy}
+                      fullWidth
+                    >
+                      View Online Leaderboard
+                    </Button>
+                  </div>
+                )}
+
+                {submissionError && (
+                  <div className="text-center text-sm text-red-400">
+                    {submissionError}
+                  </div>
+                )}
+              </>
+            )}
 
             <Button
               onClick={handleQuit}
