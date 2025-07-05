@@ -16,11 +16,11 @@ export const CurrentBlock: React.FC<CurrentBlockProps> = ({
   return (
     <div>
       <div
-        className="border-block-shadow bg-block-shadow/30 absolute border-1 border-t-0 border-solid"
+        className="border-block-shadow bg-block-shadow/30 absolute border-2 border-t-0 border-solid"
         style={{
-          left: `calc(${blockPosition.x} * var(--spacing-block-size))`,
+          left: `calc(${blockPosition.x} * var(--spacing-block-size) - 1px)`,
           top: `calc(-1 * var(--spacing-block-size))`,
-          width: `calc(2 * var(--spacing-block-size))`,
+          width: `calc(2 * var(--spacing-block-size) + 2px)`,
           height: `calc((${BOARD_HEIGHT + 1}) * var(--spacing-block-size))`,
           ...getZIndexStyle(GAME_FIELD_Z_INDEX.DROP_SHADOW),
         }}
@@ -28,8 +28,8 @@ export const CurrentBlock: React.FC<CurrentBlockProps> = ({
       <div
         className="pointer-events-none absolute"
         style={{
-          left: `calc(${blockPosition.x} * var(--spacing-block-size))`,
-          top: `calc(${blockPosition.y} * var(--spacing-block-size))`,
+          left: `calc(${blockPosition.x} * var(--spacing-block-size) - 1px)`,
+          top: `calc(${blockPosition.y} * var(--spacing-block-size) - 1px)`,
           ...getZIndexStyle(GAME_FIELD_Z_INDEX.ACTIVE_ELEMENTS),
         }}
       >

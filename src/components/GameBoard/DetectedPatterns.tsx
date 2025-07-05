@@ -12,12 +12,12 @@ export const DetectedPatterns: React.FC<DetectedPatternsProps> = ({
     return (
       <div
         key={`detected-pattern-${pattern.x}-${pattern.y}`}
-        className="absolute border-2 border-solid border-white"
+        className="absolute box-border border-2 border-solid border-white"
         style={{
-          left: `calc(${pattern.x} * var(--spacing-block-size) + 1px)`,
-          top: `calc(${pattern.y} * var(--spacing-block-size) + 1px)`,
-          width: `calc(2 * var(--spacing-block-size))`,
-          height: `calc(2 * var(--spacing-block-size))`,
+          left: `calc(${pattern.x} * var(--spacing-block-size) - 1px)`,
+          top: `calc(${pattern.y} * var(--spacing-block-size) - 1px)`,
+          width: `calc(2 * var(--spacing-block-size) + 2px)`,
+          height: `calc(2 * var(--spacing-block-size) + 2px)`,
           backgroundColor:
             pattern.color === 1
               ? 'var(--color-block-light-detected)'

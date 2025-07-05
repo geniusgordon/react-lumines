@@ -21,9 +21,9 @@ export interface GameBoardProps {
  */
 export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
   return (
-    <div className="relative">
+    <div className="border-game-grid relative border-1">
       <div
-        className={`bg-game-background border-game-grid relative grid gap-0 border`}
+        className="bg-game-background border-game-grid relative grid gap-0"
         style={{
           width: `calc(${BOARD_WIDTH} * var(--spacing-block-size))`,
           height: `calc(${BOARD_HEIGHT} * var(--spacing-block-size))`,

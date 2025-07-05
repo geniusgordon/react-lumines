@@ -21,11 +21,12 @@ export const MarkedCells: React.FC<MarkedCellsProps> = ({
     return (
       <div
         key={`marked-cell-${cell.x}-${cell.y}`}
-        className="bg-block-marked h-block-size border-game-grid absolute border border-solid"
+        className="bg-block-marked border-game-grid absolute border-2"
         style={{
-          left: `calc(${cell.x} * var(--spacing-block-size) + 1px)`,
-          top: `calc(${cell.y} * var(--spacing-block-size) + 1px)`,
-          width: `calc(${width} * var(--spacing-block-size))`,
+          left: `calc(${cell.x} * var(--spacing-block-size) - 1px)`,
+          top: `calc(${cell.y} * var(--spacing-block-size) - 1px)`,
+          width: `calc(${width} * var(--spacing-block-size) + 2px)`,
+          height: `calc(var(--spacing-block-size) + 2px)`,
           ...getZIndexStyle(GAME_FIELD_Z_INDEX.GAME_EFFECTS),
         }}
       />
