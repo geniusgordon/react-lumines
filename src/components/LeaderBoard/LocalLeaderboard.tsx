@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-
 import type { SavedReplay } from '@/types/replay';
 
 import { EmptyState } from './EmptyState';
@@ -35,15 +33,14 @@ export const LocalLeaderboard: React.FC<LocalLeaderboardProps> = ({
   return (
     <div className="space-y-2">
       {replays.map((replay, index) => (
-        <Link key={replay.id} to={`/replays/${replay.id}`} className="block">
-          <LeaderboardEntry
-            rank={index + 1}
-            playerName={replay.data.metadata?.playerName || 'Anonymous'}
-            score={replay.data.metadata?.finalScore || 0}
-            date={formatDate(replay.savedAt)}
-            isClickable
-          />
-        </Link>
+        <LeaderboardEntry
+          key={replay.id}
+          replayId={replay.id}
+          rank={index + 1}
+          playerName={replay.data.metadata?.playerName || 'Anonymous'}
+          score={replay.data.metadata?.finalScore || 0}
+          date={formatDate(replay.savedAt)}
+        />
       ))}
     </div>
   );

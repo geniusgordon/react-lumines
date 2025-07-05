@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { Game } from '@/components/Game/Game';
 import { ReplayHeader } from '@/components/ReplayHeader';
+import { useOnlineReplay } from '@/hooks/useOnlineReplay';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 import type { ExpandedReplayData, SavedReplay } from '@/types/replay';
 
@@ -18,6 +19,15 @@ export function ReplayScreen() {
   const [replay, setReplay] = useState<SavedReplay | null>(null);
   const [replayData, setReplayData] = useState<ExpandedReplayData | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isOnlineReplay, setIsOnlineReplay] = useState(false);
+
+  // Only fetch online replay if ID is not found in local replays
+  const shouldFetchOnline = id && !savedReplays.find(r => r.id === id);
+  const {
+    replayData: onlineReplayData,
+    loading: onlineLoading,
+    error: onlineError,
+  } = useOnlineReplay(shouldFetchOnline ? id : null);
 
   useEffect(() => {
     if (!id) {
@@ -25,16 +35,24 @@ export function ReplayScreen() {
       return;
     }
 
+    // First try to find local replay
     const foundReplay = savedReplays.find(r => r.id === id);
-    if (!foundReplay) {
+    if (foundReplay) {
+      setReplay(foundReplay);
+      setIsOnlineReplay(false);
+      const replayData = expandReplayDataWithSnapshots(foundReplay.data);
+      setReplayData(replayData);
+    } else if (onlineReplayData) {
+      // Handle online replay data
+      setReplay(null);
+      setIsOnlineReplay(true);
+      const replayData = expandReplayDataWithSnapshots(onlineReplayData);
+      setReplayData(replayData);
+    } else if (onlineError) {
+      // Navigate back if online replay not found
       navigate('/leaderboard');
-      return;
     }
-
-    setReplay(foundReplay);
-    const replayData = expandReplayDataWithSnapshots(foundReplay.data);
-    setReplayData(replayData);
-  }, [id, savedReplays, navigate]);
+  }, [id, savedReplays, onlineReplayData, onlineError, navigate]);
 
   const handleDelete = () => {
     if (!replay) {
@@ -60,10 +78,12 @@ export function ReplayScreen() {
     }
   };
 
-  if (!replay || !replayData) {
+  if (onlineLoading || (!replay && !onlineReplayData) || !replayData) {
     return (
       <div className="bg-game-background flex h-full w-full items-center justify-center">
-        <p className="text-2xl font-bold text-white">Loading...</p>
+        <p className="text-2xl font-bold text-white">
+          {onlineLoading ? 'Loading online replay...' : 'Loading...'}
+        </p>
       </div>
     );
   }
@@ -72,8 +92,9 @@ export function ReplayScreen() {
     <div className="bg-game-background h-screen text-white">
       <ReplayHeader
         replay={replay}
-        onExport={handleExport}
-        onDelete={() => setShowDeleteConfirm(true)}
+        onlineReplayData={isOnlineReplay ? onlineReplayData : undefined}
+        onExport={isOnlineReplay ? undefined : handleExport}
+        onDelete={isOnlineReplay ? undefined : () => setShowDeleteConfirm(true)}
         onBack={() => navigate('/leaderboard')}
       />
 
@@ -82,22 +103,24 @@ export function ReplayScreen() {
         <Game replayMode={true} replayData={replayData} />
       </div>
 
-      <DeleteConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title="Delete Replay"
-        message={
-          <>
-            Are you sure you want to delete{' '}
-            <span className="font-semibold text-purple-400">
-              {replay.data.metadata?.playerName || 'Anonymous'}'s Game -{' '}
-              {replay.data.metadata?.finalScore?.toLocaleString() || 'N/A'}
-            </span>
-            ? This action cannot be undone.
-          </>
-        }
-      />
+      {!isOnlineReplay && (
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="Delete Replay"
+          message={
+            <>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-purple-400">
+                {replay?.data.metadata?.playerName || 'Anonymous'}'s Game -{' '}
+                {replay?.data.metadata?.finalScore?.toLocaleString() || 'N/A'}
+              </span>
+              ? This action cannot be undone.
+            </>
+          }
+        />
+      )}
     </div>
   );
 }

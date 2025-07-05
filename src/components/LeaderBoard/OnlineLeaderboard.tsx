@@ -62,6 +62,7 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
       {leaderboard.map((entry, index) => (
         <LeaderboardEntry
           key={entry.id}
+          replayId={entry.replay_id}
           rank={index + 1}
           playerName={entry.player_name}
           score={entry.score}
