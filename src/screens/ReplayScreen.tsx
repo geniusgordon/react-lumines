@@ -91,8 +91,9 @@ export function ReplayScreen() {
   return (
     <div className="bg-game-background h-screen text-white">
       <ReplayHeader
-        replay={replay}
-        onlineReplayData={isOnlineReplay ? onlineReplayData : undefined}
+        isOnlineReplay={isOnlineReplay}
+        savedAt={replay?.savedAt || new Date().getTime()}
+        replayData={replay?.data || onlineReplayData}
         onExport={isOnlineReplay ? undefined : handleExport}
         onDelete={isOnlineReplay ? undefined : () => setShowDeleteConfirm(true)}
         onBack={() => navigate('/leaderboard')}

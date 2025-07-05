@@ -1,18 +1,20 @@
 import { Button } from '@/components/Button/Button';
 import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
-import type { SavedReplay, ReplayData } from '@/types/replay';
+import type { ReplayData } from '@/types/replay';
 
 export interface ReplayHeaderProps {
-  replay: SavedReplay | null;
-  onlineReplayData?: ReplayData | null;
+  isOnlineReplay: boolean;
+  replayData: ReplayData | null;
+  savedAt: number;
   onExport?: () => void;
   onDelete?: () => void;
   onBack: () => void;
 }
 
 export function ReplayHeader({
-  replay,
-  onlineReplayData,
+  isOnlineReplay,
+  replayData,
+  savedAt,
   onExport,
   onDelete,
   onBack,
@@ -20,10 +22,6 @@ export function ReplayHeader({
   const formatDate = (timestamp: number | string) => {
     return new Date(timestamp).toLocaleString();
   };
-
-  // Use replay data if available, otherwise use online replay data
-  const data = replay?.data || onlineReplayData;
-  const savedAt = replay?.savedAt || Date.now();
 
   return (
     <div
@@ -33,21 +31,18 @@ export function ReplayHeader({
       <div className="mx-auto flex max-w-4xl items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-purple-400">
-            {data?.metadata?.playerName || 'Anonymous'}'s Game -{' '}
-            {data?.metadata?.finalScore?.toLocaleString() || 'N/A'}
-            {!replay && (
+            {replayData?.metadata?.playerName || 'Anonymous'}'s Game
+            {isOnlineReplay && (
               <span className="ml-2 text-sm text-blue-400">(Online)</span>
             )}
           </h1>
           <div className="mt-1 text-sm text-gray-400">
-            <span>{data?.metadata?.playerName || 'Anonymous'}</span>
-            <span className="mx-2">•</span>
             <span>{formatDate(savedAt)}</span>
-            {data?.metadata?.finalScore && (
+            {replayData?.metadata?.finalScore && (
               <>
                 <span className="mx-2">•</span>
                 <span className="font-semibold text-yellow-400">
-                  Score: {data.metadata.finalScore.toLocaleString()}
+                  Score: {replayData.metadata.finalScore.toLocaleString()}
                 </span>
               </>
             )}
