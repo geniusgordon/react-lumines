@@ -14,7 +14,11 @@ describe('replayUtils - creation', () => {
       ];
 
       const seed = 'test-seed-456';
-      const result = createReplayData(recordedInputs, seed);
+      const result = createReplayData(recordedInputs, {
+        seed,
+        score: 0,
+        frame: 0,
+      });
 
       expect(result.seed).toBe(seed);
       expect(result.inputs).toEqual([
@@ -27,7 +31,11 @@ describe('replayUtils - creation', () => {
     });
 
     it('should handle empty recorded inputs', () => {
-      const result = createReplayData([], 'empty-seed');
+      const result = createReplayData([], {
+        seed: 'empty-seed',
+        score: 0,
+        frame: 0,
+      });
 
       expect(result.seed).toBe('empty-seed');
       expect(result.inputs).toEqual([]);
@@ -35,8 +43,16 @@ describe('replayUtils - creation', () => {
     });
 
     it('should create unique timestamps', () => {
-      const result1 = createReplayData([], 'seed1');
-      const result2 = createReplayData([], 'seed2');
+      const result1 = createReplayData([], {
+        seed: 'seed1',
+        score: 0,
+        frame: 0,
+      });
+      const result2 = createReplayData([], {
+        seed: 'seed2',
+        score: 0,
+        frame: 0,
+      });
 
       // Timestamps should be close but potentially different
       expect(result2.gameConfig.timestamp).toBeGreaterThanOrEqual(

@@ -82,6 +82,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
         controlsConfig={DEFAULT_CONTROLS}
         actions={actions}
         replayMode={replayMode}
+        exportReplay={!replayMode ? exportReplay : undefined}
       />
     </div>
   );

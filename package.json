@@ -14,10 +14,12 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:watch": "vitest watch",
+    "gen-types": "supabase gen types typescript --linked > src/types/database.gen.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.2",
     "lucide-react": "^0.518.0",
     "polished": "^4.3.1",
     "random-seed": "^0.3.0",
@@ -55,6 +57,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.12",
     "storybook": "^9.0.9",
+    "supabase": "^2.30.4",
     "tailwindcss": "^4.1.10",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",

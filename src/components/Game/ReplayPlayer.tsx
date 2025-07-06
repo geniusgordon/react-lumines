@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 
 import { ReplayController } from '@/components/ReplayController';
-import { useControls, useReplayPlayer } from '@/hooks';
-import { useReplayKeyboardControls } from '@/hooks/useReplayKeyboardControls';
+import { useGameControls, useReplayPlayer } from '@/hooks';
+import { useReplayControls } from '@/hooks/useReplayControls';
 import type { UseResponsiveScaleReturn } from '@/hooks/useResponsiveScale';
 import type { ExpandedReplayData } from '@/types/replay';
 
@@ -31,7 +31,7 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   } = useReplayPlayer(replayData);
 
   // Setup controls (disabled for replay mode)
-  const controls = useControls(gameState, actions, {
+  const controls = useGameControls(gameState, actions, {
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
   });
@@ -41,7 +41,7 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   }, [replayData]);
 
   // Enable keyboard controls for replay
-  useReplayKeyboardControls({
+  useReplayControls({
     controllerActions,
     currentSpeed: speed,
     enabled: true,

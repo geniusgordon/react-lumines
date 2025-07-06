@@ -4,7 +4,7 @@ import { useReducer, useCallback } from 'react';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 
-import { useControls, type UseControlsOptions } from './useControls';
+import { useGameControls, type UseControlsOptions } from './useGameControls';
 
 // Demo component to showcase the hook
 function ControlsDemo({ options }: { options?: UseControlsOptions }) {
@@ -34,7 +34,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
     skipCountdown: useCallback(() => dispatch({ type: 'SKIP_COUNTDOWN' }), []),
   };
 
-  const controlsReturn = useControls(gameState, actions, options);
+  const controlsReturn = useGameControls(gameState, actions, options);
 
   return (
     <div className="min-h-screen space-y-6 bg-gray-900 p-6 text-white">

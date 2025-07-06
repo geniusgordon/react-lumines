@@ -1,5 +1,11 @@
 import { useEffect, useCallback, useRef } from 'react';
 
+import {
+  isInputFieldActive,
+  getModifierFlags,
+  shouldPreventDefault,
+} from '@/utils/keyboardUtils';
+
 import type { ReplayControllerActions } from './useReplayPlayer';
 
 interface ReplayKeyboardMapping {
@@ -38,17 +44,17 @@ const DEFAULT_REPLAY_CONTROLS: ReplayKeyboardMapping = {
   },
 };
 
-export interface UseReplayKeyboardControlsOptions {
+export interface UseReplayControlsOptions {
   controllerActions: ReplayControllerActions;
   currentSpeed: number;
   enabled?: boolean;
 }
 
-export function useReplayKeyboardControls({
+export function useReplayControls({
   controllerActions,
   currentSpeed,
   enabled = true,
-}: UseReplayKeyboardControlsOptions) {
+}: UseReplayControlsOptions) {
   const controlsRef = useRef(DEFAULT_REPLAY_CONTROLS);
 
   const getSpeedStep = useCallback(
@@ -79,16 +85,20 @@ export function useReplayKeyboardControls({
         return;
       }
 
+      // Skip if user is typing in an input field
+      if (isInputFieldActive()) {
+        return;
+      }
+
       const key = event.code;
       const controls = controlsRef.current;
 
       // Check modifiers
-      const isShift = event.shiftKey;
-      const isCtrl = event.ctrlKey || event.metaKey;
+      const modifiers = getModifierFlags(event);
 
       // Handle play/pause
       if (controls.playPause.includes(key)) {
-        if (!isShift && !isCtrl) {
+        if (shouldPreventDefault(event, true, modifiers)) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -98,7 +108,7 @@ export function useReplayKeyboardControls({
 
       // Handle restart
       if (controls.restart.includes(key)) {
-        if (!isShift && !isCtrl) {
+        if (shouldPreventDefault(event, true, modifiers)) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -108,7 +118,7 @@ export function useReplayKeyboardControls({
 
       // Handle speed controls
       if (controls.speedUp.includes(key)) {
-        if (!isShift && !isCtrl) {
+        if (shouldPreventDefault(event, true, modifiers)) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -118,7 +128,7 @@ export function useReplayKeyboardControls({
       }
 
       if (controls.speedDown.includes(key)) {
-        if (!isShift && !isCtrl) {
+        if (shouldPreventDefault(event, true, modifiers)) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -129,7 +139,7 @@ export function useReplayKeyboardControls({
 
       // Handle speed presets
       if (key in controls.speedPresets) {
-        if (!isShift && !isCtrl) {
+        if (shouldPreventDefault(event, true, modifiers)) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -143,10 +153,10 @@ export function useReplayKeyboardControls({
         event.preventDefault();
         event.stopPropagation();
 
-        if (isShift) {
+        if (modifiers.shift) {
           // Step backward 1 frame
           controllerActions.stepFrames(-1);
-        } else if (isCtrl) {
+        } else if (modifiers.ctrl || modifiers.meta) {
           // Seek backward 10 seconds (600 frames)
           controllerActions.stepFrames(-600);
         } else {
@@ -160,10 +170,10 @@ export function useReplayKeyboardControls({
         event.preventDefault();
         event.stopPropagation();
 
-        if (isShift) {
+        if (modifiers.shift) {
           // Step forward 1 frame
           controllerActions.stepFrames(1);
-        } else if (isCtrl) {
+        } else if (modifiers.ctrl || modifiers.meta) {
           // Seek forward 10 seconds (600 frames)
           controllerActions.stepFrames(600);
         } else {

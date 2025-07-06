@@ -21,7 +21,11 @@ describe('replayUtils - integration', () => {
       ];
 
       // Create replay data (compaction)
-      const replayData = createReplayData(recordedInputs, 'integration-seed');
+      const replayData = createReplayData(recordedInputs, {
+        seed: 'integration-seed',
+        score: 0,
+        frame: 0,
+      });
 
       // Validate the replay data
       const validation = validateReplayData(replayData);
@@ -63,7 +67,11 @@ describe('replayUtils - integration', () => {
         { type: 'TICK', frame: 0 },
       ];
 
-      const replayData = createReplayData(recordedInputs, 'complex-seed');
+      const replayData = createReplayData(recordedInputs, {
+        seed: 'complex-seed',
+        score: 0,
+        frame: 0,
+      });
       const validation = validateReplayData(replayData);
       const frameActions = expandReplayData(replayData);
 

@@ -7,6 +7,11 @@ import type {
   ControlsConfig,
   GameStatus,
 } from '@/types/game';
+import {
+  isInputFieldActive,
+  getModifierFlags,
+  shouldPreventDefault,
+} from '@/utils/keyboardUtils';
 
 import type { UseGameActions } from './useGame';
 
@@ -61,7 +66,7 @@ export interface UseControlsReturn {
 /**
  * Controls hook for keyboard input handling
  */
-export function useControls(
+export function useGameControls(
   gameState: GameState,
   actions: UseGameActions,
   options: UseControlsOptions = {}
@@ -131,13 +136,17 @@ export function useControls(
     (event: KeyboardEvent) => {
       const key = event.code;
 
+      // Skip if user is typing in an input field
+      if (isInputFieldActive()) {
+        return;
+      }
+
       // Check modifiers
-      const isShift = event.shiftKey;
-      const isCtrl = event.ctrlKey || event.metaKey;
+      const modifiers = getModifierFlags(event);
 
       // Prevent default browser behavior for game keys (only when no modifiers)
       const gameAction = keyToActionMap.current.get(key);
-      if (gameAction && !isShift && !isCtrl) {
+      if (shouldPreventDefault(event, !!gameAction, modifiers)) {
         event.preventDefault();
       }
 

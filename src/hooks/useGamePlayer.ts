@@ -42,14 +42,10 @@ export function useGamePlayer(
       // Export and save the replay
       const replayData = exportReplay();
       if (replayData) {
-        // Generate a descriptive name with timestamp and score
-        const timestamp = new Date().toLocaleString();
-        const replayName = `Game ${timestamp} - Score: ${gameState.score}`;
-
-        const saveResult = saveReplay(replayData, replayName);
+        const saveResult = saveReplay(replayData);
 
         if (saveResult.success) {
-          console.log(`Game Over - Replay saved: "${replayName}"`);
+          console.log('Game Over - Replay saved successfully');
         } else {
           console.error('Failed to save replay:', saveResult.error?.message);
         }

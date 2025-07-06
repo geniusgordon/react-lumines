@@ -10,6 +10,7 @@ describe('replayUtils - expansion', () => {
         seed: 'test-seed',
         inputs: [],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
+        metadata: { finalScore: 0 },
       };
 
       const result = expandReplayData(replayData);
@@ -25,6 +26,7 @@ describe('replayUtils - expansion', () => {
         seed: 'test-seed',
         inputs: [{ type: 'MOVE_LEFT', frame: 2 }],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
+        metadata: { finalScore: 0 },
       };
 
       const result = expandReplayData(replayData);
@@ -55,6 +57,7 @@ describe('replayUtils - expansion', () => {
           { type: 'HARD_DROP', frame: 3 },
         ],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
+        metadata: { finalScore: 0 },
       };
 
       const result = expandReplayData(replayData);
@@ -89,6 +92,7 @@ describe('replayUtils - expansion', () => {
         seed: 'test-seed',
         inputs: [{ type: 'SOFT_DROP', frame: 0, payload: { speed: 2 } }],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
+        metadata: { finalScore: 0 },
       };
 
       const result = expandReplayData(replayData);

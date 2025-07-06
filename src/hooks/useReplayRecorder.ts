@@ -35,12 +35,8 @@ export function useReplayRecorder(gameState: GameState) {
       return null;
     }
 
-    return createReplayData(
-      recordedInputsRef.current,
-      gameState.seed,
-      gameState.score
-    );
-  }, [gameState.seed, gameState.score]);
+    return createReplayData(recordedInputsRef.current, gameState);
+  }, [gameState]);
 
   return {
     startRecording,

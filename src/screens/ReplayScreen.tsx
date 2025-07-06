@@ -1,40 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { Game } from '@/components/Game/Game';
 import { ReplayHeader } from '@/components/ReplayHeader';
+import { useReplayData } from '@/hooks/useReplayData';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
-import type { ExpandedReplayData, SavedReplay } from '@/types/replay';
-
-import { expandReplayDataWithSnapshots } from '../utils/replayUtils';
 
 export function ReplayScreen() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { savedReplays, deleteReplay, exportReplayToFile } =
-    useSaveLoadReplay();
+  const { deleteReplay, exportReplayToFile } = useSaveLoadReplay();
+  const { replay, replayData, isOnlineReplay, loading, error } =
+    useReplayData(id);
 
-  const [replay, setReplay] = useState<SavedReplay | null>(null);
-  const [replayData, setReplayData] = useState<ExpandedReplayData | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    if (!id) {
-      navigate('/leaderboard');
-      return;
-    }
-
-    const foundReplay = savedReplays.find(r => r.id === id);
-    if (!foundReplay) {
-      navigate('/leaderboard');
-      return;
-    }
-
-    setReplay(foundReplay);
-    const replayData = expandReplayDataWithSnapshots(foundReplay.data);
-    setReplayData(replayData);
-  }, [id, savedReplays, navigate]);
 
   const handleDelete = () => {
     if (!replay) {
@@ -60,10 +40,20 @@ export function ReplayScreen() {
     }
   };
 
-  if (!replay || !replayData) {
+  if (loading || !replayData) {
     return (
       <div className="bg-game-background flex h-full w-full items-center justify-center">
-        <p className="text-2xl font-bold text-white">Loading...</p>
+        <p className="text-2xl font-bold text-white">
+          {loading ? 'Loading replay...' : 'Loading...'}
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-game-background flex h-full w-full items-center justify-center">
+        <p className="text-2xl font-bold text-red-400">Error: {error}</p>
       </div>
     );
   }
@@ -71,9 +61,11 @@ export function ReplayScreen() {
   return (
     <div className="bg-game-background h-screen text-white">
       <ReplayHeader
-        replay={replay}
-        onExport={handleExport}
-        onDelete={() => setShowDeleteConfirm(true)}
+        isOnlineReplay={isOnlineReplay}
+        savedAt={replay?.savedAt || new Date().getTime()}
+        replayData={replayData}
+        onExport={isOnlineReplay ? undefined : handleExport}
+        onDelete={isOnlineReplay ? undefined : () => setShowDeleteConfirm(true)}
         onBack={() => navigate('/leaderboard')}
       />
 
@@ -82,19 +74,24 @@ export function ReplayScreen() {
         <Game replayMode={true} replayData={replayData} />
       </div>
 
-      <DeleteConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title="Delete Replay"
-        message={
-          <>
-            Are you sure you want to delete{' '}
-            <span className="font-semibold text-purple-400">{replay.name}</span>
-            ? This action cannot be undone.
-          </>
-        }
-      />
+      {!isOnlineReplay && (
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="Delete Replay"
+          message={
+            <>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-purple-400">
+                {replay?.data.metadata?.playerName || 'Anonymous'}'s Game -{' '}
+                {replay?.data.metadata?.finalScore?.toLocaleString() || 'N/A'}
+              </span>
+              ? This action cannot be undone.
+            </>
+          }
+        />
+      )}
     </div>
   );
 }

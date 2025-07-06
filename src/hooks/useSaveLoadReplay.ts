@@ -36,7 +36,7 @@ export function useSaveLoadReplay() {
   });
 
   const saveReplay = useCallback(
-    (replayData: ReplayData, name: string): SaveLoadResult => {
+    (replayData: ReplayData): SaveLoadResult => {
       try {
         // Validate replay data
         if (!replayData.seed || !replayData.inputs || !replayData.gameConfig) {
@@ -52,7 +52,6 @@ export function useSaveLoadReplay() {
         // Create new saved replay
         const savedReplay: SavedReplay = {
           id: v7(),
-          name: name.trim() || `Replay ${new Date().toLocaleString()}`,
           data: replayData,
           savedAt: Date.now(),
         };
@@ -132,7 +131,8 @@ export function useSaveLoadReplay() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${replay.name}.json`;
+        const displayName = `${replay.data.metadata?.playerName || 'Anonymous'}'s Game - ${replay.data.metadata?.finalScore?.toLocaleString() || 'N/A'}`;
+        a.download = `${displayName}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -179,10 +179,7 @@ export function useSaveLoadReplay() {
             }
 
             // Save the imported replay
-            const result = saveReplay(
-              replayData,
-              file.name.replace('.json', '')
-            );
+            const result = saveReplay(replayData);
             resolve(result);
           } catch (error) {
             resolve({

@@ -18,8 +18,8 @@ export interface ReplayData {
     version: string;
     timestamp: number;
   };
-  metadata?: {
-    finalScore?: number;
+  metadata: {
+    finalScore: number;
     duration?: number;
     playerName?: string;
   };
@@ -37,16 +37,8 @@ export type ExpandedReplayData = ReplayData & {
   snapshots: StateSnapshot[];
 };
 
-export interface ReplayState {
-  isRecording: boolean;
-  isPlayback: boolean;
-  currentReplay: ReplayData | null;
-  recordedInputs: ReplayInput[];
-}
-
 export interface SavedReplay {
   id: string;
-  name: string;
   data: ReplayData;
   savedAt: number;
 }
