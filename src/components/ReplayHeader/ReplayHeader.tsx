@@ -1,11 +1,16 @@
+import { Upload, Check } from 'lucide-react';
+import { useState } from 'react';
+
 import { Button } from '@/components/Button/Button';
 import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
+import { useScoreSubmission } from '@/hooks/useScoreSubmission';
 import type { ReplayData } from '@/types/replay';
 
 export interface ReplayHeaderProps {
   isOnlineReplay: boolean;
   replayData: ReplayData | null;
   savedAt: number;
+  enableUpload?: boolean;
   onExport?: () => void;
   onDelete?: () => void;
   onBack: () => void;
@@ -15,13 +20,29 @@ export function ReplayHeader({
   isOnlineReplay,
   replayData,
   savedAt,
+  enableUpload = true,
   onExport,
   onDelete,
   onBack,
 }: ReplayHeaderProps) {
+  const [playerName, setPlayerName] = useState('');
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const { isSubmitting, hasSubmitted, submissionError, submitScore } =
+    useScoreSubmission();
+
   const formatDate = (timestamp: number | string) => {
     return new Date(timestamp).toLocaleString();
   };
+
+  const handleUpload = async () => {
+    if (!replayData) {
+      return;
+    }
+    await submitScore(replayData, playerName.trim() || 'Anonymous');
+  };
+
+  const canUpload =
+    enableUpload && !isOnlineReplay && replayData && !hasSubmitted;
 
   return (
     <div
@@ -55,6 +76,16 @@ export function ReplayHeader({
               Export
             </Button>
           )}
+          {canUpload && (
+            <Button
+              onClick={() => setShowUploadForm(!showUploadForm)}
+              variant="secondary"
+              size="sm"
+              icon={Upload}
+            >
+              {showUploadForm ? 'Cancel' : 'Upload'}
+            </Button>
+          )}
           {onDelete && (
             <Button onClick={onDelete} variant="warning" size="sm">
               Delete
@@ -65,6 +96,53 @@ export function ReplayHeader({
           </Button>
         </div>
       </div>
+
+      {/* Upload Form */}
+      {showUploadForm && (
+        <div className="mx-auto mt-4 max-w-4xl border-t border-gray-700 py-4">
+          {!hasSubmitted && (
+            <div className="space-y-3">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">
+                  Your Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value)}
+                  placeholder="Anonymous"
+                  className="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+                  maxLength={50}
+                />
+              </div>
+              <Button
+                onClick={handleUpload}
+                variant="secondary"
+                size="sm"
+                icon={Upload}
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? 'Submitting...'
+                  : 'Submit to Online Leaderboard'}
+              </Button>
+            </div>
+          )}
+
+          {hasSubmitted && (
+            <div className="flex items-center justify-center gap-2 text-green-400">
+              <Check className="h-5 w-5" />
+              <span className="text-sm">Score submitted successfully!</span>
+            </div>
+          )}
+
+          {submissionError && (
+            <div className="text-center text-sm text-red-400">
+              {submissionError}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
