@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useControls, useGamePlayer } from '@/hooks';
+import { useGameControls, useGamePlayer } from '@/hooks';
 import type { UseResponsiveScaleReturn } from '@/hooks/useResponsiveScale';
 
 import { GameCore } from './GameCore';
@@ -26,7 +26,7 @@ export const GamePlayer: React.FC<GamePlayerProps> = ({
   );
 
   // Setup controls for user input
-  const controls = useControls(gameState, actions, {
+  const controls = useGameControls(gameState, actions, {
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
   });
