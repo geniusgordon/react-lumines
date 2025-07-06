@@ -182,7 +182,7 @@ export function compactReplayInputs(
 // Create replay data from recorded inputs and seed
 export function createReplayData(
   recordedInputs: ReplayInput[],
-  gameState: GameState
+  gameState: Pick<GameState, 'seed' | 'score' | 'frame'>
 ): ReplayData {
   return {
     seed: gameState.seed,
@@ -199,7 +199,7 @@ export function createReplayData(
 }
 
 // Constants for snapshot optimization
-export const SNAPSHOT_INTERVAL = 300; // Create snapshot every 300 frames (5 seconds at 60fps)
+export const SNAPSHOT_INTERVAL = 100;
 
 // Helper function to determine snapshot frames
 export function getSnapshotFrames(maxFrame: number): number[] {

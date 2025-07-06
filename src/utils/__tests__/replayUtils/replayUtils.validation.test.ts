@@ -13,6 +13,7 @@ describe('replayUtils - validation', () => {
           { type: 'ROTATE_CW', frame: 5, payload: 'test' },
           { type: 'HARD_DROP', frame: 10 },
         ],
+        metadata: { finalScore: 0 },
         gameConfig: {
           version: '1.0.0',
           timestamp: Date.now(),
@@ -88,6 +89,7 @@ describe('replayUtils - validation', () => {
           { type: 'INVALID_ACTION' } as any, // Missing frame
           { frame: 5 } as any, // Missing type
         ],
+        metadata: { finalScore: 0 },
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
       };
 
@@ -108,6 +110,7 @@ describe('replayUtils - validation', () => {
           { type: 'INVALID_ACTION', frame: 1 } as any,
           { type: 'ANOTHER_INVALID', frame: 2 } as any,
         ],
+        metadata: { finalScore: 0 },
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
       };
 
@@ -130,6 +133,7 @@ describe('replayUtils - validation', () => {
           { type: 'MOVE_LEFT', frame: -1 },
           { type: 'ROTATE_CW', frame: 0 },
         ],
+        metadata: { finalScore: 0 },
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
       };
 
@@ -148,6 +152,7 @@ describe('replayUtils - validation', () => {
           { type: 'ROTATE_CW', frame: 3 }, // Out of order
           { type: 'HARD_DROP', frame: 7 },
         ],
+        metadata: { finalScore: 0 },
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
       };
 
@@ -168,6 +173,7 @@ describe('replayUtils - validation', () => {
           { type: 'ROTATE_CW', frame: 0 }, // Same frame
           { type: 'HARD_DROP', frame: 1 },
         ],
+        metadata: { finalScore: 0 },
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
       };
 

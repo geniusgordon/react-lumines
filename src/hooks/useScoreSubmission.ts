@@ -1,11 +1,8 @@
 import { useState, useCallback } from 'react';
 
-import type { InsertReplayInput } from '@/types/database';
+import { SupabaseService } from '@/services/supabaseService';
 import type { ReplayData } from '@/types/replay';
-
-import type { Json } from '../types/database.gen';
-
-import { useOnlineLeaderboard } from './useOnlineLeaderboard';
+import { convertReplayDataToInsertInput } from '@/utils/dataTransformers';
 
 interface UseScoreSubmissionResult {
   isSubmitting: boolean;
@@ -18,7 +15,6 @@ export function useScoreSubmission(): UseScoreSubmissionResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const { submitScore } = useOnlineLeaderboard();
 
   const submitScoreToOnline = useCallback(
     async (replayData: ReplayData, playerName?: string) => {
@@ -30,29 +26,12 @@ export function useScoreSubmission(): UseScoreSubmissionResult {
       setSubmissionError(null);
 
       try {
-        const finalScore = replayData.metadata.finalScore;
-        const duration = replayData.metadata.duration || 0;
-
-        const createReplayInput: InsertReplayInput = {
-          player_name: playerName || 'Anonymous',
-          seed: replayData.seed,
-          inputs: replayData.inputs as unknown as Json[],
-          game_config: replayData.gameConfig,
-          metadata: {
-            ...replayData.metadata,
-            playerName: playerName || 'Anonymous',
-          },
-          final_score: finalScore,
-          duration_ms: duration,
-        };
-
-        const result = await submitScore(createReplayInput);
-
-        if (result.success) {
-          setHasSubmitted(true);
-        } else {
-          setSubmissionError(result.error || 'Failed to submit score');
-        }
+        const insertInput = convertReplayDataToInsertInput(
+          replayData,
+          playerName
+        );
+        await SupabaseService.insertReplay(insertInput);
+        setHasSubmitted(true);
       } catch (error) {
         setSubmissionError(
           error instanceof Error ? error.message : 'Failed to submit score'
@@ -61,7 +40,7 @@ export function useScoreSubmission(): UseScoreSubmissionResult {
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, hasSubmitted, submitScore]
+    [isSubmitting, hasSubmitted]
   );
 
   return {
