@@ -131,6 +131,18 @@ export function useControls(
     (event: KeyboardEvent) => {
       const key = event.code;
 
+      // Skip if user is typing in an input field
+      const activeElement = document.activeElement;
+      if (
+        activeElement &&
+        (activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.tagName === 'SELECT' ||
+          activeElement.isContentEditable)
+      ) {
+        return;
+      }
+
       // Check modifiers
       const isShift = event.shiftKey;
       const isCtrl = event.ctrlKey || event.metaKey;
