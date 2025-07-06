@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { SupabaseService } from '@/services/supabaseService';
 import type { TopLeaderboardEntry } from '@/types/database';
 
@@ -14,6 +16,10 @@ export function useOnlineLeaderboard(): UseOnlineLeaderboardResult {
   const { loading, data, error, refetch } = useSupabaseQuery({
     queryFn: SupabaseService.fetchLeaderboard,
   });
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   return {
     leaderboard: data || [],
