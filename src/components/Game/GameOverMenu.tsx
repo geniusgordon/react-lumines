@@ -34,10 +34,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
     useScoreSubmission();
 
   const replayData = !replayMode && exportReplay ? exportReplay() : null;
-  const { isSharing, shareMessage, shareReplay } = useReplayShare(
-    replayData,
-    score
-  );
+  const { isSharing, shareMessage, shareReplay } = useReplayShare(replayData);
 
   if (status !== 'gameOver') {
     return null;
