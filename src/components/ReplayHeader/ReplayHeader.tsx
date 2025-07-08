@@ -20,7 +20,7 @@ export function ReplayHeader({
   isOnlineReplay,
   replayData,
   savedAt,
-  enableUpload = true,
+  enableUpload,
   onExport,
   onDelete,
   onBack,

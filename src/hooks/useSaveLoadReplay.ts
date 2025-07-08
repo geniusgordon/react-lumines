@@ -112,19 +112,8 @@ export function useSaveLoadReplay() {
   );
 
   const exportReplayToFile = useCallback(
-    (replayId: string): SaveLoadResult => {
+    (replay: SavedReplay): SaveLoadResult => {
       try {
-        const replay = savedReplays.find(r => r.id === replayId);
-        if (!replay) {
-          return {
-            success: false,
-            error: {
-              message: 'Replay not found',
-              code: 'VALIDATION_ERROR',
-            },
-          };
-        }
-
         const blob = new Blob([JSON.stringify(replay.data, null, 2)], {
           type: 'application/json',
         });
@@ -149,7 +138,7 @@ export function useSaveLoadReplay() {
         };
       }
     },
-    [savedReplays]
+    []
   );
 
   const importReplayFromFile = useCallback(

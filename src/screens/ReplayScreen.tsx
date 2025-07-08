@@ -34,7 +34,7 @@ export function ReplayScreen() {
       return;
     }
 
-    const result = exportReplayToFile(replay.id);
+    const result = exportReplayToFile(replay);
     if (!result.success) {
       console.error('Failed to export replay:', result.error?.message);
     }
@@ -64,7 +64,7 @@ export function ReplayScreen() {
         isOnlineReplay={isOnlineReplay}
         savedAt={replay?.savedAt || new Date().getTime()}
         replayData={replayData}
-        onExport={isOnlineReplay ? undefined : handleExport}
+        onExport={handleExport}
         onDelete={isOnlineReplay ? undefined : () => setShowDeleteConfirm(true)}
         onBack={() => navigate('/leaderboard')}
       />
