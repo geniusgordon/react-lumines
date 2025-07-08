@@ -1,4 +1,4 @@
-import { RotateCcw, Home, Trophy, Upload, Check } from 'lucide-react';
+import { RotateCcw, Home, Trophy, Upload, Check, Share } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Portal } from '@/components/Portal';
 import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import type { UseGameActions } from '@/hooks';
+import { useReplayShare } from '@/hooks/useReplayShare';
 import { useScoreSubmission } from '@/hooks/useScoreSubmission';
 import type { GameState, ControlsConfig } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
@@ -31,6 +32,12 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   const [playerName, setPlayerName] = useState('');
   const { isSubmitting, hasSubmitted, submissionError, submitScore } =
     useScoreSubmission();
+
+  const replayData = !replayMode && exportReplay ? exportReplay() : null;
+  const { isSharing, shareMessage, shareReplay } = useReplayShare(
+    replayData,
+    score
+  );
 
   if (status !== 'gameOver') {
     return null;
@@ -144,21 +151,39 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
                         Score submitted successfully!
                       </span>
                     </div>
-                    <Button
-                      onClick={handleViewLeaderboard}
-                      variant="secondary"
-                      size="lg"
-                      icon={Trophy}
-                      fullWidth
-                    >
-                      View Online Leaderboard
-                    </Button>
+                    <div className="space-y-2">
+                      <Button
+                        onClick={shareReplay}
+                        variant="secondary"
+                        size="lg"
+                        icon={Share}
+                        fullWidth
+                        disabled={isSharing}
+                      >
+                        {isSharing ? 'Sharing...' : 'Share Replay'}
+                      </Button>
+                      <Button
+                        onClick={handleViewLeaderboard}
+                        variant="secondary"
+                        size="lg"
+                        icon={Trophy}
+                        fullWidth
+                      >
+                        View Online Leaderboard
+                      </Button>
+                    </div>
                   </div>
                 )}
 
                 {submissionError && (
                   <div className="text-center text-sm text-red-400">
                     {submissionError}
+                  </div>
+                )}
+
+                {shareMessage && (
+                  <div className="text-center text-sm text-green-400">
+                    {shareMessage}
                   </div>
                 )}
               </>

@@ -1,8 +1,9 @@
-import { Upload, Check } from 'lucide-react';
+import { Upload, Check, Share } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/Button/Button';
 import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
+import { useReplayShare } from '@/hooks/useReplayShare';
 import { useScoreSubmission } from '@/hooks/useScoreSubmission';
 import type { ReplayData } from '@/types/replay';
 
@@ -29,6 +30,7 @@ export function ReplayHeader({
   const [showUploadForm, setShowUploadForm] = useState(false);
   const { isSubmitting, hasSubmitted, submissionError, submitScore } =
     useScoreSubmission();
+  const { isSharing, shareMessage, shareReplay } = useReplayShare(replayData);
 
   const formatDate = (timestamp: number | string) => {
     return new Date(timestamp).toLocaleString();
@@ -76,6 +78,15 @@ export function ReplayHeader({
               Export
             </Button>
           )}
+          <Button
+            onClick={shareReplay}
+            variant="secondary"
+            size="sm"
+            icon={Share}
+            disabled={isSharing}
+          >
+            {isSharing ? 'Sharing...' : 'Share'}
+          </Button>
           {canUpload && (
             <Button
               onClick={() => setShowUploadForm(!showUploadForm)}
@@ -96,6 +107,10 @@ export function ReplayHeader({
           </Button>
         </div>
       </div>
+
+      {shareMessage && (
+        <div className="text-center text-sm text-green-400">{shareMessage}</div>
+      )}
 
       {/* Upload Form */}
       {showUploadForm && (
