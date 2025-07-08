@@ -7,6 +7,7 @@ describe('replayUtils - validation', () => {
   describe('validateReplayData', () => {
     it('should validate correct replay data', () => {
       const validReplayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed-123',
         inputs: [
           { type: 'MOVE_LEFT', frame: 0 },
@@ -83,6 +84,7 @@ describe('replayUtils - validation', () => {
 
     it('should reject inputs with invalid structure', () => {
       const invalidReplayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [
           { type: 'MOVE_LEFT', frame: 0 },
@@ -104,6 +106,7 @@ describe('replayUtils - validation', () => {
 
     it('should reject inputs with invalid action types', () => {
       const invalidReplayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [
           { type: 'MOVE_LEFT', frame: 0 },
@@ -128,6 +131,7 @@ describe('replayUtils - validation', () => {
 
     it('should reject inputs with negative frame numbers', () => {
       const invalidReplayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [
           { type: 'MOVE_LEFT', frame: -1 },
@@ -146,6 +150,7 @@ describe('replayUtils - validation', () => {
 
     it('should reject inputs with non-chronological frame ordering', () => {
       const invalidReplayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [
           { type: 'MOVE_LEFT', frame: 5 },
@@ -167,6 +172,7 @@ describe('replayUtils - validation', () => {
 
     it('should allow duplicate frame numbers (multiple actions per frame)', () => {
       const validReplayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [
           { type: 'MOVE_LEFT', frame: 0 },

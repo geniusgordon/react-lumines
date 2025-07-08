@@ -182,9 +182,10 @@ export function compactReplayInputs(
 // Create replay data from recorded inputs and seed
 export function createReplayData(
   recordedInputs: ReplayInput[],
-  gameState: Pick<GameState, 'seed' | 'score' | 'frame'>
+  gameState: Pick<GameState, 'id' | 'seed' | 'score' | 'frame'>
 ): ReplayData {
   return {
+    id: gameState.id,
     seed: gameState.seed,
     inputs: compactReplayInputs(recordedInputs),
     gameConfig: {

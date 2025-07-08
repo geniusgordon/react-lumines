@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { v7 } from 'uuid';
 
 import type { ReplayData, SavedReplay } from '@/types/replay';
 
@@ -39,7 +38,12 @@ export function useSaveLoadReplay() {
     (replayData: ReplayData): SaveLoadResult => {
       try {
         // Validate replay data
-        if (!replayData.seed || !replayData.inputs || !replayData.gameConfig) {
+        if (
+          !replayData.id ||
+          !replayData.seed ||
+          !replayData.inputs ||
+          !replayData.gameConfig
+        ) {
           return {
             success: false,
             error: {
@@ -49,9 +53,9 @@ export function useSaveLoadReplay() {
           };
         }
 
-        // Create new saved replay
+        // Create new saved replay using the replay's own ID
         const savedReplay: SavedReplay = {
-          id: v7(),
+          id: replayData.id,
           data: replayData,
           savedAt: Date.now(),
         };
@@ -153,6 +157,7 @@ export function useSaveLoadReplay() {
 
             // Validate imported data
             if (
+              !replayData.id ||
               !replayData.seed ||
               !replayData.inputs ||
               !replayData.gameConfig

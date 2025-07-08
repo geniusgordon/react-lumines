@@ -12,6 +12,7 @@ export interface StateSnapshot {
 }
 
 export interface ReplayData {
+  id: string;
   seed: string;
   inputs: ReplayInput[];
   gameConfig: {

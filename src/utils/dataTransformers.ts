@@ -8,6 +8,7 @@ export function convertDatabaseReplayToSavedReplay(
   return {
     id: data.id,
     data: {
+      id: data.id,
       seed: data.seed,
       inputs: data.inputs as any,
       gameConfig: data.game_config as any,
@@ -31,6 +32,7 @@ export function convertReplayDataToInsertInput(
   const duration = replayData.metadata.duration || 0;
 
   return {
+    id: replayData.id,
     player_name: playerName || 'Anonymous',
     seed: replayData.seed,
     inputs: replayData.inputs as unknown as Json[],

@@ -15,6 +15,7 @@ describe('replayUtils - creation', () => {
 
       const seed = 'test-seed-456';
       const result = createReplayData(recordedInputs, {
+        id: 'id',
         seed,
         score: 0,
         frame: 0,
@@ -32,6 +33,7 @@ describe('replayUtils - creation', () => {
 
     it('should handle empty recorded inputs', () => {
       const result = createReplayData([], {
+        id: 'id',
         seed: 'empty-seed',
         score: 0,
         frame: 0,
@@ -44,11 +46,13 @@ describe('replayUtils - creation', () => {
 
     it('should create unique timestamps', () => {
       const result1 = createReplayData([], {
+        id: 'id',
         seed: 'seed1',
         score: 0,
         frame: 0,
       });
       const result2 = createReplayData([], {
+        id: 'id',
         seed: 'seed2',
         score: 0,
         frame: 0,

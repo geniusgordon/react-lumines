@@ -7,6 +7,7 @@ describe('replayUtils - expansion', () => {
   describe('expandReplayData', () => {
     it('should expand empty replay data', () => {
       const replayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
@@ -23,6 +24,7 @@ describe('replayUtils - expansion', () => {
 
     it('should expand replay data with single action', () => {
       const replayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [{ type: 'MOVE_LEFT', frame: 2 }],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },
@@ -50,6 +52,7 @@ describe('replayUtils - expansion', () => {
 
     it('should expand replay data with multiple actions per frame', () => {
       const replayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [
           { type: 'MOVE_LEFT', frame: 1 },
@@ -89,6 +92,7 @@ describe('replayUtils - expansion', () => {
 
     it('should preserve action payloads', () => {
       const replayData: ReplayData = {
+        id: 'test-replay-id',
         seed: 'test-seed',
         inputs: [{ type: 'SOFT_DROP', frame: 0, payload: { speed: 2 } }],
         gameConfig: { version: '1.0.0', timestamp: Date.now() },

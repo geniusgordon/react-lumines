@@ -22,6 +22,7 @@ describe('replayUtils - integration', () => {
 
       // Create replay data (compaction)
       const replayData = createReplayData(recordedInputs, {
+        id: 'id',
         seed: 'integration-seed',
         score: 0,
         frame: 0,
@@ -68,6 +69,7 @@ describe('replayUtils - integration', () => {
       ];
 
       const replayData = createReplayData(recordedInputs, {
+        id: 'id',
         seed: 'complex-seed',
         score: 0,
         frame: 0,

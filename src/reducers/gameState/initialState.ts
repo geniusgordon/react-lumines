@@ -1,3 +1,5 @@
+import { v7 } from 'uuid';
+
 import {
   GAME_CONFIG,
   DEFAULT_VALUES,
@@ -34,6 +36,7 @@ export function createInitialGameState(
     // Game flow
     status: 'initial',
     score: 0,
+    id: v7(), // Generate unique ID for this game session
 
     // Timer system
     countdown: TIMER_CONFIG.COUNTDOWN_START,

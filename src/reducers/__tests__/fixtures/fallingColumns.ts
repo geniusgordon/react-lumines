@@ -59,6 +59,7 @@ export const gameState: GameState = {
   },
   status: 'playing',
   score: 77,
+  id: 'test-game-id',
   countdown: 0,
   gameTimer: 1516,
   detectedPatterns: [

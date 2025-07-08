@@ -84,6 +84,8 @@ export interface GameAction {
 
 // Complete game state
 export interface GameState {
+  id: string; // Unique identifier for this game session/replay
+
   // Core game data
   board: GameBoard;
   currentBlock: Block;
