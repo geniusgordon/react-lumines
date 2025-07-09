@@ -44,9 +44,11 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
       <div className="py-16 text-center">
         <p className="mb-4 text-red-400">Failed to load online leaderboard</p>
         <p className="mb-4 text-sm text-gray-400">{error}</p>
-        <Button onClick={onRetry} variant="secondary" className="w-auto">
-          Retry
-        </Button>
+        <div className="flex justify-center">
+          <Button onClick={onRetry} variant="secondary" className="w-auto">
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }

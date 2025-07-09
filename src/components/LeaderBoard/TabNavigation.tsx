@@ -1,4 +1,4 @@
-import { Trophy, Clock, Globe } from 'lucide-react';
+import { Trophy, Clock, Globe, Users } from 'lucide-react';
 
 import { Button } from '@/components/Button';
 
@@ -36,6 +36,14 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
         fullWidth
       >
         Online
+      </Button>
+      <Button
+        onClick={() => onViewChange('player-scores')}
+        variant={currentView === 'player-scores' ? 'primary' : 'secondary'}
+        icon={Users}
+        fullWidth
+      >
+        Players
       </Button>
     </div>
   );

@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase';
-import type { TopLeaderboardEntry, InsertReplayInput } from '@/types/database';
+import type {
+  TopLeaderboardEntry,
+  InsertReplayInput,
+  PlayerHighScore,
+} from '@/types/database';
 import type { SavedReplay } from '@/types/replay';
 import { convertDatabaseReplayToSavedReplay } from '@/utils/dataTransformers';
 
@@ -51,5 +55,19 @@ export class SupabaseService {
     }
 
     return convertDatabaseReplayToSavedReplay(data);
+  }
+
+  static async fetchPlayerHighScores(
+    limit: number = 50
+  ): Promise<PlayerHighScore[]> {
+    const { data, error } = await supabase.rpc('get_player_high_scores', {
+      score_limit: limit,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data || [];
   }
 }

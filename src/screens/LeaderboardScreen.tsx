@@ -8,8 +8,10 @@ import {
   ReplayImport,
   LocalLeaderboard,
   OnlineLeaderboard,
+  PlayerHighScoresBoard,
 } from '@/components/LeaderBoard';
 import { useOnlineLeaderboard } from '@/hooks/useOnlineLeaderboard';
+import { usePlayerHighScores } from '@/hooks/usePlayerHighScores';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 
 export function LeaderboardScreen() {
@@ -17,6 +19,12 @@ export function LeaderboardScreen() {
   const [searchParams] = useSearchParams();
   const { savedReplays, importReplayFromFile } = useSaveLoadReplay();
   const { leaderboard, loading, error, refresh } = useOnlineLeaderboard();
+  const {
+    playerHighScores,
+    loading: playerScoresLoading,
+    error: playerScoresError,
+    refresh: refreshPlayerScores,
+  } = usePlayerHighScores();
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
   // Map URL params to view states
@@ -28,6 +36,9 @@ export function LeaderboardScreen() {
     }
     if (view === 'recent') {
       return 'local-recent';
+    }
+    if (view === 'players') {
+      return 'player-scores';
     }
 
     return 'local-score'; // default
@@ -70,6 +81,9 @@ export function LeaderboardScreen() {
       case 'online':
         navigate('/leaderboard?view=online');
         break;
+      case 'player-scores':
+        navigate('/leaderboard?view=players');
+        break;
       default:
         navigate('/leaderboard');
     }
@@ -105,16 +119,22 @@ export function LeaderboardScreen() {
             Leaderboard
           </h1>
           <p className="text-sm text-gray-400">
-            {currentView !== 'online' ? (
+            {currentView === 'player-scores' ? (
               <>
-                {filteredReplays.length}{' '}
-                {filteredReplays.length === 1 ? 'replay' : 'replays'}
+                {playerScoresLoading
+                  ? 'Loading...'
+                  : `${playerHighScores.length} ${playerHighScores.length === 1 ? 'player' : 'players'}`}
               </>
-            ) : (
+            ) : currentView === 'online' ? (
               <>
                 {loading
                   ? 'Loading...'
                   : `${leaderboard.length} ${leaderboard.length === 1 ? 'entry' : 'entries'}`}
+              </>
+            ) : (
+              <>
+                {filteredReplays.length}{' '}
+                {filteredReplays.length === 1 ? 'replay' : 'replays'}
               </>
             )}
           </p>
@@ -126,7 +146,7 @@ export function LeaderboardScreen() {
         />
 
         <div className="mb-6 flex h-96 flex-col overflow-hidden">
-          {currentView !== 'online' && (
+          {currentView !== 'online' && currentView !== 'player-scores' && (
             <ReplayImport
               onFileImport={handleFileImport}
               importMessage={importMessage}
@@ -134,17 +154,25 @@ export function LeaderboardScreen() {
           )}
 
           <div className="scrollbar overflow-y-auto">
-            {currentView !== 'online' ? (
-              <LocalLeaderboard
-                replays={filteredReplays}
+            {currentView === 'player-scores' ? (
+              <PlayerHighScoresBoard
+                playerHighScores={playerHighScores}
+                loading={playerScoresLoading}
+                error={playerScoresError}
+                onRetry={refreshPlayerScores}
                 onEmptyAction={handlePlayNavigation}
               />
-            ) : (
+            ) : currentView === 'online' ? (
               <OnlineLeaderboard
                 leaderboard={leaderboard}
                 loading={loading}
                 error={error}
                 onRetry={refresh}
+                onEmptyAction={handlePlayNavigation}
+              />
+            ) : (
+              <LocalLeaderboard
+                replays={filteredReplays}
                 onEmptyAction={handlePlayNavigation}
               />
             )}
