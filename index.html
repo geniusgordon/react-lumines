@@ -5,9 +5,22 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>React Lumines</title>
+    <!-- Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-1Y4TEGEMR1"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-1Y4TEGEMR1');
+    </script>
   </head>
   <body class="bg-game-background">
-    <div id="root" class="h-screen w-screen bg-game-background"></div>
+    <div id="root" class="bg-game-background h-screen w-screen"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

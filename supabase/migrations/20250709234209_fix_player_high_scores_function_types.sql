@@ -4,10 +4,12 @@
 -- Drop and recreate the function with correct return types
 DROP FUNCTION IF EXISTS get_player_high_scores(INTEGER);
 
-CREATE OR REPLACE FUNCTION get_player_high_scores(score_limit INTEGER DEFAULT 50)
+CREATE OR REPLACE FUNCTION get_player_high_scores(
+    score_limit INTEGER DEFAULT 50
+)
 RETURNS TABLE (
-  player_name VARCHAR(100),
-  max_score INTEGER
+    player_name VARCHAR(100),
+    max_score INTEGER
 ) AS $$
 BEGIN
   RETURN QUERY
