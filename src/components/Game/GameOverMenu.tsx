@@ -67,7 +67,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
   };
 
   const handleViewLeaderboard = () => {
-    navigate('/leaderboard?tab=online');
+    navigate('/leaderboard?view=online');
   };
 
   return (
