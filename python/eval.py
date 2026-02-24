@@ -13,6 +13,9 @@ Usage:
 
     # Control render speed
     python python/eval.py --render --delay 0.05
+
+    # Use Node.js IPC env instead of pure Python env
+    python python/eval.py --no-native
 """
 
 import argparse
@@ -22,6 +25,7 @@ import time
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from lumines_env import LuminesEnv
+from game.env import LuminesEnvNative
 
 from stable_baselines3 import PPO
 
@@ -38,7 +42,10 @@ def evaluate(args):
     scores = []
 
     for episode in range(1, args.episodes + 1):
-        env = LuminesEnv(mode="per_block", render_mode=render_mode)
+        if args.native:
+            env = LuminesEnvNative(mode="per_block", render_mode=render_mode)
+        else:
+            env = LuminesEnv(mode="per_block", render_mode=render_mode)
         obs, _ = env.reset(seed=episode)
         done = False
         episode_score = 0
@@ -84,7 +91,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate a Lumines PPO checkpoint")
     parser.add_argument(
         "--checkpoint",
-        default="python/checkpoints/final.zip",
+        default="python/checkpoints/best_model",
         help="Path to saved PPO model (.zip)",
     )
     parser.add_argument("--episodes", type=int, default=10)
@@ -94,6 +101,13 @@ if __name__ == "__main__":
                         help="Render ASCII board after each step")
     parser.add_argument("--delay", type=float, default=0.1,
                         help="Seconds to sleep between rendered steps (0 to disable)")
+    parser.add_argument(
+        "--no-native",
+        dest="native",
+        action="store_false",
+        help="Use Node.js IPC subprocess env instead of pure Python env",
+    )
+    parser.set_defaults(native=True)
     args = parser.parse_args()
 
     evaluate(args)

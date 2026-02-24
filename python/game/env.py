@@ -3,7 +3,7 @@ env.py — Pure Python Lumines gymnasium environment.
 Mirrors the interface of lumines_env.py (Node.js IPC) but runs entirely in Python.
 
 Action spaces:
-    per_block → Discrete(64):  targetX = action // 4, rotation = action % 4
+    per_block → Discrete(60):  targetX = action // 4, rotation = action % 4  (x=0..14, 15 valid cols)
     per_frame → Discrete(7):   [MOVE_LEFT, MOVE_RIGHT, ROTATE_CW, ROTATE_CCW,
                                  SOFT_DROP, HARD_DROP, NO_OP]
 """
@@ -57,7 +57,7 @@ class LuminesEnvNative(gym.Env):
 
         # Action space
         if mode == "per_block":
-            self.action_space = spaces.Discrete(64)  # 16 cols × 4 rotations
+            self.action_space = spaces.Discrete(60)  # 15 cols × 4 rotations (x=0..14)
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
@@ -171,8 +171,13 @@ class LuminesEnvNative(gym.Env):
         if self._state.status != "gameOver":
             self._blocks_placed += 1
 
-        reward = float(self._state.score - prev_score)
+        score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
+        height_penalty = self._max_column_height() / BOARD_HEIGHT * 0.1
+        if done:
+            reward = score_delta - 1.0
+        else:
+            reward = score_delta + 0.1 - height_penalty
         return self._build_obs(), reward, done, False, self._build_info()
 
     # -------------------------------------------------------------------------
@@ -202,9 +207,18 @@ class LuminesEnvNative(gym.Env):
         rng = get_rng(self._state)
         self._state = tick(self._state, rng)
 
-        reward = float(self._state.score - prev_score)
+        score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
+        reward = score_delta + (-1.0 if done else 0.0)
         return self._build_obs(), reward, done, False, self._build_info()
+
+    def _max_column_height(self) -> int:
+        """Returns the height of the tallest column (0 = empty board, BOARD_HEIGHT = full)."""
+        board = self._state.board
+        for row in range(BOARD_HEIGHT):
+            if any(board[row][col] != 0 for col in range(BOARD_WIDTH)):
+                return BOARD_HEIGHT - row
+        return 0
 
     # -------------------------------------------------------------------------
     # Helpers

@@ -35,6 +35,8 @@ storybook-static
 __pycache__/
 *.pyc
 python/.venv/
+python/checkpoints/
+python/logs/
 
 # Git worktrees
 .worktrees/
