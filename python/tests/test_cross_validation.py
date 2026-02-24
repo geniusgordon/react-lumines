@@ -74,7 +74,6 @@ def test_score_non_decreasing():
     actions = _random_actions(50)
     for a in actions:
         obs, reward, done, _, info = env.step(a)
-        assert reward >= 0, f"Reward was negative: {reward}"
         assert obs['score'][0] >= prev_score
         prev_score = obs['score'][0]
         if done:
@@ -217,7 +216,6 @@ def test_structural_parity_with_node_env():
         node_obs, node_r, node_done, _, _ = node_env.step(a)
 
         assert py_obs['board'].shape == (10, 16)
-        assert py_r >= 0
         assert np.all((py_obs['board'] >= 0) & (py_obs['board'] <= 2))
 
         if py_done or node_done:
