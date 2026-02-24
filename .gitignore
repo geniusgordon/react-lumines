@@ -30,3 +30,7 @@ dist-ssr
 
 *storybook.log
 storybook-static
+
+# Python
+__pycache__/
+*.pyc
