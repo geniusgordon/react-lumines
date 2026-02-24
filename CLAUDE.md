@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A React-based Lumines puzzle game built with TypeScript, focusing on deterministic gameplay and replay functionality. The game features a 16x10 grid where 2x2 blocks fall and form same-colored rectangles that get cleared by a timeline sweep.
+A React-based Lumines puzzle game built with TypeScript, focusing on deterministic gameplay and replay functionality. The game features a 16x10 grid where 2x2 blocks fall and form same-colored rectangles that get cleared by a timeline sweep. It includes an online leaderboard and shareable replays via Supabase.
 
 ## Development Commands
 
@@ -14,156 +14,126 @@ A React-based Lumines puzzle game built with TypeScript, focusing on determinist
 - `pnpm build` - Build for production (includes TypeScript compilation)
 - `pnpm test` - Run tests with Vitest once (no watch mode)
 - `pnpm test:ui` - Run tests with Vitest UI
-- `pnpm test:watch` - Run tests with Vitest in watch mode
+- `pnpm test:watch` - Run tests in watch mode
 
 ### Code Quality
 
 - `pnpm lint` - Run ESLint and fix errors automatically
 - `pnpm typecheck` - TypeScript type checking (no emit)
 - `pnpm format` - Format code with Prettier
-- `pnpm format:check` - Check code formatting
 
 ### Storybook
 
 - `pnpm storybook` - Start Storybook dev server on port 6006
-- `pnpm build-storybook` - Build Storybook for production
 
 ### Testing
 
 - Single test file: `pnpm test src/utils/__tests__/gameLogic.test.ts`
-- Watch mode: `pnpm test` (default behavior)
-- Coverage: Tests are configured with jsdom environment
+- Tests use jsdom environment with Vitest and `@testing-library/react`
+- Path alias `@/` resolves to `src/`
+
+## Environment Setup
+
+Copy `.env.example` to `.env.local` and fill in Supabase credentials:
+
+```
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
 ## Architecture Overview
+
+### Routing
+
+React Router v6 with four screen-level routes:
+
+- `/` → `StartScreen` - main menu
+- `/play` → `GameScreen` - active gameplay
+- `/leaderboard` → `LeaderboardScreen` - online scores
+- `/replays/:id` → `ReplayScreen` - replay playback
 
 ### Core Patterns
 
 - **State Management**: `useReducer` with immutable state updates
 - **Game Loop**: Hybrid requestAnimationFrame + fixed timestep (60 FPS)
 - **Deterministic System**: Seeded RNG, integer-only positioning, frame-based timing
-- **Command Pattern**: All game actions dispatched through typed actions
+- **Command Pattern**: All game actions dispatched through typed `GameAction` interfaces
 
-### Key Components Structure
+### Layer Structure
 
 ```
-App
-├── GameBoard (main game area)
-│   ├── Block (falling piece)
-│   ├── GridCell (board positions)
-│   └── Timeline (sweep line)
-├── DebugPanel (development tools)
-├── Queue (upcoming blocks preview)
-└── ScoreDisplay
+src/
+├── screens/        # Route-level components (GameScreen, LeaderboardScreen, ReplayScreen, StartScreen)
+├── components/     # Reusable UI components (Game, GameBoard, LeaderBoard, ReplayController, etc.)
+├── hooks/          # Game logic hooks, replay hooks, Supabase data hooks
+├── reducers/       # gameReducer - central state machine
+├── services/       # SupabaseService - all database operations
+├── lib/            # supabase.ts client initialization
+├── utils/          # gameLogic, replayUtils, dataTransformers, seededRNG
+├── types/          # game.ts, replay.ts, database.ts (Supabase types)
+└── constants/      # gameConfig.ts - all game constants
 ```
-
-### State Management
-
-- Central game state managed by `gameReducer` in `src/reducers/gameReducer.ts`
-- Debug-aware wrapper `gameReducerWithDebug` provides comprehensive logging
-- All state changes through typed `GameAction` interfaces
-- Completely deterministic - same seed + inputs = identical gameplay
-
-### Game Loop Architecture
-
-The game uses a sophisticated hybrid approach for deterministic 60 FPS gameplay:
-
-- **Fixed Timestep**: Game logic always runs at exactly 16.67ms intervals
-- **RAF Rendering**: Uses requestAnimationFrame for efficient browser rendering
-- **Spiral of Death Protection**: `maxFrameSkip` prevents performance hiccups from cascading
-- **Debug Mode**: Manual frame stepping for testing (`useGameLoop` with `debugMode: true`)
 
 ### Critical Files
 
 #### Game Logic
 
-- `src/types/game.ts` - All TypeScript interfaces and types
-- `src/reducers/gameReducer.ts` - Central state management with debug logging
-- `src/hooks/useGameLoop.ts` - Fixed timestep game loop implementation
-- `src/utils/gameLogic.ts` - Core game mechanics (collision, clearing, gravity)
-- `src/utils/seededRNG.ts` - Deterministic random number generation
+- `src/types/game.ts` - All game TypeScript interfaces and types
+- `src/types/replay.ts` - Replay format types
+- `src/types/database.ts` - Supabase database types (auto-generated in `database.gen.ts`)
+- `src/reducers/gameReducer.ts` - Central state management; `gameReducerWithDebug` wraps for logging
+- `src/hooks/useGameLoop.ts` - Fixed timestep game loop; `debugMode: true` enables manual stepping
+- `src/utils/gameLogic/` - Core game mechanics: collision, clearing, gravity
+- `src/utils/seededRNG/` - Deterministic random number generation
+- `src/constants/gameConfig.ts` - Grid dimensions, FPS, timing constants
 
-#### Components
+#### Replay System
 
-- `src/components/DebugPanel/` - Comprehensive debugging tools with manual stepping
-- `src/components/GameBoard/` - Main game rendering
-- Component structure follows index.ts barrel exports
+- `src/hooks/useReplayRecorder.ts` - Records inputs with frame timestamps during gameplay
+- `src/hooks/useReplayPlayer.ts` - Deterministic playback from recorded inputs
+- `src/hooks/useSaveLoadReplay.ts` - Local save/load
+- `src/hooks/useReplayShare.ts` - Upload replay to Supabase and generate shareable link
+- `src/hooks/useOnlineReplay.ts` - Fetch and play a replay by ID
+- `src/utils/replayUtils.ts` - Replay serialization/deserialization
+- `src/utils/dataTransformers.ts` - Convert between database and app replay formats
 
-#### Configuration
+#### Backend (Supabase)
 
-- `src/constants/gameConfig.ts` - All game constants and configuration
-- Game runs at 60 FPS with 16x10 grid and 2x2 blocks
+- `src/lib/supabase.ts` - Supabase client (requires env vars)
+- `src/services/supabaseService.ts` - `SupabaseService` static class: `fetchLeaderboard`, `insertReplay`, `fetchReplayById`, `fetchPlayerHighScores`
+- `src/hooks/useOnlineLeaderboard.ts`, `usePlayerHighScores.ts`, `useScoreSubmission.ts` - Data hooks wrapping `SupabaseService`
+- `src/hooks/useSupabaseQuery.ts` - Generic query hook
 
-## Key Technical Decisions
+### Game Loop Architecture
+
+- **Fixed Timestep**: Logic always runs at exactly 16.67ms intervals
+- **RAF Rendering**: `requestAnimationFrame` for browser rendering
+- **Spiral of Death Protection**: `maxFrameSkip` prevents cascading frame debt
+- **Debug Mode**: `manualStep()` for frame-by-frame stepping
 
 ### Deterministic Design
 
 - **Integer-only coordinates**: No floating-point positioning
-- **Frame-based timing**: All events measured in frame counts, not milliseconds
-- **Seeded randomization**: Custom SeededRNG class for reproducible sequences
-- **Input logging**: Every action recorded with frame timestamp for replay system
-
-### Debug System
-
-- **Debug Mode Toggle**: `gameState.debugMode` enables comprehensive logging
-- **Manual Frame Stepping**: `manualStep()` function for frame-by-frame debugging
-- **State Change Tracking**: Logs before/after state comparisons
-- **Performance Aware**: Zero overhead when debug mode disabled
-
-### Testing Approach
-
-- **Vitest** with jsdom environment
-- **@testing-library/react** for component testing
-- Tests focus on game logic determinism and state management
-- Path alias `@/` resolves to `src/`
+- **Frame-based timing**: All events in frame counts, not milliseconds
+- **Seeded randomization**: `SeededRNG` for reproducible sequences
+- **Input logging**: Every action recorded with frame timestamp, enabling exact replay
 
 ## Development Patterns
 
-### Component Development
-
-- Use functional components with hooks only
-- Follow existing component structure in `src/components/`
-- Export through index.ts barrel files
-- Use TypeScript interfaces from `src/types/game.ts`
-
 ### State Updates
 
-- All state changes must go through the reducer
-- Actions must include `frame` number for determinism
-- Use `gameReducerWithDebug` for automatic debug logging
-- Never mutate state directly - always return new objects
+- All state changes through the reducer; actions must include `frame` number
+- Use `gameReducerWithDebug` during development for automatic state change logging
+- Never mutate state directly
 
-### Game Logic
+### Component Structure
 
-- Use utilities from `src/utils/gameLogic.ts` for game mechanics
-- Maintain deterministic behavior - same inputs must produce same outputs
-- Integer-only coordinates and frame-based timing
-- Validate all moves through collision detection
+- Functional components with hooks only
+- Export through `index.ts` barrel files
+- Import with `@/` alias: `import { GameBoard } from '@/components'`
 
-### Performance Considerations
+### Debugging Tools
 
-- Game loop includes frame skip protection (`maxFrameSkip`)
-- Selective rendering - only changed cells re-render
-- Debug logging only active when `debugMode` is true
-- Fixed timestep prevents timing drift
-
-## Memory Bank Integration
-
-This project uses a comprehensive Memory Bank system for context preservation:
-
-- Core files: `projectbrief.md`, `productContext.md`, `activeContext.md`, `systemPatterns.md`, `techContext.md`, `progress.md`
-- Always read memory bank files when starting work
-- Update memory bank after significant changes
-- Particularly important for understanding architecture decisions and current work focus
-
-## Import Patterns
-
-- Use path alias: `@/` for `src/`
-- Barrel exports: Import from component directories via `index.ts`
-- Example: `import { GameBoard, DebugPanel } from './components'`
-
-## Debugging Tools
-
-- Enable debug mode: dispatch `{ type: 'SET_DEBUG_MODE', payload: true, frame: 0 }`
-- Manual stepping: Access `manualStep()` from `useGameLoop` with `debugMode: true`
-- Console logging: Comprehensive state change tracking when debug mode active
-- DebugPanel component provides UI controls for all debug features
+- Enable debug mode: `dispatch({ type: 'SET_DEBUG_MODE', payload: true, frame: 0 })`
+- Manual stepping: use `manualStep()` from `useGameLoop` with `debugMode: true`
+- `DebugPanel` component provides UI controls for all debug features
