@@ -12,6 +12,7 @@ Architecture:
 Usage:
     python python/train.py
     python python/train.py --timesteps 500000 --envs 4 --device mps
+    python python/train.py --native                        # use pure Python env (no Node.js IPC)
 """
 
 import argparse
@@ -94,9 +95,13 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
 # Env factory helpers
 # ---------------------------------------------------------------------------
 
-def make_env(seed: int):
+def make_env(seed: int, native: bool = False):
     def _init():
-        env = LuminesEnv(mode="per_block", seed=str(seed))
+        if native:
+            from game.env import LuminesEnvNative
+            env = LuminesEnvNative(mode="per_block", seed=str(seed))
+        else:
+            env = LuminesEnv(mode="per_block", seed=str(seed))
         return env
     return _init
 
@@ -110,11 +115,11 @@ def train(args):
     os.makedirs(args.log_dir, exist_ok=True)
 
     # Parallel training envs
-    env = SubprocVecEnv([make_env(i) for i in range(args.envs)])
+    env = SubprocVecEnv([make_env(i, native=args.native) for i in range(args.envs)])
     env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
     # Held-out eval env (single, unwrapped normalization so scores are raw)
-    eval_env = SubprocVecEnv([make_env(9999)])
+    eval_env = SubprocVecEnv([make_env(9999, native=args.native)])
     eval_env = VecNormalize(eval_env, norm_obs=False, norm_reward=False, training=False)
 
     # Linear learning-rate schedule
@@ -178,6 +183,11 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--checkpoint-dir", dest="checkpoint_dir", default="python/checkpoints")
     parser.add_argument("--log-dir", dest="log_dir", default="python/logs")
+    parser.add_argument(
+        "--native",
+        action="store_true",
+        help="Use pure Python env instead of Node.js IPC subprocess",
+    )
     args = parser.parse_args()
 
     train(args)
