@@ -171,7 +171,7 @@ Each new 2×2 same-colour square formed adds `+0.5` to the reward immediately �
 
 **Height penalty coefficient halved:** `0.1 → 0.05`. The previous coefficient was aggressive enough that the agent prioritised board flatness over pattern formation. The softer penalty still discourages runaway columns without overriding the pattern signal.
 
-### 3d. Hyperparameter changes
+### 3d. Hyperparameter changes (iteration 2)
 
 | Hyperparameter | Iteration 1 | Iteration 2 | Rationale |
 |---------------|------------|------------|-----------|
@@ -183,7 +183,67 @@ Each new 2×2 same-colour square formed adds `+0.5` to the reward immediately �
 
 ---
 
-## 4. Monitoring
+## 6. Problem: Policy Not Learning Column Distribution (Iteration 3)
+
+After iteration 2, training exhibited a new failure mode:
+
+- **Rollout**: `ep_len_mean ≈ 52`, `ep_rew_mean ≈ 2.7` — flat, not improving
+- **Eval (deterministic)**: `mean_ep_length ≈ 6`, `mean_reward` declining from −0.2 to −0.6
+
+The 9× gap between stochastic rollout (52 steps) and deterministic eval (6 steps) confirmed the policy had NOT learned to distribute blocks. Entropy from `ent_coef=0.1` was accidentally distributing blocks during rollout, masking the fact that the deterministic argmax policy still collapsed to one column. The rollout fixed point at `ep_rew_mean ≈ 2.7` exactly matched `52 × 0.1 − height_penalties − 1.0` — the agent found a stable entropy-driven survival strategy with no further gradient to improve.
+
+**Root cause:** The `height_penalty = max_column_height / BOARD_HEIGHT * 0.05` was a global signal with no directional gradient. Every non-death step returned the same survival bonus regardless of *which* column the block was placed in. The policy had no information distinguishing "place in short column" from "place in tall column."
+
+---
+
+## 7. Fixes (Iteration 3)
+
+### 7a. Placement penalty replaces height penalty
+
+```python
+# Before — global signal, no per-column gradient
+height_penalty = self._max_column_height() / BOARD_HEIGHT * 0.05
+
+# After — penalise based on height of the column actually placed into
+actual_x = self._state.block_position_x  # captured after horizontal movement
+self._state = hard_drop(self._state, rng)
+placed_col_height = self._column_heights()[actual_x]
+placement_penalty = placed_col_height / BOARD_HEIGHT * 0.15
+```
+
+Reward formula:
+```python
+if done:
+    reward = score_delta - 1.0
+else:
+    reward = score_delta + squares_delta * 0.5 + 0.1 - placement_penalty
+```
+
+The coefficient is `0.15` (3× the old `0.05`). This makes column choice meaningful:
+
+| Scenario | placement_penalty | Net step reward |
+|----------|-------------------|-----------------|
+| Place in empty column (height 2) | 2/10 × 0.15 = 0.030 | +0.070 |
+| Place in half-full column (height 5) | 5/10 × 0.15 = 0.075 | +0.025 |
+| Place in near-full column (height 8) | 8/10 × 0.15 = 0.120 | −0.020 |
+
+Placing into a near-full column is now strictly *negative* even before game over, creating a gradient that pushes the policy toward shorter columns without requiring the episode to end.
+
+### 7b. Entropy coefficient increased
+
+`ent_coef`: `0.1 → 0.3`. While the placement penalty provides the directional signal, higher entropy is needed to keep the policy exploring during the transition period before the value function internalises the new signal.
+
+### 7c. Hyperparameter changes (iteration 3)
+
+| Hyperparameter | Iteration 2 | Iteration 3 | Rationale |
+|---------------|------------|------------|-----------|
+| `height_penalty coef` | 0.05 (global) | removed | replaced by placement_penalty |
+| `placement_penalty coef` | — | 0.15 (per-column) | directly rewards short-column placement |
+| `ent_coef` | 0.1 | 0.3 | wider exploration during policy transition |
+
+---
+
+## 8. Monitoring
 
 With these changes, the signals to watch in TensorBoard:
 
@@ -191,13 +251,16 @@ With these changes, the signals to watch in TensorBoard:
 |--------|-------------|
 | `rollout/ep_len_mean` | Should grow well past 6 and trend upward |
 | `rollout/ep_rew_mean` | Should trend positive as agent learns to survive |
+| `eval/mean_ep_length` | Should close the gap with `rollout/ep_len_mean` |
 | `train/approx_kl` | Stays elevated for longer (~100–200k steps) before settling |
 | `train/entropy_loss` | Stays noticeably negative throughout; should not collapse to ~0 |
 | `train/explained_variance` | Should stay positive and close to 1.0; drops to negative indicate LR or vf_coef issues |
 
+The key diagnostic for iteration 3 is the **eval/rollout gap**. If the gap closes (eval ep_length approaches rollout ep_length), the policy has internalised column distribution rather than relying on entropy.
+
 ---
 
-## 5. Remaining Limitations
+## 9. Remaining Limitations
 
 - **Score is still sparse.** The `squares_delta` signal rewards pattern *formation*, but actual scoring requires the timeline to sweep over marked cells. The agent must now learn the second-order behaviour of placing patterns in front of the timeline sweep.
 - **squares_delta is not cleared correctly.** Completed 2×2 squares that are later swept and cleared will reduce the count, so `squares_delta` can go negative when the timeline clears cells. This is intentional (the score_delta reward captures cleared value), but the net effect on reward should be monitored.

@@ -98,35 +98,45 @@ def test_reward_components_has_no_spread_penalty():
     assert "spread_penalty" not in info["reward_components"]
 
 
-def test_height_penalty_coefficient_is_0_05():
-    """
-    Height penalty = max_height / BOARD_HEIGHT * 0.05.
-    Verify by placing state with known max height and checking component.
-    """
+def test_reward_components_has_placement_penalty():
+    """placement_penalty must be present in reward_components."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-
-    # Fill bottom 5 rows of col 0 only → max height = 5
-    board = create_empty_board()
-    for row in range(BOARD_HEIGHT - 5, BOARD_HEIGHT):
-        board[row][0] = 1
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
-
-    expected_max_height = 5
-    expected_penalty = -(expected_max_height / BOARD_HEIGHT * 0.05)
-
     _, _, _, _, info = env.step(0)
-    # height_penalty component should be computed before this step's placement
-    # so we verify the coefficient by checking a fresh state
-    env2 = LuminesEnvNative(mode="per_block", seed="42")
-    env2.reset()
-    board2 = create_empty_board()
-    for row in range(BOARD_HEIGHT - 5, BOARD_HEIGHT):
-        board2[row][0] = 1
-    env2._state = env2._state.__class__(**{**env2._state.__dict__, "board": board2})
-    max_h = env2._max_column_height()
-    computed_penalty = -(max_h / BOARD_HEIGHT * 0.05)
-    assert computed_penalty == expected_penalty
+    assert "placement_penalty" in info["reward_components"]
+
+
+def test_reward_components_no_height_penalty():
+    """height_penalty must be replaced by placement_penalty."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "height_penalty" not in info["reward_components"]
+
+
+def test_placement_penalty_larger_in_tall_column():
+    """
+    Placing a block into a pre-filled tall column should produce a larger
+    placement_penalty than placing into an empty column.
+    """
+    # Tall column: fill bottom 7 rows of col 0 and col 1
+    env_tall = LuminesEnvNative(mode="per_block", seed="42")
+    env_tall.reset()
+    board_tall = create_empty_board()
+    for row in range(BOARD_HEIGHT - 7, BOARD_HEIGHT):
+        board_tall[row][0] = 1
+        board_tall[row][1] = 1
+    env_tall._state = env_tall._state.__class__(**{**env_tall._state.__dict__, "board": board_tall})
+    _, _, _, _, info_tall = env_tall.step(0)  # target x=0
+
+    # Empty column: fresh board, place at same x
+    env_empty = LuminesEnvNative(mode="per_block", seed="42")
+    env_empty.reset()
+    _, _, _, _, info_empty = env_empty.step(0)  # target x=0
+
+    tall_penalty = -info_tall["reward_components"]["placement_penalty"]
+    empty_penalty = -info_empty["reward_components"]["placement_penalty"]
+    assert tall_penalty > empty_penalty
 
 
 def test_squares_delta_reward_positive_when_square_formed():

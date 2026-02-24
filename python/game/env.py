@@ -155,8 +155,15 @@ class LuminesEnvNative(gym.Env):
                 if self._state.block_position_x == prev_x:
                     break
 
+        # Capture actual column after movement (before hard drop changes block_position)
+        actual_x = self._state.block_position_x
+
         # 3. Hard drop
         self._state = hard_drop(self._state, rng)
+
+        # Placement penalty: height of the column just filled (before clears)
+        placed_col_height = self._column_heights()[actual_x]
+        placement_penalty = placed_col_height / BOARD_HEIGHT * 0.15
 
         # 4. Safety ticks until new block spawns or game over
         safety = 0
@@ -175,17 +182,16 @@ class LuminesEnvNative(gym.Env):
         score_delta = float(self._state.score - prev_score)
         squares_delta = float(self._count_complete_squares() - prev_squares)
         done = self._state.status == "gameOver"
-        height_penalty = self._max_column_height() / BOARD_HEIGHT * 0.05
         if done:
             reward = score_delta - 1.0
         else:
-            reward = score_delta + squares_delta * 0.5 + 0.1 - height_penalty
+            reward = score_delta + squares_delta * 0.5 + 0.1 - placement_penalty
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "squares_delta": squares_delta,
             "survival_bonus": 0.0 if done else 0.1,
-            "height_penalty": -height_penalty,
+            "placement_penalty": -placement_penalty,
             "death_penalty": -1.0 if done else 0.0,
             "total": reward,
         }

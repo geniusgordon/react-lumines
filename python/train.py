@@ -206,8 +206,8 @@ if __name__ == "__main__":
                         help="Total timesteps between evaluations")
     parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=5,
                         help="Number of episodes per evaluation")
-    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.1,
-                        help="Entropy coefficient for exploration (default: 0.05)")
+    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.3,
+                        help="Entropy coefficient for exploration (default: 0.3)")
     parser.add_argument("--lr", type=float, default=3e-4,
                         help="Constant learning rate (default: 3e-4)")
     parser.add_argument(
