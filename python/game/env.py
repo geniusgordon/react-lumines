@@ -163,7 +163,7 @@ class LuminesEnvNative(gym.Env):
 
         # Placement penalty: height of the column just filled (before clears)
         placed_col_height = self._column_heights()[actual_x]
-        placement_penalty = placed_col_height / BOARD_HEIGHT * 0.15
+        placement_penalty = placed_col_height / BOARD_HEIGHT * 0.30
 
         # 4. Safety ticks until new block spawns or game over
         safety = 0
