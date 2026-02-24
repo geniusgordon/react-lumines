@@ -125,6 +125,7 @@ class LuminesEnvNative(gym.Env):
     def _step_per_block(self, action: int):
         prev_score = self._state.score
         prev_block_id = self._state.current_block.id
+        prev_squares = self._count_complete_squares()
 
         target_x = action // 4
         rotation = action % 4
@@ -172,15 +173,17 @@ class LuminesEnvNative(gym.Env):
             self._blocks_placed += 1
 
         score_delta = float(self._state.score - prev_score)
+        squares_delta = float(self._count_complete_squares() - prev_squares)
         done = self._state.status == "gameOver"
-        height_penalty = self._max_column_height() / BOARD_HEIGHT * 0.1
+        height_penalty = self._max_column_height() / BOARD_HEIGHT * 0.05
         if done:
             reward = score_delta - 1.0
         else:
-            reward = score_delta + 0.1 - height_penalty
+            reward = score_delta + squares_delta * 0.5 + 0.1 - height_penalty
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
+            "squares_delta": squares_delta,
             "survival_bonus": 0.0 if done else 0.1,
             "height_penalty": -height_penalty,
             "death_penalty": -1.0 if done else 0.0,
@@ -220,13 +223,33 @@ class LuminesEnvNative(gym.Env):
         reward = score_delta + (-1.0 if done else 0.0)
         return self._build_obs(), reward, done, False, self._build_info()
 
+    def _column_heights(self) -> list:
+        """Returns height of each column (0 = empty, BOARD_HEIGHT = full)."""
+        board = self._state.board
+        heights = []
+        for col in range(BOARD_WIDTH):
+            h = 0
+            for row in range(BOARD_HEIGHT):
+                if board[row][col] != 0:
+                    h = BOARD_HEIGHT - row
+                    break
+            heights.append(h)
+        return heights
+
     def _max_column_height(self) -> int:
         """Returns the height of the tallest column (0 = empty board, BOARD_HEIGHT = full)."""
+        return max(self._column_heights())
+
+    def _count_complete_squares(self) -> int:
+        """Count all 2×2 same-color squares on the board (overlapping squares counted separately)."""
         board = self._state.board
-        for row in range(BOARD_HEIGHT):
-            if any(board[row][col] != 0 for col in range(BOARD_WIDTH)):
-                return BOARD_HEIGHT - row
-        return 0
+        count = 0
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    count += 1
+        return count
 
     # -------------------------------------------------------------------------
     # Helpers

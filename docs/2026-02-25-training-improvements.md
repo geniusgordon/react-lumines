@@ -88,24 +88,24 @@ The decode logic `target_x = action // 4` required no changes — it already map
 
 ### 3b. Entropy regularisation (`ent_coef`)
 
-Added `ent_coef` to the PPO constructor and set the CLI default to `0.2`. This adds `ent_coef × H(π)` to the objective, penalising premature certainty.
+Added `ent_coef` to the PPO constructor and set the CLI default to `0.1`. This adds `ent_coef × H(π)` to the objective, penalising premature certainty.
 
 ```python
 model = PPO(..., ent_coef=args.ent_coef, ...)
 ```
 
 ```
---ent-coef 0.2   (default; try 0.1–0.5 range)
+--ent-coef 0.1   (default; try 0.1–0.5 range)
 ```
 
 Iterations tested:
 | `ent_coef` | Result |
 |-----------|--------|
 | 0.0 (default) | Immediate collapse; ep_len=6 from step 1 |
-| 0.05 | Delayed collapse; ep_len still reaches 6 by ~200k steps |
-| 0.2 | Policy diversifies; ongoing |
+| 0.05 | Delayed collapse; ep_len still reaches 6 by ~200k steps; reward plateaus at −1.3 |
+| 0.1 | Policy diversifies; ongoing |
 
-### 3c. Reward shaping
+### 3c. Reward shaping (iteration 1)
 
 Two components were added to `_step_per_block` in `LuminesEnvNative`:
 
@@ -121,15 +121,6 @@ else:
 
 **Height penalty (`-max_height / 10 * 0.1`):** Penalises tall columns with a smooth, continuous signal. This gives the policy a gradient *before* game over occurs — not just as a terminal −1 hit.
 
-```python
-def _max_column_height(self) -> int:
-    board = self._state.board
-    for row in range(BOARD_HEIGHT):
-        if any(board[row][col] != 0 for col in range(BOARD_WIDTH)):
-            return BOARD_HEIGHT - row
-    return 0
-```
-
 **Game over penalty (`−1.0`):** Applied at the terminal step to make dying strictly worse than surviving.
 
 **Reward comparison (verified):**
@@ -141,15 +132,54 @@ def _max_column_height(self) -> int:
 
 The degenerate strategy is now strictly dominated — stacking a column penalises the agent progressively before it dies, and the game-over penalty ensures dying is worse than any living state.
 
+### 3e. Reward shaping (iteration 2) — pattern formation signal
+
+After iteration 1, training plateaued at `ep_rew_mean ≈ −1.3` within 60k steps and never improved further. Analysis showed `score_delta == 0` for the entire run: the agent learned to survive a few blocks but **never formed a clearable pattern**.
+
+Root cause: the clear reward requires (1) same-colour adjacent placement, (2) a 2×2 square forming, and (3) the timeline sweeping through it. This is a deeply delayed, multi-step reward that PPO cannot credit-assign without a dense intermediate signal.
+
+**Fix: reward for creating 2×2 same-colour squares** (`squares_delta`).
+
+```python
+prev_squares = self._count_complete_squares()
+# ... block placement ...
+squares_delta = float(self._count_complete_squares() - prev_squares)
+
+height_penalty = self._max_column_height() / BOARD_HEIGHT * 0.05  # halved
+if done:
+    reward = score_delta - 1.0
+else:
+    reward = score_delta + squares_delta * 0.5 + 0.1 - height_penalty
+```
+
+```python
+def _count_complete_squares(self) -> int:
+    """Count all 2×2 same-colour squares on the board (overlapping squares counted separately)."""
+    board = self._state.board
+    count = 0
+    for row in range(BOARD_HEIGHT - 1):
+        for col in range(BOARD_WIDTH - 1):
+            c = board[row][col]
+            if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                count += 1
+    return count
+```
+
+Each new 2×2 same-colour square formed adds `+0.5` to the reward immediately — before the timeline sweeps. This gives the agent a dense signal that discovering colour alignment is valuable.
+
+**spread_penalty removed:** The `std(heights) * 0.05` penalty was counterproductive; it incentivised the agent to flatten the board, which conflicts with the density required to form clearable patterns.
+
+**Height penalty coefficient halved:** `0.1 → 0.05`. The previous coefficient was aggressive enough that the agent prioritised board flatness over pattern formation. The softer penalty still discourages runaway columns without overriding the pattern signal.
+
 ### 3d. Hyperparameter changes
 
-| Hyperparameter | Before | After | Rationale |
-|---------------|--------|-------|-----------|
-| `n_steps` | 512 | 2048 | Larger rollouts → more diverse board states per update → better advantage estimates |
-| `batch_size` | 64 | 256 | Scale with n_steps (2048 / 256 = 8 mini-batches, same ratio) |
-| `learning_rate` | linear decay → 0 | constant 3×10⁻⁴ | Linear schedule decayed to near-zero before value function converged, causing the `explained_variance` to crash to −1.4 at ~500k steps |
-| `target_kl` | None | 0.02 | Stops epoch loop early when updates are too large, preventing the KL spike-then-collapse pattern |
-| `ent_coef` | 0.0 | 0.2 | See §3a |
+| Hyperparameter | Iteration 1 | Iteration 2 | Rationale |
+|---------------|------------|------------|-----------|
+| `n_steps` | 2048 | 4096 | Longer rollouts improve credit assignment for delayed clear rewards |
+| `batch_size` | 256 | 256 | Unchanged |
+| `learning_rate` | constant 3×10⁻⁴ | linear decay `lr * progress` | Reintroduced after reward shaping stabilises value function; decays from 3×10⁻⁴ → 0 as training progresses |
+| `target_kl` | 0.02 | 0.02 | Unchanged |
+| `ent_coef` | 0.2 | 0.1 | Reduced after action space and reward fixes stabilise exploration |
 
 ---
 
@@ -169,5 +199,6 @@ With these changes, the signals to watch in TensorBoard:
 
 ## 5. Remaining Limitations
 
-- **Score is still sparse.** The `+0.1` survival bonus and height penalty teach the agent to keep the board clear, but scoring (timeline sweeps over matched cells) requires learning to form same-colour patterns. This is a harder second phase of training that will only emerge once the agent reliably survives many blocks.
-- **No pattern-formation reward.** A future improvement would be to add a shaped reward for placing blocks adjacent to same-colour cells, encouraging the formation of clearable rectangles before the timeline arrives.
+- **Score is still sparse.** The `squares_delta` signal rewards pattern *formation*, but actual scoring requires the timeline to sweep over marked cells. The agent must now learn the second-order behaviour of placing patterns in front of the timeline sweep.
+- **squares_delta is not cleared correctly.** Completed 2×2 squares that are later swept and cleared will reduce the count, so `squares_delta` can go negative when the timeline clears cells. This is intentional (the score_delta reward captures cleared value), but the net effect on reward should be monitored.
+- **Timeline position not exploited.** The agent receives `timeline_x` in its observation but there is no shaped reward for placing patterns ahead of the sweep. A future improvement could add a proximity bonus for patterns positioned just ahead of the timeline.

@@ -153,10 +153,10 @@ def train(args):
         model = PPO(
             "MultiInputPolicy",
             env,
-            n_steps=2048,
+            n_steps=4096,
             batch_size=256,
             n_epochs=10,
-            learning_rate=args.lr,
+            learning_rate=lambda progress: args.lr * progress,
             ent_coef=args.ent_coef,
             target_kl=0.02,
             policy_kwargs=policy_kwargs,
@@ -206,7 +206,7 @@ if __name__ == "__main__":
                         help="Total timesteps between evaluations")
     parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=5,
                         help="Number of episodes per evaluation")
-    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.2,
+    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.1,
                         help="Entropy coefficient for exploration (default: 0.05)")
     parser.add_argument("--lr", type=float, default=3e-4,
                         help="Constant learning rate (default: 3e-4)")
