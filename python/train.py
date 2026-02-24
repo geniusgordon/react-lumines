@@ -11,10 +11,10 @@ Architecture:
 
 Usage:
     python python/train.py
-    python python/train.py --timesteps 500000 --envs 4 --device mps
+    python python/train.py --timesteps 500000 --envs 8 --device mps
     python python/train.py --resume                        # continues from best_model
     python python/train.py --resume python/checkpoints/lumines_ppo_500000_steps
-    python python/train.py --native                        # use pure Python env (no Node.js IPC)
+    python python/train.py --no-native                     # use Node.js IPC env instead
 """
 
 import argparse
@@ -201,14 +201,14 @@ def train(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Lumines PPO agent")
-    parser.add_argument("--timesteps", type=int, default=1_000_000)
-    parser.add_argument("--envs", type=int, default=4)
+    parser.add_argument("--timesteps", type=int, default=2_000_000)
+    parser.add_argument("--envs", type=int, default=8)
     parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--checkpoint-dir", dest="checkpoint_dir", default="python/checkpoints")
     parser.add_argument("--log-dir", dest="log_dir", default="python/logs")
-    parser.add_argument("--eval-freq", dest="eval_freq", type=int, default=100_000,
+    parser.add_argument("--eval-freq", dest="eval_freq", type=int, default=50_000,
                         help="Total timesteps between evaluations")
-    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=2,
+    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=5,
                         help="Number of episodes per evaluation")
     parser.add_argument(
         "--resume",
@@ -219,10 +219,12 @@ if __name__ == "__main__":
         help="Resume training. Optionally provide a checkpoint path (default: best_model).",
     )
     parser.add_argument(
-        "--native",
-        action="store_true",
-        help="Use pure Python env instead of Node.js IPC subprocess",
+        "--no-native",
+        dest="native",
+        action="store_false",
+        help="Use Node.js IPC subprocess env instead of pure Python env",
     )
+    parser.set_defaults(native=True)
     args = parser.parse_args()
 
     train(args)
