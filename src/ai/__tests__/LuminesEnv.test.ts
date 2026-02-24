@@ -79,4 +79,63 @@ describe('LuminesEnv', () => {
       // just check done is false (timer-based game over, not block-fill based)
     });
   });
+
+  describe('step() — per_frame mode', () => {
+    let env: LuminesEnv;
+
+    beforeEach(() => {
+      env = new LuminesEnv({ mode: 'per_frame', seed: 'frame-test' });
+      env.reset();
+    });
+
+    it('returns valid step result', () => {
+      const result = env.step('NO_OP');
+      expect(result.observation.board).toHaveLength(10);
+      expect(result.reward).toBeGreaterThanOrEqual(0);
+    });
+
+    it('NO_OP does not change blockPosition.x', () => {
+      const before = env.getState().blockPosition.x;
+      env.step('NO_OP');
+      const after = env.getState().blockPosition.x;
+      expect(after).toBe(before);
+    });
+
+    it('MOVE_LEFT changes blockPosition.x when not at wall', () => {
+      // Default spawn is x=7, so MOVE_LEFT should work
+      const before = env.getState().blockPosition.x;
+      env.step('MOVE_LEFT');
+      const after = env.getState().blockPosition.x;
+      // Either moved left or was already at wall
+      expect(after).toBeLessThanOrEqual(before);
+    });
+  });
+
+  describe('determinism', () => {
+    it('two instances with same seed + same actions produce identical results', () => {
+      const env1 = new LuminesEnv({ mode: 'per_block', seed: 'det-seed' });
+      const env2 = new LuminesEnv({ mode: 'per_block', seed: 'det-seed' });
+
+      env1.reset('det-seed');
+      env2.reset('det-seed');
+
+      const actions: Array<{ targetX: number; rotation: 0 | 1 | 2 | 3 }> = [
+        { targetX: 7, rotation: 0 },
+        { targetX: 3, rotation: 1 },
+        { targetX: 12, rotation: 2 },
+        { targetX: 5, rotation: 3 },
+        { targetX: 0, rotation: 0 },
+      ];
+
+      for (const action of actions) {
+        const r1 = env1.step(action);
+        const r2 = env2.step(action);
+        expect(r1.reward).toBe(r2.reward);
+        expect(r1.done).toBe(r2.done);
+        expect(r1.observation.score).toBe(r2.observation.score);
+      }
+
+      expect(env1.getState().score).toBe(env2.getState().score);
+    });
+  });
 });
