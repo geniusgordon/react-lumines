@@ -178,7 +178,15 @@ class LuminesEnvNative(gym.Env):
             reward = score_delta - 1.0
         else:
             reward = score_delta + 0.1 - height_penalty
-        return self._build_obs(), reward, done, False, self._build_info()
+        info = self._build_info()
+        info["reward_components"] = {
+            "score_delta": score_delta,
+            "survival_bonus": 0.0 if done else 0.1,
+            "height_penalty": -height_penalty,
+            "death_penalty": -1.0 if done else 0.0,
+            "total": reward,
+        }
+        return self._build_obs(), reward, done, False, info
 
     # -------------------------------------------------------------------------
     # Per-frame step

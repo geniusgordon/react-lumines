@@ -63,8 +63,12 @@ def evaluate(args):
                 if frame:
                     # Clear previous render and print new one
                     print("\033[2J\033[H", end="")  # ANSI clear screen
-                    print(f"Episode {episode} | Score: {episode_score:.0f}")
+                    print(f"Episode {episode} | Cumulative reward: {episode_score:.3f}")
                     print(frame)
+                    rc = info.get("reward_components")
+                    if rc:
+                        parts = "  ".join(f"{k}: {v:+.3f}" for k, v in rc.items())
+                        print(f"  Reward: {parts}")
                     if args.delay > 0:
                         time.sleep(args.delay)
 
