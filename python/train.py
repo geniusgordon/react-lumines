@@ -12,6 +12,8 @@ Architecture:
 Usage:
     python python/train.py
     python python/train.py --timesteps 500000 --envs 4 --device mps
+    python python/train.py --resume                        # continues from best_model
+    python python/train.py --resume python/checkpoints/lumines_ppo_500000_steps
     python python/train.py --native                        # use pure Python env (no Node.js IPC)
 """
 
@@ -25,6 +27,7 @@ from gymnasium import spaces
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
 
 # Import from the same python/ directory
@@ -102,6 +105,7 @@ def make_env(seed: int, native: bool = False):
             env = LuminesEnvNative(mode="per_block", seed=str(seed))
         else:
             env = LuminesEnv(mode="per_block", seed=str(seed))
+        env = Monitor(env)
         return env
     return _init
 
@@ -116,7 +120,6 @@ def train(args):
 
     # Parallel training envs
     env = SubprocVecEnv([make_env(i, native=args.native) for i in range(args.envs)])
-    env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
     # Held-out eval env (single, unwrapped normalization so scores are raw)
     eval_env = SubprocVecEnv([make_env(9999, native=args.native)])
@@ -128,24 +131,44 @@ def train(args):
             return progress_remaining * initial_value
         return func
 
-    policy_kwargs = dict(
-        features_extractor_class=LuminesCNNExtractor,
-        features_extractor_kwargs=dict(features_dim=128),
-        net_arch=[],  # no extra shared layers; extractor feeds directly to heads
-    )
+    if args.resume is not None:
+        # Resolve checkpoint path: bare flag uses best_model, otherwise use given path
+        checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model")
+        vec_normalize_path = os.path.join(args.checkpoint_dir, "vec_normalize.pkl")
 
-    model = PPO(
-        "MultiInputPolicy",
-        env,
-        n_steps=512,
-        batch_size=64,
-        n_epochs=10,
-        learning_rate=linear_schedule(3e-4),
-        policy_kwargs=policy_kwargs,
-        tensorboard_log=args.log_dir,
-        device=args.device,
-        verbose=1,
-    )
+        print(f"Resuming from {checkpoint} ...")
+        env = VecNormalize.load(vec_normalize_path, env)
+        env.training = True
+
+        model = PPO.load(
+            checkpoint,
+            env=env,
+            device=args.device,
+            tensorboard_log=args.log_dir,
+        )
+        reset_num_timesteps = False
+    else:
+        env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
+
+        policy_kwargs = dict(
+            features_extractor_class=LuminesCNNExtractor,
+            features_extractor_kwargs=dict(features_dim=128),
+            net_arch=[],  # no extra shared layers; extractor feeds directly to heads
+        )
+
+        model = PPO(
+            "MultiInputPolicy",
+            env,
+            n_steps=512,
+            batch_size=64,
+            n_epochs=10,
+            learning_rate=linear_schedule(3e-4),
+            policy_kwargs=policy_kwargs,
+            tensorboard_log=args.log_dir,
+            device=args.device,
+            verbose=1,
+        )
+        reset_num_timesteps = True
 
     callbacks = [
         CheckpointCallback(
@@ -157,14 +180,14 @@ def train(args):
             eval_env,
             best_model_save_path=args.checkpoint_dir,
             log_path=args.log_dir,
-            eval_freq=25_000 // args.envs,
-            n_eval_episodes=5,
+            eval_freq=args.eval_freq // args.envs,
+            n_eval_episodes=args.eval_episodes,
             deterministic=True,
             render=False,
         ),
     ]
 
-    model.learn(total_timesteps=args.timesteps, callback=callbacks)
+    model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
 
     final_path = os.path.join(args.checkpoint_dir, "final")
     model.save(final_path)
@@ -183,6 +206,18 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--checkpoint-dir", dest="checkpoint_dir", default="python/checkpoints")
     parser.add_argument("--log-dir", dest="log_dir", default="python/logs")
+    parser.add_argument("--eval-freq", dest="eval_freq", type=int, default=100_000,
+                        help="Total timesteps between evaluations")
+    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=2,
+                        help="Number of episodes per evaluation")
+    parser.add_argument(
+        "--resume",
+        nargs="?",        # 0 or 1 args: bare flag → None (uses best_model), or a path
+        const="",         # value when flag is present with no argument
+        default=None,     # value when flag is absent
+        metavar="CHECKPOINT",
+        help="Resume training. Optionally provide a checkpoint path (default: best_model).",
+    )
     parser.add_argument(
         "--native",
         action="store_true",
