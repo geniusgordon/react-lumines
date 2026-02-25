@@ -54,7 +54,16 @@ def evaluate(args):
 
         while not done:
             action, _ = model.predict(obs, deterministic=True)
-            obs, reward, terminated, truncated, info = env.step(int(action))
+            action_int = int(action)
+            # Describe the action for debugging
+            if env.mode == "per_block":
+                target_x = action_int // 4
+                rotation = action_int % 4
+                action_desc = f"action={action_int} (col={target_x}, rot={rotation})"
+            else:
+                from game.env import FRAME_ACTIONS
+                action_desc = f"action={action_int} ({FRAME_ACTIONS[action_int]})"
+            obs, reward, terminated, truncated, info = env.step(action_int)
             episode_score += reward
             done = terminated or truncated
 
@@ -63,7 +72,7 @@ def evaluate(args):
                 if frame:
                     # Clear previous render and print new one
                     print("\033[2J\033[H", end="")  # ANSI clear screen
-                    print(f"Episode {episode} | Cumulative reward: {episode_score:.3f}")
+                    print(f"Episode {episode} | Cumulative reward: {episode_score:.3f} | {action_desc}")
                     print(frame)
                     rc = info.get("reward_components")
                     if rc:
