@@ -167,12 +167,12 @@ def test_height_reward_penalizes_tall_column():
     assert info["reward_components"]["height_reward"] < 0
 
 
-def test_height_reward_rewards_short_column():
-    """When target column is shorter than average, height_reward must be > 0."""
+def test_height_reward_zero_for_empty_column():
+    """Placing on an empty column (height=0) gives height_reward == 0."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     board = create_empty_board()
-    # Fill all columns except column 7 to height 6
+    # Fill all columns except column 7 to height 6; column 7 stays empty
     for col in range(BOARD_WIDTH):
         if col == 7:
             continue
@@ -180,4 +180,4 @@ def test_height_reward_rewards_short_column():
             board[row][col] = 1
     env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
     _, _, _, _, info = env.step(28)  # targetX=7, rotation=0
-    assert info["reward_components"]["height_reward"] > 0
+    assert info["reward_components"]["height_reward"] == 0.0

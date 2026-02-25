@@ -22,6 +22,7 @@
 | 8 | **Algorithm change: PPO → DQN.** PPO's on-policy constraint means each rollout is dominated by the current policy — one bad rollout can concentrate the policy permanently. Seven iterations of entropy tuning could not overcome this structural issue. | — |
 | 9 | DQN reward is still undifferentiated: every non-terminal step gives `+0.1` regardless of column choice; `score_delta=0` throughout a 6-step episode. Q-values converge to near-constant across all actions → argmax is arbitrary → stacks one column → ep_len=6 at 800k steps with `exploration_rate=0.05` (fully exploitative). | `eval/mean_ep_length=6`, `loss≈0.002` at 800k |
 | 10 | `exploration_fraction=0.3` decays exploration to 5% at step 600k; Q-values haven't matured enough; greedy policy collapses to one-column stacking; replay buffer fills with bad experience; Q-values for untried columns go stale. `height_reward` coefficient 0.2 too weak to override this structural pressure. | `eval/mean_ep_length=9` at 250k (during exploration) → regresses to 6 at 650k once fully greedy; `loss=0.00088` (converged to bad policy) |
+| 11 | **Relative height_reward games to 2-column alternation.** `height_reward = -(col_height - avg_height)` rewards placing on shorter-than-average columns, but once the agent commits to 2–4 columns of similar height, `col_height ≈ avg_height` → near-zero penalty per step. Agent found a local optimum: alternate 2 columns, survive 51 steps, never score. The relative formula can't force spreading to empty columns. | Best model (250k) stacks columns 5–6 and 8–9 only; `score=0` throughout; `squares_delta=0` |
 
 ---
 
@@ -129,6 +130,26 @@ with bad experience, and Q-values for untried columns go stale — reinforcing t
 |---|---|---|---|
 | `exploration_fraction` | 0.3 | **0.5** | ε decays at 1M steps instead of 600k; more diverse experience before fully greedy |
 | `height_reward` coef | 0.2 | **0.3** | Stronger column differentiation signal; range now [−0.3, +0.3] |
+
+### Iteration 11: Absolute Height Penalty (`python/game/env.py`)
+
+Root cause: relative `height_reward` allows 2–4 column alternation as a local optimum.
+Switched to absolute penalty so empty columns are always preferred over any occupied column:
+
+```python
+# Before (relative) — games to multi-column alternation
+height_reward = -(col_height - avg_height) / BOARD_HEIGHT * 0.3  # range: [-0.3, +0.3]
+
+# After (absolute) — empty columns always free; tall columns always penalised
+height_reward = -col_height / BOARD_HEIGHT * 0.3                 # range: [-0.3, 0]
+```
+
+| Column height | height_reward |
+|---|---|
+| 0 (empty) | 0.0 |
+| 3 | −0.09 |
+| 6 | −0.18 |
+| 10 (full) | −0.30 |
 
 ---
 
