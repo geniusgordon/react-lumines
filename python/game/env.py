@@ -263,7 +263,7 @@ class LuminesEnvNative(gym.Env):
         chain_delta = float(self._count_chain_length() - prev_chain)
         done = self._state.status == "gameOver"
         if done:
-            reward = score_delta - 1.0 + height_reward
+            reward = score_delta - 10.0 + height_reward
         else:
             reward = score_delta + chain_delta * 0.3 + color_adj * 0.1 + height_reward
         info = self._build_info()
@@ -273,7 +273,7 @@ class LuminesEnvNative(gym.Env):
             "chain_delta": chain_delta,
             "color_adjacency": color_adj,
             "survival_bonus": 0.0,
-            "death_penalty": -1.0 if done else 0.0,
+            "death_penalty": -10.0 if done else 0.0,
             "height_reward": height_reward,
             "total": reward,
         }

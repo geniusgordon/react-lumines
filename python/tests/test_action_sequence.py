@@ -89,7 +89,7 @@ def test_game_over_when_block_cannot_enter_board():
         "Expected game over when block (cols 9–10) can't enter a board "
         "where col 10 is fully stacked"
     )
-    assert info["reward_components"]["death_penalty"] == pytest.approx(-1.0)
+    assert info["reward_components"]["death_penalty"] == pytest.approx(-10.0)
 
 
 # ---------------------------------------------------------------------------
