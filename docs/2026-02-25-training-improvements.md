@@ -17,6 +17,7 @@
 | 3 | `height_penalty` is global — no directional gradient distinguishing tall vs short columns | Stochastic ep_len≈52, deterministic eval ep_len≈6 (entropy masks collapse) |
 | 4 | `ent_coef=0.3` dominates gradient (0.60/step vs 0.10 survival, 0.15 max penalty) | Entropy drives rollout, value function collapses (`explained_variance`=−1.4×10⁻³) |
 | 5 | `target_kl=0.02` stops every rollout at step 0 (first mini-batch); `ent_coef=0.05` concentrated policy fast → KL=2.15 on step 0 | `n_updates=4` after 150k steps; 512× fewer gradient steps than intended; training frozen |
+| 6 | `n_steps=4096 × 8 envs = 32,768` → 512 gradient steps/rollout; `placement_penalty=0.30` creates consistent signal; all 512 steps push same direction → logits → +∞ in one rollout | `approx_kl=96.72` at 50k, `entropy_loss≈0` at 98k, training frozen (`n_updates=12` at 100k) |
 
 ---
 
@@ -32,41 +33,56 @@ self.action_space = spaces.Discrete(64)  # 16 cols × 4 rotations
 self.action_space = spaces.Discrete(60)  # 15 cols × 4 rotations (x=0..14)
 ```
 
-### Reward Formula (final, iteration 4)
+### Reward Formula (iteration 4–6)
+
+Iteration 4–5 used `placement_penalty` to discourage tall columns:
 
 ```python
-actual_x = self._state.block_position_x  # captured before hard drop
-self._state = hard_drop(self._state, rng)
-placed_col_height = self._column_heights()[actual_x]
 placement_penalty = placed_col_height / BOARD_HEIGHT * 0.30
-squares_delta = float(self._count_complete_squares() - prev_squares)
+reward = score_delta + squares_delta * 0.5 + 0.1 - placement_penalty  # iter 4–5
+```
 
+**Iteration 6 removed `placement_penalty`** — it created a consistent gradient every rollout that collapsed the policy to determinism even with reduced `n_steps`:
+
+```python
 if done:
     reward = score_delta - 1.0
 else:
-    reward = score_delta + squares_delta * 0.5 + 0.1 - placement_penalty
+    reward = score_delta + squares_delta * 0.5 + 0.1
 ```
-
-| Column height | Penalty | Net step reward |
-|---|---|---|
-| height 2 (fresh) | 0.06 | +0.04 |
-| height 5 (mid)   | 0.15 | −0.05 |
-| height 8 (full)  | 0.24 | −0.14 |
 
 ### Hyperparameter History
 
-| Hyperparameter | Iter 1 | Iter 2 | Iter 3 | Iter 4 | Iter 5 |
-|---|---|---|---|---|---|
-| `action_space` | Discrete(64) | Discrete(60) | ← | ← | ← |
-| `ent_coef` | 0.1 | 0.1 | 0.3 | **0.05** | ← |
-| `n_steps` | 2048 | 4096 | ← | ← | ← |
-| `n_epochs` | 10 | 10 | 10 | **4** | ← |
-| `learning_rate` | 3×10⁻⁴ const | linear decay | ← | ← | ← |
-| `target_kl` | 0.02 | ← | ← | ← | **removed** |
-| `clip_range` | 0.2 | ← | ← | ← | **0.1** |
-| height penalty coef | 0.1 → 0.05 | 0.05 | removed | — | — |
-| placement penalty coef | — | — | 0.15 | **0.30** | ← |
-| squares_delta weight | — | 0.5 | ← | ← | ← |
+| Hyperparameter | Iter 1 | Iter 2 | Iter 3 | Iter 4 | Iter 5 | Iter 6 |
+|---|---|---|---|---|---|---|
+| `action_space` | Discrete(64) | Discrete(60) | ← | ← | ← | ← |
+| `ent_coef` | 0.1 | 0.1 | 0.3 | **0.05** | ← | **0.1** |
+| `n_steps` | 2048 | 4096 | ← | ← | ← | **512** |
+| `n_epochs` | 10 | 10 | 10 | **4** | ← | ← |
+| `learning_rate` | 3×10⁻⁴ const | linear decay | ← | ← | ← | ← |
+| `target_kl` | 0.02 | ← | ← | ← | **removed** | **0.01** |
+| `clip_range` | 0.2 | ← | ← | ← | **0.1** | ← |
+| height penalty coef | 0.1 → 0.05 | 0.05 | removed | — | — | — |
+| placement penalty coef | — | — | 0.15 | **0.30** | ← | **removed** |
+| squares_delta weight | — | 0.5 | ← | ← | ← | ← |
+
+---
+
+## Iteration 6 Results (98k steps)
+
+Both fixes together resolved the collapse:
+
+| Metric | Iter 5 (collapsed) | Iter 6 @ 98k |
+|--------|-------------------|--------------|
+| `ep_len_mean` | 6 | **57.6** |
+| `entropy_loss` | ≈0 | **−0.66** |
+| `approx_kl` | 0.0 | **0.013** |
+| `clip_fraction` | 0% | **4.1%** |
+| `policy_gradient_loss` | ≈0 | **0.0045** |
+| `n_updates` | 12 at 100k | 23 at 98k |
+
+Policy is still exploring (entropy maintained), gradient is flowing, and ep_len is 10× longer.
+`explained_variance=0.001` is low — value function still bootstrapping — but this is expected early in training.
 
 ---
 

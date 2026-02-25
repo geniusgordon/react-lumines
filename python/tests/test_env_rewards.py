@@ -98,45 +98,20 @@ def test_reward_components_has_no_spread_penalty():
     assert "spread_penalty" not in info["reward_components"]
 
 
-def test_reward_components_has_placement_penalty():
-    """placement_penalty must be present in reward_components."""
+def test_reward_components_no_placement_penalty():
+    """placement_penalty must not be present in reward_components (removed)."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "placement_penalty" in info["reward_components"]
+    assert "placement_penalty" not in info["reward_components"]
 
 
 def test_reward_components_no_height_penalty():
-    """height_penalty must be replaced by placement_penalty."""
+    """height_penalty must not be present in reward_components."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
     assert "height_penalty" not in info["reward_components"]
-
-
-def test_placement_penalty_larger_in_tall_column():
-    """
-    Placing a block into a pre-filled tall column should produce a larger
-    placement_penalty than placing into an empty column.
-    """
-    # Tall column: fill bottom 7 rows of col 0 and col 1
-    env_tall = LuminesEnvNative(mode="per_block", seed="42")
-    env_tall.reset()
-    board_tall = create_empty_board()
-    for row in range(BOARD_HEIGHT - 7, BOARD_HEIGHT):
-        board_tall[row][0] = 1
-        board_tall[row][1] = 1
-    env_tall._state = env_tall._state.__class__(**{**env_tall._state.__dict__, "board": board_tall})
-    _, _, _, _, info_tall = env_tall.step(0)  # target x=0
-
-    # Empty column: fresh board, place at same x
-    env_empty = LuminesEnvNative(mode="per_block", seed="42")
-    env_empty.reset()
-    _, _, _, _, info_empty = env_empty.step(0)  # target x=0
-
-    tall_penalty = -info_tall["reward_components"]["placement_penalty"]
-    empty_penalty = -info_empty["reward_components"]["placement_penalty"]
-    assert tall_penalty > empty_penalty
 
 
 def test_squares_delta_reward_positive_when_square_formed():
