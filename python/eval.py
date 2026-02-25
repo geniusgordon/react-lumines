@@ -1,5 +1,5 @@
 """
-eval.py — Evaluate a trained Lumines PPO checkpoint.
+eval.py — Evaluate a trained Lumines DQN checkpoint.
 
 Usage:
     # Basic evaluation (10 episodes, report mean/max/min score)
@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lumines_env import LuminesEnv
 from game.env import LuminesEnvNative
 
-from stable_baselines3 import PPO
+from stable_baselines3 import DQN
 
 
 # ---------------------------------------------------------------------------
@@ -36,7 +36,7 @@ from stable_baselines3 import PPO
 
 def evaluate(args):
     print(f"Loading checkpoint: {args.checkpoint}")
-    model = PPO.load(args.checkpoint, device=args.device)
+    model = DQN.load(args.checkpoint, device=args.device)
 
     render_mode = "ansi" if args.render else None
     scores = []
@@ -92,11 +92,11 @@ def evaluate(args):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate a Lumines PPO checkpoint")
+    parser = argparse.ArgumentParser(description="Evaluate a Lumines DQN checkpoint")
     parser.add_argument(
         "--checkpoint",
         default="python/checkpoints/best_model",
-        help="Path to saved PPO model (.zip)",
+        help="Path to saved DQN model (.zip)",
     )
     parser.add_argument("--episodes", type=int, default=10)
     parser.add_argument("--device", type=str, default="cpu",
