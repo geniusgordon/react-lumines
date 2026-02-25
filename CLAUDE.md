@@ -137,3 +137,46 @@ src/
 - Enable debug mode: `dispatch({ type: 'SET_DEBUG_MODE', payload: true, frame: 0 })`
 - Manual stepping: use `manualStep()` from `useGameLoop` with `debugMode: true`
 - `DebugPanel` component provides UI controls for all debug features
+
+### Supabase Type Generation
+
+- `pnpm gen-types` - Regenerate `src/types/database.gen.ts` from linked Supabase project (requires `supabase` CLI and linked project)
+
+## Python RL Infrastructure
+
+A reinforcement learning training setup lives in `python/`. It includes a pure-Python port of the game logic and a Stable-Baselines3 training pipeline.
+
+### Setup
+
+```bash
+cd python
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Commands
+
+```bash
+python python/train.py                          # PPO training (default, pure Python env)
+python python/train.py --algo ppo --envs 8      # PPO with 8 parallel envs
+python python/train.py --resume                 # Resume from best_model checkpoint
+python python/train.py --no-native              # Use Node.js IPC env instead
+python python/eval.py                           # Evaluate trained checkpoint (10 episodes)
+python python/eval.py --render --episodes 3     # ASCII render to watch agent play
+python/.venv/bin/pytest python/tests/ -v        # Run Python tests
+```
+
+Checkpoints are saved to `python/checkpoints/`. TensorBoard logs go to `python/logs/`.
+
+### Python Game Package (`python/game/`)
+
+A pure-Python port of the TypeScript game logic (~5000 steps/sec vs ~50 for Node.js IPC):
+
+- `constants.py` — `BOARD_WIDTH=16`, `BOARD_HEIGHT=10`, `TIMELINE_SWEEP_INTERVAL=15`
+- `state.py` — `create_initial_state`, `tick`, `hard_drop`, `move_left/right`, `rotate_cw/ccw`
+- `env.py` — `LuminesEnvNative` gymnasium environment used by training
+
+### AI TypeScript Environment (`src/ai/`)
+
+Node.js-based gymnasium environment (`LuminesEnv.ts`) communicating over IPC — used when `--no-native` flag is passed to training scripts. The `env-server.ts` handles the IPC protocol.
