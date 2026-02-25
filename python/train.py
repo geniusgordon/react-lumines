@@ -28,7 +28,7 @@ from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 
 # Import from the same python/ directory
 import sys
@@ -119,10 +119,11 @@ def train(args):
     os.makedirs(args.log_dir, exist_ok=True)
 
     # Parallel training envs (no VecNormalize — DQN needs raw rewards for Q-values)
-    env = SubprocVecEnv([make_env(i, native=args.native) for i in range(args.envs)])
+    VecEnvCls = DummyVecEnv if args.dummy else SubprocVecEnv
+    env = VecEnvCls([make_env(i, native=args.native) for i in range(args.envs)])
 
     # Held-out eval env
-    eval_env = SubprocVecEnv([make_env(9999, native=args.native)])
+    eval_env = DummyVecEnv([make_env(9999, native=args.native)])
 
     if args.resume is not None:
         checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model")
@@ -219,6 +220,12 @@ if __name__ == "__main__":
         help="Use Node.js IPC subprocess env instead of pure Python env",
     )
     parser.set_defaults(native=True)
+    parser.add_argument(
+        "--dummy",
+        action="store_true",
+        default=False,
+        help="Use DummyVecEnv (single-process, no IPC) instead of SubprocVecEnv",
+    )
     args = parser.parse_args()
 
     train(args)
