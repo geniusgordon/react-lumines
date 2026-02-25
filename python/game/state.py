@@ -7,7 +7,7 @@ import copy
 import uuid
 
 from .constants import (
-    BOARD_WIDTH, BOARD_HEIGHT,
+    BOARD_WIDTH, BOARD_HEIGHT, BLOCK_HEIGHT,
     FIXED_DROP_INTERVAL, GAME_DURATION_FRAMES, TIMELINE_SWEEP_INTERVAL,
     COUNTDOWN_START, COUNTDOWN_DURATION,
     INITIAL_POSITION_X, INITIAL_POSITION_Y,
@@ -176,6 +176,11 @@ def hard_drop(state: GameState, rng: SeededRNG) -> GameState:
     )
     state = copy.copy(state)
     state.block_position_y = drop_y
+    # Block's bottom row never reached row 0 (column full or blocked by falling
+    # cells) — this is game over, not a silent no-op placement.
+    if drop_y + BLOCK_HEIGHT - 1 < 0:
+        state.status = 'gameOver'
+        return state
     return _place_block_and_apply_physics(state, rng)
 
 

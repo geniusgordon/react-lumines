@@ -46,11 +46,13 @@ def evaluate(args):
             env = LuminesEnvNative(mode="per_block", render_mode=render_mode)
         else:
             env = LuminesEnv(mode="per_block", render_mode=render_mode)
-        obs, _ = env.reset(seed=episode)
+        seed = episode
+        obs, _ = env.reset(seed=seed)
         done = False
         episode_score = 0
+        action_history = []
 
-        print(f"\n=== Episode {episode}/{args.episodes} ===")
+        print(f"\n=== Episode {episode}/{args.episodes} (seed={seed}) ===")
 
         while not done:
             action, _ = model.predict(obs, deterministic=True)
@@ -63,6 +65,7 @@ def evaluate(args):
             else:
                 from game.env import FRAME_ACTIONS
                 action_desc = f"action={action_int} ({FRAME_ACTIONS[action_int]})"
+            action_history.append(action_desc)
             obs, reward, terminated, truncated, info = env.step(action_int)
             episode_score += reward
             done = terminated or truncated
@@ -72,12 +75,13 @@ def evaluate(args):
                 if frame:
                     # Clear previous render and print new one
                     print("\033[2J\033[H", end="")  # ANSI clear screen
-                    print(f"Episode {episode} | Cumulative reward: {episode_score:.3f} | {action_desc}")
+                    print(f"Episode {episode} (seed={seed}) | Cumulative reward: {episode_score:.3f} | {action_desc}")
                     print(frame)
                     rc = info.get("reward_components")
                     if rc:
                         parts = "  ".join(f"{k}: {v:+.3f}" for k, v in rc.items())
                         print(f"  Reward: {parts}")
+                    print(f"  History ({len(action_history)}): {', '.join(action_history[-30:])}")
                     if args.delay > 0:
                         time.sleep(args.delay)
 

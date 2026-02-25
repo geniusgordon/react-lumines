@@ -17,6 +17,7 @@ import gymnasium as gym
 from gymnasium import spaces
 
 from .constants import BOARD_WIDTH, BOARD_HEIGHT
+from .board import apply_gravity
 from .state import (
     create_initial_state, get_rng,
     move_left, move_right, rotate_cw, rotate_ccw,
@@ -175,6 +176,20 @@ class LuminesEnvNative(gym.Env):
 
         if self._state.status != "gameOver":
             self._blocks_placed += 1
+
+        # Settle any floating cells instantly — in per_block mode there are no
+        # animation ticks between placements, so falling cells would otherwise
+        # stay frozen and act as permanent obstacles while being invisible to
+        # the board observation.
+        if self._state.falling_columns:
+            board = [row[:] for row in self._state.board]
+            for col in self._state.falling_columns:
+                for cell in col.cells:
+                    if 0 <= cell.y < BOARD_HEIGHT:
+                        board[cell.y][col.x] = cell.color
+            self._state = copy.copy(self._state)
+            self._state.board = apply_gravity(board)
+            self._state.falling_columns = []
 
         col_height = prev_heights[actual_x]
         height_reward = -col_height / BOARD_HEIGHT * 0.3
