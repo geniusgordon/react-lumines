@@ -139,8 +139,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--algo",
         choices=["dqn", "ppo"],
-        default="dqn",
-        help="Algorithm of the checkpoint to load (default: dqn)",
+        default="ppo",
+        help="Algorithm of the checkpoint to load (default: ppo)",
     )
     args = parser.parse_args()
 
