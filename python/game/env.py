@@ -179,7 +179,7 @@ class LuminesEnvNative(gym.Env):
         avg_height = sum(prev_heights) / BOARD_WIDTH
         col_height = prev_heights[actual_x]
         height_diff = col_height - avg_height
-        height_reward = -height_diff / BOARD_HEIGHT * 0.2
+        height_reward = -height_diff / BOARD_HEIGHT * 0.3
 
         score_delta = float(self._state.score - prev_score)
         squares_delta = float(self._count_complete_squares() - prev_squares)

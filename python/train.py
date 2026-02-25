@@ -153,7 +153,7 @@ def train(args):
             train_freq=4,
             gradient_steps=1,
             target_update_interval=1000,
-            exploration_fraction=0.3,
+            exploration_fraction=0.5,
             exploration_initial_eps=1.0,
             exploration_final_eps=0.05,
             policy_kwargs=policy_kwargs,

@@ -21,6 +21,7 @@
 | 7 | Linear LR decay `lr * progress` → LR≈0 by end of training; entropy gradient step ≈ 0; policy concentrates gradually across 1894 updates, each below target_kl=0.01 threshold | `entropy_loss=0`, `approx_kl=0`, `eval/mean_ep_length=6` at 2M steps; `explained_variance=0.998` (value learned deterministic trajectory) |
 | 8 | **Algorithm change: PPO → DQN.** PPO's on-policy constraint means each rollout is dominated by the current policy — one bad rollout can concentrate the policy permanently. Seven iterations of entropy tuning could not overcome this structural issue. | — |
 | 9 | DQN reward is still undifferentiated: every non-terminal step gives `+0.1` regardless of column choice; `score_delta=0` throughout a 6-step episode. Q-values converge to near-constant across all actions → argmax is arbitrary → stacks one column → ep_len=6 at 800k steps with `exploration_rate=0.05` (fully exploitative). | `eval/mean_ep_length=6`, `loss≈0.002` at 800k |
+| 10 | `exploration_fraction=0.3` decays exploration to 5% at step 600k; Q-values haven't matured enough; greedy policy collapses to one-column stacking; replay buffer fills with bad experience; Q-values for untried columns go stale. `height_reward` coefficient 0.2 too weak to override this structural pressure. | `eval/mean_ep_length=9` at 250k (during exploration) → regresses to 6 at 650k once fully greedy; `loss=0.00088` (converged to bad policy) |
 
 ---
 
@@ -117,6 +118,17 @@ else:
 | `squares_delta × 0.5` | varies | Reward 2×2 pattern formation |
 | `height_reward` | −0.2 … +0.2 | Penalise tall columns, reward short ones |
 | `death_penalty` | −1.0 | Penalise game over |
+
+### Iteration 10: Longer Exploration + Stronger Height Signal
+
+Root cause: `exploration_fraction=0.3` means ε decays to 0.05 at step 600k of 2M. The greedy
+policy collapses to one-column stacking before Q-values have matured. Replay buffer then fills
+with bad experience, and Q-values for untried columns go stale — reinforcing the bad policy.
+
+| Parameter | Iter 9 | Iter 10 | Rationale |
+|---|---|---|---|
+| `exploration_fraction` | 0.3 | **0.5** | ε decays at 1M steps instead of 600k; more diverse experience before fully greedy |
+| `height_reward` coef | 0.2 | **0.3** | Stronger column differentiation signal; range now [−0.3, +0.3] |
 
 ---
 
