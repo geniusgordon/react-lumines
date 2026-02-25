@@ -20,9 +20,13 @@ In per-block mode each episode is ~40–100 decisions. Each `step()` call covers
 
 **Mirrors established puzzle-game RL research.** All high-performing Tetris agents (DQN, MCTS, ES) operate at piece-placement granularity, not frame granularity. The per-block abstraction is the standard for this problem class.
 
-**Timeline sweep consideration.** Lumines scoring is deferred: cleared cells accumulate in `timeline.holdingScore` and are converted to points as the timeline sweeps left-to-right. After a hard-drop, the timeline continues sweeping during subsequent ticks. Because the reward window in per-block mode extends from just before the hard-drop to just before the next block spawns, the timeline has several frames to sweep through any newly-formed patterns. Score feedback therefore arrives naturally within the step window for patterns near or to the right of the current timeline position.
+**Timeline sweep consideration.** Lumines scoring is deferred: cleared cells accumulate in `timeline.holdingScore` and are converted to points as the timeline sweeps left-to-right. In real gameplay a player places 5–8 blocks per full timeline sweep. The Python `LuminesEnvNative` simulates this by advancing the timeline a fixed number of ticks after each hard drop (`ticks_per_block = BOARD_WIDTH × SWEEP_INTERVAL ÷ blocks_per_sweep`, default 40 ticks / ~2–3 columns per block). This means:
 
-For patterns far to the left (timeline must travel many columns to reach them), reward attribution is inherently delayed and will appear in a later step. This is an accepted trade-off of the game's mechanics and is consistent with how human players reason about it.
+- Patterns near the current timeline position are cleared within the same step.
+- Patterns well ahead of the sweep are cleared in a later step, matching how a human player experiences the game.
+- The agent learns to build patterns *ahead of* the sweep rather than just reacting immediately.
+
+`blocks_per_sweep` (default 6) is a constructor parameter that controls pacing. See `docs/2026-02-24-rl-agent-design.md §1a` for details.
 
 **Per-frame mode** is retained for completeness: it enables research into direct policy gradient approaches where frame-level micro-control matters, or for behavioural cloning from human replays.
 

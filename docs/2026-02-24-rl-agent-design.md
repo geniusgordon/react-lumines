@@ -14,6 +14,37 @@ Training uses [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) wit
 
 ---
 
+## 1a. Timeline Sweep in Per-Block Mode
+
+### Problem
+
+In real Lumines a player places 5–8 blocks per full timeline sweep. The timeline advances continuously while the player is thinking and placing. The RL environment must simulate this pacing so the agent learns to build patterns *ahead of* the sweep and chain combos — not just clear immediately on every placement.
+
+### Solution: `blocks_per_sweep`
+
+After every hard drop, `_step_per_block` runs `ticks_per_block` timeline ticks:
+
+```python
+ticks_per_block = (BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL) // blocks_per_sweep
+#               = (16 × 15) // 6 = 40  (default)
+```
+
+Each tick increments `frame`, decrements `game_timer`, re-detects patterns, and calls `update_timeline`. The timeline advances ~2–3 columns per block at the default setting, completing a full board pass every ~6 placements — matching real gameplay pacing.
+
+| `blocks_per_sweep` | `ticks_per_block` | Cols/step | Full sweep every |
+|--------------------|-------------------|-----------|-----------------|
+| 1 | 240 | 16 | 1 block |
+| 6 (default) | 40 | ~2–3 | ~6 blocks |
+| 16 | 15 | 1 | 16 blocks |
+
+Falling columns from clears are settled instantly at the end of the step (no animation ticks), so the observation always reflects the fully resolved board.
+
+### Why not instant clear?
+
+Clearing everything immediately on each placement would prevent the agent from learning combo strategies — the core skill in Lumines. With `blocks_per_sweep=6` the sweep progresses naturally and the agent must plan 2–3 blocks ahead to chain patterns.
+
+---
+
 ## 2. Neural Network Architecture
 
 A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
