@@ -1,5 +1,5 @@
 """
-train.py — PPO training for the Lumines RL agent.
+train.py — DQN training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
@@ -7,13 +7,13 @@ Architecture:
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
                       + timeline_x(1) + game_timer(1) = 16 values
                       → Linear(16→64) → ReLU
-  Both branches concatenated (128-dim) → SB3 policy + value heads.
+  Both branches concatenated (128-dim) → SB3 Q-network head.
 
 Usage:
     python python/train.py
-    python python/train.py --timesteps 500000 --envs 8 --device mps
+    python python/train.py --timesteps 2000000 --envs 8 --device mps
     python python/train.py --resume                        # continues from best_model
-    python python/train.py --resume python/checkpoints/lumines_ppo_500000_steps
+    python python/train.py --resume python/checkpoints/lumines_dqn_500000_steps
     python python/train.py --no-native                     # use Node.js IPC env instead
 """
 
@@ -24,11 +24,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 from gymnasium import spaces
-from stable_baselines3 import PPO
+from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # Import from the same python/ directory
 import sys
@@ -118,23 +118,17 @@ def train(args):
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
 
-    # Parallel training envs
+    # Parallel training envs (no VecNormalize — DQN needs raw rewards for Q-values)
     env = SubprocVecEnv([make_env(i, native=args.native) for i in range(args.envs)])
 
-    # Held-out eval env (single, unwrapped normalization so scores are raw)
+    # Held-out eval env
     eval_env = SubprocVecEnv([make_env(9999, native=args.native)])
-    eval_env = VecNormalize(eval_env, norm_obs=False, norm_reward=False, training=False)
 
     if args.resume is not None:
-        # Resolve checkpoint path: bare flag uses best_model, otherwise use given path
         checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model")
-        vec_normalize_path = os.path.join(args.checkpoint_dir, "vec_normalize.pkl")
 
         print(f"Resuming from {checkpoint} ...")
-        env = VecNormalize.load(vec_normalize_path, env)
-        env.training = True
-
-        model = PPO.load(
+        model = DQN.load(
             checkpoint,
             env=env,
             device=args.device,
@@ -142,24 +136,26 @@ def train(args):
         )
         reset_num_timesteps = False
     else:
-        env = VecNormalize(env, norm_obs=False, norm_reward=True, clip_reward=10.0)
-
         policy_kwargs = dict(
             features_extractor_class=LuminesCNNExtractor,
             features_extractor_kwargs=dict(features_dim=128),
-            net_arch=[],  # no extra shared layers; extractor feeds directly to heads
+            net_arch=[128, 128],
         )
 
-        model = PPO(
+        model = DQN(
             "MultiInputPolicy",
             env,
-            n_steps=512,
-            batch_size=256,
-            n_epochs=4,
             learning_rate=args.lr,
-            ent_coef=args.ent_coef,
-            clip_range=0.1,
-            target_kl=0.01,
+            buffer_size=200_000,
+            learning_starts=10_000,
+            batch_size=256,
+            gamma=0.99,
+            train_freq=4,
+            gradient_steps=1,
+            target_update_interval=1000,
+            exploration_fraction=0.3,
+            exploration_initial_eps=1.0,
+            exploration_final_eps=0.05,
             policy_kwargs=policy_kwargs,
             tensorboard_log=args.log_dir,
             device=args.device,
@@ -171,7 +167,7 @@ def train(args):
         CheckpointCallback(
             save_freq=50_000 // args.envs,  # per-env steps
             save_path=args.checkpoint_dir,
-            name_prefix="lumines_ppo",
+            name_prefix="lumines_dqn",
         ),
         EvalCallback(
             eval_env,
@@ -188,7 +184,6 @@ def train(args):
 
     final_path = os.path.join(args.checkpoint_dir, "final")
     model.save(final_path)
-    env.save(os.path.join(args.checkpoint_dir, "vec_normalize.pkl"))
     print(f"\nTraining complete. Model saved to {final_path}.zip")
 
 
@@ -197,7 +192,7 @@ def train(args):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train Lumines PPO agent")
+    parser = argparse.ArgumentParser(description="Train Lumines DQN agent")
     parser.add_argument("--timesteps", type=int, default=2_000_000)
     parser.add_argument("--envs", type=int, default=8)
     parser.add_argument("--device", type=str, default="mps")
@@ -207,15 +202,13 @@ if __name__ == "__main__":
                         help="Total timesteps between evaluations")
     parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=5,
                         help="Number of episodes per evaluation")
-    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.2,
-                        help="Entropy coefficient for exploration (default: 0.2)")
-    parser.add_argument("--lr", type=float, default=3e-4,
-                        help="Constant learning rate (default: 3e-4)")
+    parser.add_argument("--lr", type=float, default=1e-4,
+                        help="Learning rate (default: 1e-4)")
     parser.add_argument(
         "--resume",
-        nargs="?",        # 0 or 1 args: bare flag → None (uses best_model), or a path
-        const="",         # value when flag is present with no argument
-        default=None,     # value when flag is absent
+        nargs="?",
+        const="",
+        default=None,
         metavar="CHECKPOINT",
         help="Resume training. Optionally provide a checkpoint path (default: best_model).",
     )
