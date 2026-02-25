@@ -20,6 +20,7 @@
 | 6 | `n_steps=4096 × 8 envs = 32,768` → 512 gradient steps/rollout; `placement_penalty=0.30` creates consistent signal; all 512 steps push same direction → logits → +∞ in one rollout | `approx_kl=96.72` at 50k, `entropy_loss≈0` at 98k, training frozen (`n_updates=12` at 100k) |
 | 7 | Linear LR decay `lr * progress` → LR≈0 by end of training; entropy gradient step ≈ 0; policy concentrates gradually across 1894 updates, each below target_kl=0.01 threshold | `entropy_loss=0`, `approx_kl=0`, `eval/mean_ep_length=6` at 2M steps; `explained_variance=0.998` (value learned deterministic trajectory) |
 | 8 | **Algorithm change: PPO → DQN.** PPO's on-policy constraint means each rollout is dominated by the current policy — one bad rollout can concentrate the policy permanently. Seven iterations of entropy tuning could not overcome this structural issue. | — |
+| 9 | DQN reward is still undifferentiated: every non-terminal step gives `+0.1` regardless of column choice; `score_delta=0` throughout a 6-step episode. Q-values converge to near-constant across all actions → argmax is arbitrary → stacks one column → ep_len=6 at 800k steps with `exploration_rate=0.05` (fully exploitative). | `eval/mean_ep_length=6`, `loss≈0.002` at 800k |
 
 ---
 
@@ -85,6 +86,37 @@ else:
 | `batch_size` | 256 | Sampled randomly from replay buffer |
 | `net_arch` | [128, 128] | Two hidden layers after feature extractor |
 | reward shaping | survival + squares_delta | Unchanged from iter 6 |
+
+### Iteration 9: Height-Differential Reward (`python/game/env.py`)
+
+Root cause: DQN Q-values collapse to near-constant because `+0.1` survival is identical
+for every column placement. Added `height_reward` to differentiate placements immediately:
+
+```python
+avg_height = sum(prev_heights) / BOARD_WIDTH
+col_height = prev_heights[actual_x]          # height of chosen column before drop
+height_diff = col_height - avg_height
+height_reward = -height_diff / BOARD_HEIGHT * 0.2  # range: [-0.2, +0.2]
+```
+
+`prev_heights` is captured after movement but before `hard_drop` so it reflects the board
+state the agent was choosing against (not the post-placement state).
+
+Full reward formula:
+
+```python
+if done:
+    reward = score_delta - 1.0 + height_reward
+else:
+    reward = score_delta + squares_delta * 0.5 + 0.1 + height_reward
+```
+
+| Component | Value range | Purpose |
+|---|---|---|
+| `survival_bonus` | +0.1 | Incentivise staying alive |
+| `squares_delta × 0.5` | varies | Reward 2×2 pattern formation |
+| `height_reward` | −0.2 … +0.2 | Penalise tall columns, reward short ones |
+| `death_penalty` | −1.0 | Penalise game over |
 
 ---
 

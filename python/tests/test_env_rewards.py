@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 from python.game.env import LuminesEnvNative
 from python.game.board import create_empty_board
-from python.game.constants import BOARD_HEIGHT
+from python.game.constants import BOARD_HEIGHT, BOARD_WIDTH
 
 
 # ---------------------------------------------------------------------------
@@ -140,3 +140,44 @@ def test_squares_delta_reward_positive_when_square_formed():
         assert info["reward_components"]["squares_delta"] > 0
     else:
         pytest.skip("block color mismatch for this seed — skip placement test")
+
+
+# ---------------------------------------------------------------------------
+# Height reward
+# ---------------------------------------------------------------------------
+
+def test_reward_components_has_height_reward():
+    """After any step, reward_components must include height_reward."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "height_reward" in info["reward_components"]
+
+
+def test_height_reward_penalizes_tall_column():
+    """When target column is taller than average, height_reward must be < 0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # Fill column 0 from row 2 down (height = 8), all others empty
+    for row in range(2, BOARD_HEIGHT):
+        board[row][0] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    _, _, _, _, info = env.step(0)  # targetX=0, rotation=0
+    assert info["reward_components"]["height_reward"] < 0
+
+
+def test_height_reward_rewards_short_column():
+    """When target column is shorter than average, height_reward must be > 0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # Fill all columns except column 7 to height 6
+    for col in range(BOARD_WIDTH):
+        if col == 7:
+            continue
+        for row in range(4, BOARD_HEIGHT):
+            board[row][col] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    _, _, _, _, info = env.step(28)  # targetX=7, rotation=0
+    assert info["reward_components"]["height_reward"] > 0
