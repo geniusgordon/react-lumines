@@ -1,5 +1,5 @@
 """
-train.py — DQN training for the Lumines RL agent.
+train.py — DQN/PPO training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
@@ -7,14 +7,15 @@ Architecture:
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
                       + timeline_x(1) + game_timer(1) = 16 values
                       → Linear(16→64) → ReLU
-  Both branches concatenated (128-dim) → SB3 Q-network head.
+  Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
 Usage:
-    python python/train.py
-    python python/train.py --timesteps 2000000 --envs 8 --device mps
-    python python/train.py --resume                        # continues from best_model
+    python python/train.py                                      # DQN (default)
+    python python/train.py --algo ppo                           # PPO
+    python python/train.py --algo ppo --timesteps 2000000 --envs 8 --device mps
+    python python/train.py --resume                             # continues from best_model
     python python/train.py --resume python/checkpoints/lumines_dqn_500000_steps
-    python python/train.py --no-native                     # use Node.js IPC env instead
+    python python/train.py --no-native                          # use Node.js IPC env instead
 """
 
 import argparse
@@ -24,11 +25,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 from gymnasium import spaces
-from stable_baselines3 import DQN
-from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+from stable_baselines3 import DQN, PPO
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecNormalize
 
 # Import from the same python/ directory
 import sys
@@ -111,6 +112,22 @@ def make_env(seed: int, native: bool = False):
 
 
 # ---------------------------------------------------------------------------
+# Callbacks
+# ---------------------------------------------------------------------------
+
+class SaveVecNormalizeCallback(BaseCallback):
+    """Saves VecNormalize stats after every eval."""
+    def __init__(self, vec_env: VecNormalize, path: str):
+        super().__init__()
+        self.vec_env = vec_env
+        self.path = path
+
+    def _on_step(self) -> bool:
+        self.vec_env.save(self.path)
+        return True
+
+
+# ---------------------------------------------------------------------------
 # Training
 # ---------------------------------------------------------------------------
 
@@ -118,23 +135,21 @@ def train(args):
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
 
-    # Parallel training envs (no VecNormalize — DQN needs raw rewards for Q-values)
     VecEnvCls = DummyVecEnv if args.dummy else SubprocVecEnv
     env = VecEnvCls([make_env(i, native=args.native) for i in range(args.envs)])
-
-    # Held-out eval env
     eval_env = DummyVecEnv([make_env(9999, native=args.native)])
 
+    if args.algo == "ppo":
+        _train_ppo(args, env, eval_env)
+    else:
+        _train_dqn(args, env, eval_env)
+
+
+def _train_dqn(args, env, eval_env):
     if args.resume is not None:
         checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model")
-
         print(f"Resuming from {checkpoint} ...")
-        model = DQN.load(
-            checkpoint,
-            env=env,
-            device=args.device,
-            tensorboard_log=args.log_dir,
-        )
+        model = DQN.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
         reset_num_timesteps = False
     else:
         policy_kwargs = dict(
@@ -142,7 +157,6 @@ def train(args):
             features_extractor_kwargs=dict(features_dim=128),
             net_arch=[128, 128],
         )
-
         model = DQN(
             "MultiInputPolicy",
             env,
@@ -166,7 +180,7 @@ def train(args):
 
     callbacks = [
         CheckpointCallback(
-            save_freq=50_000 // args.envs,  # per-env steps
+            save_freq=50_000 // args.envs,
             save_path=args.checkpoint_dir,
             name_prefix="lumines_dqn",
         ),
@@ -183,9 +197,77 @@ def train(args):
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
 
-    final_path = os.path.join(args.checkpoint_dir, "final")
+    final_path = os.path.join(args.checkpoint_dir, "final_dqn")
     model.save(final_path)
     print(f"\nTraining complete. Model saved to {final_path}.zip")
+
+
+def _train_ppo(args, env, eval_env):
+    norm_stats_path = os.path.join(args.checkpoint_dir, "vecnormalize.pkl")
+
+    if args.resume is not None:
+        checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model_ppo")
+        print(f"Resuming PPO from {checkpoint} ...")
+        env = VecNormalize.load(norm_stats_path, env)
+        env.training = True
+        eval_env = VecNormalize.load(norm_stats_path, eval_env)
+        eval_env.training = False
+        eval_env.norm_reward = False
+        model = PPO.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
+        reset_num_timesteps = False
+    else:
+        env = VecNormalize(env, norm_obs=True, norm_reward=True)
+        eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, training=False)
+        policy_kwargs = dict(
+            features_extractor_class=LuminesCNNExtractor,
+            features_extractor_kwargs=dict(features_dim=128),
+            net_arch=dict(pi=[128, 128], vf=[128, 128]),
+        )
+        model = PPO(
+            "MultiInputPolicy",
+            env,
+            learning_rate=3e-4,
+            n_steps=512,
+            batch_size=256,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            ent_coef=0.01,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            policy_kwargs=policy_kwargs,
+            tensorboard_log=args.log_dir,
+            device=args.device,
+            verbose=1,
+        )
+        reset_num_timesteps = True
+
+    callbacks = [
+        CheckpointCallback(
+            save_freq=50_000 // args.envs,
+            save_path=args.checkpoint_dir,
+            name_prefix="lumines_ppo",
+        ),
+        EvalCallback(
+            eval_env,
+            best_model_save_path=args.checkpoint_dir,
+            log_path=args.log_dir,
+            eval_freq=args.eval_freq // args.envs,
+            n_eval_episodes=args.eval_episodes,
+            deterministic=True,
+            render=False,
+            callback_after_eval=SaveVecNormalizeCallback(env, norm_stats_path),
+        ),
+    ]
+
+    model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
+
+    env.save(norm_stats_path)
+    final_path = os.path.join(args.checkpoint_dir, "final_ppo")
+    model.save(final_path)
+    print(f"\nTraining complete. Model saved to {final_path}.zip")
+    print(f"VecNormalize stats saved to {norm_stats_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -193,7 +275,7 @@ def train(args):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train Lumines DQN agent")
+    parser = argparse.ArgumentParser(description="Train Lumines DQN/PPO agent")
     parser.add_argument("--timesteps", type=int, default=2_000_000)
     parser.add_argument("--envs", type=int, default=8)
     parser.add_argument("--device", type=str, default="mps")
@@ -225,6 +307,12 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="Use DummyVecEnv (single-process, no IPC) instead of SubprocVecEnv",
+    )
+    parser.add_argument(
+        "--algo",
+        choices=["dqn", "ppo"],
+        default="dqn",
+        help="RL algorithm to use (default: dqn)",
     )
     args = parser.parse_args()
 
