@@ -44,7 +44,7 @@ def test_safe_prefix_completes_without_game_over():
     for i, action in enumerate(SAFE_ACTIONS):
         _, _, done, _, info = env.step(action)
         assert not done, f"Game ended unexpectedly at step {i} (action={action})"
-        assert info["reward_components"]["survival_bonus"] == pytest.approx(0.1)
+        assert info["reward_components"]["survival_bonus"] == pytest.approx(0.0)
 
     assert env._state.status != "gameOver"
 
