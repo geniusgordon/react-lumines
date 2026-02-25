@@ -77,7 +77,7 @@ def evaluate(args):
         while not done:
             predict_obs = _normalize_obs(vec_normalize, obs) if vec_normalize is not None else obs
             action, _ = model.predict(predict_obs, deterministic=args.deterministic)
-            action_int = int(action)
+            action_int = int(action.flat[0])
             # Describe the action for debugging
             if env.mode == "per_block":
                 target_x = action_int // 4
