@@ -18,7 +18,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import pytest
-from python.game.env import LuminesEnvNative
+from python.game.env import LuminesEnvNative, DEATH_PENALTY
 from python.game.constants import BOARD_HEIGHT, BOARD_WIDTH
 
 # Actions before game over (indices 0–7): cols 10–11 fill up, then one col-8 drop
@@ -89,7 +89,7 @@ def test_game_over_when_block_cannot_enter_board():
         "Expected game over when block (cols 9–10) can't enter a board "
         "where col 10 is fully stacked"
     )
-    assert info["reward_components"]["death_penalty"] == pytest.approx(-10.0)
+    assert info["reward_components"]["death_penalty"] == pytest.approx(DEATH_PENALTY)
 
 
 # ---------------------------------------------------------------------------

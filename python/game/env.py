@@ -17,7 +17,7 @@ comes from the timeline sweeping across *consecutive columns* of same-color
            + chain_delta  * 0.3   # extending a run of consecutive pattern cols
            + color_adj    * 0.1   # placing next to existing same-color cells
            + height_reward        # -(aggregate_height / 160) * 0.2
-           + death_penalty        # -1.0 on game over, else 0
+           + death_penalty        # DEATH_PENALTY on game over, else 0
 
     score_delta   — actual game score increase this step (primary objective)
     chain_delta   — change in the longest consecutive run of columns that
@@ -29,7 +29,7 @@ comes from the timeline sweeping across *consecutive columns* of same-color
     height_reward — aggregate height of all columns (sum / 160) penalizes
                     overall board fullness; accounts for every column, not
                     just the placement column
-    death_penalty — -1.0 when the game ends; no per-step survival bonus
+    death_penalty — DEATH_PENALTY when the game ends; no per-step survival bonus
                     (the agent's incentive to survive comes from future
                     scoring opportunities, not a flat bonus)
 
@@ -58,6 +58,9 @@ from .state import (
     soft_drop, hard_drop, tick,
 )
 from .validation import find_drop_position
+
+# Reward hyperparameters
+DEATH_PENALTY = -10.0
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -263,7 +266,7 @@ class LuminesEnvNative(gym.Env):
         chain_delta = float(self._count_chain_length() - prev_chain)
         done = self._state.status == "gameOver"
         if done:
-            reward = score_delta - 10.0 + height_reward
+            reward = score_delta + DEATH_PENALTY + height_reward
         else:
             reward = score_delta + chain_delta * 0.3 + color_adj * 0.1 + height_reward
         info = self._build_info()
@@ -273,7 +276,7 @@ class LuminesEnvNative(gym.Env):
             "chain_delta": chain_delta,
             "color_adjacency": color_adj,
             "survival_bonus": 0.0,
-            "death_penalty": -10.0 if done else 0.0,
+            "death_penalty": DEATH_PENALTY if done else 0.0,
             "height_reward": height_reward,
             "total": reward,
         }
@@ -308,6 +311,8 @@ class LuminesEnvNative(gym.Env):
 
         score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
+        # Note: per-frame mode uses a smaller death penalty (-1.0) than per-block mode
+        # (DEATH_PENALTY). The two modes have different reward scales by design.
         reward = score_delta + (-1.0 if done else 0.0)
         return self._build_obs(), reward, done, False, self._build_info()
 
