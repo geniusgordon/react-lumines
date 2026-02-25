@@ -18,6 +18,7 @@
 | 4 | `ent_coef=0.3` dominates gradient (0.60/step vs 0.10 survival, 0.15 max penalty) | Entropy drives rollout, value function collapses (`explained_variance`=−1.4×10⁻³) |
 | 5 | `target_kl=0.02` stops every rollout at step 0 (first mini-batch); `ent_coef=0.05` concentrated policy fast → KL=2.15 on step 0 | `n_updates=4` after 150k steps; 512× fewer gradient steps than intended; training frozen |
 | 6 | `n_steps=4096 × 8 envs = 32,768` → 512 gradient steps/rollout; `placement_penalty=0.30` creates consistent signal; all 512 steps push same direction → logits → +∞ in one rollout | `approx_kl=96.72` at 50k, `entropy_loss≈0` at 98k, training frozen (`n_updates=12` at 100k) |
+| 7 | Linear LR decay `lr * progress` → LR≈0 by end of training; entropy gradient step ≈ 0; policy concentrates gradually across 1894 updates, each below target_kl=0.01 threshold | `entropy_loss=0`, `approx_kl=0`, `eval/mean_ep_length=6` at 2M steps; `explained_variance=0.998` (value learned deterministic trajectory) |
 
 ---
 
@@ -53,18 +54,18 @@ else:
 
 ### Hyperparameter History
 
-| Hyperparameter | Iter 1 | Iter 2 | Iter 3 | Iter 4 | Iter 5 | Iter 6 |
-|---|---|---|---|---|---|---|
-| `action_space` | Discrete(64) | Discrete(60) | ← | ← | ← | ← |
-| `ent_coef` | 0.1 | 0.1 | 0.3 | **0.05** | ← | **0.1** |
-| `n_steps` | 2048 | 4096 | ← | ← | ← | **512** |
-| `n_epochs` | 10 | 10 | 10 | **4** | ← | ← |
-| `learning_rate` | 3×10⁻⁴ const | linear decay | ← | ← | ← | ← |
-| `target_kl` | 0.02 | ← | ← | ← | **removed** | **0.01** |
-| `clip_range` | 0.2 | ← | ← | ← | **0.1** | ← |
-| height penalty coef | 0.1 → 0.05 | 0.05 | removed | — | — | — |
-| placement penalty coef | — | — | 0.15 | **0.30** | ← | **removed** |
-| squares_delta weight | — | 0.5 | ← | ← | ← | ← |
+| Hyperparameter | Iter 1 | Iter 2 | Iter 3 | Iter 4 | Iter 5 | Iter 6 | Iter 7 |
+|---|---|---|---|---|---|---|---|
+| `action_space` | Discrete(64) | Discrete(60) | ← | ← | ← | ← | ← |
+| `ent_coef` | 0.1 | 0.1 | 0.3 | **0.05** | ← | **0.1** | **0.2** |
+| `n_steps` | 2048 | 4096 | ← | ← | ← | **512** | ← |
+| `n_epochs` | 10 | 10 | 10 | **4** | ← | ← | ← |
+| `learning_rate` | 3×10⁻⁴ const | linear decay | ← | ← | ← | ← | **3×10⁻⁴ const** |
+| `target_kl` | 0.02 | ← | ← | ← | **removed** | **0.01** | ← |
+| `clip_range` | 0.2 | ← | ← | ← | **0.1** | ← | ← |
+| height penalty coef | 0.1 → 0.05 | 0.05 | removed | — | — | — | — |
+| placement penalty coef | — | — | 0.15 | **0.30** | ← | **removed** | — |
+| squares_delta weight | — | 0.5 | ← | ← | ← | ← | ← |
 
 ---
 

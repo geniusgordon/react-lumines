@@ -156,7 +156,7 @@ def train(args):
             n_steps=512,
             batch_size=256,
             n_epochs=4,
-            learning_rate=lambda progress: args.lr * progress,
+            learning_rate=args.lr,
             ent_coef=args.ent_coef,
             clip_range=0.1,
             target_kl=0.01,
@@ -207,8 +207,8 @@ if __name__ == "__main__":
                         help="Total timesteps between evaluations")
     parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=5,
                         help="Number of episodes per evaluation")
-    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.1,
-                        help="Entropy coefficient for exploration (default: 0.1)")
+    parser.add_argument("--ent-coef", dest="ent_coef", type=float, default=0.2,
+                        help="Entropy coefficient for exploration (default: 0.2)")
     parser.add_argument("--lr", type=float, default=3e-4,
                         help="Constant learning rate (default: 3e-4)")
     parser.add_argument(
