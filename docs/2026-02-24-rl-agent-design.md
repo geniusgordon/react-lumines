@@ -105,22 +105,34 @@ PPO's value function benefits from normalised observations and rewards. Norm sta
 
 ## 4. Reward Function
 
-```python
-height_reward = -col_height / BOARD_HEIGHT * 0.3   # range: [-0.3, 0]
+The reward is designed around Lumines' core scoring mechanic: the timeline
+sweeps left-to-right, accumulating `holding_score` while passing over
+consecutive columns of same-color 2×2 patterns, then cashing out on the first
+empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 
-if done:
-    reward = score_delta - 1.0 + height_reward
-else:
-    reward = score_delta + squares_delta * 0.5 + 0.1 + height_reward
+```python
+# alive:
+reward = score_delta + chain_delta * 0.3 + color_adj * 0.1 + height_reward
+# game over:
+reward = score_delta - 1.0 + height_reward
+
+height_reward = -(sum_of_all_column_heights / 160) * 0.2   # range: [-0.2, 0]
 ```
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
-| `score_delta` | ≥ 0 | Actual game score from timeline sweeps |
-| `squares_delta × 0.5` | varies | Reward 2×2 pattern formation |
-| `survival_bonus` | +0.1 | Incentivise staying alive |
-| `height_reward` | −0.3 … 0 | Penalise tall columns; empty cols = 0 penalty |
+| `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
+| `chain_delta × 0.3` | varies | Change in longest run of consecutive columns with a 2×2 pattern; directly rewards the combo strategy |
+| `color_adj × 0.1` | ≥ 0 | External same-color neighbors of placed cells in the pre-drop board; encourages consolidating colors for future chains |
+| `height_reward` | −0.2 … 0 | Aggregate board fullness penalty; accounts for every column, not just the placement column |
 | `death_penalty` | −1.0 | Penalise game over |
+
+No flat survival bonus — the agent's incentive to survive comes from future
+scoring opportunities.
+
+`squares_delta` is tracked in `reward_components` for logging but is not
+included in the formula (its sign is unreliable when the timeline clears
+patterns within the same step).
 
 ---
 

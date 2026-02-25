@@ -86,19 +86,29 @@ type FrameAction =
 
 ## 4. Reward Design
 
-**Default:** `score_after_step − score_before_step`
+The Python `LuminesEnvNative` uses a shaped reward designed around the combo
+mechanic. See `docs/2026-02-24-rl-agent-design.md §4` for the full formula.
 
-Pure score delta. No shaping.
+**Summary (per_block mode):**
+
+```
+reward = score_delta
+       + chain_delta  × 0.3   # longest consecutive pattern-column run
+       + color_adj    × 0.1   # same-color neighbors at drop site
+       + height_reward        # -(aggregate board height / 160) × 0.2
+       + death_penalty        # -1.0 on game over
+```
 
 **Rationale:**
-- Unambiguous and measurable — any improvement in agent policy corresponds directly to higher game score.
-- Avoids reward hacking from shaped intermediate signals.
-- Score in Lumines is already a meaningful proxy for board quality (clearing large same-colour rectangles gives more points).
-
-**Future options (not implemented):**
-- `+bonus` for forming connected patterns (encourage long-range planning).
-- `-penalty` for stack height (discourage blocking the timeline).
-- Potential-based shaping to make reward dense without changing the optimal policy.
+- `score_delta` is the primary objective — directly tied to game score.
+- `chain_delta` rewards the core Lumines skill: building long chains of
+  same-color patterns for the timeline to sweep in one pass.
+- `color_adj` provides dense signal for color consolidation without needing
+  the timeline to actually sweep.
+- Aggregate height penalty discourages board-wide filling, not just a single
+  column.
+- No flat survival bonus — timid play (avoiding risky placements to stay
+  alive) is not rewarded; the agent must score to maximise return.
 
 ---
 
