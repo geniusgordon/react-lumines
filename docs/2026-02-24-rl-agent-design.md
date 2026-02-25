@@ -1,22 +1,22 @@
 # Lumines RL Agent — Architecture & Usage
 
-**Date:** 2026-02-24
+**Date:** 2026-02-24 (updated 2026-02-26)
 **Status:** Implemented
-**Files:** `python/train.py`, `python/eval.py`, `python/requirements.txt`
+**Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
 
 ## 1. Overview
 
-A PPO-based reinforcement learning agent trained to play Lumines. The agent operates in `per_block` mode: one action per block placement, with reward equal to the score delta produced by each placement window (covering any timeline sweeps that occur before the next block spawns).
+A PPO-based reinforcement learning agent trained to play Lumines. The agent operates in `per_block` mode: one action per block placement, choosing a target column (0–14) and rotation (0–3) as a single `Discrete(60)` action.
 
-Training uses [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) on top of the `LuminesEnv` gymnasium wrapper (`python/lumines_env.py`), which communicates with the TypeScript game engine via a Node.js subprocess (`src/ai/env-server.ts`).
+Training uses [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) with the pure-Python `LuminesEnvNative` gymnasium environment (`python/game/env.py`) — no Node.js subprocess required.
 
 ---
 
 ## 2. Neural Network Architecture
 
-A two-branch `BaseFeaturesExtractor` feeds into SB3's `MultiInputPolicy`.
+A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 
 ```
 Observation (Dict)
@@ -33,13 +33,14 @@ Observation (Dict)
                                                                   │
                         128-dim concat ←──────────────────────────
                                │
-                    SB3 policy head + value head
+                    PPO actor head + critic head
+                    net_arch=dict(pi=[128,128], vf=[128,128])
 ```
 
 **MLP input size:** 4 + 8 + 2 + 1 + 1 = 16 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
-`score` and `frame` are excluded from the network inputs — they would leak non-stationary scale information and are better left to the value baseline learned implicitly from returns.
+`score` and `frame` are excluded from the network inputs — they leak non-stationary scale information and are better left to the value baseline learned implicitly from returns.
 
 ---
 
@@ -49,74 +50,84 @@ Observation (Dict)
 |---------------|-------|
 | Algorithm | PPO |
 | Policy | `MultiInputPolicy` |
-| Parallel envs | 4 (`SubprocVecEnv`) |
-| `n_steps` | 512 per env (2 048 total per rollout) |
-| `batch_size` | 64 |
+| Parallel envs | 8 (`SubprocVecEnv`) |
+| `n_steps` | 512 per env (4 096 total per rollout) |
+| `batch_size` | 256 |
 | `n_epochs` | 10 |
-| Learning rate | 3×10⁻⁴ linear decay → 0 |
+| `gae_lambda` | 0.95 |
+| `ent_coef` | 0.01 |
+| `vf_coef` | 0.5 |
+| `clip_range` | 0.2 |
+| `max_grad_norm` | 0.5 |
+| Learning rate | 3×10⁻⁴ constant |
 | Device | `mps` (Apple Silicon) |
-| Total timesteps | 1 000 000 |
-| Reward normalisation | `VecNormalize` (reward only, clip 10) |
+| Total timesteps | 2 000 000 |
+| Obs/reward normalisation | `VecNormalize(norm_obs=True, norm_reward=True)` |
 | Checkpoint frequency | Every 50 000 steps |
-| Eval frequency | Every 25 000 steps (5 episodes) |
+| Eval frequency | Every 50 000 steps (5 episodes) |
 
-### Why `VecNormalize` on reward only?
+### Why `VecNormalize`?
 
-The observation space is already bounded and heterogeneous (board cells are categorical 0/1/2, not continuous). Normalising observations would distort the categorical board encoding. Reward normalisation alone stabilises PPO's value estimates without harming the observation structure.
-
-### Why linear LR decay?
-
-PPO is sensitive to learning-rate magnitude late in training when the policy has converged. A schedule that decays to zero prevents over-updating a near-optimal policy and keeps the KL-clipping constraint meaningful throughout.
+PPO's value function benefits from normalised observations and rewards. Norm stats are saved alongside checkpoints as `vecnormalize.pkl` and restored on resume/eval.
 
 ---
 
-## 4. File Reference
+## 4. Reward Function
+
+```python
+height_reward = -col_height / BOARD_HEIGHT * 0.3   # range: [-0.3, 0]
+
+if done:
+    reward = score_delta - 1.0 + height_reward
+else:
+    reward = score_delta + squares_delta * 0.5 + 0.1 + height_reward
+```
+
+| Component | Range | Purpose |
+|-----------|-------|---------|
+| `score_delta` | ≥ 0 | Actual game score from timeline sweeps |
+| `squares_delta × 0.5` | varies | Reward 2×2 pattern formation |
+| `survival_bonus` | +0.1 | Incentivise staying alive |
+| `height_reward` | −0.3 … 0 | Penalise tall columns; empty cols = 0 penalty |
+| `death_penalty` | −1.0 | Penalise game over |
+
+---
+
+## 5. File Reference
 
 | File | Purpose |
 |------|---------|
-| `python/train.py` | Training entry point — defines `LuminesCNNExtractor`, builds envs, runs PPO |
+| `python/train.py` | Training entry point — `--algo ppo\|dqn`, builds envs, runs training |
 | `python/eval.py` | Evaluation — loads a checkpoint, runs episodes, reports scores, optional ASCII render |
-| `python/lumines_env.py` | Gymnasium wrapper (unchanged) |
-| `python/requirements.txt` | Python dependencies |
-| `src/ai/LuminesEnv.ts` | TypeScript headless game engine (unchanged) |
-| `src/ai/env-server.ts` | Node.js IPC bridge (unchanged) |
+| `python/game/env.py` | Pure-Python gymnasium environment (`LuminesEnvNative`) |
+| `python/game/` | Pure-Python game logic (board, blocks, physics, timeline, etc.) |
 | `python/checkpoints/` | Saved model checkpoints (generated at runtime) |
 | `python/logs/` | TensorBoard event files (generated at runtime) |
-
----
-
-## 5. Installation
-
-```bash
-# Python deps (from repo root)
-pip install -r python/requirements.txt
-
-# Node deps (needed by env-server.ts)
-pnpm install
-```
 
 ---
 
 ## 6. Training
 
 ```bash
-# Default: 1M steps, 4 envs, MPS device
-python python/train.py
+# PPO (default algo)
+python python/train.py --algo ppo
 
 # Custom run
-python python/train.py \
+python python/train.py --algo ppo \
   --timesteps 2000000 \
   --envs 8 \
-  --device mps \
-  --checkpoint-dir python/checkpoints \
-  --log-dir python/logs
+  --device mps
+
+# Resume from best checkpoint
+python python/train.py --algo ppo --resume
+
+# DQN (alternative)
+python python/train.py --algo dqn
 ```
 
-Checkpoints are saved to `python/checkpoints/lumines_ppo_<N>_steps.zip` every 50k steps.
-The best model (by eval return) is saved to `python/checkpoints/best_model.zip`.
-The final model is saved to `python/checkpoints/final.zip`.
-
-The `VecNormalize` statistics are saved alongside the final model as `python/checkpoints/vec_normalize.pkl`.
+PPO checkpoints: `python/checkpoints/lumines_ppo_<N>_steps.zip`
+Best PPO model: `python/checkpoints/best_model_ppo.zip`
+VecNormalize stats: `python/checkpoints/vecnormalize.pkl`
 
 ### Monitoring
 
@@ -126,8 +137,10 @@ tensorboard --logdir python/logs
 
 Key metrics to watch:
 - `rollout/ep_rew_mean` — mean episode reward (should trend upward)
-- `train/value_loss` — should decrease then stabilise
+- `rollout/ep_len_mean` — episode length (longer = agent surviving better)
+- `train/entropy_loss` — must stay noticeably negative; collapse to ~0 = policy collapse
 - `train/approx_kl` — should stay below ~0.02; spikes indicate instability
+- `train/explained_variance` — positive and trending toward 1.0
 
 ---
 
@@ -135,48 +148,12 @@ Key metrics to watch:
 
 ```bash
 # Basic: 10 episodes, print mean/max/min score
-python python/eval.py --checkpoint python/checkpoints/final.zip
-
-# More episodes
-python python/eval.py --checkpoint python/checkpoints/final.zip --episodes 20
+python python/eval.py --algo ppo --checkpoint python/checkpoints/best_model_ppo
 
 # Watch the agent play (ASCII board, 100ms between steps)
-python python/eval.py \
-  --checkpoint python/checkpoints/final.zip \
-  --render \
-  --episodes 3 \
-  --delay 0.1
-
-# Faster render
-python python/eval.py --render --delay 0.03
+python python/eval.py --algo ppo \
+  --checkpoint python/checkpoints/best_model_ppo \
+  --render --episodes 3 --delay 0.1
 ```
 
-Eval uses `cpu` by default (faster subprocess startup for single-env inference).
-
----
-
-## 8. Expected Results
-
-After 1M steps on Apple M-series hardware (~30–60 min):
-
-| Metric | Random baseline | Target after 1M steps |
-|--------|----------------|----------------------|
-| Mean score | ~0 | > 0, improving trend |
-| Max score | occasional small values | measurable clears |
-
-The agent is expected to learn to form 2×2 same-colour patterns and place blocks to maximise timeline sweeps before the timer expires. Scores will be low initially; performance typically improves significantly with 2–5M steps.
-
----
-
-## 9. Extending the Agent
-
-**Longer training:**
-```bash
-python python/train.py --timesteps 5000000
-```
-
-**Resuming from checkpoint:** SB3 does not natively support resuming `VecNormalize` mid-run. For long runs, set `--timesteps` high from the start.
-
-**Reward shaping:** Edit the `step()` return value in `src/ai/env-server.ts` or add a reward wrapper around `LuminesEnv` in Python. See `docs/2026-02-24-headless-env-design.md` §4 for design rationale.
-
-**Per-frame mode:** Change `mode='per_block'` to `mode='per_frame'` in `make_env()`. Update `action_space` handling accordingly (Discrete(7) instead of Discrete(64)).
+Eval automatically loads `vecnormalize.pkl` from the checkpoint directory when `--algo ppo`.
