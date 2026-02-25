@@ -34,7 +34,9 @@ GAME_OVER_ACTION = 39
 def test_safe_prefix_completes_without_game_over():
     """
     The first 8 actions ([41×4, 26×2, 41, 34]) should all land successfully.
-    After them: col 10 is fully stacked, cols 0–5 and 12–15 are empty.
+    After them: cols 0–5 and 12–15 are still empty (no blocks placed there).
+    With timeline advancement, patterns may have been cleared so col 10 may
+    not be fully stacked and score may be > 0.
     """
     env = LuminesEnvNative(mode="per_block", seed="1")
     env.reset(seed=1)
@@ -45,13 +47,6 @@ def test_safe_prefix_completes_without_game_over():
         assert info["reward_components"]["survival_bonus"] == pytest.approx(0.1)
 
     assert env._state.status != "gameOver"
-    assert env._state.score == 0
-
-    # Cols 10–11 fully stacked after 5× action=41
-    heights = env._column_heights()
-    assert heights[10] == BOARD_HEIGHT, (
-        f"Col 10 should be fully stacked (height={BOARD_HEIGHT}), got {heights[10]}"
-    )
 
     # Empty columns outside the placement region
     board = env._state.board
@@ -72,15 +67,23 @@ def test_game_over_when_block_cannot_enter_board():
     game over, not silently no-op. Previously the board would appear frozen as
     the block placed cells above the board that immediately became falling columns
     and never settled (no ticks between per-block steps).
+
+    Col 10 is filled directly via board manipulation to guarantee a full column
+    regardless of how the timeline has advanced.
     """
+    from python.game.board import create_empty_board
     env = LuminesEnvNative(mode="per_block", seed="1")
     env.reset(seed=1)
 
-    for action in SAFE_ACTIONS:
-        _, _, done, _, _ = env.step(action)
-        assert not done
+    # Fill cols 10–11 completely so any block spanning those columns cannot enter
+    board = create_empty_board()
+    for row in range(BOARD_HEIGHT):
+        board[row][10] = 1
+        board[row][11] = 2
 
-    # Col 10 is now full — action=39 includes col 10 in its footprint
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+
+    # action=39 → target_x=9, spans cols 9–10; col 10 is full → game over
     _, _, done, _, info = env.step(GAME_OVER_ACTION)
     assert done, (
         "Expected game over when block (cols 9–10) can't enter a board "

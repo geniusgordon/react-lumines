@@ -16,8 +16,10 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
-from .constants import BOARD_WIDTH, BOARD_HEIGHT
+from .constants import BOARD_WIDTH, BOARD_HEIGHT, TIMELINE_SWEEP_INTERVAL
 from .board import apply_gravity
+from .patterns import detect_patterns
+from .timeline import update_timeline
 from .state import (
     create_initial_state, get_rng,
     move_left, move_right, rotate_cw, rotate_ccw,
@@ -48,6 +50,7 @@ class LuminesEnvNative(gym.Env):
         mode: str = "per_block",
         seed: Optional[str] = None,
         render_mode: Optional[str] = None,
+        blocks_per_sweep: int = 6,
     ):
         super().__init__()
 
@@ -55,6 +58,10 @@ class LuminesEnvNative(gym.Env):
         self._seed = seed or ""
         self.render_mode = render_mode
         self._blocks_placed = 0
+        # How many timeline ticks to advance per block placement.
+        # One full sweep = BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL ticks.
+        # blocks_per_sweep=6 means ~6 blocks land per full timeline pass.
+        self.ticks_per_block = (BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL) // blocks_per_sweep
 
         # Action space
         if mode == "per_block":
@@ -125,7 +132,6 @@ class LuminesEnvNative(gym.Env):
 
     def _step_per_block(self, action: int):
         prev_score = self._state.score
-        prev_block_id = self._state.current_block.id
         prev_squares = self._count_complete_squares()
 
         target_x = action // 4
@@ -160,24 +166,31 @@ class LuminesEnvNative(gym.Env):
         actual_x = self._state.block_position_x
         prev_heights = self._column_heights()
 
-        # 3. Hard drop
+        # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
-
-        # 4. Safety ticks until new block spawns or game over
-        safety = 0
-        while (
-            self._state.status != "gameOver" and
-            self._state.current_block.id == prev_block_id and
-            safety < 1000
-        ):
-            rng = get_rng(self._state)
-            self._state = tick(self._state, rng)
-            safety += 1
 
         if self._state.status != "gameOver":
             self._blocks_placed += 1
 
-        # Settle any floating cells instantly — in per_block mode there are no
+        # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
+        # progressing while the player was placing this block. Each tick
+        # increments the frame counter, decrements the game timer, re-detects
+        # patterns, and advances the timeline (marking and clearing cells).
+        for _ in range(self.ticks_per_block):
+            if self._state.status == "gameOver":
+                break
+            new_timer = self._state.game_timer - 1
+            self._state = copy.copy(self._state)
+            self._state.frame += 1
+            if new_timer <= 0:
+                self._state.game_timer = 0
+                self._state.status = "gameOver"
+                break
+            self._state.game_timer = new_timer
+            self._state.detected_patterns = detect_patterns(self._state.board)
+            self._state = update_timeline(self._state)
+
+        # 5. Settle any floating cells instantly — in per_block mode there are no
         # animation ticks between placements, so falling cells would otherwise
         # stay frozen and act as permanent obstacles while being invisible to
         # the board observation.
