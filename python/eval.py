@@ -27,7 +27,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lumines_env import LuminesEnv
 from game.env import LuminesEnvNative
 
-from stable_baselines3 import DQN
+from stable_baselines3 import DQN, PPO
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 
 # ---------------------------------------------------------------------------
@@ -36,7 +37,17 @@ from stable_baselines3 import DQN
 
 def evaluate(args):
     print(f"Loading checkpoint: {args.checkpoint}")
-    model = DQN.load(args.checkpoint, device=args.device)
+    if args.algo == "ppo":
+        norm_stats_path = os.path.join(os.path.dirname(args.checkpoint), "vecnormalize.pkl")
+        _dummy_env = DummyVecEnv([lambda: (LuminesEnvNative(mode="per_block") if args.native else LuminesEnv(mode="per_block"))])
+        if os.path.exists(norm_stats_path):
+            print(f"Loading VecNormalize stats from {norm_stats_path}")
+            _dummy_env = VecNormalize.load(norm_stats_path, _dummy_env)
+            _dummy_env.training = False
+            _dummy_env.norm_reward = False
+        model = PPO.load(args.checkpoint, env=_dummy_env, device=args.device)
+    else:
+        model = DQN.load(args.checkpoint, device=args.device)
 
     render_mode = "ansi" if args.render else None
     scores = []
@@ -125,6 +136,12 @@ if __name__ == "__main__":
         help="Use Node.js IPC subprocess env instead of pure Python env",
     )
     parser.set_defaults(native=True)
+    parser.add_argument(
+        "--algo",
+        choices=["dqn", "ppo"],
+        default="dqn",
+        help="Algorithm of the checkpoint to load (default: dqn)",
+    )
     args = parser.parse_args()
 
     evaluate(args)
