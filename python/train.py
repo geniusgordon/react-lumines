@@ -311,8 +311,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--algo",
         choices=["dqn", "ppo"],
-        default="dqn",
-        help="RL algorithm to use (default: dqn)",
+        default="ppo",
+        help="RL algorithm to use (default: ppo)",
     )
     args = parser.parse_args()
 

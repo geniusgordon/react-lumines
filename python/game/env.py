@@ -103,7 +103,10 @@ class LuminesEnvNative(gym.Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        seed_str = str(seed) if seed is not None else self._seed
+        if seed is not None:
+            seed_str = str(seed)
+        else:
+            seed_str = str(self.np_random.integers(0, 1_000_000))
         self._seed = seed_str
         self._state = create_initial_state(seed_str)
         self._blocks_placed = 0

@@ -101,7 +101,10 @@ class LuminesEnv(gym.Env):
         super().reset(seed=seed)
         if self._proc is None or self._proc.poll() is not None:
             self._start_proc()
-        seed_str = str(seed) if seed is not None else self._seed
+        if seed is not None:
+            seed_str = str(seed)
+        else:
+            seed_str = str(self.np_random.integers(0, 1_000_000))
         self._send({"cmd": "reset", "seed": seed_str})
         resp = self._recv()
         return self._obs_to_numpy(resp["observation"]), {}
