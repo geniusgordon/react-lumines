@@ -22,6 +22,7 @@ import argparse
 import os
 import time
 
+import numpy as np
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from lumines_env import LuminesEnv
@@ -35,8 +36,15 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 # Evaluation
 # ---------------------------------------------------------------------------
 
+def _normalize_obs(vec_normalize, obs):
+    """Normalize a single (unbatched) obs dict through a VecNormalize wrapper."""
+    batched = {k: np.array([v]) for k, v in obs.items()} if isinstance(obs, dict) else np.array([obs])
+    return vec_normalize.normalize_obs(batched)
+
+
 def evaluate(args):
     print(f"Loading checkpoint: {args.checkpoint}")
+    vec_normalize = None
     if args.algo == "ppo":
         norm_stats_path = os.path.join(os.path.dirname(args.checkpoint), "vecnormalize.pkl")
         _dummy_env = DummyVecEnv([lambda: (LuminesEnvNative(mode="per_block") if args.native else LuminesEnv(mode="per_block"))])
@@ -45,6 +53,7 @@ def evaluate(args):
             _dummy_env = VecNormalize.load(norm_stats_path, _dummy_env)
             _dummy_env.training = False
             _dummy_env.norm_reward = False
+            vec_normalize = _dummy_env
         model = PPO.load(args.checkpoint, env=_dummy_env, device=args.device)
     else:
         model = DQN.load(args.checkpoint, device=args.device)
@@ -66,7 +75,8 @@ def evaluate(args):
         print(f"\n=== Episode {episode}/{args.episodes} (seed={seed}) ===")
 
         while not done:
-            action, _ = model.predict(obs, deterministic=True)
+            predict_obs = _normalize_obs(vec_normalize, obs) if vec_normalize is not None else obs
+            action, _ = model.predict(predict_obs, deterministic=args.deterministic)
             action_int = int(action)
             # Describe the action for debugging
             if env.mode == "per_block":
@@ -142,6 +152,13 @@ if __name__ == "__main__":
         default="ppo",
         help="Algorithm of the checkpoint to load (default: ppo)",
     )
+    parser.add_argument(
+        "--no-deterministic",
+        dest="deterministic",
+        action="store_false",
+        help="Use stochastic (sampled) actions instead of argmax",
+    )
+    parser.set_defaults(deterministic=True)
     args = parser.parse_args()
 
     evaluate(args)
