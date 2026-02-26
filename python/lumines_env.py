@@ -46,12 +46,14 @@ class LuminesEnv(gym.Env):
         seed: Optional[str] = None,
         render_mode: Optional[str] = None,
         repo_root: Optional[str] = None,
+        record_replay_path: Optional[str] = None,
     ):
         super().__init__()
 
         self.mode = mode
         self._seed = seed
         self.render_mode = render_mode
+        self._record_replay_path = record_replay_path
 
         # Locate the repo root (parent of the python/ directory by default)
         if repo_root is None:
@@ -134,8 +136,14 @@ class LuminesEnv(gym.Env):
     # -------------------------------------------------------------------------
 
     def _start_proc(self) -> None:
+        cmd = [
+            self._tsx, "--tsconfig", self._tsconfig,
+            self._server_script, "--mode", self.mode,
+        ]
+        if self._record_replay_path:
+            cmd += ["--record-replay", self._record_replay_path]
         self._proc = subprocess.Popen(
-            [self._tsx, "--tsconfig", self._tsconfig, self._server_script, "--mode", self.mode],
+            cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
