@@ -383,3 +383,88 @@ def test_adj_bonus_zero_on_game_over():
     assert info["reward_components"]["adj_bonus"] == pytest.approx(0.0)
 
 
+# ---------------------------------------------------------------------------
+# Observation features: column_heights and holes
+# ---------------------------------------------------------------------------
+
+def test_obs_has_column_heights():
+    """Observation dict must contain 'column_heights' key."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "column_heights" in obs
+
+
+def test_obs_column_heights_shape():
+    """column_heights must have shape (16,)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["column_heights"].shape == (16,)
+
+
+def test_obs_column_heights_empty_board():
+    """column_heights must be all zeros for empty board."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
+    obs = env._build_obs()
+    assert (obs["column_heights"] == 0).all()
+
+
+def test_obs_column_heights_one_full_column():
+    """A column filled to the top should report height == BOARD_HEIGHT (10)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    for row in range(BOARD_HEIGHT):
+        board[row][3] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    obs = env._build_obs()
+    assert obs["column_heights"][3] == BOARD_HEIGHT
+    assert obs["column_heights"][0] == 0
+
+
+def test_obs_has_holes():
+    """Observation dict must contain 'holes' key."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "holes" in obs
+
+
+def test_obs_holes_shape():
+    """holes must have shape (1,)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["holes"].shape == (1,)
+
+
+def test_obs_holes_empty_board_is_zero():
+    """holes must be 0 for a board with no overhangs."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
+    obs = env._build_obs()
+    assert obs["holes"][0] == 0
+
+
+def test_obs_holes_counts_overhang():
+    """An empty cell with a filled cell above it counts as a hole."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # Col 5: row 8 filled, row 9 empty — 1 hole
+    board[8][5] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    obs = env._build_obs()
+    assert obs["holes"][0] == 1
+
+
+def test_obs_holes_solid_column_no_holes():
+    """A solid column with no gaps has 0 holes."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    board[8][5] = 1
+    board[9][5] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    obs = env._build_obs()
+    assert obs["holes"][0] == 0
