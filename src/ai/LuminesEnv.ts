@@ -69,6 +69,7 @@ export interface StepResult {
     framesElapsed: number;
     blocksPlaced: number;
   };
+  appliedInputs: { type: string; frame: number }[];
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +117,7 @@ export class LuminesEnv {
         reward: 0,
         done: true,
         info: this.buildInfo(),
+        appliedInputs: [],
       };
     }
 
@@ -206,6 +208,8 @@ export class LuminesEnv {
   private stepPerBlock(action: BlockAction): StepResult {
     const prevScore = this.state.score;
     const prevBlockId = this.state.currentBlock.id;
+    const inputFrame = this.state.frame;
+    const appliedInputs: { type: string; frame: number }[] = [];
 
     // Clamp targetX: block is 2 cells wide, so max left edge = BOARD_WIDTH - 2
     const maxX = BOARD_WIDTH - 2;
@@ -215,6 +219,7 @@ export class LuminesEnv {
     const rotations = ((action.rotation % 4) + 4) % 4;
     for (let i = 0; i < rotations; i++) {
       this.state = gameReducer(this.state, { type: 'ROTATE_CW' });
+      appliedInputs.push({ type: 'ROTATE_CW', frame: inputFrame });
     }
 
     // 2. Move horizontally to targetX (respect walls and existing blocks)
@@ -224,17 +229,20 @@ export class LuminesEnv {
         const prevX = this.state.blockPosition.x;
         this.state = gameReducer(this.state, { type: 'MOVE_LEFT' });
         if (this.state.blockPosition.x === prevX) break; // wall/block collision
+        appliedInputs.push({ type: 'MOVE_LEFT', frame: inputFrame });
       }
     } else if (dx > 0) {
       for (let i = 0; i < dx; i++) {
         const prevX = this.state.blockPosition.x;
         this.state = gameReducer(this.state, { type: 'MOVE_RIGHT' });
         if (this.state.blockPosition.x === prevX) break;
+        appliedInputs.push({ type: 'MOVE_RIGHT', frame: inputFrame });
       }
     }
 
     // 3. Hard drop — places block instantly, spawns next block (or sets gameOver)
     this.state = gameReducer(this.state, { type: 'HARD_DROP' });
+    appliedInputs.push({ type: 'HARD_DROP', frame: inputFrame });
 
     // 4. Safety loop: tick until the new block has spawned or game ends.
     //    In practice, HARD_DROP already triggers block spawn, so this is a
@@ -259,6 +267,7 @@ export class LuminesEnv {
       reward: this.state.score - prevScore,
       done: this.state.status === 'gameOver',
       info: this.buildInfo(),
+      appliedInputs,
     };
   }
 
@@ -301,6 +310,7 @@ export class LuminesEnv {
       reward: this.state.score - prevScore,
       done: this.state.status === 'gameOver',
       info: this.buildInfo(),
+      appliedInputs: [],
     };
   }
 

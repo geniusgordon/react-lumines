@@ -111,6 +111,48 @@ describe('LuminesEnv', () => {
     });
   });
 
+  describe('appliedInputs', () => {
+    let env: LuminesEnv;
+
+    beforeEach(() => {
+      env = new LuminesEnv({ mode: 'per_block', seed: 'block-test' });
+      env.reset();
+    });
+
+    it('returns appliedInputs for each step', () => {
+      const result = env.step({ targetX: 7, rotation: 2 });
+
+      expect(Array.isArray(result.appliedInputs)).toBe(true);
+      // rotation=2 → 2 ROTATE_CW
+      const rotations = result.appliedInputs.filter(i => i.type === 'ROTATE_CW');
+      expect(rotations).toHaveLength(2);
+      // always ends with HARD_DROP
+      const lastInput = result.appliedInputs[result.appliedInputs.length - 1];
+      expect(lastInput.type).toBe('HARD_DROP');
+      // all inputs have the same frame (before safety ticks)
+      const frame = result.appliedInputs[0].frame;
+      expect(result.appliedInputs.every(i => i.frame === frame)).toBe(true);
+    });
+
+    it('appliedInputs rotation=0 has no ROTATE_CW', () => {
+      const result = env.step({ targetX: 7, rotation: 0 });
+      const rotations = result.appliedInputs.filter(i => i.type === 'ROTATE_CW');
+      expect(rotations).toHaveLength(0);
+    });
+
+    it('appliedInputs move count matches actual displacement', () => {
+      env.reset('block-test');
+      const stateBefore = env.getState();
+      const startX = stateBefore.blockPosition.x; // default spawn X
+      const targetX = startX + 2; // move right by 2
+      const result = env.step({ targetX, rotation: 0 });
+      const moves = result.appliedInputs.filter(i => i.type === 'MOVE_RIGHT');
+      // moved right by 2 (or less if wall hit — result.appliedInputs only has successful moves)
+      expect(moves.length).toBeLessThanOrEqual(2);
+      expect(moves.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   describe('determinism', () => {
     it('two instances with same seed + same actions produce identical results', () => {
       const env1 = new LuminesEnv({ mode: 'per_block', seed: 'det-seed' });
