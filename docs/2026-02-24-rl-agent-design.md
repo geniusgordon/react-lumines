@@ -1,7 +1,7 @@
 # Lumines RL Agent — Architecture & Usage
 
 **Date:** 2026-02-24 (updated 2026-02-26)
-**Status:** Implemented — PPO_13 in progress (PPO_12 complete)
+**Status:** Implemented — PPO_14 in progress (PPO_13 complete)
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -95,7 +95,7 @@ With `vf_coef=2.0`, a shared extractor causes the critic's value gradient to dom
 | `n_steps` | 2048 per env (16 384 total per rollout) |
 | `batch_size` | 256 |
 | `n_epochs` | 10 |
-| `gae_lambda` | 0.95 |
+| `gae_lambda` | 0.90 |
 | `share_features_extractor` | `False` (separate actor/critic extractors) |
 | `features_dim` | 128 (64 from CNN branch + 64 from MLP branch) |
 | `vf_coef` | 2.0 |
@@ -104,8 +104,8 @@ With `vf_coef=2.0`, a shared extractor causes the critic's value gradient to dom
 | `target_kl` | 0.01 |
 | `gamma` | 0.99 |
 | `ent_coef` | 0.1 → 0.01 (linear decay over training) |
-| Learning rate | 5×10⁻⁵ → 5×10⁻⁶ (linear decay) |
-| Eval episodes | 50 |
+| Learning rate | 3×10⁻⁵ → 3×10⁻⁶ (linear decay) |
+| Eval episodes | 100 |
 | Device | `mps` (Apple Silicon) |
 | Total timesteps | 2 000 000 |
 | Obs/reward normalisation | `VecNormalize(norm_obs=True, norm_reward=True)` |
@@ -239,7 +239,8 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory when `
 | PPO_10 | 688k | 11.6 @ 350k | 0.42 | 0.11 | `SyncAndSaveVecNormalizeCallback` fixed eval drift; `share_features_extractor=True` caused clip fraction explosion and eventual eval collapse |
 | PPO_11 | 2M | 14.58 @ 700k | 0.30 (stable) | 0.35 | `share_features_extractor=False`, LR 1e-4→1e-5, clip_range 0.2. No collapse. EV ceiling ~0.35, value loss drifted up in second half. |
 | PPO_12 | 2M | 10.31 @ 450k | — | — | `features_dim=256`, LR 3e-5→3e-6, `n_steps=4096`, `gamma=0.995`, `target_kl=0.01`, entropy 0.1→0.01, `eval_episodes=50`. Larger model + longer rollouts hurt. |
-| PPO_13 | — | — | — | — | Dense `patterns_created*0.05` reward; `pattern_board` 2nd CNN channel; `features_dim=128`, LR 5e-5→5e-6, `n_steps=2048`, `gamma=0.99` |
+| PPO_13 | 2M | 16.09 @ 950k | 0.17 | 0.55 | Dense `patterns_created*0.05` reward; `pattern_board` 2nd CNN channel; `features_dim=128`, LR 5e-5→5e-6. New best, but plateaued at 400k. |
+| PPO_14 | — | — | — | — | `gae_lambda=0.90`, `n_envs=16`, `eval_episodes=100`, LR 3e-5→3e-6. Targets EV ceiling via reduced advantage variance + more rollout diversity. |
 
 ### PPO_10 post-mortem
 
