@@ -3,7 +3,7 @@ train.py — DQN/PPO training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
-    1. CNN branch   : board (10×16) → Conv2d → flatten → Linear(64) → ReLU
+    1. CNN branch   : board (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
                       + timeline_x(1) + game_timer(1) + column_heights(16)
                       + holes(1) + holding_score(1) + chain_length(1) = 35 values
@@ -73,19 +73,20 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
 
         # ---- CNN branch (board: 10×16, 4 channels: raw board + pattern_board + ghost_board + timeline_board) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(4, 16, kernel_size=3, padding=1),
+            nn.Conv2d(4, 32, kernel_size=3, padding=1),   # stem: 4 → 32 channels
             nn.ReLU(),
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 5×5
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 7×7
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 9×9
             nn.ReLU(),
             nn.Flatten(),
         )
-        # Compute CNN output size with a dummy forward pass
-        with torch.no_grad():
-            dummy_board = torch.zeros(1, 4, 10, 16)
-            cnn_out_size = self.cnn(dummy_board).shape[1]
+        # Output is always 32 * 10 * 16 = 5120 (padding=1 preserves spatial dims, no stride)
 
         self.cnn_linear = nn.Sequential(
-            nn.Linear(cnn_out_size, branch_dim),
+            nn.Linear(5120, branch_dim),
             nn.ReLU(),
         )
 
