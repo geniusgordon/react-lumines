@@ -261,12 +261,12 @@ def _train_ppo(args, env, eval_env):
         model = PPO(
             "MultiInputPolicy",
             env,
-            learning_rate=linear_schedule(5e-5, 5e-6),
+            learning_rate=linear_schedule(3e-5, 3e-6),
             n_steps=2048,
             batch_size=256,
             n_epochs=10,
             gamma=0.99,
-            gae_lambda=0.95,
+            gae_lambda=0.90,
             clip_range=0.2,
             ent_coef=0.1,
             vf_coef=2.0,
@@ -314,13 +314,13 @@ def _train_ppo(args, env, eval_env):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Lumines DQN/PPO agent")
     parser.add_argument("--timesteps", type=int, default=2_000_000)
-    parser.add_argument("--envs", type=int, default=8)
+    parser.add_argument("--envs", type=int, default=16)
     parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--checkpoint-dir", dest="checkpoint_dir", default="python/checkpoints")
     parser.add_argument("--log-dir", dest="log_dir", default="python/logs")
     parser.add_argument("--eval-freq", dest="eval_freq", type=int, default=50_000,
                         help="Total timesteps between evaluations")
-    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=50,
+    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=100,
                         help="Number of episodes per evaluation")
     parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate (default: 1e-4)")
