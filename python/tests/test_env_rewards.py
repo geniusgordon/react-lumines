@@ -220,11 +220,11 @@ def test_reward_components_no_chain_delta():
 
 
 def test_reward_components_exact_keys():
-    """reward_components must contain exactly the 5 expected keys."""
+    """reward_components must contain exactly the expected keys."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "squares_delta", "height_delta", "death_penalty", "total"}
+    expected_keys = {"score_delta", "squares_delta", "patterns_created", "height_delta", "death_penalty", "total"}
     assert set(info["reward_components"].keys()) == expected_keys
 
 

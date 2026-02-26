@@ -83,10 +83,11 @@ def evaluate(args):
                 target_x = action_int // 4
                 rotation = action_int % 4
                 action_desc = f"action={action_int} (col={target_x}, rot={rotation})"
+                action_history.append((target_x, rotation))
             else:
                 from game.env import FRAME_ACTIONS
                 action_desc = f"action={action_int} ({FRAME_ACTIONS[action_int]})"
-            action_history.append(action_desc)
+                action_history.append(action_desc)
             obs, reward, terminated, truncated, info = env.step(action_int)
             episode_score += reward
             done = terminated or truncated
@@ -102,12 +103,20 @@ def evaluate(args):
                     if rc:
                         parts = "  ".join(f"{k}: {v:+.3f}" for k, v in rc.items())
                         print(f"  Reward: {parts}")
-                    print(f"  History ({len(action_history)}): {', '.join(action_history[-30:])}")
+                    recent = action_history[-20:]
+                    if env.mode == "per_block" and recent:
+                        cols = "".join(f"{c:4d}" for c, _ in recent)
+                        rots = "".join(f"{r:4d}" for _, r in recent)
+                        print(f"  History ({len(action_history)}):")
+                        print(f"    col{cols}")
+                        print(f"    rot{rots}")
+                    else:
+                        print(f"  History ({len(action_history)}): {', '.join(str(a) for a in recent)}")
                     if args.delay > 0:
                         time.sleep(args.delay)
 
         # Final score from info (raw game score, not cumulative reward)
-        final_score = info.get("score", episode_score)
+        final_score = info.get("finalScore", episode_score)
         scores.append(final_score)
         print(f"Episode {episode} finished — score: {final_score:.0f}")
         env.close()

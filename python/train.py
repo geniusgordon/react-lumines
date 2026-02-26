@@ -21,6 +21,8 @@ Usage:
 import argparse
 import os
 
+import copy
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -57,18 +59,20 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
     Two-branch features extractor:
       - CNN branch for the board observation
       - MLP branch for scalar/small observations
-    Output: 128-dim concatenation.
+    Output: features_dim-dim concatenation (features_dim // 2 from each branch).
     """
 
-    # Keys to route through the MLP branch (flattened and concatenated)
+    # Keys to route through the MLP branch (flattened and concatenated).
+    # pattern_board is routed through the CNN branch as channel 2, not here.
     MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holes"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
+        branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16) ----
+        # ---- CNN branch (board: 10×16, 2 channels: raw board + pattern_board) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=3, padding=1),
+            nn.Conv2d(2, 16, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
@@ -76,11 +80,11 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
         # Compute CNN output size with a dummy forward pass
         with torch.no_grad():
-            dummy_board = torch.zeros(1, 1, 10, 16)
+            dummy_board = torch.zeros(1, 2, 10, 16)
             cnn_out_size = self.cnn(dummy_board).shape[1]
 
         self.cnn_linear = nn.Sequential(
-            nn.Linear(cnn_out_size, 64),
+            nn.Linear(cnn_out_size, branch_dim),
             nn.ReLU(),
         )
 
@@ -89,21 +93,22 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
             int(np.prod(observation_space[k].shape)) for k in self.MLP_KEYS
         )
         self.mlp = nn.Sequential(
-            nn.Linear(mlp_input_size, 64),
+            nn.Linear(mlp_input_size, branch_dim),
             nn.ReLU(),
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        # CNN branch
-        board = observations["board"].float() / 2.0  # normalise [0,2] → [0,1]
-        board = board.unsqueeze(1)  # add channel dim: (B, 1, 10, 16)
-        cnn_out = self.cnn_linear(self.cnn(board))
+        # CNN branch — stack board and pattern_board as 2-channel input
+        board = observations["board"].float() / 2.0        # [B, 10, 16], values 0–1
+        pattern = observations["pattern_board"].float()    # [B, 10, 16], values 0–1
+        x = torch.stack([board, pattern], dim=1)           # [B, 2, 10, 16]
+        cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs
         mlp_parts = [observations[k].float().flatten(start_dim=1) for k in self.MLP_KEYS]
         mlp_out = self.mlp(torch.cat(mlp_parts, dim=1))
 
-        return torch.cat([cnn_out, mlp_out], dim=1)  # (B, 128)
+        return torch.cat([cnn_out, mlp_out], dim=1)
 
 
 # ---------------------------------------------------------------------------
@@ -126,15 +131,33 @@ def make_env(seed: int, native: bool = False):
 # Callbacks
 # ---------------------------------------------------------------------------
 
-class SaveVecNormalizeCallback(BaseCallback):
-    """Saves VecNormalize stats after every eval."""
-    def __init__(self, vec_env: VecNormalize, path: str):
+class EntropyScheduleCallback(BaseCallback):
+    """Linearly decays ent_coef from initial_ent to final_ent over total_steps."""
+    def __init__(self, initial_ent: float, final_ent: float, total_steps: int):
         super().__init__()
-        self.vec_env = vec_env
+        self.initial_ent = initial_ent
+        self.final_ent = final_ent
+        self.total_steps = total_steps
+
+    def _on_step(self) -> bool:
+        progress = min(1.0, self.model.num_timesteps / self.total_steps)
+        self.model.ent_coef = self.initial_ent + progress * (self.final_ent - self.initial_ent)
+        return True
+
+
+class SyncAndSaveVecNormalizeCallback(BaseCallback):
+    """Syncs eval env obs normalization stats from train env, then saves stats to disk."""
+    def __init__(self, train_env: VecNormalize, eval_env: VecNormalize, path: str):
+        super().__init__()
+        self.train_env = train_env
+        self.eval_env = eval_env
         self.path = path
 
     def _on_step(self) -> bool:
-        self.vec_env.save(self.path)
+        # Keep eval env's obs normalization in sync with training env so the
+        # policy sees the same observation distribution at eval time.
+        self.eval_env.obs_rms = copy.deepcopy(self.train_env.obs_rms)
+        self.train_env.save(self.path)
         return True
 
 
@@ -233,12 +256,12 @@ def _train_ppo(args, env, eval_env):
             features_extractor_class=LuminesCNNExtractor,
             features_extractor_kwargs=dict(features_dim=128),
             net_arch=dict(pi=[128, 128], vf=[512, 512, 256]),
-            share_features_extractor=False,   # separate actor/critic feature extractors
+            share_features_extractor=False,
         )
         model = PPO(
             "MultiInputPolicy",
             env,
-            learning_rate=linear_schedule(1e-4, 1e-5),
+            learning_rate=linear_schedule(5e-5, 5e-6),
             n_steps=2048,
             batch_size=256,
             n_epochs=10,
@@ -248,7 +271,7 @@ def _train_ppo(args, env, eval_env):
             ent_coef=0.1,
             vf_coef=2.0,
             max_grad_norm=0.5,
-            target_kl=0.02,
+            target_kl=0.01,
             policy_kwargs=policy_kwargs,
             tensorboard_log=args.log_dir,
             device=args.device,
@@ -270,8 +293,9 @@ def _train_ppo(args, env, eval_env):
             n_eval_episodes=args.eval_episodes,
             deterministic=True,
             render=False,
-            callback_after_eval=SaveVecNormalizeCallback(env, norm_stats_path),
+            callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
         ),
+        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.01, total_steps=args.timesteps),
     ]
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
@@ -296,7 +320,7 @@ if __name__ == "__main__":
     parser.add_argument("--log-dir", dest="log_dir", default="python/logs")
     parser.add_argument("--eval-freq", dest="eval_freq", type=int, default=50_000,
                         help="Total timesteps between evaluations")
-    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=20,
+    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=50,
                         help="Number of episodes per evaluation")
     parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate (default: 1e-4)")

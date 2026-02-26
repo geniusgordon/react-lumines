@@ -10,12 +10,19 @@ Action spaces:
 Reward (per_block mode)
 -----------------------
     reward = score_delta
-           + squares_delta * 0.2  # creating 2×2 same-color patterns
-           + height_delta         # -(height_increase / 160) * 0.5  (potential-based)
-           + death_penalty        # DEATH_PENALTY on game over, else 0
+           + patterns_created * 0.05  # immediate signal for each new 2×2 pattern after drop
+           + height_delta             # -(height_increase / 160) * 0.5  (potential-based)
+           + death_penalty            # DEATH_PENALTY on game over, else 0
+
+    patterns_created is measured after hard drop but before timeline ticks, so it is
+    always >= 0 (placing a block can only add cells, never remove them). This avoids
+    the conflicting signal problem: the agent gets +reward for building patterns, and
+    separately gets score_delta when the timeline clears those patterns.
+
+    squares_delta is tracked in info for monitoring but excluded from the reward.
 
 reward_components keys emitted in info:
-    score_delta, squares_delta, height_delta, death_penalty, total
+    score_delta, squares_delta, patterns_created, height_delta, death_penalty, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -84,10 +91,11 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — identical to LuminesEnv
+        # Observation space — identical to LuminesEnv, plus pattern_board channel
         self.observation_space = spaces.Dict(
             {
                 "board": spaces.Box(0, 2, shape=(10, 16), dtype=np.int8),
+                "pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "current_block": spaces.Box(0, 2, shape=(2, 2), dtype=np.int8),
                 "block_position": spaces.Box(
                     low=np.array([-2, -2], dtype=np.int32),
@@ -153,6 +161,7 @@ class LuminesEnvNative(gym.Env):
     def _step_per_block(self, action: int):
         prev_score = self._state.score
         prev_squares = self._count_complete_squares()
+        prev_patterns = self._count_complete_squares()
 
         target_x = action // 4
         rotation = action % 4
@@ -191,6 +200,12 @@ class LuminesEnvNative(gym.Env):
         if self._state.status != "gameOver":
             self._blocks_placed += 1
 
+        # Measure patterns created immediately after drop, before timeline ticks.
+        # This is always >= 0 since placing a block can only add cells.
+        # Measuring here avoids negative signal when timeline later clears patterns.
+        patterns_after_drop = self._count_complete_squares()
+        patterns_created = float(patterns_after_drop - prev_patterns)
+
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block. Each tick
         # increments the frame counter, decrements the game timer, re-detects
@@ -228,11 +243,12 @@ class LuminesEnvNative(gym.Env):
         height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + squares_delta * 0.2 + height_delta + death
+        reward = score_delta + patterns_created * 0.05 + height_delta + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "squares_delta": squares_delta,
+            "patterns_created": patterns_created,
             "height_delta": height_delta,
             "death_penalty": death,
             "total": reward,
@@ -329,6 +345,24 @@ class LuminesEnvNative(gym.Env):
                     count += 1
         return count
 
+    def _build_pattern_channel(self) -> np.ndarray:
+        """
+        Returns a (BOARD_HEIGHT, BOARD_WIDTH) float32 array where each cell's value
+        is the number of 2×2 same-color patterns it participates in, normalised to [0,1]
+        by dividing by 4 (max possible overlapping patterns per cell).
+        """
+        board = self._state.board
+        counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    counts[row][col]         += 1
+                    counts[row][col + 1]     += 1
+                    counts[row + 1][col]     += 1
+                    counts[row + 1][col + 1] += 1
+        return counts / 4.0
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -337,6 +371,7 @@ class LuminesEnvNative(gym.Env):
         s = self._state
         return {
             "board": np.array(s.board, dtype=np.int8),
+            "pattern_board": self._build_pattern_channel(),
             "current_block": np.array(s.current_block.pattern, dtype=np.int8),
             "block_position": np.array(
                 [s.block_position_x, s.block_position_y], dtype=np.int32
