@@ -43,6 +43,10 @@ def _normalize_obs(vec_normalize, obs):
 
 
 def evaluate(args):
+    if args.save_replay:
+        args.native = False  # force TypeScript env for browser compatibility
+        args.episodes = 1    # only record one episode
+
     print(f"Loading checkpoint: {args.checkpoint}")
     vec_normalize = None
     if args.algo == "ppo":
@@ -65,7 +69,8 @@ def evaluate(args):
         if args.native:
             env = LuminesEnvNative(mode="per_block", render_mode=render_mode)
         else:
-            env = LuminesEnv(mode="per_block", render_mode=render_mode)
+            record_path = args.save_replay if (args.save_replay and episode == 1) else None
+            env = LuminesEnv(mode="per_block", render_mode=render_mode, record_replay_path=record_path)
         seed = episode
         obs, _ = env.reset(seed=seed)
         done = False
@@ -168,6 +173,13 @@ if __name__ == "__main__":
         help="Use stochastic (sampled) actions instead of argmax",
     )
     parser.set_defaults(deterministic=True)
+    parser.add_argument(
+        "--save-replay",
+        dest="save_replay",
+        default=None,
+        metavar="PATH",
+        help="Save the first episode as a browser-compatible replay JSON (forces --no-native)",
+    )
     args = parser.parse_args()
 
     evaluate(args)
