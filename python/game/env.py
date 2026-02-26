@@ -14,6 +14,7 @@ Reward (per_block mode)
            + height_delta                      # -(height_increase / 160) * 0.5  (potential-based)
            + holding_score_reward              # 0.1 per point of holding_score increase during ticks
            + adjacent_patterns_created * 0.05 # bonus for patterns created adjacent to live combo zone
+           + chain_delta_reward               # 0.15 per column the longest contiguous chain grows
            + death_penalty                     # DEATH_PENALTY on game over, else 0
 
     patterns_created is measured after hard drop but before timeline ticks, so it is
@@ -31,11 +32,16 @@ Reward (per_block mode)
     agent prefers chain-extending placements without over-weighting them. Zero when no
     live combo zone exists (empty board), avoiding spurious early signal.
 
+    chain_delta_reward gives immediate credit for extending the longest contiguous run of
+    same-color pattern columns. Measured as max(0, new_chain - prev_chain) * 0.15 using
+    board-direct scanning (not detected_patterns, which hard_drop does not refresh). The
+    max(0, ...) guard prevents penalizing chain breaks caused by timeline clears during ticks.
+
     squares_delta is tracked in info for monitoring but excluded from the reward.
 
 reward_components keys emitted in info:
     score_delta, squares_delta, patterns_created, height_delta, holding_score_reward,
-    adjacent_patterns_created, death_penalty, total
+    adjacent_patterns_created, chain_delta_reward, death_penalty, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -221,6 +227,9 @@ class LuminesEnvNative(gym.Env):
         # Pre-drop aggregate height for potential-based height shaping
         prev_aggregate_height = sum(self._column_heights())
 
+        # Pre-drop chain length for chain-extension reward shaping
+        prev_chain = self._count_chain_length_from_board()
+
         # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
 
@@ -237,6 +246,11 @@ class LuminesEnvNative(gym.Env):
         # Zero when no live combo zone existed before the drop (empty board / no active patterns).
         patterns_in_zone_after = self._count_patterns_in_zone(adj_zone) if adj_zone else 0
         adjacent_patterns_created = float(max(0, patterns_in_zone_after - patterns_in_zone_before))
+
+        # Measure chain extension after drop. Must use _count_chain_length_from_board()
+        # because hard_drop does not update detected_patterns.
+        new_chain = self._count_chain_length_from_board()
+        chain_delta_reward = max(0.0, float(new_chain - prev_chain)) * 0.15
 
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block. Each tick
@@ -281,7 +295,7 @@ class LuminesEnvNative(gym.Env):
         height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + death
+        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + chain_delta_reward + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
@@ -290,6 +304,7 @@ class LuminesEnvNative(gym.Env):
             "height_delta": height_delta,
             "holding_score_reward": holding_score_reward,
             "adjacent_patterns_created": adjacent_patterns_created,
+            "chain_delta_reward": chain_delta_reward,
             "death_penalty": death,
             "total": reward,
         }
@@ -367,6 +382,31 @@ class LuminesEnvNative(gym.Env):
         max_run = 0
         run = 0
         for c in range(BOARD_WIDTH - 1):  # pattern left edge can be 0..14
+            if c in cols_with_patterns:
+                run += 1
+                max_run = max(max_run, run)
+            else:
+                run = 0
+        return max_run
+
+    def _count_chain_length_from_board(self) -> int:
+        """
+        Like _count_chain_length but scans the board directly instead of using
+        self._state.detected_patterns. Use this immediately after hard_drop, before
+        the tick loop refreshes detected_patterns.
+        """
+        board = self._state.board
+        cols_with_patterns: set[int] = set()
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    cols_with_patterns.add(col)
+        if not cols_with_patterns:
+            return 0
+        max_run = 0
+        run = 0
+        for c in range(BOARD_WIDTH - 1):
             if c in cols_with_patterns:
                 run += 1
                 max_run = max(max_run, run)

@@ -224,7 +224,7 @@ def test_reward_components_exact_keys():
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "squares_delta", "patterns_created", "height_delta", "holding_score_reward", "adjacent_patterns_created", "death_penalty", "total"}
+    expected_keys = {"score_delta", "squares_delta", "patterns_created", "height_delta", "holding_score_reward", "adjacent_patterns_created", "chain_delta_reward", "death_penalty", "total"}
     assert set(info["reward_components"].keys()) == expected_keys
 
 
@@ -247,6 +247,33 @@ def test_death_penalty_zero_on_non_terminal():
     _, _, done, _, info = env.step(0)
     if not done:
         assert info["reward_components"]["death_penalty"] == pytest.approx(0.0)
+
+
+def test_chain_delta_reward_present_and_non_negative():
+    """chain_delta_reward must be present in reward_components and never negative."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    for _ in range(20):
+        _, _, done, _, info = env.step(env.action_space.sample())
+        assert "chain_delta_reward" in info["reward_components"]
+        assert info["reward_components"]["chain_delta_reward"] >= 0.0
+        if done:
+            break
+
+
+def test_chain_delta_reward_included_in_total():
+    """total in reward_components must equal the sum of all component values including chain_delta_reward."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, reward, _, _, info = env.step(0)
+    rc = info["reward_components"]
+    expected_total = (
+        rc["score_delta"] + rc["patterns_created"] + rc["height_delta"]
+        + rc["holding_score_reward"] + rc["adjacent_patterns_created"]
+        + rc["chain_delta_reward"] + rc["death_penalty"]
+    )
+    assert rc["total"] == pytest.approx(expected_total)
+    assert rc["total"] == pytest.approx(reward)
 
 
 # ---------------------------------------------------------------------------
