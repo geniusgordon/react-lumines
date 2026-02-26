@@ -27,8 +27,8 @@ Reward (per_block mode)
 
     adjacent_patterns_created counts new 2×2 patterns whose left-edge column is adjacent
     to (or within) the live combo zone (columns currently holding patterns ahead of the
-    timeline sweep). Rewarded at 0.10 per pattern — 2× patterns_created weight so the
-    agent clearly prefers chain-extending placements over isolated ones. Zero when no
+    timeline sweep). Rewarded at 0.05 per pattern — same weight as patterns_created, so the
+    agent prefers chain-extending placements without over-weighting them. Zero when no
     live combo zone exists (empty board), avoiding spurious early signal.
 
     squares_delta is tracked in info for monitoring but excluded from the reward.
