@@ -13,7 +13,7 @@ Reward (per_block mode)
            + patterns_created * 0.05          # immediate signal for each new 2×2 pattern after drop
            + height_delta                      # -(height_increase / 160) * 0.5  (potential-based)
            + holding_score_reward              # 0.1 per point of holding_score increase during ticks
-           + adjacent_patterns_created * 0.10 # bonus for patterns created adjacent to live combo zone
+           + adjacent_patterns_created * 0.05 # bonus for patterns created adjacent to live combo zone
            + death_penalty                     # DEATH_PENALTY on game over, else 0
 
     patterns_created is measured after hard drop but before timeline ticks, so it is
@@ -281,7 +281,7 @@ class LuminesEnvNative(gym.Env):
         height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.10 + death
+        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
