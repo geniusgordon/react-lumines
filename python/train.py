@@ -264,7 +264,7 @@ def _train_ppo(args, env, eval_env):
         model = PPO(
             "MultiInputPolicy",
             env,
-            learning_rate=linear_schedule(3e-5, 3e-6),
+            learning_rate=linear_schedule(3e-5, 1e-6),
             n_steps=2048,
             batch_size=256,
             n_epochs=10,
@@ -298,7 +298,7 @@ def _train_ppo(args, env, eval_env):
             render=False,
             callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
         ),
-        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.01, total_steps=args.timesteps),
+        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.03, total_steps=args.timesteps),
     ]
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
@@ -316,7 +316,7 @@ def _train_ppo(args, env, eval_env):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Lumines DQN/PPO agent")
-    parser.add_argument("--timesteps", type=int, default=2_000_000)
+    parser.add_argument("--timesteps", type=int, default=3_000_000)
     parser.add_argument("--envs", type=int, default=16)
     parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--checkpoint-dir", dest="checkpoint_dir", default="python/checkpoints")
