@@ -468,3 +468,14 @@ def test_obs_holes_solid_column_no_holes():
     env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
     obs = env._build_obs()
     assert obs["holes"][0] == 0
+
+
+# ---------------------------------------------------------------------------
+# Queue visibility
+# ---------------------------------------------------------------------------
+
+def test_obs_queue_shape_is_3():
+    """queue in observation must have shape (3, 2, 2) — all 3 queued blocks."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["queue"].shape == (3, 2, 2)

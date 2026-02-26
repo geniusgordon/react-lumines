@@ -124,7 +124,7 @@ class LuminesEnvNative(gym.Env):
                     high=np.array([15, 9], dtype=np.int32),
                     dtype=np.int32,
                 ),
-                "queue": spaces.Box(0, 2, shape=(2, 2, 2), dtype=np.int8),
+                "queue": spaces.Box(0, 2, shape=(3, 2, 2), dtype=np.int8),
                 "timeline_x": spaces.Box(0, 15, shape=(1,), dtype=np.int32),
                 "score": spaces.Box(
                     0, np.iinfo(np.int32).max, shape=(1,), dtype=np.int32
@@ -431,7 +431,7 @@ class LuminesEnvNative(gym.Env):
                 [s.block_position_x, s.block_position_y], dtype=np.int32
             ),
             "queue": np.array(
-                [b.pattern for b in s.queue[:2]], dtype=np.int8
+                [b.pattern for b in s.queue[:3]], dtype=np.int8
             ),
             "timeline_x": np.array([s.timeline.x], dtype=np.int32),
             "score": np.array([s.score], dtype=np.int32),
