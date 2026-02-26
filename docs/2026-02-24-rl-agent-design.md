@@ -57,10 +57,12 @@ Observation (Dict)
  │                                      Flatten → Linear(→64) → ReLU
  │                                                               │
  ├── current_block (2×2) ──────┐                                 │
- ├── queue (2×2×2)  ───────────┤  MLP branch                    │
- ├── block_position (2,) ──────┤  concat → Linear(16→64) → ReLU │
+ ├── queue (3×2×2)  ───────────┤  MLP branch                    │
+ ├── block_position (2,) ──────┤  concat → Linear(33→64) → ReLU │
  ├── timeline_x (1,)  ─────────┤                                 │
- └── game_timer (1,)  ─────────┘                                 │
+ ├── game_timer (1,)  ──────────┤                                 │
+ ├── column_heights (16,) ──────┤                                 │
+ └── holes (1,)  ──────────────┘                                 │
                                                                   │
                         128-dim concat ←──────────────────────────
                                │
@@ -68,10 +70,14 @@ Observation (Dict)
                     net_arch=dict(pi=[128,128], vf=[512,512,256])
 ```
 
-**MLP input size:** 4 + 8 + 2 + 1 + 1 = 16 values.
+**MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 = 37 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
+
+Each branch is instantiated independently for actor and critic
+(`share_features_extractor=False`) — the critic specialises on board-quality
+prediction without conflicting with the actor's action-selection features.
 
 `score` and `frame` are excluded from the network inputs — they leak non-stationary scale information and are better left to the value baseline learned implicitly from returns.
 
@@ -86,9 +92,10 @@ The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,1
 | Parallel envs | 8 (`SubprocVecEnv`) |
 | `n_steps` | 2048 per env (16 384 total per rollout) |
 | `batch_size` | 256 |
-| `n_epochs` | 6 |
+| `n_epochs` | 10 |
 | `gae_lambda` | 0.95 |
-| `ent_coef` | 0.05 |
+| `ent_coef` | 0.1 |
+| `share_features_extractor` | `False` (separate actor/critic extractors) |
 | `vf_coef` | 2.0 |
 | `clip_range` | 0.2 |
 | `max_grad_norm` | 0.5 |
@@ -116,40 +123,33 @@ empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 ```python
 reward = score_delta
        + squares_delta * 0.2
-       + chain_delta   * 0.3
        + height_delta
-       + adj_bonus              # up to 6 × 0.04 = 0.24 per step
        + death_penalty  # -3.0 on game over, else 0
-
-height_delta = -(new_aggregate_height - prev_aggregate_height) / 160 * 0.5
-adj_bonus    = count_same_color_contacts(placed_block, board) * 0.04
 ```
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
 | `squares_delta × 0.2` | varies | Change in number of 2×2 same-color patterns on the board; positive when created (requires color matching), negative when swept by the timeline (offset by simultaneous `score_delta` payout) |
-| `chain_delta × 0.3` | varies | Change in longest run of consecutive columns with a 2×2 pattern; directly rewards the Lumines combo strategy |
 | `height_delta` | varies | **Potential-based** board pressure: penalises raising aggregate column height, rewards clearing. Zero on stable boards — no absolute baseline noise for the critic |
-| `adj_bonus` | 0–0.24 | **Dense per-step signal**: counts same-color contacts between placed block and pre-existing board cells (horizontal left/right + vertical above, max 6). Fires on every placement before any pattern completes; improves critic `explained_variance` |
 | `death_penalty` | −3.0 | Penalise game over |
 
 No flat survival bonus — the agent's incentive to survive comes from future
 scoring opportunities.
 
-### Design rationale
+### Design rationale (PPO Run 7)
 
-`squares_delta` and `chain_delta` together enforce color matching without a
-dedicated `color_adj` term: you cannot create a 2×2 pattern or extend a chain
-without placing same-color cells adjacent to existing same-color cells.
-`color_adj` was removed as redundant noise.
+Simplified from 7 terms to 4. Removed `chain_delta`, `adj_bonus`, and
+`survival_bonus` — each added variance the critic had to explain but couldn't,
+keeping `explained_variance` stuck at ~0.22 across all previous runs.
 
-`height_delta` replaces the previous absolute `height_reward`. The old formula
-used `-(aggregate_height / 160) * 0.5`, which produced a large constant
-negative bias even on a stable board, making the critic's job harder (it had to
-explain away a baseline unrelated to the step's action). The delta form is zero
-when no height change occurs and has the same sign conventions: negative when
-the board grows, positive when clears bring it down.
+`squares_delta` implicitly enforces color matching: you cannot create a 2×2
+pattern without placing same-color cells together. `adj_bonus` (same-color
+contacts) was redundant with `squares_delta` and added noise.
+
+`height_delta` is the potential-based form: zero when the board is stable,
+negative when raised, positive when cleared. This avoids the constant negative
+bias of the old absolute `height_reward` formula.
 
 ---
 
