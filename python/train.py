@@ -38,6 +38,17 @@ from lumines_env import LuminesEnv
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def linear_schedule(initial_lr: float, final_lr: float):
+    """Returns a callable for SB3's learning_rate: decays linearly with training progress."""
+    def func(progress_remaining: float) -> float:
+        return final_lr + progress_remaining * (initial_lr - final_lr)
+    return func
+
+
+# ---------------------------------------------------------------------------
 # Features extractor
 # ---------------------------------------------------------------------------
 
@@ -221,12 +232,12 @@ def _train_ppo(args, env, eval_env):
         policy_kwargs = dict(
             features_extractor_class=LuminesCNNExtractor,
             features_extractor_kwargs=dict(features_dim=128),
-            net_arch=dict(pi=[128, 128], vf=[128, 128]),
+            net_arch=dict(pi=[128, 128], vf=[256, 256]),
         )
         model = PPO(
             "MultiInputPolicy",
             env,
-            learning_rate=1e-4,
+            learning_rate=linear_schedule(1e-4, 1e-5),
             n_steps=1024,
             batch_size=256,
             n_epochs=4,
@@ -234,7 +245,7 @@ def _train_ppo(args, env, eval_env):
             gae_lambda=0.95,
             clip_range=0.2,
             ent_coef=0.05,
-            vf_coef=0.5,
+            vf_coef=1.0,
             max_grad_norm=0.5,
             target_kl=0.02,
             policy_kwargs=policy_kwargs,
@@ -284,7 +295,7 @@ if __name__ == "__main__":
     parser.add_argument("--log-dir", dest="log_dir", default="python/logs")
     parser.add_argument("--eval-freq", dest="eval_freq", type=int, default=50_000,
                         help="Total timesteps between evaluations")
-    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=5,
+    parser.add_argument("--eval-episodes", dest="eval_episodes", type=int, default=20,
                         help="Number of episodes per evaluation")
     parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate (default: 1e-4)")

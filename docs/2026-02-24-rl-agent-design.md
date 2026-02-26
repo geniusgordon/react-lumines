@@ -65,7 +65,7 @@ Observation (Dict)
                         128-dim concat ←──────────────────────────
                                │
                     PPO actor head + critic head
-                    net_arch=dict(pi=[128,128], vf=[128,128])
+                    net_arch=dict(pi=[128,128], vf=[256,256])
 ```
 
 **MLP input size:** 4 + 8 + 2 + 1 + 1 = 16 values.
@@ -82,20 +82,21 @@ Observation (Dict)
 | Algorithm | PPO |
 | Policy | `MultiInputPolicy` |
 | Parallel envs | 8 (`SubprocVecEnv`) |
-| `n_steps` | 512 per env (4 096 total per rollout) |
+| `n_steps` | 1024 per env (8 192 total per rollout) |
 | `batch_size` | 256 |
-| `n_epochs` | 10 |
+| `n_epochs` | 4 |
 | `gae_lambda` | 0.95 |
-| `ent_coef` | 0.01 |
-| `vf_coef` | 0.5 |
+| `ent_coef` | 0.05 |
+| `vf_coef` | 1.0 |
 | `clip_range` | 0.2 |
 | `max_grad_norm` | 0.5 |
-| Learning rate | 3×10⁻⁴ constant |
+| `target_kl` | 0.02 |
+| Learning rate | 1×10⁻⁴ → 1×10⁻⁵ (linear decay) |
 | Device | `mps` (Apple Silicon) |
 | Total timesteps | 2 000 000 |
 | Obs/reward normalisation | `VecNormalize(norm_obs=True, norm_reward=True)` |
 | Checkpoint frequency | Every 50 000 steps |
-| Eval frequency | Every 50 000 steps (5 episodes) |
+| Eval frequency | Every 50 000 steps (20 episodes) |
 
 ### Why `VecNormalize`?
 
@@ -114,9 +115,9 @@ empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 # alive:
 reward = score_delta + chain_delta * 0.3 + color_adj * 0.1 + height_reward
 # game over:
-reward = score_delta - 1.0 + height_reward
+reward = score_delta - 3.0 + height_reward
 
-height_reward = -(sum_of_all_column_heights / 160) * 0.2   # range: [-0.2, 0]
+height_reward = -(sum_of_all_column_heights / 160) * 0.5   # range: [-0.5, 0]
 ```
 
 | Component | Range | Purpose |
@@ -124,8 +125,8 @@ height_reward = -(sum_of_all_column_heights / 160) * 0.2   # range: [-0.2, 0]
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
 | `chain_delta × 0.3` | varies | Change in longest run of consecutive columns with a 2×2 pattern; directly rewards the combo strategy |
 | `color_adj × 0.1` | ≥ 0 | External same-color neighbors of placed cells in the pre-drop board; encourages consolidating colors for future chains |
-| `height_reward` | −0.2 … 0 | Aggregate board fullness penalty; accounts for every column, not just the placement column |
-| `death_penalty` | −1.0 | Penalise game over |
+| `height_reward` | −0.5 … 0 | Aggregate board fullness penalty; accounts for every column, not just the placement column |
+| `death_penalty` | −3.0 | Penalise game over |
 
 No flat survival bonus — the agent's incentive to survive comes from future
 scoring opportunities.

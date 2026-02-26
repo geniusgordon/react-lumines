@@ -16,7 +16,7 @@ comes from the timeline sweeping across *consecutive columns* of same-color
     reward = score_delta
            + chain_delta  * 0.3   # extending a run of consecutive pattern cols
            + color_adj    * 0.1   # placing next to existing same-color cells
-           + height_reward        # -(aggregate_height / 160) * 0.2
+           + height_reward        # -(aggregate_height / 160) * 0.5
            + death_penalty        # DEATH_PENALTY on game over, else 0
 
     score_delta   — actual game score increase this step (primary objective)
@@ -60,7 +60,7 @@ from .state import (
 from .validation import find_drop_position
 
 # Reward hyperparameters
-DEATH_PENALTY = -10.0
+DEATH_PENALTY = -3.0
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -207,7 +207,7 @@ class LuminesEnvNative(gym.Env):
 
         # Aggregate height penalty — computed from pre-drop board
         aggregate_height = sum(self._column_heights())
-        height_reward = -aggregate_height / (BOARD_HEIGHT * BOARD_WIDTH) * 0.2
+        height_reward = -aggregate_height / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
 
         # Color adjacency — same-color neighbors of where the block will land
         drop_y = find_drop_position(

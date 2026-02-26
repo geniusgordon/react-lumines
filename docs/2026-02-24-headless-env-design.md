@@ -95,8 +95,8 @@ mechanic. See `docs/2026-02-24-rl-agent-design.md §4` for the full formula.
 reward = score_delta
        + chain_delta  × 0.3   # longest consecutive pattern-column run
        + color_adj    × 0.1   # same-color neighbors at drop site
-       + height_reward        # -(aggregate board height / 160) × 0.2
-       + death_penalty        # -1.0 on game over
+       + height_reward        # -(aggregate board height / 160) × 0.5
+       + death_penalty        # -3.0 on game over
 ```
 
 **Rationale:**
