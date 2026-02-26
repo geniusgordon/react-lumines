@@ -70,9 +70,9 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         super().__init__(observation_space, features_dim)
         branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16, 2 channels: raw board + pattern_board) ----
+        # ---- CNN branch (board: 10×16, 3 channels: raw board + pattern_board + ghost_board) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(2, 16, kernel_size=3, padding=1),
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
@@ -80,7 +80,7 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
         # Compute CNN output size with a dummy forward pass
         with torch.no_grad():
-            dummy_board = torch.zeros(1, 2, 10, 16)
+            dummy_board = torch.zeros(1, 3, 10, 16)
             cnn_out_size = self.cnn(dummy_board).shape[1]
 
         self.cnn_linear = nn.Sequential(
@@ -98,10 +98,11 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        # CNN branch — stack board and pattern_board as 2-channel input
+        # CNN branch — stack board, pattern_board, and ghost_board as 3-channel input
         board = observations["board"].float() / 2.0        # [B, 10, 16], values 0–1
         pattern = observations["pattern_board"].float()    # [B, 10, 16], values 0–1
-        x = torch.stack([board, pattern], dim=1)           # [B, 2, 10, 16]
+        ghost = observations["ghost_board"].float()        # [B, 10, 16], values 0–1
+        x = torch.stack([board, pattern, ghost], dim=1)    # [B, 3, 10, 16]
         cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs

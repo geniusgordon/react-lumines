@@ -39,6 +39,7 @@ from .constants import BOARD_WIDTH, BOARD_HEIGHT, TIMELINE_SWEEP_INTERVAL
 from .board import apply_gravity
 from .patterns import detect_patterns
 from .timeline import update_timeline
+from .validation import find_drop_position
 from .state import (
     create_initial_state, get_rng,
     move_left, move_right, rotate_cw, rotate_ccw,
@@ -96,6 +97,7 @@ class LuminesEnvNative(gym.Env):
             {
                 "board": spaces.Box(0, 2, shape=(10, 16), dtype=np.int8),
                 "pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "ghost_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "current_block": spaces.Box(0, 2, shape=(2, 2), dtype=np.int8),
                 "block_position": spaces.Box(
                     low=np.array([-2, -2], dtype=np.int32),
@@ -363,6 +365,35 @@ class LuminesEnvNative(gym.Env):
                     counts[row + 1][col + 1] += 1
         return counts / 4.0
 
+    def _build_ghost_channel(self) -> np.ndarray:
+        """
+        Returns a (BOARD_HEIGHT, BOARD_WIDTH) float32 array showing the board
+        after the current block hard-drops at its current X position.
+        Channel encodes cell occupancy: 0=empty, 1=occupied.
+        """
+        state = self._state
+        ghost_y = find_drop_position(
+            state.board,
+            state.current_block,
+            state.block_position_x,
+            state.block_position_y,
+            state.falling_columns,
+        )
+        ghost = np.array(
+            [[1.0 if state.board[r][c] != 0 else 0.0 for c in range(BOARD_WIDTH)]
+             for r in range(BOARD_HEIGHT)],
+            dtype=np.float32,
+        )
+        cells = state.current_block.pattern
+        bx = state.block_position_x
+        for dy in range(2):
+            for dx in range(2):
+                if cells[dy][dx] != 0:
+                    r, c = ghost_y + dy, bx + dx
+                    if 0 <= r < BOARD_HEIGHT and 0 <= c < BOARD_WIDTH:
+                        ghost[r][c] = 1.0
+        return ghost
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -372,6 +403,7 @@ class LuminesEnvNative(gym.Env):
         return {
             "board": np.array(s.board, dtype=np.int8),
             "pattern_board": self._build_pattern_channel(),
+            "ghost_board": self._build_ghost_channel(),
             "current_block": np.array(s.current_block.pattern, dtype=np.int8),
             "block_position": np.array(
                 [s.block_position_x, s.block_position_y], dtype=np.int32

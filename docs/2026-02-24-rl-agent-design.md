@@ -1,7 +1,7 @@
 # Lumines RL Agent — Architecture & Usage
 
 **Date:** 2026-02-24 (updated 2026-02-26)
-**Status:** Implemented — PPO_14 in progress (PPO_13 complete)
+**Status:** Implemented — PPO_15 in progress (PPO_14 complete)
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -52,9 +52,9 @@ A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 ```
 Observation (Dict)
  ├── board (10×16 int8)         ─┐
- ├── pattern_board (10×16 f32)  ─┤ CNN branch (2-channel input)
- │                               │   Conv2d(2→16, 3×3, pad=1) → ReLU
- │                               │   Conv2d(16→32, 3×3, pad=1) → ReLU
+ ├── pattern_board (10×16 f32)  ─┤ CNN branch (3-channel input)
+ ├── ghost_board (10×16 f32)   ─┘   Conv2d(3→16, 3×3, pad=1) → ReLU
+ │                                   Conv2d(16→32, 3×3, pad=1) → ReLU
  │                               │   Flatten → Linear(→64) → ReLU
  │                               │                            │
  ├── current_block (2×2) ──────┐ │                            │
@@ -74,7 +74,9 @@ Observation (Dict)
 **MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 = 37 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
-`pattern_board` is routed through the CNN branch as channel 2 (stacked with `board`), not through the MLP branch. Each cell's value = number of 2×2 same-color patterns it participates in, normalised to [0,1]. The CNN can directly see where valuable overlap clusters are, rather than having to infer pattern locations from raw cell colors alone.
+`pattern_board` is routed through the CNN branch as channel 2 (stacked with `board`). Each cell's value = number of 2×2 same-color patterns it participates in, normalised to [0,1]. The CNN can directly see where valuable overlap clusters are, rather than having to infer pattern locations from raw cell colors alone.
+
+`ghost_board` is channel 3: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. This gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity. Neither `pattern_board` nor `ghost_board` is in `MLP_KEYS`; both route exclusively through the CNN.
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
 
@@ -240,7 +242,8 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory when `
 | PPO_11 | 2M | 14.58 @ 700k | 0.30 (stable) | 0.35 | `share_features_extractor=False`, LR 1e-4→1e-5, clip_range 0.2. No collapse. EV ceiling ~0.35, value loss drifted up in second half. |
 | PPO_12 | 2M | 10.31 @ 450k | — | — | `features_dim=256`, LR 3e-5→3e-6, `n_steps=4096`, `gamma=0.995`, `target_kl=0.01`, entropy 0.1→0.01, `eval_episodes=50`. Larger model + longer rollouts hurt. |
 | PPO_13 | 2M | 16.09 @ 950k | 0.17 | 0.55 | Dense `patterns_created*0.05` reward; `pattern_board` 2nd CNN channel; `features_dim=128`, LR 5e-5→5e-6. New best, but plateaued at 400k. |
-| PPO_14 | — | — | — | — | `gae_lambda=0.90`, `n_envs=16`, `eval_episodes=100`, LR 3e-5→3e-6. Targets EV ceiling via reduced advantage variance + more rollout diversity. |
+| PPO_14 | 2M | — | — | 0.66 | `gae_lambda=0.90`, `n_envs=16`, `eval_episodes=100`, LR 3e-5→3e-6. Broke EV ceiling (0.55→0.66); plateau at ~15 eval reward by 1.28M steps. |
+| PPO_15 | — | — | — | — | `ghost_board` 3rd CNN channel: board state after current block hard-drops. Targets placement planning signal for chain building. |
 
 ### PPO_10 post-mortem
 
