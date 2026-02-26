@@ -120,46 +120,24 @@ def test_squares_delta_reward_positive_when_square_formed():
 
 
 # ---------------------------------------------------------------------------
-# Height reward
+# Height delta (potential-based)
 # ---------------------------------------------------------------------------
 
-def test_reward_components_has_height_reward():
-    """After any step, reward_components must include height_reward."""
+def test_reward_components_has_height_delta():
+    """After any step, reward_components must include height_delta."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "height_reward" in info["reward_components"]
+    assert "height_delta" in info["reward_components"]
 
 
-def test_height_reward_penalizes_tall_column():
-    """When target column is taller than average, height_reward must be < 0."""
+def test_height_delta_negative_when_no_clear():
+    """Placing a block with no timeline clear increases aggregate height → height_delta < 0."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    board = create_empty_board()
-    # Fill column 0 from row 2 down (height = 8), all others empty
-    for row in range(2, BOARD_HEIGHT):
-        board[row][0] = 1
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
-    _, _, _, _, info = env.step(0)  # targetX=0, rotation=0
-    assert info["reward_components"]["height_reward"] < 0
-
-
-def test_height_reward_negative_when_board_has_cells():
-    """Aggregate height: a non-empty board gives height_reward < 0 regardless of placement column."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    board = create_empty_board()
-    # Fill all columns except column 7 to height 6; column 7 stays empty.
-    # With per-column formula this gave 0.0 (placing on empty col).
-    # With aggregate, all the other filled columns make it negative.
-    for col in range(BOARD_WIDTH):
-        if col == 7:
-            continue
-        for row in range(4, BOARD_HEIGHT):
-            board[row][col] = 1
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
-    _, _, _, _, info = env.step(28)  # targetX=7, rotation=0
-    assert info["reward_components"]["height_reward"] < 0
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
+    _, _, _, _, info = env.step(0)
+    assert info["reward_components"]["height_delta"] < 0
 
 
 # ---------------------------------------------------------------------------
@@ -225,92 +203,183 @@ def test_reward_components_has_chain_delta():
 # Survival bonus removal
 # ---------------------------------------------------------------------------
 
-def test_survival_bonus_is_always_zero():
-    """survival_bonus must be 0.0 even for non-terminal steps."""
+def test_survival_bonus_positive_on_non_terminal_step():
+    """survival_bonus must be SURVIVAL_BONUS (> 0) on non-terminal steps."""
+    from python.game.env import SURVIVAL_BONUS
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    _, _, _, _, info = env.step(0)
-    assert info["reward_components"]["survival_bonus"] == 0.0
+    _, _, done, _, info = env.step(0)
+    if not done:
+        assert info["reward_components"]["survival_bonus"] == pytest.approx(SURVIVAL_BONUS)
+
+
+def test_survival_bonus_zero_on_game_over():
+    """survival_bonus must be 0.0 on the terminal step."""
+    from python.game.env import SURVIVAL_BONUS
+    import pytest
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    done = False
+    info = {}
+    while not done:
+        _, _, done, _, info = env.step(0)
+    assert info["reward_components"]["survival_bonus"] == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------
-# Aggregate height reward
+# _count_adj_contacts
 # ---------------------------------------------------------------------------
 
-def test_height_reward_aggregate_empty_board_zero():
-    """Aggregate height of an empty board is 0, so height_reward == 0.0."""
+def _make_env_blank():
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
-    _, _, _, _, info = env.step(0)
-    assert info["reward_components"]["height_reward"] == 0.0
+    return env
 
 
-def test_height_reward_aggregate_accounts_for_non_placement_columns():
-    """Aggregate height: filling col 5 only (not placement col 0) still gives height_reward < 0."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
+def test_adj_contacts_empty_board_returns_zero():
+    env = _make_env_blank()
     board = create_empty_board()
-    for r in range(BOARD_HEIGHT - 5, BOARD_HEIGHT):
-        board[r][5] = 1          # only col 5 filled; placement col is 0
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
-    _, _, _, _, info = env.step(0)   # targetX=0, col 0 is empty
-    # Per-column formula → 0.0. Aggregate formula → negative.
-    assert info["reward_components"]["height_reward"] < 0
+    pattern = [[1, 1], [1, 1]]
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 0
 
 
-def test_height_reward_aggregate_more_negative_for_fuller_board():
-    """Aggregate height: all columns filled penalizes more than one column filled."""
-    env1 = LuminesEnvNative(mode="per_block", seed="42")
-    env1.reset()
-    board1 = create_empty_board()
-    for r in range(BOARD_HEIGHT - 5, BOARD_HEIGHT):
-        board1[r][0] = 1         # only col 0, height 5
-    env1._state = env1._state.__class__(**{**env1._state.__dict__, "board": board1})
-    _, _, _, _, info1 = env1.step(0)
-
-    env2 = LuminesEnvNative(mode="per_block", seed="42")
-    env2.reset()
-    board2 = create_empty_board()
-    for c in range(BOARD_WIDTH):
-        for r in range(BOARD_HEIGHT - 5, BOARD_HEIGHT):
-            board2[r][c] = 1     # all 16 cols, height 5
-    env2._state = env2._state.__class__(**{**env2._state.__dict__, "board": board2})
-    _, _, _, _, info2 = env2.step(0)
-
-    assert info2["reward_components"]["height_reward"] < info1["reward_components"]["height_reward"]
-
-
-# ---------------------------------------------------------------------------
-# Color adjacency
-# ---------------------------------------------------------------------------
-
-def test_reward_components_has_color_adjacency():
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, _, _, info = env.step(0)
-    assert "color_adjacency" in info["reward_components"]
-
-
-def test_color_adjacency_zero_on_empty_board():
-    """Placing on a fully empty board means no same-color neighbors → color_adjacency == 0."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
-    _, _, _, _, info = env.step(0)
-    assert info["reward_components"]["color_adjacency"] == 0
-
-
-def test_color_adjacency_positive_with_same_color_right_neighbor():
-    """Block at x=0 with same-color cells in col 2 (right neighbor) → color_adjacency > 0."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    block = env._state.current_block.pattern
+def test_adj_contacts_left_neighbor_same_color():
+    """Both rows have a same-color cell to the left → count=2."""
+    env = _make_env_blank()
     board = create_empty_board()
-    # Block drops to rows 8-9 on an empty board. Its right column is at board-col 1.
-    # Place the matching colors in col 2 (external right neighbor of the block's right column).
-    board[8][2] = block[0][1]
-    board[9][2] = block[1][1]
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
-    _, _, _, _, info = env.step(0)   # targetX=0, rotation=0
-    assert info["reward_components"]["color_adjacency"] > 0
+    # Left neighbor at col 4, rows 7 and 8
+    board[7][4] = 1
+    board[8][4] = 1
+    pattern = [[1, 2], [1, 2]]  # left cells are color 1
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 2
+
+
+def test_adj_contacts_right_neighbor_same_color():
+    """Both rows have a same-color cell to the right → count=2."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    # Right neighbor at col 7 (drop_x=5, drop_x+2=7), rows 7 and 8
+    board[7][7] = 2
+    board[8][7] = 2
+    pattern = [[1, 2], [1, 2]]  # right cells are color 2
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 2
+
+
+def test_adj_contacts_wrong_color_not_counted():
+    """Neighbor cell exists but is a different color → 0."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    board[7][4] = 2  # wrong color vs pattern left cell (color 1)
+    board[8][4] = 2
+    pattern = [[1, 2], [1, 2]]
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 0
+
+
+def test_adj_contacts_above_same_color():
+    """Both cells above the top row of the block match → count=2."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    # Above row = drop_y - 1 = 6, cols 5 and 6
+    board[6][5] = 1
+    board[6][6] = 2
+    pattern = [[1, 2], [2, 1]]
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 2
+
+
+def test_adj_contacts_no_above_at_top_row():
+    """drop_y=0 → vertical-above check is skipped → 0."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    pattern = [[1, 2], [1, 2]]
+    assert env._count_adj_contacts(pattern, 5, 0, board) == 0
+
+
+def test_adj_contacts_negative_drop_y_returns_zero():
+    """drop_y < 0 → return 0 immediately."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    pattern = [[1, 2], [1, 2]]
+    assert env._count_adj_contacts(pattern, 5, -1, board) == 0
+    assert env._count_adj_contacts(pattern, 5, -2, board) == 0
+
+
+def test_adj_contacts_left_edge_no_index_error():
+    """drop_x=0 → no left-neighbor check, no crash."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    pattern = [[1, 2], [1, 2]]
+    result = env._count_adj_contacts(pattern, 0, 5, board)
+    assert result == 0  # no neighbors present
+
+
+def test_adj_contacts_right_edge_no_index_error():
+    """drop_x=14 → no right-neighbor check (14+2=16 >= BOARD_WIDTH), no crash."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    pattern = [[1, 2], [1, 2]]
+    result = env._count_adj_contacts(pattern, 14, 5, board)
+    assert result == 0  # no neighbors present
+
+
+def test_adj_contacts_max_six():
+    """All 6 neighbor cells present and matching → count=6."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    # drop_x=5, drop_y=7 → block occupies rows 7-8, cols 5-6
+    # Left neighbors: rows 7,8 col 4
+    board[7][4] = 1
+    board[8][4] = 1
+    # Right neighbors: rows 7,8 col 7
+    board[7][7] = 2
+    board[8][7] = 2
+    # Above neighbors: row 6, cols 5,6
+    board[6][5] = 1
+    board[6][6] = 2
+    pattern = [[1, 2], [1, 2]]
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 6
+
+
+def test_adj_contacts_partial_match():
+    """2 of 4 horizontal neighbors match → count=2."""
+    env = _make_env_blank()
+    board = create_empty_board()
+    # Left neighbor row 7 matches, row 8 wrong color
+    board[7][4] = 1
+    board[8][4] = 2  # wrong color
+    # Right neighbor row 7 wrong color, row 8 matches
+    board[7][7] = 1  # wrong color
+    board[8][7] = 2
+    pattern = [[1, 2], [1, 2]]
+    assert env._count_adj_contacts(pattern, 5, 7, board) == 2
+
+
+def test_reward_components_has_adj_bonus():
+    """adj_bonus key must be present in reward_components after any step."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "adj_bonus" in info["reward_components"]
+
+
+def test_adj_bonus_non_negative():
+    """adj_bonus must be >= 0 for 10 consecutive steps."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    for _ in range(10):
+        _, _, done, _, info = env.step(0)
+        assert info["reward_components"]["adj_bonus"] >= 0.0
+        if done:
+            break
+
+
+def test_adj_bonus_zero_on_game_over():
+    """adj_bonus must be 0.0 on the terminal (game over) step."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    done = False
+    info = {}
+    while not done:
+        _, _, done, _, info = env.step(0)
+    assert info["reward_components"]["adj_bonus"] == pytest.approx(0.0)
+
+

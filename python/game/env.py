@@ -14,28 +14,35 @@ comes from the timeline sweeping across *consecutive columns* of same-color
 2×2 patterns. Longer chains = more holding_score accumulated before payout.
 
     reward = score_delta
-           + chain_delta  * 0.3   # extending a run of consecutive pattern cols
-           + color_adj    * 0.1   # placing next to existing same-color cells
-           + height_reward        # -(aggregate_height / 160) * 0.5
+           + squares_delta * 0.2  # creating 2×2 same-color patterns (requires color matching)
+           + chain_delta   * 0.3  # extending a run of consecutive pattern cols
+           + height_delta         # -(height_increase / 160) * 0.5  (potential-based)
+           + adj_bonus            # ADJ_BONUS_WEIGHT × same-color contacts (dense signal)
+           + survival_bonus       # SURVIVAL_BONUS per step (not on game over)
            + death_penalty        # DEATH_PENALTY on game over, else 0
 
-    score_delta   — actual game score increase this step (primary objective)
-    chain_delta   — change in the longest consecutive run of columns that
-                    contain at least one 2×2 same-color pattern; rewards the
-                    combo strategy of building and extending color chains
-    color_adj     — number of external same-color neighbors of the placed
-                    block's cells in the pre-drop board; encourages placing
-                    blocks adjacent to same-color regions to enable chains
-    height_reward — aggregate height of all columns (sum / 160) penalizes
-                    overall board fullness; accounts for every column, not
-                    just the placement column
-    death_penalty — DEATH_PENALTY when the game ends; no per-step survival bonus
-                    (the agent's incentive to survive comes from future
-                    scoring opportunities, not a flat bonus)
+    score_delta    — actual game score increase this step (primary objective)
+    squares_delta  — change in the number of 2×2 same-color patterns on the board;
+                     positive when patterns are created, negative when swept by the
+                     timeline (offset by the simultaneous score_delta payout)
+    chain_delta    — change in the longest consecutive run of columns that
+                     contain at least one 2×2 same-color pattern; rewards the
+                     combo strategy of building and extending color chains
+    height_delta   — change in aggregate column height * -0.5/160; penalises
+                     raising the board, rewards clearing rows. Potential-based
+                     so it does not shift the value-function baseline every step.
+    adj_bonus      — ADJ_BONUS_WEIGHT × count of same-color contacts between the
+                     placed block and pre-existing board cells (horizontal left/right
+                     + vertical above, up to 6 contacts). Provides a dense per-step
+                     signal that fires on every placement, before any pattern completes.
+    survival_bonus — small constant reward per non-terminal step; gives the
+                     critic a dense per-step signal to bootstrap from. Much
+                     smaller than death_penalty so timid play is still penalised.
+    death_penalty  — DEATH_PENALTY on game over
 
 reward_components keys emitted in info:
-    score_delta, squares_delta (informational), chain_delta, color_adjacency,
-    survival_bonus (always 0.0), death_penalty, height_reward, total
+    score_delta, squares_delta, chain_delta,
+    adj_bonus, survival_bonus, death_penalty, height_delta, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -61,6 +68,8 @@ from .validation import find_drop_position
 
 # Reward hyperparameters
 DEATH_PENALTY = -3.0
+SURVIVAL_BONUS = 0.05
+ADJ_BONUS_WEIGHT = 0.04
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -205,23 +214,18 @@ class LuminesEnvNative(gym.Env):
         # Capture actual column after movement (before hard drop changes block_position)
         actual_x = self._state.block_position_x
 
-        # Aggregate height penalty — computed from pre-drop board
-        aggregate_height = sum(self._column_heights())
-        height_reward = -aggregate_height / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
-
-        # Color adjacency — same-color neighbors of where the block will land
-        drop_y = find_drop_position(
+        # Capture pre-drop state for adj_bonus computation
+        pre_drop_y = find_drop_position(
             self._state.board,
             self._state.current_block,
             actual_x,
             self._state.block_position_y,
             self._state.falling_columns,
         )
-        color_adj = float(self._color_adjacency_score(
-            actual_x, drop_y,
-            self._state.current_block.pattern,
-            self._state.board,
-        ))
+        pre_drop_pattern = [row[:] for row in self._state.current_block.pattern]
+
+        # Pre-drop aggregate height for potential-based height shaping
+        prev_aggregate_height = sum(self._column_heights())
 
         # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
@@ -264,20 +268,26 @@ class LuminesEnvNative(gym.Env):
         score_delta = float(self._state.score - prev_score)
         squares_delta = float(self._count_complete_squares() - prev_squares)
         chain_delta = float(self._count_chain_length() - prev_chain)
+        height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
-        if done:
-            reward = score_delta + DEATH_PENALTY + height_reward
+        if not done:
+            adj_bonus = self._count_adj_contacts(
+                pre_drop_pattern, actual_x, pre_drop_y, self._state.board
+            ) * ADJ_BONUS_WEIGHT
         else:
-            reward = score_delta + chain_delta * 0.3 + color_adj * 0.1 + height_reward
+            adj_bonus = 0.0
+        death = DEATH_PENALTY if done else 0.0
+        survival = 0.0 if done else SURVIVAL_BONUS
+        reward = score_delta + squares_delta * 0.2 + chain_delta * 0.3 + height_delta + adj_bonus + survival + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "squares_delta": squares_delta,
             "chain_delta": chain_delta,
-            "color_adjacency": color_adj,
-            "survival_bonus": 0.0,
-            "death_penalty": DEATH_PENALTY if done else 0.0,
-            "height_reward": height_reward,
+            "adj_bonus": adj_bonus,
+            "survival_bonus": survival,
+            "death_penalty": death,
+            "height_delta": height_delta,
             "total": reward,
         }
         return self._build_obs(), reward, done, False, info
@@ -316,6 +326,40 @@ class LuminesEnvNative(gym.Env):
         reward = score_delta + (-1.0 if done else 0.0)
         return self._build_obs(), reward, done, False, self._build_info()
 
+    def _count_adj_contacts(
+        self,
+        block_pattern: list,
+        drop_x: int,
+        drop_y: int,
+        board: list,
+    ) -> int:
+        """
+        Count same-color contacts between placed block cells and pre-existing
+        board cells outside the 2×2 footprint (up to 6: H×4 + V-above×2).
+        """
+        if drop_y < 0:
+            return 0
+        contacts = 0
+        for dy in range(2):
+            row = drop_y + dy
+            if row >= BOARD_HEIGHT:
+                continue
+            # Left neighbor of left cell
+            if drop_x > 0:
+                if board[row][drop_x - 1] == block_pattern[dy][0]:
+                    contacts += 1
+            # Right neighbor of right cell
+            if drop_x + 2 < BOARD_WIDTH:
+                if board[row][drop_x + 2] == block_pattern[dy][1]:
+                    contacts += 1
+        if drop_y > 0:
+            above_row = drop_y - 1
+            if board[above_row][drop_x] == block_pattern[0][0]:
+                contacts += 1
+            if board[above_row][drop_x + 1] == block_pattern[0][1]:
+                contacts += 1
+        return contacts
+
     def _column_heights(self) -> list:
         """Returns height of each column (0 = empty, BOARD_HEIGHT = full)."""
         board = self._state.board
@@ -347,36 +391,6 @@ class LuminesEnvNative(gym.Env):
             else:
                 run = 0
         return max_run
-
-    def _color_adjacency_score(
-        self,
-        actual_x: int,
-        drop_y: int,
-        block_pattern: list,
-        board: list,
-    ) -> int:
-        """Count external same-color neighbors of placed cells in the pre-drop board."""
-        count = 0
-        for dy in range(2):
-            for dx in range(2):
-                cell_color = block_pattern[dy][dx]
-                if cell_color == 0:
-                    continue
-                cell_x = actual_x + dx
-                cell_y = drop_y + dy
-                for nx, ny in (
-                    (cell_x - 1, cell_y),
-                    (cell_x + 1, cell_y),
-                    (cell_x, cell_y - 1),
-                    (cell_x, cell_y + 1),
-                ):
-                    # Skip cells that are part of the same block
-                    if actual_x <= nx <= actual_x + 1 and drop_y <= ny <= drop_y + 1:
-                        continue
-                    if 0 <= nx < BOARD_WIDTH and 0 <= ny < BOARD_HEIGHT:
-                        if board[ny][nx] == cell_color:
-                            count += 1
-        return count
 
     def _count_complete_squares(self) -> int:
         """Count all 2×2 same-color squares on the board (overlapping squares counted separately)."""
