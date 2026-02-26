@@ -5,8 +5,9 @@ Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
     1. CNN branch   : board (10×16) → Conv2d → flatten → Linear(64) → ReLU
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
-                      + timeline_x(1) + game_timer(1) = 16 values
-                      → Linear(16→64) → ReLU
+                      + timeline_x(1) + game_timer(1) + column_heights(16)
+                      + holes(1) + holding_score(1) + chain_length(1) = 35 values
+                      → Linear(39→64) → ReLU
   Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
 Usage:
@@ -63,16 +64,16 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
     """
 
     # Keys to route through the MLP branch (flattened and concatenated).
-    # pattern_board is routed through the CNN branch as channel 2, not here.
-    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holes"]
+    # pattern_board, ghost_board, timeline_board are routed through the CNN branch, not here.
+    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holes", "holding_score", "chain_length"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
         branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16, 3 channels: raw board + pattern_board + ghost_board) ----
+        # ---- CNN branch (board: 10×16, 4 channels: raw board + pattern_board + ghost_board + timeline_board) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.Conv2d(4, 16, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
@@ -80,7 +81,7 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
         # Compute CNN output size with a dummy forward pass
         with torch.no_grad():
-            dummy_board = torch.zeros(1, 3, 10, 16)
+            dummy_board = torch.zeros(1, 4, 10, 16)
             cnn_out_size = self.cnn(dummy_board).shape[1]
 
         self.cnn_linear = nn.Sequential(
@@ -98,11 +99,12 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        # CNN branch — stack board, pattern_board, and ghost_board as 3-channel input
-        board = observations["board"].float() / 2.0        # [B, 10, 16], values 0–1
-        pattern = observations["pattern_board"].float()    # [B, 10, 16], values 0–1
-        ghost = observations["ghost_board"].float()        # [B, 10, 16], values 0–1
-        x = torch.stack([board, pattern, ghost], dim=1)    # [B, 3, 10, 16]
+        # CNN branch — stack board, pattern_board, ghost_board, timeline_board as 4-channel input
+        board    = observations["board"].float() / 2.0         # [B, 10, 16], values 0–1
+        pattern  = observations["pattern_board"].float()       # [B, 10, 16], values 0–1
+        ghost    = observations["ghost_board"].float()         # [B, 10, 16], values 0–1
+        timeline = observations["timeline_board"].float()      # [B, 10, 16], values 0–1
+        x = torch.stack([board, pattern, ghost, timeline], dim=1)  # [B, 4, 10, 16]
         cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs

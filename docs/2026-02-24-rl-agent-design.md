@@ -1,7 +1,7 @@
 # Lumines RL Agent — Architecture & Usage
 
-**Date:** 2026-02-24 (updated 2026-02-26)
-**Status:** Implemented — PPO_15 in progress (PPO_14 complete)
+**Date:** 2026-02-24 (updated 2026-02-27)
+**Status:** Implemented — PPO_17 in progress (PPO_16 complete)
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -51,32 +51,40 @@ A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 
 ```
 Observation (Dict)
- ├── board (10×16 int8)         ─┐
- ├── pattern_board (10×16 f32)  ─┤ CNN branch (3-channel input)
- ├── ghost_board (10×16 f32)   ─┘   Conv2d(3→16, 3×3, pad=1) → ReLU
- │                                   Conv2d(16→32, 3×3, pad=1) → ReLU
- │                               │   Flatten → Linear(→64) → ReLU
- │                               │                            │
- ├── current_block (2×2) ──────┐ │                            │
- ├── queue (3×2×2)  ───────────┤ │  MLP branch                │
- ├── block_position (2,) ──────┤ │  concat → Linear(37→64)    │
- ├── timeline_x (1,)  ─────────┤ │              → ReLU        │
- ├── game_timer (1,)  ──────────┤ │                            │
- ├── column_heights (16,) ──────┤ │                            │
- └── holes (1,)  ──────────────┘ │                            │
-                                                               │
-                        128-dim concat ←───────────────────────
+ ├── board (10×16 int8)          ─┐
+ ├── pattern_board (10×16 f32)   ─┤ CNN branch (4-channel input)
+ ├── ghost_board (10×16 f32)     ─┤   Conv2d(4→16, 3×3, pad=1) → ReLU
+ ├── timeline_board (10×16 f32) ─┘   Conv2d(16→32, 3×3, pad=1) → ReLU
+ │                                    Flatten → Linear(→64) → ReLU
+ │                                │                             │
+ ├── current_block (2×2) ──────┐  │                             │
+ ├── queue (3×2×2)  ───────────┤  │  MLP branch                 │
+ ├── block_position (2,) ──────┤  │  concat → Linear(39→64)     │
+ ├── timeline_x (1,)  ─────────┤  │              → ReLU         │
+ ├── game_timer (1,)  ──────────┤  │                             │
+ ├── column_heights (16,) ──────┤  │                             │
+ ├── holes (1,)  ───────────────┤  │                             │
+ ├── holding_score (1,)  ───────┤  │                             │
+ └── chain_length (1,)  ────────┘  │                             │
+                                                                  │
+                        128-dim concat ←──────────────────────────
                                │
                     PPO actor head + critic head (separate extractors)
                     net_arch=dict(pi=[128,128], vf=[512,512,256])
 ```
 
-**MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 = 37 values.
+**MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 + 1 + 1 = 39 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
 `pattern_board` is routed through the CNN branch as channel 2 (stacked with `board`). Each cell's value = number of 2×2 same-color patterns it participates in, normalised to [0,1]. The CNN can directly see where valuable overlap clusters are, rather than having to infer pattern locations from raw cell colors alone.
 
-`ghost_board` is channel 3: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. This gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity. Neither `pattern_board` nor `ghost_board` is in `MLP_KEYS`; both route exclusively through the CNN.
+`ghost_board` is channel 3: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. This gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity.
+
+`timeline_board` is channel 4: `pattern_board` masked to columns strictly ahead of the current sweep position (`column > timeline_x`). Already-swept columns are zeroed out. This gives the CNN a direct spatial view of the "live combo zone" — the actionable region where patterns will still be swept. The CNN can align `ghost_board` with `timeline_board` to learn "drop here to extend the active chain." None of `pattern_board`, `ghost_board`, or `timeline_board` is in `MLP_KEYS`; all three route exclusively through the CNN.
+
+`holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
+
+`chain_length` is the longest consecutive run of columns with at least one 2×2 pattern, normalised by `BOARD_WIDTH - 1 = 15`. Together with `holding_score`, it lets the agent condition on the spatial span of the current combo zone — extending a chain of length 4 is now explicitly signalled as high-value.
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
 
@@ -135,8 +143,10 @@ empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 
 ```python
 reward = score_delta
-       + patterns_created * 0.05   # dense: new 2×2 patterns formed by this drop
+       + patterns_created * 0.05            # dense: new 2×2 patterns formed by this drop
        + height_delta
+       + holding_score_reward               # 0.1 per point of holding_score increase during ticks
+       + adjacent_patterns_created * 0.10  # bonus for patterns adjacent to the live combo zone
        + death_penalty  # -3.0 on game over, else 0
 ```
 
@@ -145,9 +155,11 @@ reward = score_delta
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
 | `patterns_created * 0.05` | ≥ 0 | **Dense** signal: immediate reward for each new 2×2 same-color pattern created by this drop. Measured after hard drop but before timeline ticks — always ≥ 0. |
 | `height_delta` | varies | **Potential-based** board pressure: penalises raising aggregate column height, rewards clearing. Zero on stable boards — no absolute baseline noise for the critic |
+| `holding_score_reward` | ≥ 0 | **Combo signal**: 0.1 per point of `holding_score` increase during timeline ticks. Fires immediately as the sweep hits consecutive pattern columns, solving the multi-step credit-assignment problem for chain building. |
+| `adjacent_patterns_created * 0.10` | ≥ 0 | **Spatial alignment signal**: immediate bonus for new 2×2 patterns whose left-edge column is adjacent to (or within) the live combo zone. Fires at placement time — directly rewards aligning drops with existing chains. Zero when no live combo zone exists. |
 | `death_penalty` | −3.0 | Penalise game over |
 
-`squares_delta` and `patterns_created` are both tracked in `info["reward_components"]` for observability.
+`squares_delta`, `patterns_created`, and `holding_score_reward` are all tracked in `info["reward_components"]` for observability.
 
 No flat survival bonus — the agent's incentive to survive comes from future
 scoring opportunities.
@@ -243,7 +255,9 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory when `
 | PPO_12 | 2M | 10.31 @ 450k | — | — | `features_dim=256`, LR 3e-5→3e-6, `n_steps=4096`, `gamma=0.995`, `target_kl=0.01`, entropy 0.1→0.01, `eval_episodes=50`. Larger model + longer rollouts hurt. |
 | PPO_13 | 2M | 16.09 @ 950k | 0.17 | 0.55 | Dense `patterns_created*0.05` reward; `pattern_board` 2nd CNN channel; `features_dim=128`, LR 5e-5→5e-6. New best, but plateaued at 400k. |
 | PPO_14 | 2M | — | — | 0.66 | `gae_lambda=0.90`, `n_envs=16`, `eval_episodes=100`, LR 3e-5→3e-6. Broke EV ceiling (0.55→0.66); plateau at ~15 eval reward by 1.28M steps. |
-| PPO_15 | — | — | — | — | `ghost_board` 3rd CNN channel: board state after current block hard-drops. Targets placement planning signal for chain building. |
+| PPO_15 | ~1.5M | 18.77 @ 700k | — | — | `ghost_board` 3rd CNN channel: board state after current block hard-drops. New best eval reward ~18.8; agent survives longer but doesn't chain combos. |
+| PPO_16 | 1.6M | 22.46 @ 1.6M | 0.14 | 0.73 | Combo awareness: `timeline_board` 4th CNN channel (live combo zone), `holding_score` MLP scalar, `holding_score_delta * 0.1` chain reward. New best; still trending up. |
+| PPO_17 | — | — | — | — | Adjacent-pattern reward (`adjacent_patterns_created * 0.10` at placement time); `chain_length` MLP obs. No architecture change. |
 
 ### PPO_10 post-mortem
 

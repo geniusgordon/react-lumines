@@ -10,19 +10,32 @@ Action spaces:
 Reward (per_block mode)
 -----------------------
     reward = score_delta
-           + patterns_created * 0.05  # immediate signal for each new 2×2 pattern after drop
-           + height_delta             # -(height_increase / 160) * 0.5  (potential-based)
-           + death_penalty            # DEATH_PENALTY on game over, else 0
+           + patterns_created * 0.05          # immediate signal for each new 2×2 pattern after drop
+           + height_delta                      # -(height_increase / 160) * 0.5  (potential-based)
+           + holding_score_reward              # 0.1 per point of holding_score increase during ticks
+           + adjacent_patterns_created * 0.10 # bonus for patterns created adjacent to live combo zone
+           + death_penalty                     # DEATH_PENALTY on game over, else 0
 
     patterns_created is measured after hard drop but before timeline ticks, so it is
     always >= 0 (placing a block can only add cells, never remove them). This avoids
     the conflicting signal problem: the agent gets +reward for building patterns, and
     separately gets score_delta when the timeline clears those patterns.
 
+    holding_score_reward gives immediate credit for extending combos — fires each time
+    the sweep hits a pattern column during the timeline ticks. This solves the
+    multi-step credit-assignment problem for chained patterns.
+
+    adjacent_patterns_created counts new 2×2 patterns whose left-edge column is adjacent
+    to (or within) the live combo zone (columns currently holding patterns ahead of the
+    timeline sweep). Rewarded at 0.10 per pattern — 2× patterns_created weight so the
+    agent clearly prefers chain-extending placements over isolated ones. Zero when no
+    live combo zone exists (empty board), avoiding spurious early signal.
+
     squares_delta is tracked in info for monitoring but excluded from the reward.
 
 reward_components keys emitted in info:
-    score_delta, squares_delta, patterns_created, height_delta, death_penalty, total
+    score_delta, squares_delta, patterns_created, height_delta, holding_score_reward,
+    adjacent_patterns_created, death_penalty, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -92,12 +105,13 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — identical to LuminesEnv, plus pattern_board channel
+        # Observation space — identical to LuminesEnv, plus pattern/ghost/timeline channels
         self.observation_space = spaces.Dict(
             {
                 "board": spaces.Box(0, 2, shape=(10, 16), dtype=np.int8),
                 "pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "ghost_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "timeline_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "current_block": spaces.Box(0, 2, shape=(2, 2), dtype=np.int8),
                 "block_position": spaces.Box(
                     low=np.array([-2, -2], dtype=np.int32),
@@ -115,6 +129,8 @@ class LuminesEnvNative(gym.Env):
                 "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
                 "column_heights": spaces.Box(0, BOARD_HEIGHT, shape=(BOARD_WIDTH,), dtype=np.float32),
                 "holes": spaces.Box(0, BOARD_HEIGHT * BOARD_WIDTH, shape=(1,), dtype=np.int32),
+                "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
+                "chain_length": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
             }
         )
 
@@ -193,6 +209,15 @@ class LuminesEnvNative(gym.Env):
                 if self._state.block_position_x == prev_x:
                     break
 
+        # Snapshot adjacency zone before drop: columns adjacent to the live combo zone
+        # (columns ahead of the timeline that already hold 2×2 patterns).
+        timeline_snap = self._build_timeline_board()
+        live_cols = {c for c in range(BOARD_WIDTH) if timeline_snap[:, c].max() > 0}
+        adj_zone = {c for c in
+                    live_cols | {c - 1 for c in live_cols} | {c + 1 for c in live_cols}
+                    if 0 <= c < BOARD_WIDTH - 1}  # valid left-edge positions for 2×2 patterns
+        patterns_in_zone_before = self._count_patterns_in_zone(adj_zone) if adj_zone else 0
+
         # Pre-drop aggregate height for potential-based height shaping
         prev_aggregate_height = sum(self._column_heights())
 
@@ -208,14 +233,22 @@ class LuminesEnvNative(gym.Env):
         patterns_after_drop = self._count_complete_squares()
         patterns_created = float(patterns_after_drop - prev_patterns)
 
+        # Measure how many new patterns landed in the adjacency zone (adjacent to live combo zone).
+        # Zero when no live combo zone existed before the drop (empty board / no active patterns).
+        patterns_in_zone_after = self._count_patterns_in_zone(adj_zone) if adj_zone else 0
+        adjacent_patterns_created = float(max(0, patterns_in_zone_after - patterns_in_zone_before))
+
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block. Each tick
         # increments the frame counter, decrements the game timer, re-detects
         # patterns, and advances the timeline (marking and clearing cells).
+        # Track holding_score increases for combo reward.
+        holding_score_reward = 0.0
         for _ in range(self.ticks_per_block):
             if self._state.status == "gameOver":
                 break
             new_timer = self._state.game_timer - 1
+            prev_tick_holding = self._state.timeline.holding_score
             self._state = copy.copy(self._state)
             self._state.frame += 1
             if new_timer <= 0:
@@ -225,6 +258,9 @@ class LuminesEnvNative(gym.Env):
             self._state.game_timer = new_timer
             self._state.detected_patterns = detect_patterns(self._state.board)
             self._state = update_timeline(self._state)
+            new_holding = self._state.timeline.holding_score
+            if new_holding > prev_tick_holding:
+                holding_score_reward += (new_holding - prev_tick_holding) * 0.1
 
         # 5. Settle any floating cells instantly — in per_block mode there are no
         # animation ticks between placements, so falling cells would otherwise
@@ -245,13 +281,15 @@ class LuminesEnvNative(gym.Env):
         height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + patterns_created * 0.05 + height_delta + death
+        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.10 + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "squares_delta": squares_delta,
             "patterns_created": patterns_created,
             "height_delta": height_delta,
+            "holding_score_reward": holding_score_reward,
+            "adjacent_patterns_created": adjacent_patterns_created,
             "death_penalty": death,
             "total": reward,
         }
@@ -336,6 +374,19 @@ class LuminesEnvNative(gym.Env):
                 run = 0
         return max_run
 
+    def _count_patterns_in_zone(self, col_set: set) -> int:
+        """Count 2×2 same-color patterns whose left-edge column is in col_set."""
+        board = self._state.board
+        count = 0
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                if col not in col_set:
+                    continue
+                c = board[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    count += 1
+        return count
+
     def _count_complete_squares(self) -> int:
         """Count all 2×2 same-color squares on the board (overlapping squares counted separately)."""
         board = self._state.board
@@ -364,6 +415,18 @@ class LuminesEnvNative(gym.Env):
                     counts[row + 1][col]     += 1
                     counts[row + 1][col + 1] += 1
         return counts / 4.0
+
+    def _build_timeline_board(self) -> np.ndarray:
+        """
+        Returns pattern_board masked to columns strictly ahead of the timeline sweep
+        (column > timeline_x). Already-swept columns are zeroed out.
+        Gives the CNN a direct spatial view of the 'live' combo zone.
+        """
+        pattern = self._build_pattern_channel()
+        tx = self._state.timeline.x
+        result = pattern.copy()
+        result[:, :tx + 1] = 0.0
+        return result
 
     def _build_ghost_channel(self) -> np.ndarray:
         """
@@ -404,6 +467,7 @@ class LuminesEnvNative(gym.Env):
             "board": np.array(s.board, dtype=np.int8),
             "pattern_board": self._build_pattern_channel(),
             "ghost_board": self._build_ghost_channel(),
+            "timeline_board": self._build_timeline_board(),
             "current_block": np.array(s.current_block.pattern, dtype=np.int8),
             "block_position": np.array(
                 [s.block_position_x, s.block_position_y], dtype=np.int32
@@ -417,6 +481,12 @@ class LuminesEnvNative(gym.Env):
             "game_timer": np.array([s.game_timer], dtype=np.int32),
             "column_heights": np.array(self._column_heights(), dtype=np.float32),
             "holes": np.array([self._compute_holes()], dtype=np.int32),
+            "holding_score": np.array(
+                [min(s.timeline.holding_score / 10.0, 1.0)], dtype=np.float32
+            ),
+            "chain_length": np.array(
+                [self._count_chain_length() / (BOARD_WIDTH - 1)], dtype=np.float32
+            ),
         }
 
     def _build_info(self) -> dict:
