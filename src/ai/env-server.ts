@@ -15,6 +15,8 @@
  *   {"cmd": "close"}
  */
 
+import { writeFileSync } from 'fs';
+import { randomUUID } from 'crypto';
 import { LuminesEnv, type StepMode, type BlockAction, type FrameAction } from './LuminesEnv.js';
 
 // Parse --mode argument
@@ -24,6 +26,14 @@ const mode: StepMode =
   modeIdx !== -1 && (args[modeIdx + 1] === 'per_frame' || args[modeIdx + 1] === 'per_block')
     ? (args[modeIdx + 1] as StepMode)
     : 'per_block';
+
+// --record-replay <path>
+const recordIdx = args.indexOf('--record-replay');
+const recordReplayPath: string | null =
+  recordIdx !== -1 ? (args[recordIdx + 1] ?? null) : null;
+
+let recordedSeed: string = Date.now().toString();
+const recordedInputs: { type: string; frame: number }[] = [];
 
 const env = new LuminesEnv({ mode });
 
@@ -55,11 +65,18 @@ function handleCommand(cmd: Command): void {
   switch (cmd.cmd) {
     case 'reset': {
       const obs = env.reset(cmd.seed ?? undefined);
+      if (recordReplayPath && cmd.seed) {
+        recordedSeed = cmd.seed;
+        recordedInputs.length = 0; // clear for new episode
+      }
       send({ type: 'obs', observation: obs });
       break;
     }
     case 'step': {
       const result = env.step(cmd.action);
+      if (recordReplayPath && result.appliedInputs.length > 0) {
+        recordedInputs.push(...result.appliedInputs);
+      }
       send({ type: 'step', ...result });
       break;
     }
@@ -68,6 +85,19 @@ function handleCommand(cmd: Command): void {
       break;
     }
     case 'close': {
+      if (recordReplayPath && recordedInputs.length > 0) {
+        const replayData = {
+          id: randomUUID(),
+          seed: recordedSeed,
+          inputs: recordedInputs,
+          gameConfig: { version: '1.0.0', timestamp: Date.now() },
+          metadata: {
+            finalScore: 0,
+            playerName: 'AI Agent',
+          },
+        };
+        writeFileSync(recordReplayPath, JSON.stringify(replayData, null, 2));
+      }
       process.exit(0);
     }
   }
