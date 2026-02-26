@@ -61,7 +61,7 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
     """
 
     # Keys to route through the MLP branch (flattened and concatenated)
-    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer"]
+    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holes"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
@@ -232,20 +232,21 @@ def _train_ppo(args, env, eval_env):
         policy_kwargs = dict(
             features_extractor_class=LuminesCNNExtractor,
             features_extractor_kwargs=dict(features_dim=128),
-            net_arch=dict(pi=[128, 128], vf=[256, 256]),
+            net_arch=dict(pi=[128, 128], vf=[512, 512, 256]),
+            share_features_extractor=False,   # separate actor/critic feature extractors
         )
         model = PPO(
             "MultiInputPolicy",
             env,
             learning_rate=linear_schedule(1e-4, 1e-5),
-            n_steps=1024,
+            n_steps=2048,
             batch_size=256,
-            n_epochs=4,
+            n_epochs=10,
             gamma=0.99,
             gae_lambda=0.95,
             clip_range=0.2,
-            ent_coef=0.05,
-            vf_coef=1.0,
+            ent_coef=0.1,
+            vf_coef=2.0,
             max_grad_norm=0.5,
             target_kl=0.02,
             policy_kwargs=policy_kwargs,

@@ -46,7 +46,7 @@ def test_reset_returns_correct_shapes():
     assert obs['board'].shape == (10, 16)
     assert obs['current_block'].shape == (2, 2)
     assert obs['block_position'].shape == (2,)
-    assert obs['queue'].shape == (2, 2, 2)
+    assert obs['queue'].shape == (3, 2, 2)
     assert obs['timeline_x'].shape == (1,)
     assert obs['score'].shape == (1,)
     assert obs['frame'].shape == (1,)
