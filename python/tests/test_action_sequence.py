@@ -44,7 +44,6 @@ def test_safe_prefix_completes_without_game_over():
     for i, action in enumerate(SAFE_ACTIONS):
         _, _, done, _, info = env.step(action)
         assert not done, f"Game ended unexpectedly at step {i} (action={action})"
-        assert info["reward_components"]["survival_bonus"] == pytest.approx(0.0)
 
     assert env._state.status != "gameOver"
 
@@ -100,44 +99,27 @@ def test_col10_height_increases_with_repeated_action41():
     """
     Step action=41 four times and verify:
     - col 10 height increases strictly after each placement
-    - height_reward uses the pre-drop height, so step 1 is 0.0 (col was empty),
-      and steps 2–4 are strictly decreasing (more negative each time)
+    - height_delta is negative each step (block raises aggregate height, no clears)
     """
     env = LuminesEnvNative(mode="per_block", seed="1")
     env.reset(seed=1)
 
     prev_height = env._column_heights()[10]
-    heights_after = []
-    rewards = []
 
     for i in range(4):
         _, _, done, _, info = env.step(41)
         assert not done, f"Game ended unexpectedly on step {i+1}"
 
         curr_height = env._column_heights()[10]
-        curr_height_reward = info["reward_components"]["height_reward"]
-
         assert curr_height > prev_height, (
             f"Step {i+1}: expected col 10 height to increase from {prev_height}, "
             f"got {curr_height}"
         )
-
-        heights_after.append(curr_height)
-        rewards.append(curr_height_reward)
-        prev_height = curr_height
-
-    # Step 1: col was empty before drop → height_reward == 0.0
-    assert rewards[0] == pytest.approx(0.0), (
-        f"Step 1: col 10 was empty before first drop, expected height_reward=0.0, "
-        f"got {rewards[0]}"
-    )
-
-    # Steps 2–4: height_reward should be strictly decreasing (more negative)
-    for i in range(1, 4):
-        assert rewards[i] < rewards[i - 1], (
-            f"Step {i+1}: expected height_reward to decrease "
-            f"(was {rewards[i-1]}, got {rewards[i]})"
+        assert info["reward_components"]["height_delta"] < 0, (
+            f"Step {i+1}: expected height_delta < 0 (block raised board), "
+            f"got {info['reward_components']['height_delta']}"
         )
+        prev_height = curr_height
 
 
 # ---------------------------------------------------------------------------
