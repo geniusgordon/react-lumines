@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ws_eval import (
     compute_column_heights,
-    compute_holes,
     compute_pattern_board,
     compute_ghost_board,
     compute_timeline_board,
@@ -73,34 +72,6 @@ class TestComputeColumnHeights:
         expected = np.array(env._column_heights(), dtype=np.float32)
         got = compute_column_heights(board)
         np.testing.assert_array_equal(got, expected)
-
-
-# ---------------------------------------------------------------------------
-# compute_holes
-# ---------------------------------------------------------------------------
-
-class TestComputeHoles:
-    def test_empty_board(self):
-        board = [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
-        assert compute_holes(board) == 0
-
-    def test_no_holes_solid_column(self):
-        board = [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
-        for row in range(BOARD_HEIGHT):
-            board[row][0] = 1
-        assert compute_holes(board) == 0
-
-    def test_one_hole(self):
-        board = [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
-        board[0][0] = 1   # top
-        board[2][0] = 1   # row 1 is a hole, rows 3-9 also count as holes below filled cells
-        # row 1 (above row 2 filled) + rows 3-9 (below row 2 filled) = 1 + 7 = 8
-        assert compute_holes(board) == 8
-
-    def test_matches_env(self):
-        env = _make_env_with_board()
-        board = env._state.board
-        assert compute_holes(board) == env._compute_holes()
 
 
 # ---------------------------------------------------------------------------
@@ -313,13 +284,6 @@ class TestObsToNumpy:
         env_obs = env._build_obs()
         ws_obs = obs_to_numpy(obs_json)
         np.testing.assert_array_almost_equal(ws_obs["column_heights"], env_obs["column_heights"])
-
-    def test_holes(self):
-        env = _make_env_with_board()
-        obs_json = self._env_state_to_obs_json(env)
-        env_obs = env._build_obs()
-        ws_obs = obs_to_numpy(obs_json)
-        np.testing.assert_array_equal(ws_obs["holes"], env_obs["holes"])
 
     def test_chain_length(self):
         # ws_eval derives chain_length from the board directly, matching

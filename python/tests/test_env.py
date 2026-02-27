@@ -18,6 +18,7 @@ def test_adjacent_patterns_reward_weight():
                     + rc["holding_score_reward"]
                     + rc["adjacent_patterns_created"] * 0.05
                     + rc["chain_delta_reward"]
+                    + rc["projected_chain_reward"]
                     + rc["post_sweep_pattern_delta"]
                     + rc["death_penalty"]
                 )

@@ -52,18 +52,6 @@ def compute_column_heights(board):
     return heights
 
 
-def compute_holes(board):
-    total = 0
-    for col in range(BOARD_WIDTH):
-        found = False
-        for row in range(BOARD_HEIGHT):
-            if board[row][col] != 0:
-                found = True
-            elif found:
-                total += 1
-    return total
-
-
 def compute_pattern_board(board):
     pb = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
     for r in range(BOARD_HEIGHT - 1):
@@ -187,7 +175,6 @@ def obs_to_numpy(obs_json: dict) -> dict:
         "frame": np.array([obs_json["frame"]], dtype=np.int32),
         "game_timer": np.array([obs_json["gameTimer"]], dtype=np.int32),
         "column_heights": compute_column_heights(board),
-        "holes": np.array([compute_holes(board)], dtype=np.int32),
         "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
         "chain_length": np.array([compute_chain_length(board)], dtype=np.float32),
         "projected_pattern_board": compute_projected_pattern_board(board.tolist(), marked_cells),

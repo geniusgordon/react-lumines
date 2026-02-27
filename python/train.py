@@ -7,14 +7,15 @@ Architecture:
                       Channels: board, pattern_board, ghost_board, timeline_board, projected_pattern_board
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
                       + timeline_x(1) + game_timer(1) + column_heights(16)
-                      + holes(1) + holding_score(1) + chain_length(1) = 35 values
-                      → Linear(39→64) → ReLU
+                      + holding_score(1) + chain_length(1) = 34 values
+                      → Linear(34→64) → ReLU
   Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
 Usage:
     python python/train.py                                      # DQN (default)
     python python/train.py --algo ppo                           # PPO
     python python/train.py --algo ppo --timesteps 2000000 --envs 8 --device mps
+    python python/train.py --algo dqn                           # DQN
     python python/train.py --resume                             # continues from best_model
     python python/train.py --resume python/checkpoints/lumines_dqn_500000_steps
     python python/train.py --no-native                          # use Node.js IPC env instead
@@ -66,7 +67,7 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
 
     # Keys to route through the MLP branch (flattened and concatenated).
     # pattern_board, ghost_board, timeline_board are routed through the CNN branch, not here.
-    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holes", "holding_score", "chain_length"]
+    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holding_score", "chain_length"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
@@ -181,8 +182,6 @@ def train(args):
 
     if args.algo == "ppo":
         _train_ppo(args, env, eval_env)
-    elif args.algo == "recurrent_ppo":
-        _train_recurrent_ppo(args, env, eval_env)
     else:
         _train_dqn(args, env, eval_env)
 
@@ -315,82 +314,6 @@ def _train_ppo(args, env, eval_env):
     print(f"VecNormalize stats saved to {norm_stats_path}")
 
 
-def _train_recurrent_ppo(args, env, eval_env):
-    from sb3_contrib import RecurrentPPO
-
-    norm_stats_path = os.path.join(args.checkpoint_dir, "vecnormalize_recurrent.pkl")
-
-    if args.resume is not None:
-        checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model_recurrent_ppo")
-        print(f"Resuming RecurrentPPO from {checkpoint} ...")
-        env = VecNormalize.load(norm_stats_path, env)
-        env.training = True
-        eval_env = VecNormalize.load(norm_stats_path, eval_env)
-        eval_env.training = False
-        eval_env.norm_reward = False
-        model = RecurrentPPO.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
-        reset_num_timesteps = False
-    else:
-        env = VecNormalize(env, norm_obs=True, norm_reward=False)
-        eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, training=False)
-        policy_kwargs = dict(
-            features_extractor_class=LuminesCNNExtractor,
-            features_extractor_kwargs=dict(features_dim=128),
-            net_arch=dict(pi=[128], vf=[256, 256]),
-            share_features_extractor=False,
-            lstm_hidden_size=256,
-            n_lstm_layers=1,
-            enable_critic_lstm=False,
-        )
-        model = RecurrentPPO(
-            "MultiInputLstmPolicy",
-            env,
-            learning_rate=linear_schedule(3e-5, 1e-7),
-            n_steps=256,
-            batch_size=128,
-            n_epochs=10,
-            gamma=0.99,
-            gae_lambda=0.95,
-            clip_range=0.2,
-            ent_coef=0.1,
-            vf_coef=1.0,
-            max_grad_norm=0.5,
-            target_kl=0.008,
-            policy_kwargs=policy_kwargs,
-            tensorboard_log=args.log_dir,
-            device=args.device,
-            verbose=1,
-        )
-        reset_num_timesteps = True
-
-    callbacks = [
-        CheckpointCallback(
-            save_freq=50_000 // args.envs,
-            save_path=args.checkpoint_dir,
-            name_prefix="lumines_recurrent_ppo",
-        ),
-        EvalCallback(
-            eval_env,
-            best_model_save_path=args.checkpoint_dir,
-            log_path=args.log_dir,
-            eval_freq=args.eval_freq // args.envs,
-            n_eval_episodes=args.eval_episodes,
-            deterministic=True,
-            render=False,
-            callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
-        ),
-        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.03, total_steps=args.timesteps),
-    ]
-
-    model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
-
-    env.save(norm_stats_path)
-    final_path = os.path.join(args.checkpoint_dir, "final_recurrent_ppo")
-    model.save(final_path)
-    print(f"\nTraining complete. Model saved to {final_path}.zip")
-    print(f"VecNormalize stats saved to {norm_stats_path}")
-
-
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -431,7 +354,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--algo",
-        choices=["dqn", "ppo", "recurrent_ppo"],
+        choices=["dqn", "ppo"],
         default="ppo",
         help="RL algorithm to use (default: ppo)",
     )

@@ -142,7 +142,6 @@ class LuminesEnvNative(gym.Env):
                 ),
                 "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
                 "column_heights": spaces.Box(0, BOARD_HEIGHT, shape=(BOARD_WIDTH,), dtype=np.float32),
-                "holes": spaces.Box(0, BOARD_HEIGHT * BOARD_WIDTH, shape=(1,), dtype=np.int32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "chain_length": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "projected_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
@@ -375,19 +374,6 @@ class LuminesEnvNative(gym.Env):
         reward = score_delta + (-1.0 if done else 0.0)
         return self._build_obs(), reward, done, False, self._build_info()
 
-    def _compute_holes(self) -> int:
-        """Count empty cells that have at least one filled cell above them in the same column."""
-        board = self._state.board
-        holes = 0
-        for col in range(BOARD_WIDTH):
-            found_filled = False
-            for row in range(BOARD_HEIGHT):
-                if board[row][col] != 0:
-                    found_filled = True
-                elif found_filled:
-                    holes += 1
-        return holes
-
     def _column_heights(self) -> list:
         """Returns height of each column (0 = empty, BOARD_HEIGHT = full)."""
         board = self._state.board
@@ -579,7 +565,6 @@ class LuminesEnvNative(gym.Env):
             "frame": np.array([s.frame], dtype=np.int32),
             "game_timer": np.array([s.game_timer], dtype=np.int32),
             "column_heights": np.array(self._column_heights(), dtype=np.float32),
-            "holes": np.array([self._compute_holes()], dtype=np.int32),
             "holding_score": np.array(
                 [min(s.timeline.holding_score / 10.0, 1.0)], dtype=np.float32
             ),
