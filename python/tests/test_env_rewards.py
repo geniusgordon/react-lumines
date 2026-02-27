@@ -224,7 +224,7 @@ def test_reward_components_exact_keys():
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "squares_delta", "patterns_created", "height_delta", "holding_score_reward", "adjacent_patterns_created", "chain_delta_reward", "post_sweep_pattern_delta", "death_penalty", "total"}
+    expected_keys = {"score_delta", "squares_delta", "patterns_created", "height_delta", "holding_score_reward", "adjacent_patterns_created", "chain_delta_reward", "projected_chain_reward", "post_sweep_pattern_delta", "death_penalty", "total"}
     assert set(info["reward_components"].keys()) == expected_keys
 
 
@@ -270,8 +270,8 @@ def test_chain_delta_reward_included_in_total():
     expected_total = (
         rc["score_delta"] + rc["patterns_created"] + rc["height_delta"]
         + rc["holding_score_reward"] + rc["adjacent_patterns_created"]
-        + rc["chain_delta_reward"] + rc["post_sweep_pattern_delta"]
-        + rc["death_penalty"]
+        + rc["chain_delta_reward"] + rc["projected_chain_reward"]
+        + rc["post_sweep_pattern_delta"] + rc["death_penalty"]
     )
     assert rc["total"] == pytest.approx(expected_total)
     assert rc["total"] == pytest.approx(reward)
@@ -412,8 +412,92 @@ def test_post_sweep_pattern_delta_included_in_total():
     expected_total = (
         rc["score_delta"] + rc["patterns_created"] + rc["height_delta"]
         + rc["holding_score_reward"] + rc["adjacent_patterns_created"]
-        + rc["chain_delta_reward"] + rc["post_sweep_pattern_delta"]
-        + rc["death_penalty"]
+        + rc["chain_delta_reward"] + rc["projected_chain_reward"]
+        + rc["post_sweep_pattern_delta"] + rc["death_penalty"]
+    )
+    assert rc["total"] == pytest.approx(expected_total)
+    assert rc["total"] == pytest.approx(reward)
+
+
+# ---------------------------------------------------------------------------
+# projected_pattern_board obs channel (PPO_26)
+# ---------------------------------------------------------------------------
+
+def test_obs_has_projected_pattern_board():
+    """Observation dict must contain 'projected_pattern_board' key."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "projected_pattern_board" in obs
+
+
+def test_obs_projected_pattern_board_shape():
+    """projected_pattern_board must have shape (BOARD_HEIGHT, BOARD_WIDTH)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["projected_pattern_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_projected_pattern_board_no_marked_cells_equals_pattern_board():
+    """When marked_cells is empty, projected_pattern_board must equal pattern_board."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    for r in (8, 9):
+        for c in (0, 1):
+            board[r][c] = 1
+    env._state = env._state.__class__(**{
+        **env._state.__dict__,
+        "board": board,
+        "marked_cells": [],
+    })
+    obs = env._build_obs()
+    np.testing.assert_array_almost_equal(
+        obs["projected_pattern_board"], obs["pattern_board"]
+    )
+
+
+def test_projected_pattern_board_clears_marked_cells():
+    """Marked cells should be removed from the projected board before pattern detection."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # 2×2 pattern at rows 8-9, cols 4-5
+    for r in (8, 9):
+        for c in (4, 5):
+            board[r][c] = 2
+    # Mark all four cells for clearing
+    from python.game.types import Square
+    marked = [Square(x=c, y=r, color=2) for r in (8, 9) for c in (4, 5)]
+    env._state = env._state.__class__(**{
+        **env._state.__dict__,
+        "board": board,
+        "marked_cells": marked,
+    })
+    proj = env._build_projected_pattern_board()
+    # All cells cleared → board empty → no patterns
+    assert np.all(proj == 0.0)
+
+
+def test_projected_chain_reward_in_info():
+    """projected_chain_reward must be present in reward_components on every step."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "projected_chain_reward" in info["reward_components"]
+
+
+def test_projected_chain_reward_included_in_total():
+    """total must equal the step return value and include projected_chain_reward."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, reward, _, _, info = env.step(0)
+    rc = info["reward_components"]
+    # Use the correct weighted formula (patterns_created/adjacent are stored raw, weighted 0.05)
+    expected_total = (
+        rc["score_delta"] + rc["patterns_created"] * 0.05 + rc["height_delta"]
+        + rc["holding_score_reward"] + rc["adjacent_patterns_created"] * 0.05
+        + rc["chain_delta_reward"] + rc["projected_chain_reward"]
+        + rc["post_sweep_pattern_delta"] + rc["death_penalty"]
     )
     assert rc["total"] == pytest.approx(expected_total)
     assert rc["total"] == pytest.approx(reward)

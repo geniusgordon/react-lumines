@@ -103,6 +103,34 @@ def compute_ghost_board(board, current_block, block_x):
     return ghost
 
 
+def compute_projected_pattern_board(board, marked_cells):
+    """
+    Mirror of env._build_projected_pattern_board().
+    board is a 2D list (BOARD_HEIGHT × BOARD_WIDTH).
+    marked_cells is a list of {x, y} dicts (from the browser JSON obs).
+    """
+    proj = [row[:] for row in board]
+    for cell in marked_cells:
+        x, y = cell["x"], cell["y"]
+        if 0 <= y < BOARD_HEIGHT and 0 <= x < BOARD_WIDTH:
+            proj[y][x] = 0
+    # apply gravity: compact each column downward
+    new_board = [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
+    for c in range(BOARD_WIDTH):
+        col = [proj[r][c] for r in range(BOARD_HEIGHT - 1, -1, -1) if proj[r][c] != 0]
+        for i, v in enumerate(col):
+            new_board[BOARD_HEIGHT - 1 - i][c] = v
+    # build pattern channel
+    counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
+    for r in range(BOARD_HEIGHT - 1):
+        for c in range(BOARD_WIDTH - 1):
+            v = new_board[r][c]
+            if v != 0 and v == new_board[r + 1][c] == new_board[r][c + 1] == new_board[r + 1][c + 1]:
+                counts[r][c] += 1; counts[r + 1][c] += 1
+                counts[r][c + 1] += 1; counts[r + 1][c + 1] += 1
+    return counts / 4.0
+
+
 def compute_timeline_board(pattern_board, timeline_x):
     result = pattern_board.copy()
     result[:, :timeline_x + 1] = 0.0
@@ -144,6 +172,7 @@ def obs_to_numpy(obs_json: dict) -> dict:
     queue = np.array(raw_queue[:3], dtype=np.int8)
 
     pattern_board = compute_pattern_board(board)
+    marked_cells = obs_json.get("markedCells", [])
 
     return {
         "board": board,
@@ -161,6 +190,7 @@ def obs_to_numpy(obs_json: dict) -> dict:
         "holes": np.array([compute_holes(board)], dtype=np.int32),
         "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
         "chain_length": np.array([compute_chain_length(board)], dtype=np.float32),
+        "projected_pattern_board": compute_projected_pattern_board(board.tolist(), marked_cells),
     }
 
 

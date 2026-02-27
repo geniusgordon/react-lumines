@@ -3,7 +3,8 @@ train.py — DQN/PPO training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
-    1. CNN branch   : board (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
+    1. CNN branch   : 5-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
+                      Channels: board, pattern_board, ghost_board, timeline_board, projected_pattern_board
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
                       + timeline_x(1) + game_timer(1) + column_heights(16)
                       + holes(1) + holding_score(1) + chain_length(1) = 35 values
@@ -71,9 +72,9 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         super().__init__(observation_space, features_dim)
         branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16, 4 channels: raw board + pattern_board + ghost_board + timeline_board) ----
+        # ---- CNN branch (board: 10×16, 5 channels: raw board + pattern_board + ghost_board + timeline_board + projected_pattern_board) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=3, padding=1),   # stem: 4 → 32 channels
+            nn.Conv2d(5, 32, kernel_size=3, padding=1),   # stem: 5 → 32 channels
             nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 5×5
             nn.ReLU(),
@@ -100,12 +101,13 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        # CNN branch — stack board, pattern_board, ghost_board, timeline_board as 4-channel input
-        board    = observations["board"].float() / 2.0         # [B, 10, 16], values 0–1
-        pattern  = observations["pattern_board"].float()       # [B, 10, 16], values 0–1
-        ghost    = observations["ghost_board"].float()         # [B, 10, 16], values 0–1
-        timeline = observations["timeline_board"].float()      # [B, 10, 16], values 0–1
-        x = torch.stack([board, pattern, ghost, timeline], dim=1)  # [B, 4, 10, 16]
+        # CNN branch — stack board, pattern_board, ghost_board, timeline_board, projected_pattern_board as 5-channel input
+        board     = observations["board"].float() / 2.0                  # [B, 10, 16], values 0–1
+        pattern   = observations["pattern_board"].float()                # [B, 10, 16], values 0–1
+        ghost     = observations["ghost_board"].float()                  # [B, 10, 16], values 0–1
+        timeline  = observations["timeline_board"].float()               # [B, 10, 16], values 0–1
+        projected = observations["projected_pattern_board"].float()      # [B, 10, 16], values 0–1
+        x = torch.stack([board, pattern, ghost, timeline, projected], dim=1)  # [B, 5, 10, 16]
         cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs

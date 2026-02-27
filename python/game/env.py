@@ -15,6 +15,7 @@ Reward (per_block mode)
            + holding_score_reward              # 0.1 per point of holding_score increase during ticks
            + adjacent_patterns_created * 0.05 # bonus for patterns created adjacent to live combo zone
            + chain_delta_reward               # (new_chain² - old_chain²) * 0.02  quadratic chain potential
+           + projected_chain_reward           # (new_proj_chain² - old_proj_chain²) * 0.02  post-clear chain potential
            + post_sweep_pattern_delta         # 0.05 * (patterns_after_ticks - patterns_after_drop), only when score_delta > 0
            + death_penalty                     # DEATH_PENALTY on game over, else 0
 
@@ -38,11 +39,17 @@ Reward (per_block mode)
     board-direct scanning (not detected_patterns, which hard_drop does not refresh).
     Chain breaks are penalised (no max(0,...) clamp) to discourage breaking combo setups.
 
+    projected_chain_reward uses the same quadratic potential but on the board after
+    simulating clear of marked_cells + gravity. Gives the CNN spatial awareness of
+    post-clear board quality at placement time. Same weight (0.02) as chain_delta_reward.
+    No clamp — penalizes placements that break post-clear chains.
+
     squares_delta is tracked in info for monitoring but excluded from the reward.
 
 reward_components keys emitted in info:
     score_delta, squares_delta, patterns_created, height_delta, holding_score_reward,
-    adjacent_patterns_created, chain_delta_reward, post_sweep_pattern_delta, death_penalty, total
+    adjacent_patterns_created, chain_delta_reward, projected_chain_reward,
+    post_sweep_pattern_delta, death_penalty, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -138,6 +145,7 @@ class LuminesEnvNative(gym.Env):
                 "holes": spaces.Box(0, BOARD_HEIGHT * BOARD_WIDTH, shape=(1,), dtype=np.int32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "chain_length": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
+                "projected_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
             }
         )
 
@@ -231,6 +239,9 @@ class LuminesEnvNative(gym.Env):
         # Pre-drop chain length for chain-extension reward shaping
         prev_chain = self._count_chain_length_from_board()
 
+        # Pre-drop projected chain (post-clear board quality)
+        prev_proj_chain = self._count_chain_length_from_board(self._project_board())
+
         # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
 
@@ -252,6 +263,11 @@ class LuminesEnvNative(gym.Env):
         # because hard_drop does not update detected_patterns.
         new_chain = self._count_chain_length_from_board()
         chain_delta_reward = (float(new_chain) ** 2 - float(prev_chain) ** 2) * 0.02
+
+        # Projected chain reward: quadratic potential on the post-clear board.
+        # Incentivises placements that build chains that survive the sweep.
+        new_proj_chain = self._count_chain_length_from_board(self._project_board())
+        projected_chain_reward = (float(new_proj_chain) ** 2 - float(prev_proj_chain) ** 2) * 0.02
 
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block. Each tick
@@ -308,7 +324,7 @@ class LuminesEnvNative(gym.Env):
             float(post_tick_patterns - patterns_after_drop) * 0.05
             if score_delta > 0 else 0.0
         )
-        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + chain_delta_reward + post_sweep_pattern_delta + death
+        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + chain_delta_reward + projected_chain_reward + post_sweep_pattern_delta + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
@@ -318,6 +334,7 @@ class LuminesEnvNative(gym.Env):
             "holding_score_reward": holding_score_reward,
             "adjacent_patterns_created": adjacent_patterns_created,
             "chain_delta_reward": chain_delta_reward,
+            "projected_chain_reward": projected_chain_reward,
             "post_sweep_pattern_delta": post_sweep_pattern_delta,
             "death_penalty": death,
             "total": reward,
@@ -403,13 +420,16 @@ class LuminesEnvNative(gym.Env):
                 run = 0
         return max_run
 
-    def _count_chain_length_from_board(self) -> int:
+    def _count_chain_length_from_board(self, board=None) -> int:
         """
         Like _count_chain_length but scans the board directly instead of using
         self._state.detected_patterns. Use this immediately after hard_drop, before
         the tick loop refreshes detected_patterns.
+
+        Optional board argument lets callers pass a projected board (e.g. after
+        simulating clear + gravity) without mutating state.
         """
-        board = self._state.board
+        board = board if board is not None else self._state.board
         cols_with_patterns: set[int] = set()
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):
@@ -459,6 +479,31 @@ class LuminesEnvNative(gym.Env):
         by dividing by 4 (max possible overlapping patterns per cell).
         """
         board = self._state.board
+        counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    counts[row][col]         += 1
+                    counts[row][col + 1]     += 1
+                    counts[row + 1][col]     += 1
+                    counts[row + 1][col + 1] += 1
+        return counts / 4.0
+
+    def _project_board(self) -> list:
+        """Board state after clearing marked cells and applying gravity."""
+        board = [row[:] for row in self._state.board]
+        for cell in self._state.marked_cells:
+            if 0 <= cell.y < BOARD_HEIGHT and 0 <= cell.x < BOARD_WIDTH:
+                board[cell.y][cell.x] = 0
+        return apply_gravity(board)
+
+    def _build_projected_pattern_board(self) -> np.ndarray:
+        """
+        Pattern channel computed on the projected board (after simulating clear of
+        marked_cells + gravity). When marked_cells is empty, equals _build_pattern_channel().
+        """
+        board = self._project_board()
         counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):
@@ -541,6 +586,7 @@ class LuminesEnvNative(gym.Env):
             "chain_length": np.array(
                 [self._count_chain_length() / (BOARD_WIDTH - 1)], dtype=np.float32
             ),
+            "projected_pattern_board": self._build_projected_pattern_board(),
         }
 
     def _build_info(self) -> dict:
