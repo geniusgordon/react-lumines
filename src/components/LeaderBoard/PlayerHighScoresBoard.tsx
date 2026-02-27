@@ -59,7 +59,7 @@ export const PlayerHighScoresBoard: React.FC<PlayerHighScoresBoardProps> = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold text-gray-300">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold tabular-nums text-gray-300">
                 #{index + 1}
               </div>
               <div>
@@ -70,7 +70,7 @@ export const PlayerHighScoresBoard: React.FC<PlayerHighScoresBoardProps> = ({
               </div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-white">
+              <div className="font-bold tabular-nums text-white">
                 {entry.max_score.toLocaleString()}
               </div>
             </div>

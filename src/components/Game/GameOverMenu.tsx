@@ -90,7 +90,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
             </h2>
             <div className="space-y-1">
               <p className="text-lg text-slate-300">Final Score</p>
-              <p className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-4xl font-bold text-transparent">
+              <p className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-4xl font-bold tabular-nums text-transparent">
                 {score.toLocaleString()}
               </p>
             </div>

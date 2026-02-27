@@ -121,7 +121,7 @@ export function ProgressBar({
             className="absolute bottom-6 min-w-[120px] -translate-x-1/2 rounded bg-black/80 px-2 py-1 text-xs text-white"
             style={{ left: `${hoverProgress * 100}%` }}
           >
-            <div className="text-center">
+            <div className="text-center tabular-nums">
               <div>{formatTime(currentDisplayFrame)}</div>
               <div className="text-gray-400">Frame {currentDisplayFrame}</div>
             </div>

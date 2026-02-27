@@ -19,7 +19,7 @@ export const Countdown: React.FC<CountdownProps> = props => {
       style={{ ...getZIndexStyle(UI_Z_INDEX.MODALS) }}
     >
       <div className="text-center">
-        <div className="text-game-text animate-pulse text-8xl font-bold">
+        <div className="text-game-text animate-pulse text-8xl font-bold tabular-nums">
           {countdown > 0 ? countdown : 'GO!'}
         </div>
       </div>

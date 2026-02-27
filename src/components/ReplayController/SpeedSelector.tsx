@@ -59,7 +59,7 @@ export function SpeedSelector({ speed, onSpeedChange }: SpeedSelectorProps) {
         icon={ChevronDown}
         iconClassName={isOpen ? 'rotate-180' : ''}
       >
-        <span className="font-mono">{currentSpeedLabel}</span>
+        <span className="font-mono tabular-nums">{currentSpeedLabel}</span>
       </Button>
 
       {/* Dropdown Menu */}
@@ -78,7 +78,7 @@ export function SpeedSelector({ speed, onSpeedChange }: SpeedSelectorProps) {
                   : 'text-gray-300'
               }`}
             >
-              <span className="font-mono">{option.label}</span>
+              <span className="font-mono tabular-nums">{option.label}</span>
             </button>
           ))}
         </div>

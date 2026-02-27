@@ -22,7 +22,7 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold text-gray-300">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold tabular-nums text-gray-300">
             #{rank}
           </div>
           <div>
@@ -31,7 +31,7 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({
           </div>
         </div>
         <div className="text-right">
-          <div className="font-bold text-white">{score.toLocaleString()}</div>
+          <div className="font-bold tabular-nums text-white">{score.toLocaleString()}</div>
         </div>
       </div>
     </Link>

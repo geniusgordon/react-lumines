@@ -27,16 +27,16 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
       <div>
         <div className="text-xs">Time</div>
         {gameStatus === 'countdown' || gameStatus === 'countdownPaused' ? (
-          <div className="animate-pulse text-4xl font-bold">
+          <div className="animate-pulse text-4xl font-bold tabular-nums">
             {countdown > 0 ? countdown : 'GO!'}
           </div>
         ) : (
-          <div className="text-4xl font-bold">{timeInSeconds}</div>
+          <div className="text-4xl font-bold tabular-nums">{timeInSeconds}</div>
         )}
       </div>
       <div className="mt-block-size">
         <div className="text-xs">Score</div>
-        <div className="text-4xl font-bold">{score}</div>
+        <div className="text-4xl font-bold tabular-nums">{score}</div>
       </div>
     </div>
   );

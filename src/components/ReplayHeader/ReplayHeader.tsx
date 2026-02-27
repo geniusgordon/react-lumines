@@ -64,7 +64,7 @@ export function ReplayHeader({
             {replayData?.metadata?.finalScore && (
               <>
                 <span className="mx-2">•</span>
-                <span className="font-semibold text-yellow-400">
+                <span className="font-semibold tabular-nums text-yellow-400">
                   Score: {replayData.metadata.finalScore.toLocaleString()}
                 </span>
               </>

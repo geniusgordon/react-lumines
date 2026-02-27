@@ -40,7 +40,7 @@ export function QuickStats(props: QuickStatsProps) {
         </div>
         <div>
           <div className="text-gray-500">Score</div>
-          <div className="font-mono font-semibold text-blue-400">
+          <div className="font-mono font-semibold tabular-nums text-blue-400">
             {score.toLocaleString()}
           </div>
         </div>
@@ -48,7 +48,7 @@ export function QuickStats(props: QuickStatsProps) {
           <div className="text-gray-500">Seed</div>
           <div className="flex items-center gap-2">
             <div
-              className="font-mono font-semibold text-orange-400"
+              className="font-mono font-semibold tabular-nums text-orange-400"
               title={seed}
             >
               {seed.length > 16 ? `${seed.substring(0, 16)}...` : seed}
@@ -65,7 +65,7 @@ export function QuickStats(props: QuickStatsProps) {
         {scale && (
           <div>
             <div className="text-gray-500">Scale</div>
-            <div className="font-mono font-semibold text-purple-400">
+            <div className="font-mono font-semibold tabular-nums text-purple-400">
               {(scale * 100).toFixed(0)}%
             </div>
           </div>

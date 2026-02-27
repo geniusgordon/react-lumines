@@ -27,11 +27,11 @@ export function PerformanceMetrics({
       <div className="grid grid-cols-3 gap-3 text-sm">
         <div>
           <div className="text-gray-500">Frame</div>
-          <div className="font-mono text-gray-200">{frameCount}</div>
+          <div className="font-mono tabular-nums text-gray-200">{frameCount}</div>
         </div>
         <div>
           <div className="text-gray-500">FPS</div>
-          <div className={`font-mono font-semibold ${getFPSColor(currentFPS)}`}>
+          <div className={`font-mono font-semibold tabular-nums ${getFPSColor(currentFPS)}`}>
             {currentFPS}
           </div>
         </div>
