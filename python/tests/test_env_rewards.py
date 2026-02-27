@@ -372,3 +372,47 @@ def test_obs_queue_shape_is_3():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
     assert obs["queue"].shape == (3, 2, 2)
+
+
+# ---------------------------------------------------------------------------
+# post_sweep_pattern_delta (PPO_21)
+# ---------------------------------------------------------------------------
+
+def test_post_sweep_pattern_delta_key_present():
+    """post_sweep_pattern_delta must be present in reward_components on every step."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "post_sweep_pattern_delta" in info["reward_components"]
+
+
+def test_post_sweep_pattern_delta_zero_when_no_sweep():
+    """post_sweep_pattern_delta must be 0.0 when score_delta == 0 (no sweep fired)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    # Run steps until we find one with no score_delta
+    for _ in range(30):
+        _, _, done, _, info = env.step(env.action_space.sample())
+        rc = info["reward_components"]
+        if rc["score_delta"] == 0.0:
+            assert rc["post_sweep_pattern_delta"] == pytest.approx(0.0)
+            return
+        if done:
+            break
+    pytest.skip("Could not find a step with score_delta == 0 in 30 steps")
+
+
+def test_post_sweep_pattern_delta_included_in_total():
+    """total must equal the sum of all components including post_sweep_pattern_delta."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, reward, _, _, info = env.step(0)
+    rc = info["reward_components"]
+    expected_total = (
+        rc["score_delta"] + rc["patterns_created"] + rc["height_delta"]
+        + rc["holding_score_reward"] + rc["adjacent_patterns_created"]
+        + rc["chain_delta_reward"] + rc["post_sweep_pattern_delta"]
+        + rc["death_penalty"]
+    )
+    assert rc["total"] == pytest.approx(expected_total)
+    assert rc["total"] == pytest.approx(reward)
