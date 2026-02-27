@@ -4,6 +4,8 @@ import { BOARD_WIDTH, FRAME_INTERVAL_MS } from '@/constants/gameConfig';
 
 const DEFAULT_WS_URL = 'ws://localhost:8765';
 
+const TICKS_PER_BLOCK = 40; // Matches Python env: (BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL) // 6
+
 export interface UseAiLoopReturn {
   isConnected: boolean;
   isRunning: boolean;
@@ -17,11 +19,13 @@ export function buildObservationFromState(state: GameState): object {
     board: state.board,
     currentBlock: state.currentBlock.pattern,
     blockPosition: { x: state.blockPosition.x, y: state.blockPosition.y },
-    queue: state.queue.slice(0, 2).map(b => b.pattern),
+    queue: state.queue.slice(0, 3).map(b => b.pattern),
     timelineX: state.timeline.x,
     score: state.score,
     frame: state.frame,
     gameTimer: state.gameTimer,
+    holdingScore: state.timeline.holdingScore,
+    detectedPatterns: state.detectedPatterns,
   };
 }
 
@@ -40,6 +44,7 @@ export function useAiLoop(
   const decidingRef = useRef(false);
   const pendingActionRef = useRef<{ targetX: number; rotation: number } | null>(null);
   const lastBlockIdRef = useRef<string | null>(null);
+  const ticksRemainingRef = useRef(0);
   const rafRef = useRef<number>(0);
   const fpsFrameCountRef = useRef(0);
   const fpsLastTimeRef = useRef(0);
@@ -75,7 +80,15 @@ export function useAiLoop(
     };
 
     return () => {
-      ws.close();
+      ws.onopen = null;
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.onmessage = null;
+      if (ws.readyState === WebSocket.CONNECTING) {
+        ws.addEventListener('open', () => ws.close());
+      } else {
+        ws.close();
+      }
       wsRef.current = null;
     };
   }, [wsUrl]);
@@ -112,6 +125,21 @@ export function useAiLoop(
           for (let i = 0; i < clampedDx; i++) dispatch({ type: 'MOVE_RIGHT' });
         }
         dispatch({ type: 'HARD_DROP' });
+        ticksRemainingRef.current = TICKS_PER_BLOCK;
+        return;
+      }
+
+      // Post-placement timeline advancement — matches Python env's ticks_per_block
+      if (ticksRemainingRef.current > 0) {
+        dispatch({ type: 'TICK' });
+        ticksRemainingRef.current--;
+        return;
+      }
+
+      // Wait for all falling cells to settle before sending observation.
+      // Mirrors Python's apply_gravity() settle step after the 40-tick loop.
+      if (state.fallingColumns.length > 0) {
+        dispatch({ type: 'TICK' });
         return;
       }
 
