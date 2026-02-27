@@ -265,7 +265,7 @@ def _train_ppo(args, env, eval_env):
         model = PPO(
             "MultiInputPolicy",
             env,
-            learning_rate=linear_schedule(3e-5, 1e-6),
+            learning_rate=linear_schedule(3e-5, 1e-7),
             n_steps=2048,
             batch_size=256,
             n_epochs=10,
@@ -275,7 +275,7 @@ def _train_ppo(args, env, eval_env):
             ent_coef=0.1,
             vf_coef=2.0,
             max_grad_norm=0.5,
-            target_kl=0.01,
+            target_kl=0.008,
             policy_kwargs=policy_kwargs,
             tensorboard_log=args.log_dir,
             device=args.device,
