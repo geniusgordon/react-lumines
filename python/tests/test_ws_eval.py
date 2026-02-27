@@ -214,23 +214,33 @@ class TestComputeGhostBoard:
 # ---------------------------------------------------------------------------
 
 class TestComputeChainLength:
-    def test_empty_board(self):
-        pb = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
-        assert compute_chain_length(pb) == pytest.approx(0.0)
+    def _empty_board(self):
+        return [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
 
-    def test_single_column_pattern(self):
-        pb = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
-        pb[0][0] = 0.25  # pattern left-edge at col 0
-        result = compute_chain_length(pb)
-        # run of 1 in cols 0..14 → 1/15
+    def test_empty_board(self):
+        assert compute_chain_length(self._empty_board()) == pytest.approx(0.0)
+
+    def test_single_2x2_pattern(self):
+        board = self._empty_board()
+        # 2×2 pattern at left-edge col 0
+        board[0][0] = 1; board[0][1] = 1; board[1][0] = 1; board[1][1] = 1
+        result = compute_chain_length(board)
+        # run of 1 left-edge col (0) → 1/15
         assert result == pytest.approx(1.0 / (BOARD_WIDTH - 1))
 
-    def test_rightmost_col_not_double_counted(self):
-        pb = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
-        # pattern at left-edge col 14 → fills cols 14 and 15 in pattern_board
-        pb[0][14] = 0.25; pb[0][15] = 0.25
-        result = compute_chain_length(pb)
-        # only col 14 is scanned (left-edge range 0..14) → run of 1
+    def test_right_edge_not_counted_as_separate_run(self):
+        board = self._empty_board()
+        # Pattern at left-edge col 3: right-edge col 4 must NOT be counted separately
+        board[8][3] = 1; board[8][4] = 1; board[9][3] = 1; board[9][4] = 1
+        result = compute_chain_length(board)
+        # Only one left-edge (col 3) → run of 1
+        assert result == pytest.approx(1.0 / (BOARD_WIDTH - 1))
+
+    def test_rightmost_pattern(self):
+        board = self._empty_board()
+        # Pattern at left-edge col 14 (rightmost valid left-edge)
+        board[8][14] = 1; board[8][15] = 1; board[9][14] = 1; board[9][15] = 1
+        result = compute_chain_length(board)
         assert result == pytest.approx(1.0 / (BOARD_WIDTH - 1))
 
     def test_matches_env(self):
@@ -239,8 +249,7 @@ class TestComputeChainLength:
         # detected_patterns and can differ from board state).
         env = _make_env_with_board()
         board = env._state.board
-        pb = compute_pattern_board(board)
-        got = compute_chain_length(pb)
+        got = compute_chain_length(board)
         expected = env._count_chain_length_from_board() / (BOARD_WIDTH - 1)
         assert got == pytest.approx(expected, abs=1e-5)
 
@@ -311,17 +320,13 @@ class TestObsToNumpy:
         np.testing.assert_array_equal(ws_obs["holes"], env_obs["holes"])
 
     def test_chain_length(self):
-        # ws_eval derives chain_length from the board directly (like
-        # _count_chain_length_from_board), not from detected_patterns
-        # (_count_chain_length). Both scan the same board so they agree when
-        # detected_patterns reflects the current board state.
+        # ws_eval derives chain_length from the board directly, matching
+        # env._count_chain_length_from_board.
         env = _make_env_with_board()
         obs_json = self._env_state_to_obs_json(env)
+        env_obs = env._build_obs()
         ws_obs = obs_to_numpy(obs_json)
-        board = env._state.board
-        pb = compute_pattern_board(board)
-        expected = compute_chain_length(pb)
-        np.testing.assert_array_almost_equal(ws_obs["chain_length"], [expected])
+        np.testing.assert_array_almost_equal(ws_obs["chain_length"], env_obs["chain_length"])
 
     def test_holding_score(self):
         env = _make_env_with_board()

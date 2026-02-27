@@ -109,10 +109,21 @@ def compute_timeline_board(pattern_board, timeline_x):
     return result
 
 
-def compute_chain_length(pattern_board):
+def compute_chain_length(board):
+    """Longest consecutive run of left-edge columns that have a 2×2 same-color
+    pattern, normalised to [0, 1] by dividing by BOARD_WIDTH-1 (=15).
+    Mirrors env._count_chain_length_from_board() exactly."""
+    cols_with_patterns: set = set()
+    for row in range(BOARD_HEIGHT - 1):
+        for col in range(BOARD_WIDTH - 1):
+            c = board[row][col]
+            if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                cols_with_patterns.add(col)
+    if not cols_with_patterns:
+        return 0.0
     max_run = cur = 0
-    for col in range(BOARD_WIDTH - 1):  # left-edge of 2×2 pattern: 0..14
-        if np.any(pattern_board[:, col] > 0):
+    for col in range(BOARD_WIDTH - 1):
+        if col in cols_with_patterns:
             cur += 1; max_run = max(max_run, cur)
         else:
             cur = 0
@@ -149,7 +160,7 @@ def obs_to_numpy(obs_json: dict) -> dict:
         "column_heights": compute_column_heights(board),
         "holes": np.array([compute_holes(board)], dtype=np.int32),
         "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
-        "chain_length": np.array([compute_chain_length(pattern_board)], dtype=np.float32),
+        "chain_length": np.array([compute_chain_length(board)], dtype=np.float32),
     }
 
 
