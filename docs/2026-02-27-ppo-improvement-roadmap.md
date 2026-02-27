@@ -64,8 +64,10 @@ Asynchronous distributed actor-learner architecture with V-trace correction.
 | PPO_23 | Next-block obs + `n_steps=4096` | Break plateau, better combo timing | Eval ~23, plateau |
 | PPO_24 | Disable reward normalization (`norm_reward=False`) | Isolate VecNormalize signal compression; expose raw combo spike magnitude to critic | Done |
 | PPO_25 | Quadratic chain delta reward `(new_chain² - old_chain²) * 0.02` | Incentivise long combos over isolated placements | Done |
-| PPO_26 | `projected_pattern_board` 5th CNN channel + `projected_chain_reward` `(new_proj_chain² - old_proj_chain²) * 0.02` | Spatial awareness of post-clear board quality | In progress |
-| PPO_27 | PPG (if PPO ceiling confirmed) | Better late-training EV and stability | — |
+| PPO_26 | `projected_pattern_board` 5th CNN channel + `projected_chain_reward` `(new_proj_chain² - old_proj_chain²) * 0.02` | Spatial awareness of post-clear board quality | Eval peaked ~24.2, plateau ~21–24 |
+| PPO_27 | `norm_reward=True`, `clip_range_vf=0.2`, `vf_coef=0.5` | Stabilise rising value loss; keep value targets bounded | Eval peaked ~19.7 @ 1.25M — behind PPO_26; `norm_reward=True` hurt signal |
+| PPO_28 | Reward redesign: strip to 4 components (score_delta + pre-sweep chain level + post-sweep chain level + death); `norm_reward=False`, `clip_range_vf=0.2`, `vf_coef=0.5` | Reduce reward variance; align shaping directly with "big combo + good residual board" goal | — |
+| PPO_29 | PPG (if PPO ceiling confirmed) | Better late-training EV and stability | — |
 
 Each iteration isolates 1–2 changes to attribute improvements clearly.
 
@@ -81,7 +83,54 @@ Rather than adding timeline proximity obs (deferred), PPO_25 focused on combo in
 
 The agent (PPO_25) builds chains but still leaves messy boards after sweeps because it cannot reason about the post-clear board state. PPO_26 adds a 5th CNN input channel (`projected_pattern_board`) showing the pattern board after simulating clear + gravity, and a matching `projected_chain_reward` component with the same quadratic weight as `chain_delta_reward`. This is a breaking change (CNN 4→5 channels); cannot resume from PPO_25 checkpoints.
 
+### PPO_26 Results
+
+Eval peaked at 24.19 @ ~1.95M steps but plateaued in the 21–24 range for the remainder of the run. Value loss climbed steadily from 1.9 → 7.7 over 2.1M steps — the critic was chasing unnormalized returns that grew as the policy improved. EV held at 0.783 (still good) but value loss trajectory was unsustainable.
+
 ### PPO_27 Rationale
+
+PPO_26 ran with `norm_reward=False`, which was intentional for PPO_24 to expose raw combo spikes to the critic. But as the policy improved and eval reward grew to ~22–24, the unnormalized discounted returns scaled up accordingly, causing value loss to drift from ~2 → ~8. Three targeted fixes:
+
+- **`norm_reward=True`** — root cause fix; VecNormalize normalises returns to unit variance, keeping value targets bounded regardless of policy improvement
+- **`clip_range_vf=0.2`** — clips how much the value function can change per update step (mirrors policy clipping); prevents large value swings contributing to loss spikes
+- **`vf_coef=0.5`** — back to SB3 default (was 2.0); with `share_features_extractor=False` the high weight was unnecessary and added critic gradient pressure
+
+Note: with `norm_reward=True`, `rollout/ep_rew_mean` and `eval/mean_reward` are again on different scales (rollout is normalised, eval is raw). The large rollout/eval gap seen in PPO_26 (~15 vs ~22) will no longer be meaningful to compare directly.
+
+### PPO_27 Results
+
+Value loss fixed: dropped from PPO_26's 7.7 → 0.23 and stable. However, `norm_reward=True` compressed the reward signal — eval peaked at 19.71 @ 1.25M steps vs PPO_26's ~22–24 at the same point. EV 0.721 (GOOD but slightly lower). Confirmed that `norm_reward=True` hurts by compressing combo spike magnitude, partially undoing PPO_24's intent. Stopped at 1.31M steps.
+
+### PPO_28 Rationale
+
+PPO_26/27 accumulated 8 reward components that overlap, conflict, and add unnecessary variance. The root problem: the shaping terms were trying to approximate "build combos and leave a good board" through indirect proxies (delta-based chain terms, post_sweep_pattern_delta, adjacent_patterns, holding_score) rather than measuring those goals directly.
+
+**Diagnosis of current reward noise:**
+
+- `chain_delta_reward` + `projected_chain_reward` — two simultaneous quadratic delta terms produce ±1.0 swings per step; combined variance dominates the shaping signal
+- `post_sweep_pattern_delta` — fires **negative** when `score_delta > 0` (clearing patterns reduces pattern count); directly conflicts with the primary objective
+- `holding_score_reward` — timeline-position-dependent: same board state, different returns; makes value function harder to fit
+- `adjacent_patterns_created` — sparse (zero when no live combo zone); fragile gating adds noise without strong signal
+- 8 overlapping components inflate reward variance → higher value loss, harder critic fitting
+
+**Redesign: 4 components, directly aligned with the goal**
+
+```python
+reward = score_delta                          # primary: actual combo payoff (sparse, correct)
+       + chain_after_drop * 0.05             # dense: chain length right after placement
+       + post_sweep_chain * 0.05             # dense: chain length after tick loop settles
+       + death_penalty                        # survival
+```
+
+- **`chain_after_drop`** (`_count_chain_length_from_board()` measured after hard drop, before ticks) — direct proxy for combo potential. Level-based not delta: continuous reward for maintaining chains, not just building them.
+- **`post_sweep_chain`** (`_count_chain_length_from_board()` measured after tick loop + gravity settling, step 5) — direct proxy for "board readiness for next combo". This is goal 2 stated explicitly.
+- Level-based rewards are always ≥ 0 and produce stable gradients; no conflicting sign flips from chain breaks.
+
+**Components dropped:** `patterns_created`, `adjacent_patterns_created`, `chain_delta_reward`, `projected_chain_reward`, `post_sweep_pattern_delta`, `height_delta`, `holding_score_reward`.
+
+**Hyperparameters:** `norm_reward=False` (preserve raw combo spike magnitude for critic), `clip_range_vf=0.2` (stabilise per-update value swings), `vf_coef=0.5` (reduce critic gradient pressure). No architecture changes — CNN still 5 channels, obs space unchanged.
+
+### PPO_29 Rationale
 
 PPG gives the value function dedicated "auxiliary phases" for longer training on stored data → much better EV, more stable late training, better credit assignment. Try after PPO improvements are exhausted and EV ceiling is confirmed. ~1.5× more compute than PPO. Available in `sb3-contrib`.
 
@@ -92,4 +141,4 @@ PPG gives the value function dedicated "auxiliary phases" for longer training on
 - **EV > 0.75** — critic keeping up with policy
 - **Entropy loss trending more negative** — exploration maintained
 - **Eval reward breaking above 24** (current best) — plateau broken
-- **Rollout/eval gap narrowing** — currently rollout ~12 vs eval ~22; large gap suggests VecNormalize distortion
+- **Rollout/eval gap** — only meaningful when both use the same reward scale; with `norm_reward=True` (PPO_27+), rollout rewards are normalised and not directly comparable to raw eval rewards
