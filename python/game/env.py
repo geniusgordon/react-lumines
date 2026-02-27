@@ -15,6 +15,7 @@ Reward (per_block mode)
            + holding_score_reward              # 0.1 per point of holding_score increase during ticks
            + adjacent_patterns_created * 0.05 # bonus for patterns created adjacent to live combo zone
            + chain_delta_reward               # 0.15 per column the longest contiguous chain grows
+           + post_sweep_pattern_delta         # 0.05 * (patterns_after_ticks - patterns_after_drop), only when score_delta > 0
            + death_penalty                     # DEATH_PENALTY on game over, else 0
 
     patterns_created is measured after hard drop but before timeline ticks, so it is
@@ -41,7 +42,7 @@ Reward (per_block mode)
 
 reward_components keys emitted in info:
     score_delta, squares_delta, patterns_created, height_delta, holding_score_reward,
-    adjacent_patterns_created, chain_delta_reward, death_penalty, total
+    adjacent_patterns_created, chain_delta_reward, post_sweep_pattern_delta, death_penalty, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -290,12 +291,24 @@ class LuminesEnvNative(gym.Env):
             self._state.board = apply_gravity(board)
             self._state.falling_columns = []
 
+        # Measure post-sweep board quality for potential-based shaping.
+        # Must be measured after gravity settling (step 5) so falling cells
+        # are included in the board.
+        post_tick_patterns = self._count_complete_squares()
+
         score_delta = float(self._state.score - prev_score)
         squares_delta = float(self._count_complete_squares() - prev_squares)
         height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + chain_delta_reward + death
+        # Post-sweep pattern delta: reward combinable residual, penalize junk residual.
+        # Only fires when a sweep actually occurred (score_delta > 0) to avoid
+        # double-counting placement quality already captured by patterns_created.
+        post_sweep_pattern_delta = (
+            float(post_tick_patterns - patterns_after_drop) * 0.05
+            if score_delta > 0 else 0.0
+        )
+        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + chain_delta_reward + post_sweep_pattern_delta + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
@@ -305,6 +318,7 @@ class LuminesEnvNative(gym.Env):
             "holding_score_reward": holding_score_reward,
             "adjacent_patterns_created": adjacent_patterns_created,
             "chain_delta_reward": chain_delta_reward,
+            "post_sweep_pattern_delta": post_sweep_pattern_delta,
             "death_penalty": death,
             "total": reward,
         }

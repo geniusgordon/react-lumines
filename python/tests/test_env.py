@@ -17,6 +17,8 @@ def test_adjacent_patterns_reward_weight():
                     + rc["height_delta"]
                     + rc["holding_score_reward"]
                     + rc["adjacent_patterns_created"] * 0.05
+                    + rc["chain_delta_reward"]
+                    + rc["post_sweep_pattern_delta"]
                     + rc["death_penalty"]
                 )
                 assert abs(implied_weight) < 1e-6, (
