@@ -14,7 +14,7 @@ Reward (per_block mode)
            + height_delta                      # -(height_increase / 160) * 0.5  (potential-based)
            + holding_score_reward              # 0.1 per point of holding_score increase during ticks
            + adjacent_patterns_created * 0.05 # bonus for patterns created adjacent to live combo zone
-           + chain_delta_reward               # 0.15 per column the longest contiguous chain grows
+           + chain_delta_reward               # (new_chain² - old_chain²) * 0.02  quadratic chain potential
            + post_sweep_pattern_delta         # 0.05 * (patterns_after_ticks - patterns_after_drop), only when score_delta > 0
            + death_penalty                     # DEATH_PENALTY on game over, else 0
 
@@ -33,10 +33,10 @@ Reward (per_block mode)
     agent prefers chain-extending placements without over-weighting them. Zero when no
     live combo zone exists (empty board), avoiding spurious early signal.
 
-    chain_delta_reward gives immediate credit for extending the longest contiguous run of
-    same-color pattern columns. Measured as max(0, new_chain - prev_chain) * 0.15 using
-    board-direct scanning (not detected_patterns, which hard_drop does not refresh). The
-    max(0, ...) guard prevents penalizing chain breaks caused by timeline clears during ticks.
+    chain_delta_reward uses a quadratic potential over the longest contiguous run of
+    same-color pattern columns: (new_chain² - old_chain²) * 0.02. Measured via
+    board-direct scanning (not detected_patterns, which hard_drop does not refresh).
+    Chain breaks are penalised (no max(0,...) clamp) to discourage breaking combo setups.
 
     squares_delta is tracked in info for monitoring but excluded from the reward.
 
@@ -251,7 +251,7 @@ class LuminesEnvNative(gym.Env):
         # Measure chain extension after drop. Must use _count_chain_length_from_board()
         # because hard_drop does not update detected_patterns.
         new_chain = self._count_chain_length_from_board()
-        chain_delta_reward = max(0.0, float(new_chain - prev_chain)) * 0.15
+        chain_delta_reward = (float(new_chain) ** 2 - float(prev_chain) ** 2) * 0.02
 
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block. Each tick

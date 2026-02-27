@@ -254,7 +254,7 @@ def _train_ppo(args, env, eval_env):
         model = PPO.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
         reset_num_timesteps = False
     else:
-        env = VecNormalize(env, norm_obs=True, norm_reward=True)
+        env = VecNormalize(env, norm_obs=True, norm_reward=False)
         eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, training=False)
         policy_kwargs = dict(
             features_extractor_class=LuminesCNNExtractor,

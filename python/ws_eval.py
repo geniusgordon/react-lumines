@@ -39,17 +39,117 @@ def load_model(checkpoint: str, device: str):
     return model, vec_normalize
 
 
+BOARD_HEIGHT, BOARD_WIDTH = 10, 16
+
+
+def compute_column_heights(board):
+    heights = np.zeros(BOARD_WIDTH, dtype=np.float32)
+    for col in range(BOARD_WIDTH):
+        for row in range(BOARD_HEIGHT):
+            if board[row][col] != 0:
+                heights[col] = float(BOARD_HEIGHT - row)
+                break
+    return heights
+
+
+def compute_holes(board):
+    total = 0
+    for col in range(BOARD_WIDTH):
+        found = False
+        for row in range(BOARD_HEIGHT):
+            if board[row][col] != 0:
+                found = True
+            elif found:
+                total += 1
+    return total
+
+
+def compute_pattern_board(board):
+    pb = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
+    for r in range(BOARD_HEIGHT - 1):
+        for c in range(BOARD_WIDTH - 1):
+            color = board[r][c]
+            if color != 0 and board[r+1][c] == color and board[r][c+1] == color and board[r+1][c+1] == color:
+                pb[r][c] += 0.25; pb[r+1][c] += 0.25
+                pb[r][c+1] += 0.25; pb[r+1][c+1] += 0.25
+    return pb
+
+
+def compute_ghost_board(board, current_block, block_x):
+    ghost = np.array(
+        [[1.0 if board[r][c] != 0 else 0.0 for c in range(BOARD_WIDTH)]
+         for r in range(BOARD_HEIGHT)],
+        dtype=np.float32,
+    )
+    drop_y = -1
+    for y in range(BOARD_HEIGHT):
+        collision = False
+        for dr in range(2):
+            for dc in range(2):
+                if current_block[dr][dc] != 0:
+                    r, c = y + dr, block_x + dc
+                    if r >= BOARD_HEIGHT or c >= BOARD_WIDTH or c < 0 or (r >= 0 and board[r][c] != 0):
+                        collision = True
+        if collision:
+            break
+        drop_y = y
+    if drop_y >= 0:
+        for dr in range(2):
+            for dc in range(2):
+                if current_block[dr][dc] != 0:
+                    r, c = drop_y + dr, block_x + dc
+                    if 0 <= r < BOARD_HEIGHT and 0 <= c < BOARD_WIDTH:
+                        ghost[r][c] = 1.0
+    return ghost
+
+
+def compute_timeline_board(pattern_board, timeline_x):
+    result = pattern_board.copy()
+    result[:, :timeline_x + 1] = 0.0
+    return result
+
+
+def compute_chain_length(pattern_board):
+    max_run = cur = 0
+    for col in range(BOARD_WIDTH - 1):  # left-edge of 2×2 pattern: 0..14
+        if np.any(pattern_board[:, col] > 0):
+            cur += 1; max_run = max(max_run, cur)
+        else:
+            cur = 0
+    return float(max_run) / max(BOARD_WIDTH - 1, 1)
+
+
 def obs_to_numpy(obs_json: dict) -> dict:
     bp = obs_json["blockPosition"]
+    board = np.array(obs_json["board"], dtype=np.int8)
+    current_block = np.array(obs_json["currentBlock"], dtype=np.int8)
+    block_x = int(bp["x"])
+    timeline_x = int(obs_json["timelineX"])
+
+    # Pad queue to 3 blocks if browser sends fewer
+    raw_queue = list(obs_json["queue"])
+    while len(raw_queue) < 3:
+        raw_queue.append([[0, 0], [0, 0]])
+    queue = np.array(raw_queue[:3], dtype=np.int8)
+
+    pattern_board = compute_pattern_board(board)
+
     return {
-        "board": np.array(obs_json["board"], dtype=np.int8),
-        "current_block": np.array(obs_json["currentBlock"], dtype=np.int8),
+        "board": board,
+        "pattern_board": pattern_board,
+        "ghost_board": compute_ghost_board(board, current_block, block_x),
+        "timeline_board": compute_timeline_board(pattern_board, timeline_x),
+        "current_block": current_block,
         "block_position": np.array([bp["x"], bp["y"]], dtype=np.int32),
-        "queue": np.array(obs_json["queue"], dtype=np.int8),
-        "timeline_x": np.array([obs_json["timelineX"]], dtype=np.int32),
+        "queue": queue,
+        "timeline_x": np.array([timeline_x], dtype=np.int32),
         "score": np.array([obs_json["score"]], dtype=np.int32),
         "frame": np.array([obs_json["frame"]], dtype=np.int32),
         "game_timer": np.array([obs_json["gameTimer"]], dtype=np.int32),
+        "column_heights": compute_column_heights(board),
+        "holes": np.array([compute_holes(board)], dtype=np.int32),
+        "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
+        "chain_length": np.array([compute_chain_length(pattern_board)], dtype=np.float32),
     }
 
 
@@ -70,7 +170,9 @@ def make_handler(model, vec_normalize):
                 action_int = int(action.flat[0])
                 await websocket.send(str(action_int))
         except Exception as e:
+            import traceback
             print(f"Connection error: {e}")
+            traceback.print_exc()
         finally:
             print("Client disconnected")
     return handler

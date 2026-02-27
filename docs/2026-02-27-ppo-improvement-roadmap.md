@@ -66,14 +66,19 @@ Asynchronous distributed actor-learner architecture with V-trace correction.
 
 ## Suggested Iteration Roadmap
 
-| Run | Changes | Goal |
-|-----|---------|------|
-| PPO_23 | Next-block obs + `n_steps=4096` | Break plateau, better combo timing |
-| PPO_24 | + Timeline proximity obs + quadratic chain reward | Agent learns sweep timing |
-| PPO_25 | + LSTM (`RecurrentPPO`) | Long-horizon planning |
-| PPO_26 | PPG (if PPO ceiling confirmed) | Better late-training EV and stability |
+| Run | Changes | Goal | Result |
+|-----|---------|------|--------|
+| PPO_23 | Next-block obs + `n_steps=4096` | Break plateau, better combo timing | Eval ~23, plateau |
+| PPO_24 | Disable reward normalization (`norm_reward=False`) | Isolate VecNormalize signal compression; expose raw combo spike magnitude to critic | In progress |
+| PPO_25 | Timeline proximity obs + quadratic chain reward | Agent learns sweep timing | — |
+| PPO_26 | + LSTM (`RecurrentPPO`) | Long-horizon planning | — |
+| PPO_27 | PPG (if PPO ceiling confirmed) | Better late-training EV and stability | — |
 
 Each iteration isolates 1–2 changes to attribute improvements clearly.
+
+### PPO_24 Rationale
+
+PPO_23 used `norm_reward=True` on the training env and `norm_reward=False` on eval, making rollout/ep_rew_mean and eval/mean_reward structurally incomparable (different scales). More importantly, reward normalization compresses the signal from big combo sweeps — the critic sees a flattened distribution where a sweep scores only marginally better than a single placement. PPO_24 disables reward normalization to let raw reward magnitude flow to the critic, potentially producing stronger gradient signal for combo setup behaviors.
 
 ---
 
