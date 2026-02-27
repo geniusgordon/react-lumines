@@ -21,7 +21,7 @@ export function AiWatchScreen() {
   const { gameState, actions, _dispatch } = useGame();
   const aiLoop = useAiLoop(gameState, _dispatch, { wsUrl });
   const scale = useResponsiveScale({ minScale: 0.5, maxScale: 2, padding: 40 });
-  const controls = useGameControls(gameState, actions, { enableKeyRepeat: false });
+  const controls = useGameControls(gameState, actions, { enableKeyRepeat: false, disabled: aiLoop.isConnected });
 
   // Auto-start when screen loads
   useEffect(() => {

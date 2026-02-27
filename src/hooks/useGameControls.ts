@@ -54,6 +54,11 @@ export interface UseControlsOptions {
    * Repeat delay in milliseconds for held keys (default: 150ms)
    */
   keyRepeatDelay?: number;
+
+  /**
+   * When true, all game actions are suppressed (e.g. AI watch mode)
+   */
+  disabled?: boolean;
 }
 
 export interface UseControlsReturn {
@@ -76,6 +81,7 @@ export function useGameControls(
     debugMode = false,
     enableKeyRepeat = false,
     keyRepeatDelay = 150,
+    disabled = false,
   } = options;
 
   // Key state tracking
@@ -187,8 +193,8 @@ export function useGameControls(
         return;
       }
 
-      // Handle game actions only when playing
-      if (gameState.status === 'playing' && gameAction) {
+      // Handle game actions only when playing and not disabled
+      if (gameState.status === 'playing' && gameAction && !disabled) {
         const actionFn = actionMap.current.get(gameAction);
         if (actionFn) {
           actionFn();
@@ -215,7 +221,7 @@ export function useGameControls(
         }
       }
     },
-    [gameState.status, debugMode, enableKeyRepeat, keyRepeatDelay, actions]
+    [gameState.status, debugMode, enableKeyRepeat, keyRepeatDelay, disabled, actions]
   );
 
   // Handle key release
