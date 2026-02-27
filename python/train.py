@@ -266,7 +266,7 @@ def _train_ppo(args, env, eval_env):
             "MultiInputPolicy",
             env,
             learning_rate=linear_schedule(3e-5, 1e-7),
-            n_steps=2048,
+            n_steps=4096,
             batch_size=256,
             n_epochs=10,
             gamma=0.99,
