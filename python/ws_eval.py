@@ -83,7 +83,7 @@ async def main(args):
     print(f"Inference server listening on ws://localhost:{args.port}")
     print("Open the browser and navigate to /ai-watch")
     async with serve(handler, "localhost", args.port):
-        await asyncio.get_event_loop().run_forever()
+        await asyncio.Future()  # run forever
 
 
 if __name__ == "__main__":
