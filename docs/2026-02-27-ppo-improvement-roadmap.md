@@ -28,13 +28,6 @@ All runs (PPO_16–22) show the same pattern: rapid improvement in the first ~1M
 
 ### Medium Impact
 
-#### LSTM / Recurrent Policy
-Replace MLP policy head with an LSTM that retains memory across timesteps.
-
-- **Why:** Current MLP sees one frame at a time with no memory. Good Lumines strategy requires remembering recent placements, combo momentum, and zone context. LSTM learns implicit working memory without explicit encoding.
-- **How:** Use `RecurrentPPO` from `sb3-contrib` (drop-in PPO replacement).
-- **Cost:** ~2–3× slower per step; adds `lstm_hidden_size` and sequence length as hyperparameters.
-
 #### Timeline Proximity in Observation
 Add a single scalar to MLP obs: `timeline_x / BOARD_WIDTH` (range 0→1).
 
@@ -69,9 +62,9 @@ Asynchronous distributed actor-learner architecture with V-trace correction.
 | Run | Changes | Goal | Result |
 |-----|---------|------|--------|
 | PPO_23 | Next-block obs + `n_steps=4096` | Break plateau, better combo timing | Eval ~23, plateau |
-| PPO_24 | Disable reward normalization (`norm_reward=False`) | Isolate VecNormalize signal compression; expose raw combo spike magnitude to critic | In progress |
-| PPO_25 | Timeline proximity obs + quadratic chain reward | Agent learns sweep timing | — |
-| PPO_26 | + LSTM (`RecurrentPPO`) | Long-horizon planning | — |
+| PPO_24 | Disable reward normalization (`norm_reward=False`) | Isolate VecNormalize signal compression; expose raw combo spike magnitude to critic | Done |
+| PPO_25 | Quadratic chain delta reward `(new_chain² - old_chain²) * 0.02` | Incentivise long combos over isolated placements | Done |
+| PPO_26 | `projected_pattern_board` 5th CNN channel + `projected_chain_reward` `(new_proj_chain² - old_proj_chain²) * 0.02` | Spatial awareness of post-clear board quality | In progress |
 | PPO_27 | PPG (if PPO ceiling confirmed) | Better late-training EV and stability | — |
 
 Each iteration isolates 1–2 changes to attribute improvements clearly.
@@ -79,6 +72,18 @@ Each iteration isolates 1–2 changes to attribute improvements clearly.
 ### PPO_24 Rationale
 
 PPO_23 used `norm_reward=True` on the training env and `norm_reward=False` on eval, making rollout/ep_rew_mean and eval/mean_reward structurally incomparable (different scales). More importantly, reward normalization compresses the signal from big combo sweeps — the critic sees a flattened distribution where a sweep scores only marginally better than a single placement. PPO_24 disables reward normalization to let raw reward magnitude flow to the critic, potentially producing stronger gradient signal for combo setup behaviors.
+
+### PPO_25 Rationale
+
+Rather than adding timeline proximity obs (deferred), PPO_25 focused on combo incentives: replacing the linear `chain_length` reward with a quadratic delta `(new_chain² - old_chain²) * 0.02`. A 5-block chain is not 5× better than a 1-block clear — it's strategically far more valuable. The quadratic term makes each additional chain block worth progressively more, nudging the policy away from isolated 2×2 placements and toward wide connected patterns.
+
+### PPO_26 Rationale
+
+The agent (PPO_25) builds chains but still leaves messy boards after sweeps because it cannot reason about the post-clear board state. PPO_26 adds a 5th CNN input channel (`projected_pattern_board`) showing the pattern board after simulating clear + gravity, and a matching `projected_chain_reward` component with the same quadratic weight as `chain_delta_reward`. This is a breaking change (CNN 4→5 channels); cannot resume from PPO_25 checkpoints.
+
+### PPO_27 Rationale
+
+PPG gives the value function dedicated "auxiliary phases" for longer training on stored data → much better EV, more stable late training, better credit assignment. Try after PPO improvements are exhausted and EV ceiling is confirmed. ~1.5× more compute than PPO. Available in `sb3-contrib`.
 
 ---
 
