@@ -80,15 +80,16 @@ async def main(args):
     from websockets.asyncio.server import serve
     model, vec_normalize = load_model(args.checkpoint, args.device)
     handler = make_handler(model, vec_normalize)
-    print(f"Inference server listening on ws://localhost:{args.port}")
+    print(f"Inference server listening on ws://{args.host}:{args.port}")
     print("Open the browser and navigate to /ai-watch")
-    async with serve(handler, "localhost", args.port):
+    async with serve(handler, args.host, args.port):
         await asyncio.Future()  # run forever
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebSocket inference server for live AI watch")
     parser.add_argument("--checkpoint", default="python/checkpoints/best_model")
+    parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
