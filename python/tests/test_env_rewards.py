@@ -1,5 +1,5 @@
 """
-test_env_rewards.py — Tests for env.py reward shaping changes.
+test_env_rewards.py — Tests for env.py reward shaping changes (PPO_30).
 """
 
 import sys, os
@@ -74,18 +74,83 @@ def test_count_complete_squares_3x2_block_counts_two():
 
 
 # ---------------------------------------------------------------------------
-# Reward components structure
+# Reward components structure (PPO_29)
 # ---------------------------------------------------------------------------
 
-def test_reward_components_has_squares_delta():
-    """After any step, reward_components must include squares_delta."""
+def test_reward_components_exact_keys():
+    """reward_components must contain exactly the PPO_30 keys."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "squares_delta" in info["reward_components"]
+    expected_keys = {"score_delta", "single_color_chain_delta", "post_sweep_chain", "death", "total"}
+    assert set(info["reward_components"].keys()) == expected_keys
 
 
-def test_reward_components_has_no_spread_penalty():
+def test_reward_components_no_chain_after_drop():
+    """chain_after_drop must NOT be present (replaced by single_color_chain_delta in PPO_30)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "chain_after_drop" not in info["reward_components"]
+
+
+def test_reward_components_no_height_delta():
+    """height_delta must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "height_delta" not in info["reward_components"]
+
+
+def test_reward_components_no_patterns_created():
+    """patterns_created must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "patterns_created" not in info["reward_components"]
+
+
+def test_reward_components_no_holding_score_reward():
+    """holding_score_reward must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "holding_score_reward" not in info["reward_components"]
+
+
+def test_reward_components_no_adjacent_patterns():
+    """adjacent_patterns_created must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "adjacent_patterns_created" not in info["reward_components"]
+
+
+def test_reward_components_no_chain_delta_reward():
+    """chain_delta_reward must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "chain_delta_reward" not in info["reward_components"]
+
+
+def test_reward_components_no_projected_chain_reward():
+    """projected_chain_reward must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "projected_chain_reward" not in info["reward_components"]
+
+
+def test_reward_components_no_post_sweep_pattern_delta():
+    """post_sweep_pattern_delta must NOT be present in reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "post_sweep_pattern_delta" not in info["reward_components"]
+
+
+def test_reward_components_no_spread_penalty():
     """spread_penalty must be absent from reward_components."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
@@ -101,43 +166,65 @@ def test_reward_components_no_placement_penalty():
     assert "placement_penalty" not in info["reward_components"]
 
 
-def test_reward_components_no_height_penalty():
-    """height_penalty must not be present in reward_components."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, _, _, info = env.step(0)
-    assert "height_penalty" not in info["reward_components"]
-
-
-def test_squares_delta_reward_positive_when_square_formed():
-    """
-    squares_delta is informational only (not part of the reward formula).
-    Its sign depends on whether the timeline sweeps the pattern in the same
-    step, so asserting > 0 is unreliable. We skip and rely on the structural
-    test (test_reward_components_has_squares_delta) to confirm the key exists.
-    """
-    pytest.skip("squares_delta sign is timing-dependent; covered by structural test")
-
-
 # ---------------------------------------------------------------------------
-# Height delta (potential-based)
+# PPO_30 reward formula: total = score_delta + single_color_chain_delta*0.1 + post_sweep_chain*0.05 + death
 # ---------------------------------------------------------------------------
 
-def test_reward_components_has_height_delta():
-    """After any step, reward_components must include height_delta."""
+def test_reward_total_matches_formula():
+    """total must equal score_delta + single_color_chain_delta*0.1 + post_sweep_chain*0.05 + death."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, reward, _, _, info = env.step(0)
+    rc = info["reward_components"]
+    expected_total = (
+        rc["score_delta"]
+        + rc["single_color_chain_delta"] * 0.1
+        + rc["post_sweep_chain"] * 0.05
+        + rc["death"]
+    )
+    assert rc["total"] == pytest.approx(expected_total)
+    assert rc["total"] == pytest.approx(reward)
+
+
+def test_single_color_chain_delta_can_be_negative():
+    """single_color_chain_delta can be negative; verify key is present and is a float."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "height_delta" in info["reward_components"]
+    assert "single_color_chain_delta" in info["reward_components"]
+    assert isinstance(info["reward_components"]["single_color_chain_delta"], float)
 
 
-def test_height_delta_negative_when_no_clear():
-    """Placing a block with no timeline clear increases aggregate height → height_delta < 0."""
+def test_post_sweep_chain_non_negative():
+    """post_sweep_chain must be >= 0 on every step."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
-    _, _, _, _, info = env.step(0)
-    assert info["reward_components"]["height_delta"] < 0
+    for _ in range(20):
+        _, _, done, _, info = env.step(env.action_space.sample())
+        assert info["reward_components"]["post_sweep_chain"] >= 0.0
+        if done:
+            break
+
+
+def test_death_on_game_over():
+    """death must equal DEATH_PENALTY on the terminal step."""
+    from python.game.env import DEATH_PENALTY
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    done = False
+    info = {}
+    while not done:
+        _, _, done, _, info = env.step(0)
+    assert info["reward_components"]["death"] == pytest.approx(DEATH_PENALTY)
+
+
+def test_death_zero_on_non_terminal():
+    """death must be 0.0 on non-terminal steps."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, done, _, info = env.step(0)
+    if not done:
+        assert info["reward_components"]["death"] == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -219,64 +306,6 @@ def test_reward_components_no_chain_delta():
     assert "chain_delta" not in info["reward_components"]
 
 
-def test_reward_components_exact_keys():
-    """reward_components must contain exactly the expected keys."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "squares_delta", "patterns_created", "height_delta", "holding_score_reward", "adjacent_patterns_created", "chain_delta_reward", "projected_chain_reward", "post_sweep_pattern_delta", "death_penalty", "total"}
-    assert set(info["reward_components"].keys()) == expected_keys
-
-
-def test_death_penalty_on_game_over():
-    """death_penalty must equal DEATH_PENALTY on the terminal step."""
-    from python.game.env import DEATH_PENALTY
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    done = False
-    info = {}
-    while not done:
-        _, _, done, _, info = env.step(0)
-    assert info["reward_components"]["death_penalty"] == pytest.approx(DEATH_PENALTY)
-
-
-def test_death_penalty_zero_on_non_terminal():
-    """death_penalty must be 0.0 on non-terminal steps."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, done, _, info = env.step(0)
-    if not done:
-        assert info["reward_components"]["death_penalty"] == pytest.approx(0.0)
-
-
-def test_chain_delta_reward_present_and_non_negative():
-    """chain_delta_reward must be present in reward_components and never negative."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    for _ in range(20):
-        _, _, done, _, info = env.step(env.action_space.sample())
-        assert "chain_delta_reward" in info["reward_components"]
-        assert info["reward_components"]["chain_delta_reward"] >= 0.0
-        if done:
-            break
-
-
-def test_chain_delta_reward_included_in_total():
-    """total in reward_components must equal the sum of all component values including chain_delta_reward."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, reward, _, _, info = env.step(0)
-    rc = info["reward_components"]
-    expected_total = (
-        rc["score_delta"] + rc["patterns_created"] + rc["height_delta"]
-        + rc["holding_score_reward"] + rc["adjacent_patterns_created"]
-        + rc["chain_delta_reward"] + rc["projected_chain_reward"]
-        + rc["post_sweep_pattern_delta"] + rc["death_penalty"]
-    )
-    assert rc["total"] == pytest.approx(expected_total)
-    assert rc["total"] == pytest.approx(reward)
-
-
 # ---------------------------------------------------------------------------
 # Observation features: column_heights
 # ---------------------------------------------------------------------------
@@ -326,50 +355,6 @@ def test_obs_queue_shape_is_3():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
     assert obs["queue"].shape == (3, 2, 2)
-
-
-# ---------------------------------------------------------------------------
-# post_sweep_pattern_delta (PPO_21)
-# ---------------------------------------------------------------------------
-
-def test_post_sweep_pattern_delta_key_present():
-    """post_sweep_pattern_delta must be present in reward_components on every step."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, _, _, info = env.step(0)
-    assert "post_sweep_pattern_delta" in info["reward_components"]
-
-
-def test_post_sweep_pattern_delta_zero_when_no_sweep():
-    """post_sweep_pattern_delta must be 0.0 when score_delta == 0 (no sweep fired)."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    # Run steps until we find one with no score_delta
-    for _ in range(30):
-        _, _, done, _, info = env.step(env.action_space.sample())
-        rc = info["reward_components"]
-        if rc["score_delta"] == 0.0:
-            assert rc["post_sweep_pattern_delta"] == pytest.approx(0.0)
-            return
-        if done:
-            break
-    pytest.skip("Could not find a step with score_delta == 0 in 30 steps")
-
-
-def test_post_sweep_pattern_delta_included_in_total():
-    """total must equal the sum of all components including post_sweep_pattern_delta."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, reward, _, _, info = env.step(0)
-    rc = info["reward_components"]
-    expected_total = (
-        rc["score_delta"] + rc["patterns_created"] + rc["height_delta"]
-        + rc["holding_score_reward"] + rc["adjacent_patterns_created"]
-        + rc["chain_delta_reward"] + rc["projected_chain_reward"]
-        + rc["post_sweep_pattern_delta"] + rc["death_penalty"]
-    )
-    assert rc["total"] == pytest.approx(expected_total)
-    assert rc["total"] == pytest.approx(reward)
 
 
 # ---------------------------------------------------------------------------
@@ -431,26 +416,154 @@ def test_projected_pattern_board_clears_marked_cells():
     assert np.all(proj == 0.0)
 
 
-def test_projected_chain_reward_in_info():
-    """projected_chain_reward must be present in reward_components on every step."""
+# ---------------------------------------------------------------------------
+# _count_max_single_color_chain_from_board (PPO_30)
+# ---------------------------------------------------------------------------
+
+def _make_env_with_board_simple(board):
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    _, _, _, _, info = env.step(0)
-    assert "projected_chain_reward" in info["reward_components"]
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    return env
 
 
-def test_projected_chain_reward_included_in_total():
-    """total must equal the step return value and include projected_chain_reward."""
+def test_max_single_color_chain_empty_board():
+    env = _make_env_with_board_simple(create_empty_board())
+    assert env._count_max_single_color_chain_from_board() == 0
+
+
+def test_max_single_color_chain_single_light_pattern():
+    board = create_empty_board()
+    board[8][0] = 1; board[8][1] = 1
+    board[9][0] = 1; board[9][1] = 1
+    env = _make_env_with_board_simple(board)
+    assert env._count_max_single_color_chain_from_board() == 1
+
+
+def test_max_single_color_chain_mixed_colors_picks_best():
+    """Light: 3 consecutive cols, Dark: 2 consecutive cols → returns 3."""
+    board = create_empty_board()
+    for c in range(3):
+        board[8][c] = 1; board[9][c] = 1  # light cols 0,1,2 → patterns at 0,1
+    board[8][5] = 2; board[8][6] = 2; board[9][5] = 2; board[9][6] = 2  # dark col 5
+    env = _make_env_with_board_simple(board)
+    # light: run of 2 (cols 0,1), dark: run of 1 (col 5) → max=2
+    assert env._count_max_single_color_chain_from_board() == 2
+
+
+def test_max_single_color_chain_ignores_mixed_2x2():
+    """A 2×2 with mixed colors must not be counted."""
+    board = create_empty_board()
+    board[8][0] = 1; board[8][1] = 2
+    board[9][0] = 2; board[9][1] = 1
+    env = _make_env_with_board_simple(board)
+    assert env._count_max_single_color_chain_from_board() == 0
+
+
+def test_max_single_color_chain_gap_returns_longest_run():
+    """Patterns at cols 0,1 (light) and 4,5 (light) with gap at 2,3 → max run = 2."""
+    board = create_empty_board()
+    for c in (0, 1, 2):
+        board[8][c] = 1; board[9][c] = 1  # patterns at left edges 0,1
+    for c in (4, 5, 6):
+        board[8][c] = 1; board[9][c] = 1  # patterns at left edges 4,5
+    env = _make_env_with_board_simple(board)
+    assert env._count_max_single_color_chain_from_board() == 2
+
+
+def test_max_single_color_chain_board_arg_does_not_mutate_state():
+    """Passing a board arg must not affect the env's own board."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    _, reward, _, _, info = env.step(0)
-    rc = info["reward_components"]
-    # Use the correct weighted formula (patterns_created/adjacent are stored raw, weighted 0.05)
-    expected_total = (
-        rc["score_delta"] + rc["patterns_created"] * 0.05 + rc["height_delta"]
-        + rc["holding_score_reward"] + rc["adjacent_patterns_created"] * 0.05
-        + rc["chain_delta_reward"] + rc["projected_chain_reward"]
-        + rc["post_sweep_pattern_delta"] + rc["death_penalty"]
-    )
-    assert rc["total"] == pytest.approx(expected_total)
-    assert rc["total"] == pytest.approx(reward)
+    original_board = [row[:] for row in env._state.board]
+    alt_board = create_empty_board()
+    alt_board[8][0] = 1; alt_board[8][1] = 1
+    alt_board[9][0] = 1; alt_board[9][1] = 1
+    env._count_max_single_color_chain_from_board(alt_board)
+    assert env._state.board == original_board
+
+
+# ---------------------------------------------------------------------------
+# _build_color_board (PPO_30)
+# ---------------------------------------------------------------------------
+
+def test_build_color_board_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    assert env._build_color_board(1).shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_build_color_board_binary_values():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
+    light = env._build_color_board(1)
+    dark = env._build_color_board(2)
+    assert set(np.unique(light)).issubset({0.0, 1.0})
+    assert set(np.unique(dark)).issubset({0.0, 1.0})
+
+
+def test_build_color_board_light_dark_no_overlap():
+    """A cell cannot be both light and dark."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    board[9][0] = 1; board[9][1] = 2
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    light = env._build_color_board(1)
+    dark = env._build_color_board(2)
+    assert np.all(light * dark == 0.0), "light_board and dark_board must not overlap"
+
+
+# ---------------------------------------------------------------------------
+# Observation key tests (PPO_30)
+# ---------------------------------------------------------------------------
+
+def test_obs_has_light_board():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "light_board" in obs
+
+
+def test_obs_has_dark_board():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "dark_board" in obs
+
+
+def test_obs_has_dominant_color_chain():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "dominant_color_chain" in obs
+
+
+def test_obs_light_board_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["light_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_obs_dark_board_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["dark_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_obs_dominant_color_chain_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["dominant_color_chain"].shape == (1,)
+
+
+def test_obs_board_absent():
+    """'board' key must NOT be present in PPO_30 observations."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "board" not in obs
+
+
+def test_obs_chain_length_absent():
+    """'chain_length' key must NOT be present in PPO_30 observations."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "chain_length" not in obs

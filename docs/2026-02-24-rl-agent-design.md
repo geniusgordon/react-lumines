@@ -1,7 +1,7 @@
-# Lumines RL Agent — Architecture & Usage
+# Lumines RL Agent — Architecture, Training & Run History
 
-**Date:** 2026-02-24 (updated 2026-02-27)
-**Status:** Implemented — PPO_17 in progress (PPO_16 complete)
+**Date:** 2026-02-24 (updated 2026-02-28)
+**Status:** Implemented — PPO_30 in progress (PPO_29 complete)
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -14,7 +14,7 @@ Training uses [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) wit
 
 ---
 
-## 1a. Timeline Sweep in Per-Block Mode
+## 2. Timeline Sweep in Per-Block Mode
 
 ### Problem
 
@@ -45,86 +45,93 @@ Clearing everything immediately on each placement would prevent the agent from l
 
 ---
 
-## 2. Neural Network Architecture
+## 3. Neural Network Architecture
 
 A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 
 ```
 Observation (Dict)
- ├── board (10×16 int8)          ─┐
- ├── pattern_board (10×16 f32)   ─┤ CNN branch (4-channel input)
- ├── ghost_board (10×16 f32)     ─┤   Conv2d(4→16, 3×3, pad=1) → ReLU
- ├── timeline_board (10×16 f32) ─┘   Conv2d(16→32, 3×3, pad=1) → ReLU
- │                                    Flatten → Linear(→64) → ReLU
- │                                │                             │
- ├── current_block (2×2) ──────┐  │                             │
- ├── queue (3×2×2)  ───────────┤  │  MLP branch                 │
- ├── block_position (2,) ──────┤  │  concat → Linear(39→64)     │
- ├── timeline_x (1,)  ─────────┤  │              → ReLU         │
- ├── game_timer (1,)  ──────────┤  │                             │
- ├── column_heights (16,) ──────┤  │                             │
- ├── holes (1,)  ───────────────┤  │                             │
- ├── holding_score (1,)  ───────┤  │                             │
- └── chain_length (1,)  ────────┘  │                             │
-                                                                  │
-                        128-dim concat ←──────────────────────────
+ ├── light_board (10×16 f32)               ─┐
+ ├── dark_board (10×16 f32)                ─┤
+ ├── pattern_board (10×16 f32)             ─┤ CNN branch (6-channel input)
+ ├── ghost_board (10×16 f32)               ─┤   4 × Conv2d(3×3, pad=1) → ReLU
+ ├── timeline_board (10×16 f32)            ─┤   Flatten → Linear(5120→64) → ReLU
+ ├── projected_pattern_board (10×16 f32)  ─┘
+ │                                                                │
+ ├── current_block (2×2) ──────┐                                  │
+ ├── queue (3×2×2)  ───────────┤  MLP branch                      │
+ ├── block_position (2,) ──────┤  concat → Linear(34→64) → ReLU   │
+ ├── timeline_x (1,)  ─────────┤                                  │
+ ├── game_timer (1,)  ──────────┤                                  │
+ ├── column_heights (16,) ──────┤                                  │
+ ├── holding_score (1,)  ───────┤                                  │
+ └── dominant_color_chain (1,) ─┘                                  │
+                                                                   │
+                        128-dim concat ←───────────────────────────
                                │
                     PPO actor head + critic head (separate extractors)
                     net_arch=dict(pi=[128,128], vf=[512,512,256])
 ```
 
-**MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 + 1 + 1 = 39 values.
+**MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 + 1 = 38 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
-`pattern_board` is routed through the CNN branch as channel 2 (stacked with `board`). Each cell's value = number of 2×2 same-color patterns it participates in, normalised to [0,1]. The CNN can directly see where valuable overlap clusters are, rather than having to infer pattern locations from raw cell colors alone.
+`light_board` is channel 1: binary float32 (10×16), 1.0 where board cell == color 1 (light). `dark_board` is channel 2: same encoding for color 2 (dark). Together they replace the old single `board` channel (which encoded 0/1/2 and forced the network to learn a threshold). Separate binary channels make color identity trivially readable for the CNN.
 
-`ghost_board` is channel 3: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. This gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity.
+`pattern_board` is channel 3. Each cell's value = number of 2×2 same-color patterns it participates in, normalised to [0,1]. The CNN can directly see where valuable overlap clusters are.
 
-`timeline_board` is channel 4: `pattern_board` masked to columns strictly ahead of the current sweep position (`column > timeline_x`). Already-swept columns are zeroed out. This gives the CNN a direct spatial view of the "live combo zone" — the actionable region where patterns will still be swept. The CNN can align `ghost_board` with `timeline_board` to learn "drop here to extend the active chain." None of `pattern_board`, `ghost_board`, or `timeline_board` is in `MLP_KEYS`; all three route exclusively through the CNN.
+`ghost_board` is channel 4: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. Gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity.
+
+`timeline_board` is channel 5: `pattern_board` masked to columns strictly ahead of the current sweep position (`column > timeline_x`). Already-swept columns are zeroed out. Gives the CNN a direct spatial view of the "live combo zone". The CNN can align `ghost_board` with `timeline_board` to learn "drop here to extend the active chain."
+
+`projected_pattern_board` is channel 6: `pattern_board` computed on the board after simulating clear of `marked_cells` + gravity. When no cells are marked, it equals `pattern_board`. This lets the CNN reason about post-clear board quality at placement time — useful for chains that survive the sweep.
+
+None of the six CNN channels is in `MLP_KEYS`; all route exclusively through the CNN.
 
 `holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
 
-`chain_length` is the longest consecutive run of columns with at least one 2×2 pattern, normalised by `BOARD_WIDTH - 1 = 15`. Together with `holding_score`, it lets the agent condition on the spatial span of the current combo zone — extending a chain of length 4 is now explicitly signalled as high-value.
+`dominant_color_chain` is the longest consecutive run of same-color pattern columns for the best single color, normalised by `BOARD_WIDTH - 1 = 15`. Unlike the old `chain_length` (which counted any-color patterns), this directly measures the single-color chain the agent should be building. Together with `holding_score`, it lets the agent condition on both the spatial span and color purity of the current combo zone.
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
 
-Actor and critic use **separate** feature extractors (`share_features_extractor=False`).
-With `vf_coef=2.0`, a shared extractor causes the critic's value gradient to dominate the shared weights, pulling them toward value prediction and starving the actor of clean action-relevant features. In PPO_10 this produced explained variance stuck at ~0.11 throughout, a clip fraction explosion to 0.42 by 688k steps, and eval reward collapse from 11.6 → 1.9. Separate extractors let the critic specialise on board-quality prediction without conflicting with the actor.
+Actor and critic use **separate** feature extractors (`share_features_extractor=False`). A shared extractor causes the critic's gradient to dominate the shared CNN/MLP weights, starving the actor of clean action-relevant features — PPO_10 demonstrated this with a clip fraction explosion to 0.42 and eval reward collapse from 11.6 → 1.9. Separate extractors let the critic specialise on board-quality prediction without conflicting with the actor.
 
 `score` and `frame` are excluded from the network inputs — they leak non-stationary scale information and are better left to the value baseline learned implicitly from returns.
 
 ---
 
-## 3. Training Configuration
+## 4. Training Configuration
 
 | Hyperparameter | Value |
 |---------------|-------|
 | Algorithm | PPO |
 | Policy | `MultiInputPolicy` |
-| Parallel envs | 8 (`SubprocVecEnv`) |
-| `n_steps` | 2048 per env (16 384 total per rollout) |
+| Parallel envs | 16 (`SubprocVecEnv`) |
+| `n_steps` | 4096 per env (65 536 total per rollout) |
 | `batch_size` | 256 |
 | `n_epochs` | 10 |
 | `gae_lambda` | 0.90 |
 | `share_features_extractor` | `False` (separate actor/critic extractors) |
 | `features_dim` | 128 (64 from CNN branch + 64 from MLP branch) |
-| `vf_coef` | 2.0 |
+| `net_arch` | `pi=[128,128], vf=[512,512,256]` |
+| `vf_coef` | 0.5 |
 | `clip_range` | 0.2 |
+| `clip_range_vf` | `None` (no value function clipping) |
 | `max_grad_norm` | 0.5 |
-| `target_kl` | 0.01 |
+| `target_kl` | 0.008 |
 | `gamma` | 0.99 |
-| `ent_coef` | 0.1 → 0.01 (linear decay over training) |
-| Learning rate | 3×10⁻⁵ → 3×10⁻⁶ (linear decay) |
+| `ent_coef` | 0.1 → 0.03 (linear decay via `EntropyScheduleCallback`) |
+| Learning rate | 3×10⁻⁵ → 1×10⁻⁷ (linear decay) |
 | Eval episodes | 100 |
 | Device | `mps` (Apple Silicon) |
-| Total timesteps | 2 000 000 |
-| Obs/reward normalisation | `VecNormalize(norm_obs=True, norm_reward=True)` |
+| Total timesteps | 3 000 000 |
+| Obs normalisation | `VecNormalize(norm_obs=True, norm_reward=False)` |
 | Checkpoint frequency | Every 50 000 steps |
 | Eval frequency | Every 50 000 steps |
 
 ### Why `VecNormalize`?
 
-PPO's value function benefits from normalised observations and rewards. Norm stats are saved alongside checkpoints as `vecnormalize.pkl` and restored on resume/eval.
+Observation normalisation (`norm_obs=True`) stabilises CNN and MLP inputs across the wide range of board states. Reward normalisation is **disabled** (`norm_reward=False`) to preserve raw combo spike magnitude — a large `score_delta` from a long chain should produce a proportionally strong gradient signal in the critic. Norm stats are saved alongside checkpoints as `vecnormalize.pkl` and restored on resume/eval.
 
 ### VecNormalize eval sync
 
@@ -134,7 +141,7 @@ The eval env's obs normalization stats (`obs_rms`) must stay in sync with the tr
 
 ---
 
-## 4. Reward Function
+## 5. Reward Function
 
 The reward is designed around Lumines' core scoring mechanic: the timeline
 sweeps left-to-right, accumulating `holding_score` while passing over
@@ -142,41 +149,53 @@ consecutive columns of same-color 2×2 patterns, then cashing out on the first
 empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 
 ```python
-reward = score_delta
-       + patterns_created * 0.05            # dense: new 2×2 patterns formed by this drop
-       + height_delta
-       + holding_score_reward               # 0.1 per point of holding_score increase during ticks
-       + adjacent_patterns_created * 0.10  # bonus for patterns adjacent to the live combo zone
-       + death_penalty  # -3.0 on game over, else 0
+reward = score_delta                          # primary: actual combo payoff from timeline sweep
+       + single_color_chain_delta * 0.1       # dense delta: change in longest single-color chain
+       + post_sweep_chain * 0.05              # dense level: single-color chain after sweep + gravity
+       + death                                # -3.0 on game over, else 0
 ```
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
-| `patterns_created * 0.05` | ≥ 0 | **Dense** signal: immediate reward for each new 2×2 same-color pattern created by this drop. Measured after hard drop but before timeline ticks — always ≥ 0. |
-| `height_delta` | varies | **Potential-based** board pressure: penalises raising aggregate column height, rewards clearing. Zero on stable boards — no absolute baseline noise for the critic |
-| `holding_score_reward` | ≥ 0 | **Combo signal**: 0.1 per point of `holding_score` increase during timeline ticks. Fires immediately as the sweep hits consecutive pattern columns, solving the multi-step credit-assignment problem for chain building. |
-| `adjacent_patterns_created * 0.10` | ≥ 0 | **Spatial alignment signal**: immediate bonus for new 2×2 patterns whose left-edge column is adjacent to (or within) the live combo zone. Fires at placement time — directly rewards aligning drops with existing chains. Zero when no live combo zone exists. |
-| `death_penalty` | −3.0 | Penalise game over |
+| `single_color_chain_delta * 0.1` | any sign | **Color-aware placement signal**: `chain_after_drop − chain_before`, where chain = longest consecutive same-color pattern-column run (best of light vs dark). Rewards extending the dominant color chain; penalises breaking it. Zero for neutral placements. |
+| `post_sweep_chain * 0.05` | ≥ 0 | **Board readiness signal**: same single-color chain metric measured after tick loop + gravity settling. Rewards leaving a clean same-color chain-ready board after the sweep. |
+| `death` | −3.0 | Penalise game over |
 
-`squares_delta`, `patterns_created`, and `holding_score_reward` are all tracked in `info["reward_components"]` for observability.
+`info["reward_components"]` emits: `score_delta`, `single_color_chain_delta`, `post_sweep_chain`, `death`, `total`.
 
-No flat survival bonus — the agent's incentive to survive comes from future
-scoring opportunities.
+No flat survival bonus — the agent's incentive to survive comes from future scoring opportunities.
+
+### Why this design rewards the ideal Lumines strategy
+
+The ideal strategy is alternating single-color combos: build a wide chain of color A → sweep scores big → color B residue forms a chain-ready shape → build big B combo → repeat.
+
+| Situation | Signal |
+|---|---|
+| Place block that extends single-color chain from 4→7 | `single_color_chain_delta=+3` → `+0.30` |
+| Place block that doesn't touch chain (neutral) | `single_color_chain_delta=0` → `0` |
+| Place block that breaks a chain from 5→2 | `single_color_chain_delta=−3` → `−0.30` |
+| Big color-A sweep (score_delta=8), color-B residue forms 4-chain | `score_delta=8` + `post_sweep_chain=4 → +0.20` |
+| Big sweep but board is a mess afterward | `score_delta=8` + `post_sweep_chain≈0` |
+
+The alternating rhythm is directly rewarded: big score from a pure-color sweep + positive `post_sweep_chain` from well-shaped residue.
 
 ### Design rationale
 
-`patterns_created` solves the sparse reward problem: the agent previously only received signal when the timeline swept, potentially several blocks after the placement that caused the clear. With `patterns_created * 0.05` the agent gets immediate feedback for building patterns. The 0.05 weight is small enough that clearing 4 patterns (−0.20 from this term's perspective) is dominated by any real `score_delta` (typically +2 to +10 per sweep) — no conflicting signal.
+PPO_29 used level-based chain counts (always ≥ 0) at two points per step. This was an improvement over earlier runs but had three residual problems:
 
-`patterns_created` is measured *before* timeline ticks, so it is always ≥ 0 (placing a block can only add cells). This avoids the old `squares_delta` problem where building patterns gave +reward but the timeline clearing them caused `squares_delta` to go negative, partially cancelling the `score_delta` for the same event.
+- **Color-blind**: `chain_after_drop` counted any-color patterns, so a mixed A+B chain looked as good as a pure A chain even though it scores worse.
+- **Level-based shaping conflates position and quality**: every block earns `0.05 × existing_chain` regardless of whether it improved anything.
+- **`post_sweep_chain` penalised good combos**: when a long chain is swept (big `score_delta`), `post_sweep_chain` dropped to near-zero → mixed signal that discouraged the desired behaviour.
 
-`height_delta` is the potential-based form: zero when the board is stable,
-negative when raised, positive when cleared. This avoids the constant negative
-bias of the old absolute `height_reward` formula.
+PPO_30 fixes all three:
+- **`single_color_chain_delta`** is color-aware and is a delta (can be negative), directly incentivising placements that increase the dominant-color chain.
+- **`post_sweep_chain`** is also single-color, rewarding a clean same-color residue — not a mixed heap.
+- **CNN observes color via separate binary channels** (`light_board`, `dark_board`) instead of a single 0/1/2 channel (PPO_29), making color identity trivially readable.
 
 ---
 
-## 5. File Reference
+## 6. File Reference
 
 | File | Purpose |
 |------|---------|
@@ -189,23 +208,17 @@ bias of the old absolute `height_reward` formula.
 
 ---
 
-## 6. Training
+## 7. Training
 
 ```bash
-# PPO (default algo)
-python python/train.py --algo ppo
-
-# Custom run
-python python/train.py --algo ppo \
-  --timesteps 2000000 \
-  --envs 8 \
-  --device mps
+# PPO (default)
+python python/train.py
 
 # Resume from best checkpoint
-python python/train.py --algo ppo --resume
+python python/train.py --resume
 
-# DQN (alternative)
-python python/train.py --algo dqn
+# Custom run
+python python/train.py --timesteps 3000000 --envs 16 --device mps
 ```
 
 PPO checkpoints: `python/checkpoints/lumines_ppo_<N>_steps.zip`
@@ -218,32 +231,23 @@ VecNormalize stats: `python/checkpoints/vecnormalize.pkl`
 tensorboard --logdir python/logs
 ```
 
-Key metrics to watch:
-- `rollout/ep_rew_mean` — mean episode reward (should trend upward)
-- `rollout/ep_len_mean` — episode length (longer = agent surviving better)
-- `train/entropy_loss` — must stay noticeably negative; collapse to ~0 = policy collapse
-- `train/approx_kl` — should stay below ~0.02; spikes indicate instability
-- `train/explained_variance` — positive and trending toward 1.0
-
 ---
 
-## 7. Evaluation
+## 8. Evaluation
 
 ```bash
-# Basic: 10 episodes, print mean/max/min score
-python python/eval.py --algo ppo --checkpoint python/checkpoints/best_model_ppo
+# Basic: 100 episodes, print mean/max/min score
+python python/eval.py
 
 # Watch the agent play (ASCII board, 100ms between steps)
-python python/eval.py --algo ppo \
-  --checkpoint python/checkpoints/best_model_ppo \
-  --render --episodes 3 --delay 0.1
+python python/eval.py --render --episodes 3 --delay 0.1
 ```
 
-Eval automatically loads `vecnormalize.pkl` from the checkpoint directory when `--algo ppo`.
+Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 
 ---
 
-## 8. Run History
+## 9. Run History
 
 | Run | Steps | Best eval reward | Peak clip frac | EV | Key change |
 |-----|-------|-----------------|----------------|----|-----------|
@@ -255,12 +259,127 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory when `
 | PPO_12 | 2M | 10.31 @ 450k | — | — | `features_dim=256`, LR 3e-5→3e-6, `n_steps=4096`, `gamma=0.995`, `target_kl=0.01`, entropy 0.1→0.01, `eval_episodes=50`. Larger model + longer rollouts hurt. |
 | PPO_13 | 2M | 16.09 @ 950k | 0.17 | 0.55 | Dense `patterns_created*0.05` reward; `pattern_board` 2nd CNN channel; `features_dim=128`, LR 5e-5→5e-6. New best, but plateaued at 400k. |
 | PPO_14 | 2M | — | — | 0.66 | `gae_lambda=0.90`, `n_envs=16`, `eval_episodes=100`, LR 3e-5→3e-6. Broke EV ceiling (0.55→0.66); plateau at ~15 eval reward by 1.28M steps. |
-| PPO_15 | ~1.5M | 18.77 @ 700k | — | — | `ghost_board` 3rd CNN channel: board state after current block hard-drops. New best eval reward ~18.8; agent survives longer but doesn't chain combos. |
-| PPO_16 | 1.6M | 22.46 @ 1.6M | 0.14 | 0.73 | Combo awareness: `timeline_board` 4th CNN channel (live combo zone), `holding_score` MLP scalar, `holding_score_delta * 0.1` chain reward. New best; still trending up. |
-| PPO_17 | — | — | — | — | Adjacent-pattern reward (`adjacent_patterns_created * 0.10` at placement time); `chain_length` MLP obs. No architecture change. |
+| PPO_15 | ~1.5M | 18.77 @ 700k | — | — | `ghost_board` 3rd CNN channel. New best eval reward ~18.8; agent survives longer but doesn't chain combos. |
+| PPO_16 | 1.6M | 22.46 @ 1.6M | 0.14 | 0.73 | Combo awareness: `timeline_board` 4th CNN channel, `holding_score` MLP scalar, `holding_score_delta * 0.1` chain reward. New best; still trending up. |
+| PPO_17 | 2M | ~22 | ~0.14 | ~0.73 | `adjacent_patterns_created * 0.10` placement bonus; `chain_length` MLP obs. No architecture change from PPO_16. |
+| PPO_18 | 3M | — | — | — | `adjacent` weight 0.10→0.05; LR `3e-5→3e-6`; entropy final 0.03; `total_timesteps=3M`. |
+| PPO_19–22 | 2–3M | ~22 | — | ~0.69 | Continued tuning; plateau at ~22 eval reward with healthy metrics (EV=0.69, KL=0.0076, clip=0.088). |
+| PPO_23 | — | ~23 | — | — | Next-block obs + `n_steps=4096` to break plateau. |
+| PPO_24 | — | — | — | — | `norm_reward=False`: expose raw combo spike magnitude to critic. |
+| PPO_25 | — | — | — | — | Quadratic chain delta: `(new_chain²−old_chain²) * 0.02`. |
+| PPO_26 | 2.1M | 24.19 @ 1.95M | — | 0.78 | `projected_pattern_board` 5th CNN channel; `projected_chain_reward` matching quadratic term. Value loss climbed 1.9→7.7 (unnormalised returns). |
+| PPO_27 | 1.3M | 19.71 @ 1.25M | — | 0.72 | `norm_reward=True`, `clip_range_vf=0.2`, `vf_coef=0.5`. Value loss fixed (0.23, stable) but `norm_reward=True` compressed combo signal — below PPO_26. |
+| PPO_28 | ~1M | ~21.5 @ 900k | — | 0.68 | `norm_reward=False` (reverted), existing 8-component reward unchanged. Value loss 3.6→5.7 @ 1M — same drift trajectory as PPO_26 confirms 8-component reward variance is the root cause. |
+| PPO_29 | — | — | — | — | 4-component reward (`score_delta + chain_after_drop*0.05 + post_sweep_chain*0.05 + death`); `clip_range_vf=None`. Strips noisy components; measures goals directly. |
+| PPO_30 | — | — | — | — | Color-aware obs (`light_board`+`dark_board` channels replacing `board`; `dominant_color_chain` replacing `chain_length`) + color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). CNN 5→6 channels. |
 
 ### PPO_10 post-mortem
 
 PPO_10 ran 688k steps. Eval reward peaked at **11.6 @ 350k** then collapsed to 1.9 by 650k. Clip fraction grew monotonically from 0.05 → 0.42. Explained variance never exceeded 0.11.
 
 Root cause: `share_features_extractor=True` with `vf_coef=2.0` meant the critic's 2× gradient weight dominated the shared CNN/MLP extractor, pulling features toward value prediction. As the board complexity grew, the actor and critic gradients increasingly conflicted, producing large policy updates that exceeded the clip range and destabilised training. The VecNormalize sync was functioning correctly — the eval collapse was policy instability, not obs distribution drift.
+
+### PPO_24 Rationale
+
+PPO_23 used `norm_reward=True` on the training env and `norm_reward=False` on eval, making `rollout/ep_rew_mean` and `eval/mean_reward` structurally incomparable. More importantly, reward normalization compresses the signal from big combo sweeps — the critic sees a flattened distribution where a sweep scores only marginally better than a single placement. PPO_24 disables reward normalization to let raw reward magnitude flow to the critic, producing stronger gradient signal for combo setup behaviors.
+
+### PPO_25 Rationale
+
+Rather than adding timeline proximity obs (deferred), PPO_25 focused on combo incentives: replacing the linear `chain_length` reward with a quadratic delta `(new_chain² - old_chain²) * 0.02`. A 5-block chain is not 5× better than a 1-block clear — it's strategically far more valuable. The quadratic term makes each additional chain block worth progressively more, nudging the policy away from isolated 2×2 placements and toward wide connected patterns.
+
+### PPO_26 Rationale & Results
+
+The agent (PPO_25) builds chains but still leaves messy boards after sweeps because it cannot reason about the post-clear board state. PPO_26 adds a 5th CNN input channel (`projected_pattern_board`) showing the pattern board after simulating clear + gravity, and a matching `projected_chain_reward` component with the same quadratic weight as `chain_delta_reward`. Breaking change (CNN 4→5 channels); cannot resume from PPO_25 checkpoints.
+
+Eval peaked at 24.19 @ ~1.95M steps but plateaued in the 21–24 range for the remainder of the run. Value loss climbed steadily from 1.9 → 7.7 over 2.1M steps — the critic was chasing unnormalized returns that grew as the policy improved. EV held at 0.783 (still good) but value loss trajectory was unsustainable.
+
+### PPO_27 Rationale & Results
+
+PPO_26 ran with `norm_reward=False`, which was intentional for PPO_24 to expose raw combo spikes to the critic. But as the policy improved and eval reward grew to ~22–24, the unnormalized discounted returns scaled up accordingly, causing value loss to drift from ~2 → ~8. Three targeted fixes:
+
+- **`norm_reward=True`** — root cause fix; VecNormalize normalises returns to unit variance, keeping value targets bounded regardless of policy improvement
+- **`clip_range_vf=0.2`** — clips how much the value function can change per update step; prevents large value swings contributing to loss spikes
+- **`vf_coef=0.5`** — back to SB3 default; with `share_features_extractor=False` the higher weight was unnecessary and added critic gradient pressure
+
+Value loss fixed: dropped from PPO_26's 7.7 → 0.23 and stable. However, `norm_reward=True` compressed the reward signal — eval peaked at 19.71 @ 1.25M steps vs PPO_26's ~22–24 at the same point. EV 0.721. Confirmed that `norm_reward=True` hurts by compressing combo spike magnitude, partially undoing PPO_24's intent. Stopped at 1.31M steps.
+
+Note: with `norm_reward=True`, `rollout/ep_rew_mean` and `eval/mean_reward` are on different scales (rollout is normalised, eval is raw) and are not directly comparable.
+
+### PPO_28 Rationale & Results
+
+PPO_27's `norm_reward=True` compressed combo spike magnitude — eval peaked at only 19.71 vs PPO_26's ~24. PPO_28 reverts to `norm_reward=False` (same as PPO_26/24) while keeping all other PPO_27 fixes (`clip_range_vf=0.2`, `vf_coef=0.5`) and the existing 8-component reward unchanged. Goal: confirm `norm_reward=False` recovers PPO_26-level performance without the value loss drift.
+
+Eval peaked ~21.5 @ 900k steps. Value loss 3.6 → 5.7 at 1M steps (climbing, same trajectory as PPO_26). EV 0.68. Confirmed `norm_reward=False` partially recovers signal vs PPO_27, but the 8-component reward's overlapping variance still causes value loss drift. Provides the baseline for PPO_29's reward redesign.
+
+### PPO_29 Rationale
+
+PPO_26–28 accumulated 8 reward components that overlap, conflict, and add unnecessary variance. The root problem: the shaping terms approximate "build combos and leave a good board" through indirect proxies rather than measuring those goals directly.
+
+**Diagnosis of reward noise:**
+
+- `chain_delta_reward` + `projected_chain_reward` — two simultaneous quadratic delta terms produce ±1.0 swings per step; combined variance dominates the shaping signal
+- `post_sweep_pattern_delta` — fires **negative** when `score_delta > 0` (clearing patterns reduces pattern count); directly conflicts with the primary objective
+- `holding_score_reward` — timeline-position-dependent: same board state, different returns; makes value function harder to fit
+- `adjacent_patterns_created` — sparse (zero when no live combo zone); fragile gating adds noise without strong signal
+
+**`clip_range_vf` fix:** Changed from `0.2` → `None`. With `norm_reward=False` and raw episode returns of 10–25, `clip_range_vf=0.2` capped each per-step value correction to ±0.2, preventing the critic from correcting large estimation errors quickly → unnecessary value loss drift. `None` removes the cap, letting the critic correct freely.
+
+All other hyperparameters preserved from PPO_28.
+
+### PPO_30 Rationale
+
+PPO_29 simplified the reward to 4 components and removed conflicting signals — a necessary step. But the reward and observations remained color-blind, preventing the agent from learning the core Lumines strategy: alternating single-color combos.
+
+**Three structural problems in PPO_29:**
+
+- **Color-blind reward**: `chain_after_drop` counted any-color patterns. A mixed A+B chain of length 5 scored identically to a pure-color chain of length 5, even though the mixed chain produces zero sweep score when the timeline passes.
+- **Level-based shaping misaligns incentives**: every block earned `0.05 × existing_chain` regardless of whether it improved the chain. The agent learned to keep chains large, not to grow them.
+- **`post_sweep_chain` conflicted with scoring**: after a big sweep (large `score_delta`), the cleared board meant `post_sweep_chain ≈ 0`, producing a mixed signal — big positive + near-zero shaping — that implicitly discouraged the very combos we want.
+
+**PPO_30 changes:**
+
+1. **`single_color_chain_delta * 0.1`** replaces both `chain_after_drop` terms. Measures change in longest consecutive same-color pattern run. Positive when a placement extends the dominant chain; zero for neutral placements; negative when a placement fragments it. The sign matches strategy.
+
+2. **`post_sweep_chain * 0.05`** now uses the same single-color metric, so it rewards leaving a clean same-color residue — not a mixed heap — after a sweep.
+
+3. **`light_board` + `dark_board`** CNN channels replace the single `board` channel (0/1/2 int8). Separate binary channels make color identity a trivial lookup for the CNN rather than a threshold the network must learn. CNN input expands from 5 → 6 channels.
+
+4. **`dominant_color_chain`** MLP scalar replaces `chain_length`. Reports the single-color chain (best of light vs dark), so the actor's MLP branch has accurate information about the chain quality it is shaping.
+
+No hyperparameter changes from PPO_29. Breaking change (CNN 5→6 channels, obs key renaming) — cannot resume from PPO_29 checkpoints.
+
+---
+
+## 10. Future Directions
+
+### Why runs plateau at ~22–24
+
+All runs from PPO_16–28 show the same pattern: rapid improvement in the first ~1M steps, then plateau. Root causes:
+
+1. **Entropy collapse → exploitation trap** — policy converges to a local optimum; with `ent_coef` decaying to near-zero, PPO can't escape.
+2. **Credit assignment breaks down** — Lumines combos require multi-move setup. With `gamma=0.99`, rewards 30+ steps out are heavily discounted.
+3. **Observation blindspot** — agent doesn't see the next block, preventing planning beyond immediate placement.
+4. **Policy-value coupling** — once EV plateaus (~0.69–0.73), the critic is bounded by what the observation space + rollout length allows.
+
+### High-impact ideas
+
+| Idea | Rationale |
+|------|-----------|
+| Add next-block to observation | Lookahead is the largest strategic info gap; even 1 block ahead changes planning |
+| Longer rollouts (`n_steps=8192`) | Better credit assignment for delayed combo rewards |
+| Cyclic/cosine LR schedule | Periodic LR restarts help escape local optima vs. monotonic decay |
+| Higher entropy floor | Don't let `ent_coef` decay below ~0.02; keeps exploration alive in late training |
+
+### Medium-impact ideas
+
+**PPG (Phasic Policy Gradient)** — gives the value function dedicated auxiliary phases for longer training on stored data → much better EV, more stable late training, better credit assignment. Available in `sb3-contrib`. ~1.5× more compute than PPO. Try after PPO ceiling is confirmed.
+
+**IMPALA** — asynchronous distributed actor-learner with V-trace correction; handles long-horizon credit assignment better; scales to 32+ parallel envs. Only relevant if env throughput becomes the bottleneck.
+
+### Key metrics to watch per run
+
+- **EV > 0.75** — critic keeping up with policy
+- **Entropy loss trending more negative** — exploration maintained
+- **Eval reward breaking above 24** — plateau broken
+- **Value loss stable or declining** — critic not chasing growing returns
+- **Rollout/eval gap** — only meaningful when both use the same reward scale; with `norm_reward=False` both are on raw scale and directly comparable

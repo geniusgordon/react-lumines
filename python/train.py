@@ -3,11 +3,11 @@ train.py — DQN/PPO training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
-    1. CNN branch   : 5-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
-                      Channels: board, pattern_board, ghost_board, timeline_board, projected_pattern_board
+    1. CNN branch   : 6-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
+                      Channels: light_board, dark_board, pattern_board, ghost_board, timeline_board, projected_pattern_board
     2. MLP branch   : current_block(4) + queue(8) + block_position(2)
                       + timeline_x(1) + game_timer(1) + column_heights(16)
-                      + holding_score(1) + chain_length(1) = 34 values
+                      + holding_score(1) + dominant_color_chain(1) = 34 values
                       → Linear(34→64) → ReLU
   Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
@@ -66,16 +66,16 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
     """
 
     # Keys to route through the MLP branch (flattened and concatenated).
-    # pattern_board, ghost_board, timeline_board are routed through the CNN branch, not here.
-    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holding_score", "chain_length"]
+    # light_board, dark_board, pattern_board, ghost_board, timeline_board, projected_pattern_board are routed through the CNN branch.
+    MLP_KEYS = ["current_block", "queue", "block_position", "timeline_x", "game_timer", "column_heights", "holding_score", "dominant_color_chain"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
         branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16, 5 channels: raw board + pattern_board + ghost_board + timeline_board + projected_pattern_board) ----
+        # ---- CNN branch (board: 10×16, 6 channels: light_board + dark_board + pattern_board + ghost_board + timeline_board + projected_pattern_board) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(5, 32, kernel_size=3, padding=1),   # stem: 5 → 32 channels
+            nn.Conv2d(6, 32, kernel_size=3, padding=1),   # stem: 6 → 32 channels
             nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 5×5
             nn.ReLU(),
@@ -102,13 +102,14 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        # CNN branch — stack board, pattern_board, ghost_board, timeline_board, projected_pattern_board as 5-channel input
-        board     = observations["board"].float() / 2.0                  # [B, 10, 16], values 0–1
+        # CNN branch — stack 6 color-aware channels as input
+        light     = observations["light_board"].float()                  # [B, 10, 16], binary 0/1
+        dark      = observations["dark_board"].float()                   # [B, 10, 16], binary 0/1
         pattern   = observations["pattern_board"].float()                # [B, 10, 16], values 0–1
         ghost     = observations["ghost_board"].float()                  # [B, 10, 16], values 0–1
         timeline  = observations["timeline_board"].float()               # [B, 10, 16], values 0–1
         projected = observations["projected_pattern_board"].float()      # [B, 10, 16], values 0–1
-        x = torch.stack([board, pattern, ghost, timeline, projected], dim=1)  # [B, 5, 10, 16]
+        x = torch.stack([light, dark, pattern, ghost, timeline, projected], dim=1)  # [B, 6, 10, 16]
         cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs
@@ -268,7 +269,7 @@ def _train_ppo(args, env, eval_env):
         model = PPO(
             "MultiInputPolicy",
             env,
-            learning_rate=linear_schedule(3e-5, 1e-7),
+            learning_rate=linear_schedule(3e-5, 3e-6),
             n_steps=4096,
             batch_size=256,
             n_epochs=10,
@@ -303,7 +304,7 @@ def _train_ppo(args, env, eval_env):
             render=False,
             callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
         ),
-        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.03, total_steps=args.timesteps),
+        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.05, total_steps=args.timesteps),
     ]
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)

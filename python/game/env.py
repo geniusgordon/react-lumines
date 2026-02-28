@@ -9,47 +9,19 @@ Action spaces:
 
 Reward (per_block mode)
 -----------------------
-    reward = score_delta
-           + patterns_created * 0.05          # immediate signal for each new 2×2 pattern after drop
-           + height_delta                      # -(height_increase / 160) * 0.5  (potential-based)
-           + holding_score_reward              # 0.1 per point of holding_score increase during ticks
-           + adjacent_patterns_created * 0.05 # bonus for patterns created adjacent to live combo zone
-           + chain_delta_reward               # (new_chain² - old_chain²) * 0.02  quadratic chain potential
-           + projected_chain_reward           # (new_proj_chain² - old_proj_chain²) * 0.02  post-clear chain potential
-           + post_sweep_pattern_delta         # 0.05 * (patterns_after_ticks - patterns_after_drop), only when score_delta > 0
-           + death_penalty                     # DEATH_PENALTY on game over, else 0
+    reward = score_delta                        # primary: actual combo payoff (sparse, correct)
+           + single_color_chain_delta * 0.1    # dense delta: change in longest single-color chain
+           + post_sweep_chain * 0.05           # dense level: single-color chain after sweep + gravity
+           + death                              # survival: DEATH_PENALTY on game over, else 0
 
-    patterns_created is measured after hard drop but before timeline ticks, so it is
-    always >= 0 (placing a block can only add cells, never remove them). This avoids
-    the conflicting signal problem: the agent gets +reward for building patterns, and
-    separately gets score_delta when the timeline clears those patterns.
+    single_color_chain_delta: (chain_after_drop - chain_before), can be negative.
+    Rewards placements that extend the best same-color chain; penalises those that break it.
 
-    holding_score_reward gives immediate credit for extending combos — fires each time
-    the sweep hits a pattern column during the timeline ticks. This solves the
-    multi-step credit-assignment problem for chained patterns.
-
-    adjacent_patterns_created counts new 2×2 patterns whose left-edge column is adjacent
-    to (or within) the live combo zone (columns currently holding patterns ahead of the
-    timeline sweep). Rewarded at 0.05 per pattern — same weight as patterns_created, so the
-    agent prefers chain-extending placements without over-weighting them. Zero when no
-    live combo zone exists (empty board), avoiding spurious early signal.
-
-    chain_delta_reward uses a quadratic potential over the longest contiguous run of
-    same-color pattern columns: (new_chain² - old_chain²) * 0.02. Measured via
-    board-direct scanning (not detected_patterns, which hard_drop does not refresh).
-    Chain breaks are penalised (no max(0,...) clamp) to discourage breaking combo setups.
-
-    projected_chain_reward uses the same quadratic potential but on the board after
-    simulating clear of marked_cells + gravity. Gives the CNN spatial awareness of
-    post-clear board quality at placement time. Same weight (0.02) as chain_delta_reward.
-    No clamp — penalizes placements that break post-clear chains.
-
-    squares_delta is tracked in info for monitoring but excluded from the reward.
+    post_sweep_chain: longest consecutive same-color pattern-column run measured after
+    all ticks and gravity settling. Rewards leaving the board in a "chain-ready" state.
 
 reward_components keys emitted in info:
-    score_delta, squares_delta, patterns_created, height_delta, holding_score_reward,
-    adjacent_patterns_created, chain_delta_reward, projected_chain_reward,
-    post_sweep_pattern_delta, death_penalty, total
+    score_delta, single_color_chain_delta, post_sweep_chain, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -119,10 +91,11 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — identical to LuminesEnv, plus pattern/ghost/timeline channels
+        # Observation space — color-aware board channels (PPO_30)
         self.observation_space = spaces.Dict(
             {
-                "board": spaces.Box(0, 2, shape=(10, 16), dtype=np.int8),
+                "light_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "dark_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "ghost_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "timeline_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
@@ -143,7 +116,7 @@ class LuminesEnvNative(gym.Env):
                 "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
                 "column_heights": spaces.Box(0, BOARD_HEIGHT, shape=(BOARD_WIDTH,), dtype=np.float32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
-                "chain_length": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
+                "dominant_color_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "projected_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
             }
         )
@@ -192,8 +165,6 @@ class LuminesEnvNative(gym.Env):
 
     def _step_per_block(self, action: int):
         prev_score = self._state.score
-        prev_squares = self._count_complete_squares()
-        prev_patterns = self._count_complete_squares()
 
         target_x = action // 4
         rotation = action % 4
@@ -203,6 +174,9 @@ class LuminesEnvNative(gym.Env):
         target_x = max(0, min(target_x, max_x))
 
         rng = get_rng(self._state)
+
+        # Capture board state BEFORE drop for delta computation
+        board_before = [row[:] for row in self._state.board]
 
         # 1. Apply rotations
         for _ in range(rotation % 4):
@@ -223,62 +197,23 @@ class LuminesEnvNative(gym.Env):
                 if self._state.block_position_x == prev_x:
                     break
 
-        # Snapshot adjacency zone before drop: columns adjacent to the live combo zone
-        # (columns ahead of the timeline that already hold 2×2 patterns).
-        timeline_snap = self._build_timeline_board()
-        live_cols = {c for c in range(BOARD_WIDTH) if timeline_snap[:, c].max() > 0}
-        adj_zone = {c for c in
-                    live_cols | {c - 1 for c in live_cols} | {c + 1 for c in live_cols}
-                    if 0 <= c < BOARD_WIDTH - 1}  # valid left-edge positions for 2×2 patterns
-        patterns_in_zone_before = self._count_patterns_in_zone(adj_zone) if adj_zone else 0
-
-        # Pre-drop aggregate height for potential-based height shaping
-        prev_aggregate_height = sum(self._column_heights())
-
-        # Pre-drop chain length for chain-extension reward shaping
-        prev_chain = self._count_chain_length_from_board()
-
-        # Pre-drop projected chain (post-clear board quality)
-        prev_proj_chain = self._count_chain_length_from_board(self._project_board())
-
         # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
 
         if self._state.status != "gameOver":
             self._blocks_placed += 1
 
-        # Measure patterns created immediately after drop, before timeline ticks.
-        # This is always >= 0 since placing a block can only add cells.
-        # Measuring here avoids negative signal when timeline later clears patterns.
-        patterns_after_drop = self._count_complete_squares()
-        patterns_created = float(patterns_after_drop - prev_patterns)
-
-        # Measure how many new patterns landed in the adjacency zone (adjacent to live combo zone).
-        # Zero when no live combo zone existed before the drop (empty board / no active patterns).
-        patterns_in_zone_after = self._count_patterns_in_zone(adj_zone) if adj_zone else 0
-        adjacent_patterns_created = float(max(0, patterns_in_zone_after - patterns_in_zone_before))
-
-        # Measure chain extension after drop. Must use _count_chain_length_from_board()
-        # because hard_drop does not update detected_patterns.
-        new_chain = self._count_chain_length_from_board()
-        chain_delta_reward = (float(new_chain) ** 2 - float(prev_chain) ** 2) * 0.02
-
-        # Projected chain reward: quadratic potential on the post-clear board.
-        # Incentivises placements that build chains that survive the sweep.
-        new_proj_chain = self._count_chain_length_from_board(self._project_board())
-        projected_chain_reward = (float(new_proj_chain) ** 2 - float(prev_proj_chain) ** 2) * 0.02
+        # Measure single-color chain delta (can be negative).
+        chain_before = float(self._count_max_single_color_chain_from_board(board_before))
+        chain_after_drop = float(self._count_max_single_color_chain_from_board())
+        single_color_chain_delta = chain_after_drop - chain_before
 
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
-        # progressing while the player was placing this block. Each tick
-        # increments the frame counter, decrements the game timer, re-detects
-        # patterns, and advances the timeline (marking and clearing cells).
-        # Track holding_score increases for combo reward.
-        holding_score_reward = 0.0
+        # progressing while the player was placing this block.
         for _ in range(self.ticks_per_block):
             if self._state.status == "gameOver":
                 break
             new_timer = self._state.game_timer - 1
-            prev_tick_holding = self._state.timeline.holding_score
             self._state = copy.copy(self._state)
             self._state.frame += 1
             if new_timer <= 0:
@@ -288,9 +223,6 @@ class LuminesEnvNative(gym.Env):
             self._state.game_timer = new_timer
             self._state.detected_patterns = detect_patterns(self._state.board)
             self._state = update_timeline(self._state)
-            new_holding = self._state.timeline.holding_score
-            if new_holding > prev_tick_holding:
-                holding_score_reward += (new_holding - prev_tick_holding) * 0.1
 
         # 5. Settle any floating cells instantly — in per_block mode there are no
         # animation ticks between placements, so falling cells would otherwise
@@ -306,36 +238,19 @@ class LuminesEnvNative(gym.Env):
             self._state.board = apply_gravity(board)
             self._state.falling_columns = []
 
-        # Measure post-sweep board quality for potential-based shaping.
-        # Must be measured after gravity settling (step 5) so falling cells
-        # are included in the board.
-        post_tick_patterns = self._count_complete_squares()
+        # Measure post-sweep single-color chain (board readiness after combo + gravity settle).
+        post_sweep_chain = float(self._count_max_single_color_chain_from_board())
 
         score_delta = float(self._state.score - prev_score)
-        squares_delta = float(self._count_complete_squares() - prev_squares)
-        height_delta = -(sum(self._column_heights()) - prev_aggregate_height) / (BOARD_HEIGHT * BOARD_WIDTH) * 0.5
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        # Post-sweep pattern delta: reward combinable residual, penalize junk residual.
-        # Only fires when a sweep actually occurred (score_delta > 0) to avoid
-        # double-counting placement quality already captured by patterns_created.
-        post_sweep_pattern_delta = (
-            float(post_tick_patterns - patterns_after_drop) * 0.05
-            if score_delta > 0 else 0.0
-        )
-        reward = score_delta + patterns_created * 0.05 + height_delta + holding_score_reward + adjacent_patterns_created * 0.05 + chain_delta_reward + projected_chain_reward + post_sweep_pattern_delta + death
+        reward = score_delta + single_color_chain_delta * 0.1 + post_sweep_chain * 0.05 + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
-            "squares_delta": squares_delta,
-            "patterns_created": patterns_created,
-            "height_delta": height_delta,
-            "holding_score_reward": holding_score_reward,
-            "adjacent_patterns_created": adjacent_patterns_created,
-            "chain_delta_reward": chain_delta_reward,
-            "projected_chain_reward": projected_chain_reward,
-            "post_sweep_pattern_delta": post_sweep_pattern_delta,
-            "death_penalty": death,
+            "single_color_chain_delta": single_color_chain_delta,
+            "post_sweep_chain": post_sweep_chain,
+            "death": death,
             "total": reward,
         }
         return self._build_obs(), reward, done, False, info
@@ -433,6 +348,32 @@ class LuminesEnvNative(gym.Env):
             else:
                 run = 0
         return max_run
+
+    def _longest_run(self, col_set: set) -> int:
+        max_run = run = 0
+        for c in range(BOARD_WIDTH - 1):
+            if c in col_set:
+                run += 1
+                max_run = max(max_run, run)
+            else:
+                run = 0
+        return max_run
+
+    def _count_max_single_color_chain_from_board(self, board=None) -> int:
+        """Longest consecutive pattern-column run for the single best color."""
+        board = board if board is not None else self._state.board
+        light_cols: set[int] = set()
+        dark_cols: set[int] = set()
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    (light_cols if c == 1 else dark_cols).add(col)
+        return max(self._longest_run(light_cols), self._longest_run(dark_cols))
+
+    def _build_color_board(self, color: int) -> np.ndarray:
+        """Binary float32 (H×W): 1.0 where board cell == color."""
+        return (np.array(self._state.board, dtype=np.float32) == color).astype(np.float32)
 
     def _count_patterns_in_zone(self, col_set: set) -> int:
         """Count 2×2 same-color patterns whose left-edge column is in col_set."""
@@ -549,7 +490,8 @@ class LuminesEnvNative(gym.Env):
     def _build_obs(self) -> dict:
         s = self._state
         return {
-            "board": np.array(s.board, dtype=np.int8),
+            "light_board": self._build_color_board(1),
+            "dark_board": self._build_color_board(2),
             "pattern_board": self._build_pattern_channel(),
             "ghost_board": self._build_ghost_channel(),
             "timeline_board": self._build_timeline_board(),
@@ -568,8 +510,9 @@ class LuminesEnvNative(gym.Env):
             "holding_score": np.array(
                 [min(s.timeline.holding_score / 10.0, 1.0)], dtype=np.float32
             ),
-            "chain_length": np.array(
-                [self._count_chain_length() / (BOARD_WIDTH - 1)], dtype=np.float32
+            "dominant_color_chain": np.array(
+                [self._count_max_single_color_chain_from_board() / (BOARD_WIDTH - 1)],
+                dtype=np.float32,
             ),
             "projected_pattern_board": self._build_projected_pattern_board(),
         }

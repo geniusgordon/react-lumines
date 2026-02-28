@@ -125,25 +125,31 @@ def compute_timeline_board(pattern_board, timeline_x):
     return result
 
 
-def compute_chain_length(board):
-    """Longest consecutive run of left-edge columns that have a 2×2 same-color
-    pattern, normalised to [0, 1] by dividing by BOARD_WIDTH-1 (=15).
-    Mirrors env._count_chain_length_from_board() exactly."""
-    cols_with_patterns: set = set()
+def compute_dominant_color_chain(board) -> float:
+    """Longest consecutive single-color pattern-column run, normalised to [0,1].
+    Mirrors env._count_max_single_color_chain_from_board() exactly."""
+    light_cols: set = set()
+    dark_cols: set = set()
     for row in range(BOARD_HEIGHT - 1):
         for col in range(BOARD_WIDTH - 1):
             c = board[row][col]
             if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                cols_with_patterns.add(col)
-    if not cols_with_patterns:
-        return 0.0
-    max_run = cur = 0
-    for col in range(BOARD_WIDTH - 1):
-        if col in cols_with_patterns:
-            cur += 1; max_run = max(max_run, cur)
-        else:
-            cur = 0
-    return float(max_run) / max(BOARD_WIDTH - 1, 1)
+                (light_cols if c == 1 else dark_cols).add(col)
+
+    def _run(col_set):
+        mx = cur = 0
+        for c in range(BOARD_WIDTH - 1):
+            cur = cur + 1 if c in col_set else 0
+            mx = max(mx, cur)
+        return mx
+
+    return float(max(_run(light_cols), _run(dark_cols))) / (BOARD_WIDTH - 1)
+
+
+def compute_color_board(board, color: int) -> np.ndarray:
+    """Binary float32 (H×W): 1.0 where board cell == color.
+    Mirrors env._build_color_board() exactly."""
+    return (np.array(board, dtype=np.float32) == color).astype(np.float32)
 
 
 def obs_to_numpy(obs_json: dict) -> dict:
@@ -163,7 +169,8 @@ def obs_to_numpy(obs_json: dict) -> dict:
     marked_cells = obs_json.get("markedCells", [])
 
     return {
-        "board": board,
+        "light_board": compute_color_board(board.tolist(), 1),
+        "dark_board": compute_color_board(board.tolist(), 2),
         "pattern_board": pattern_board,
         "ghost_board": compute_ghost_board(board, current_block, block_x),
         "timeline_board": compute_timeline_board(pattern_board, timeline_x),
@@ -176,7 +183,7 @@ def obs_to_numpy(obs_json: dict) -> dict:
         "game_timer": np.array([obs_json["gameTimer"]], dtype=np.int32),
         "column_heights": compute_column_heights(board),
         "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
-        "chain_length": np.array([compute_chain_length(board)], dtype=np.float32),
+        "dominant_color_chain": np.array([compute_dominant_color_chain(board.tolist())], dtype=np.float32),
         "projected_pattern_board": compute_projected_pattern_board(board.tolist(), marked_cells),
     }
 

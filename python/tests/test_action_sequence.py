@@ -88,7 +88,7 @@ def test_game_over_when_block_cannot_enter_board():
         "Expected game over when block (cols 9–10) can't enter a board "
         "where col 10 is fully stacked"
     )
-    assert info["reward_components"]["death_penalty"] == pytest.approx(DEATH_PENALTY)
+    assert info["reward_components"]["death"] == pytest.approx(DEATH_PENALTY)
 
 
 # ---------------------------------------------------------------------------
@@ -97,9 +97,7 @@ def test_game_over_when_block_cannot_enter_board():
 
 def test_col10_height_increases_with_repeated_action41():
     """
-    Step action=41 four times and verify:
-    - col 10 height increases strictly after each placement
-    - height_delta is negative each step (block raises aggregate height, no clears)
+    Step action=41 four times and verify col 10 height increases strictly after each placement.
     """
     env = LuminesEnvNative(mode="per_block", seed="1")
     env.reset(seed=1)
@@ -114,10 +112,6 @@ def test_col10_height_increases_with_repeated_action41():
         assert curr_height > prev_height, (
             f"Step {i+1}: expected col 10 height to increase from {prev_height}, "
             f"got {curr_height}"
-        )
-        assert info["reward_components"]["height_delta"] < 0, (
-            f"Step {i+1}: expected height_delta < 0 (block raised board), "
-            f"got {info['reward_components']['height_delta']}"
         )
         prev_height = curr_height
 

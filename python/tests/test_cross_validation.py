@@ -43,7 +43,9 @@ def test_reset_returns_correct_shapes():
     env = LuminesEnvNative(mode='per_block', seed='test123')
     obs, info = env.reset()
 
-    assert obs['board'].shape == (10, 16)
+    assert obs['light_board'].shape == (10, 16)
+    assert obs['dark_board'].shape == (10, 16)
+    assert obs['dominant_color_chain'].shape == (1,)
     assert obs['current_block'].shape == (2, 2)
     assert obs['block_position'].shape == (2,)
     assert obs['queue'].shape == (3, 2, 2)
@@ -96,15 +98,17 @@ def test_game_timer_decreases():
 
 
 def test_board_values_in_range():
-    """Board cells must always be 0, 1, or 2."""
+    """light_board and dark_board must be binary (0.0 or 1.0) on every step."""
     env = LuminesEnvNative(mode='per_block', seed='test123')
     env.reset()
 
     actions = _random_actions(30)
     for a in actions:
         obs, _, done, _, _ = env.step(a)
-        board = obs['board']
-        assert np.all((board >= 0) & (board <= 2)), "Board contains out-of-range values"
+        light = obs['light_board']
+        dark = obs['dark_board']
+        assert np.all((light == 0.0) | (light == 1.0)), "light_board contains non-binary values"
+        assert np.all((dark == 0.0) | (dark == 1.0)), "dark_board contains non-binary values"
         if done:
             break
 
@@ -215,8 +219,10 @@ def test_structural_parity_with_node_env():
         py_obs, py_r, py_done, _, _ = py_env.step(a)
         node_obs, node_r, node_done, _, _ = node_env.step(a)
 
-        assert py_obs['board'].shape == (10, 16)
-        assert np.all((py_obs['board'] >= 0) & (py_obs['board'] <= 2))
+        assert py_obs['light_board'].shape == (10, 16)
+        assert py_obs['dark_board'].shape == (10, 16)
+        assert np.all((py_obs['light_board'] == 0.0) | (py_obs['light_board'] == 1.0))
+        assert np.all((py_obs['dark_board'] == 0.0) | (py_obs['dark_board'] == 1.0))
 
         if py_done or node_done:
             break
