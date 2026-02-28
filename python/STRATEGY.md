@@ -51,8 +51,8 @@ The most efficient Lumines strategy is **alternating single-color combos**:
 | `post_sweep_dark_delta` | Strategy shaping — color-aware post-sweep delta | 0.05 |
 | `chain_delta_any_color` | Density aid — color-agnostic pre-sweep bootstrap | 0.03 |
 | `chain_blocking_delta` | Blocking penalty — wrong-color 2×2 count change in chain zone | −0.05 |
-| `near_pattern_delta` | Initial-phase aid — progress toward first 2×2 pattern | 0.01 |
-| `initial_blocking_delta` | Initial-phase penalty — single-cell blocker of a near-pattern | −0.03 |
+| `open_pattern_delta` | Initial-phase aid — progress toward first 2×2 pattern | 0.01 |
+| `ruined_pattern_delta` | Initial-phase penalty — single-cell blocker of a near-pattern | −0.03 |
 | `death` | Survival penalty | −3.0 on terminal |
 
 ### Why `score_delta` is ground truth
@@ -101,30 +101,30 @@ opposite of correct. Zeroing prevents the spurious negative; the actual payoff i
 `score_delta`. `_prev` is updated unconditionally even on sweep steps, so the *next* step's delta
 is relative to the post-clear board, correctly starting a fresh buildup cycle.
 
-### Why `near_pattern_delta` and `initial_blocking_delta` are needed
+### Why `open_pattern_delta` and `ruined_pattern_delta` are needed
 
 Before any complete 2×2 pattern exists, `chain_delta_any_color` fires zero and
 `chain_blocking_delta` fires zero (no chain zone is defined). The initial phase of the game
 is completely signal-free: good placements and bad placements both receive 0 reward.
 
-`near_pattern_delta` fills the positive gap. A **near-pattern** is a 2×2 region with 2 or
+`open_pattern_delta` fills the positive gap. A **near-pattern** is a 2×2 region with 2 or
 3 same-color cells and the rest empty — completable in one block drop. Counting the maximum
 near-pattern count over both colors and taking the delta (clipped to ≥ 0) gives a small
 positive signal for moves that progress toward the first complete 2×2. The clip prevents
 spurious negatives when a near-pattern graduates to a complete pattern (which fires
 `chain_delta_any_color` instead).
 
-`initial_blocking_delta` fills the negative gap. A **blocked near-pattern** is a 2×2 region
+`ruined_pattern_delta` fills the negative gap. A **blocked near-pattern** is a 2×2 region
 with exactly 3 cells of one color and 1 cell of the other — the single wrong-color cell
 prevents completion. An increase means the agent just destroyed a near-pattern by placing a
 blocker; the −0.03 weight makes that a penalty.
 
 **Why smaller weights than their chain counterparts?**
 
-- `near_pattern_delta * 0.01` < `chain_delta_any_color * 0.03`: near-patterns are less
+- `open_pattern_delta * 0.01` < `chain_delta_any_color * 0.03`: near-patterns are less
   definitive than complete 2×2s; the 2-cell case (broader definition) is noisier — many
   regions qualify early on, so the count is high and the weight must stay small.
-- `initial_blocking_delta * -0.03` < `chain_blocking_delta * -0.05`: single-cell blockers
+- `ruined_pattern_delta * -0.03` < `chain_blocking_delta * -0.05`: single-cell blockers
   of near-patterns are less severe than full wrong-color 2×2 patterns inside an established
   chain. Both can fire simultaneously for the worst placements, compounding the penalty
   appropriately.

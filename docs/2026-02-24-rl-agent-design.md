@@ -144,11 +144,11 @@ empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 ```python
 reward = score_delta                              # primary: actual combo payoff from timeline sweep
        + chain_delta_any_color   * 0.03           # density aid: color-agnostic pre-sweep bootstrap
-       + near_pattern_delta      * 0.01           # initial aid: progress toward first 2×2 pattern
+       + open_pattern_delta      * 0.01           # bootstrap aid: progress toward first 2×2 pattern
        + post_sweep_light_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
        + post_sweep_dark_delta   * 0.05           # strategy shaping: color-aware post-sweep delta
        + chain_blocking_delta    * -0.05          # blocking: wrong-color 2×2 in chain zone
-       + initial_blocking_delta  * -0.03          # blocking: single-cell blocker of near-pattern
+       + ruined_pattern_delta    * -0.03          # blocking: single-cell blocker of near-pattern
        + death                                    # -3.0 on game over, else 0
 ```
 
@@ -156,11 +156,11 @@ reward = score_delta                              # primary: actual combo payoff
 |-----------|-------|---------|
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
 | `chain_delta_any_color * 0.03` | any sign | Color-agnostic pre-sweep bootstrap: change in longest same-color pattern-column run (best of light vs dark). Kept small (0.03) so it doesn't mislead once chains form. |
-| `near_pattern_delta * 0.01` | ≥ 0 | Initial-phase aid: change in max near-pattern count (2–3 same-color cells in a 2×2, rest empty). Clipped ≥ 0 so completions don't produce a spurious negative. Fires mostly before the first 2×2 forms. |
+| `open_pattern_delta * 0.01` | ≥ 0 | Initial-phase aid: change in max near-pattern count (2–3 same-color cells in a 2×2, rest empty). Clipped ≥ 0 so completions don't produce a spurious negative. Fires mostly before the first 2×2 forms. |
 | `post_sweep_light_delta * 0.05` | any sign | Strategy shaping: change in light chain since previous step's post-sweep value. **Zeroed when `score_delta > 0`** — after the sweep clears the board, the simulated post-sweep value drops sharply, making the raw delta large and negative. This would spuriously punish the agent for the combo that the buildup was designed to produce; `score_delta` handles the actual payoff. `_prev` is still updated so the next step's delta is relative to the post-clear board, starting a new buildup cycle. |
 | `post_sweep_dark_delta * 0.05` | any sign | Same for dark chain. |
 | `chain_blocking_delta * -0.05` | ≤ 0 | Blocking penalty: change in wrong-color 2×2 count inside dominant chain zone (±1 col). Penalises placements that cap lateral/vertical chain growth. |
-| `initial_blocking_delta * -0.03` | ≤ 0 | Near-pattern blocking penalty: change in blocked near-pattern count (3 cells of one color + 1 of the other). Penalises single-cell blockers that ruin near-patterns. |
+| `ruined_pattern_delta * -0.03` | ≤ 0 | Near-pattern blocking penalty: change in blocked near-pattern count (3 cells of one color + 1 of the other). Penalises single-cell blockers that ruin near-patterns. |
 | `death` | −3.0 | Penalise game over |
 
 `info["reward_components"]` emits all 7 components plus `total`.
@@ -249,7 +249,7 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_29 | — | — | — | — | 4-component reward (`score_delta + chain_after_drop*0.05 + post_sweep_chain*0.05 + death`); `clip_range_vf=None`. Strips noisy components; measures goals directly. |
 | PPO_30 | — | — | — | — | Color-aware obs + obs space cleanup: `light_board`+`dark_board` replace `board`; `dominant_color_chain` replaces `chain_length`; 5 redundant keys removed. Color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). Color-separated pattern boards: `light_pattern_board`+`dark_pattern_board` replace `pattern_board`+`ghost_board`+`projected_pattern_board`. CNN 4 channels, MLP 20 inputs. |
 | PPO_31 | — | — | — | — | Flat PPO baseline with PPO_30 architecture. LSTM/RecurrentPPO is a separate parallel experiment (not a sequential run). |
-| PPO_32 | — | — | — | — | **Upcoming.** Full reward redesign: color-aware post-sweep deltas (`post_sweep_light_delta`+`post_sweep_dark_delta`); delta zeroed on scoring steps; `dominant_color_chain`→`light_chain`+`dark_chain` obs split (MLP 20→21); `chain_blocking_delta` penalty (−0.05); `near_pattern_delta` initial-phase aid (+0.01); `initial_blocking_delta` near-pattern blocker penalty (−0.03). See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
+| PPO_32 | — | — | — | — | **Upcoming.** Full reward redesign: color-aware post-sweep deltas (`post_sweep_light_delta`+`post_sweep_dark_delta`); delta zeroed on scoring steps; `dominant_color_chain`→`light_chain`+`dark_chain` obs split (MLP 20→21); `chain_blocking_delta` penalty (−0.05); `open_pattern_delta` initial-phase aid (+0.01); `ruined_pattern_delta` near-pattern blocker penalty (−0.03). See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
 
 ### PPO_10 post-mortem
 

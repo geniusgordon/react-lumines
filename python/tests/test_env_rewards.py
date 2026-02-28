@@ -85,11 +85,11 @@ def test_reward_components_exact_keys():
     expected_keys = {
         "score_delta",
         "chain_delta_any_color",
-        "near_pattern_delta",
+        "open_pattern_delta",
         "post_sweep_light_delta",
         "post_sweep_dark_delta",
         "chain_blocking_delta",
-        "initial_blocking_delta",
+        "ruined_pattern_delta",
         "death",
         "total",
     }
@@ -178,9 +178,9 @@ def test_reward_components_no_placement_penalty():
 
 # ---------------------------------------------------------------------------
 # PPO_32 reward formula:
-#   total = score_delta + chain_delta_any_color*0.03 + near_pattern_delta*0.01
+#   total = score_delta + chain_delta_any_color*0.03 + open_pattern_delta*0.01
 #           + post_sweep_light_delta*0.05 + post_sweep_dark_delta*0.05
-#           + chain_blocking_delta*-0.05 + initial_blocking_delta*-0.03 + death
+#           + chain_blocking_delta*-0.05 + ruined_pattern_delta*-0.03 + death
 # ---------------------------------------------------------------------------
 
 def test_reward_total_matches_formula():
@@ -192,11 +192,11 @@ def test_reward_total_matches_formula():
     expected_total = (
         rc["score_delta"]
         + rc["chain_delta_any_color"]  * 0.03
-        + rc["near_pattern_delta"]     * 0.01
+        + rc["open_pattern_delta"]     * 0.01
         + rc["post_sweep_light_delta"] * 0.05
         + rc["post_sweep_dark_delta"]  * 0.05
         + rc["chain_blocking_delta"]   * -0.05
-        + rc["initial_blocking_delta"] * -0.03
+        + rc["ruined_pattern_delta"]   * -0.03
         + rc["death"]
     )
     assert rc["total"] == pytest.approx(expected_total)

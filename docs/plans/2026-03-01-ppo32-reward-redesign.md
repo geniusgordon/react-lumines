@@ -15,11 +15,11 @@ PPO_32 accumulates all reward changes developed after PPO_31 and will be the nex
 ```python
 reward = score_delta                              # primary: actual combo payoff
        + chain_delta_any_color   * 0.03           # density aid: color-agnostic pre-sweep bootstrap
-       + near_pattern_delta      * 0.01           # initial aid: progress toward first 2×2
+       + open_pattern_delta      * 0.01           # bootstrap aid: progress toward first 2×2
        + post_sweep_light_delta  * 0.05           # strategy: color-aware post-sweep delta
        + post_sweep_dark_delta   * 0.05           # strategy: color-aware post-sweep delta
        + chain_blocking_delta    * -0.05          # blocking: wrong-color 2×2 in chain zone
-       + initial_blocking_delta  * -0.03          # blocking: single-cell blocker of near-pattern
+       + ruined_pattern_delta    * -0.03          # blocking: single-cell blocker of near-pattern
        + death                                    # survival: DEATH_PENALTY on game over, else 0
 ```
 
@@ -91,13 +91,13 @@ The initial phase is completely signal-free: good and bad placements both receiv
 
 ### Solution
 
-- `near_pattern_delta * 0.01`: change in max near-pattern count (clipped ≥ 0, pre-sweep). Clipped so completions (which fire `chain_delta_any_color` instead) don't produce a spurious negative.
-- `initial_blocking_delta * -0.03`: change in blocked near-pattern count (post-sweep). Penalises placing a single wrong-color cell into a 2×2 region that had 3 matching cells.
+- `open_pattern_delta * 0.01`: change in max near-pattern count (clipped ≥ 0, pre-sweep). Clipped so completions (which fire `chain_delta_any_color` instead) don't produce a spurious negative.
+- `ruined_pattern_delta * -0.03`: change in blocked near-pattern count (pre-sweep). Penalises placing a single wrong-color cell into a 2×2 region that had 3 matching cells.
 
 ### Weight rationale
 
-- `near_pattern_delta * 0.01` < `chain_delta_any_color * 0.03`: near-patterns are noisier and less definitive; 2-cell case (broad definition) inflates count, so weight must stay small.
-- `initial_blocking_delta * -0.03` < `chain_blocking_delta * -0.05`: single-cell blockers of near-patterns are less severe than full wrong-color 2×2s inside an established chain. Both can fire simultaneously for the worst placements.
+- `open_pattern_delta * 0.01` < `chain_delta_any_color * 0.03`: near-patterns are noisier and less definitive; 2-cell case (broad definition) inflates count, so weight must stay small.
+- `ruined_pattern_delta * -0.03` < `chain_blocking_delta * -0.05`: single-cell blockers of near-patterns are less severe than full wrong-color 2×2s inside an established chain. Both can fire simultaneously for the worst placements.
 
 ---
 
