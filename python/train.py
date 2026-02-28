@@ -313,7 +313,8 @@ def _train_ppo(args, env, eval_env):
         eval_env = VecNormalize.load(norm_stats_path, eval_env)
         eval_env.training = False
         eval_env.norm_reward = False
-        model = PPO.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
+        loader = RecurrentPPO if args.recurrent else PPO
+        model = loader.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
         reset_num_timesteps = False
     else:
         env = VecNormalize(env, norm_obs=True, norm_reward=False)
@@ -325,7 +326,7 @@ def _train_ppo(args, env, eval_env):
             share_features_extractor=False,
         )
         if args.recurrent:
-            recurrent_policy_kwargs = dict(policy_kwargs)
+            recurrent_policy_kwargs = copy.deepcopy(policy_kwargs)
             recurrent_policy_kwargs["lstm_hidden_size"] = 256
             model = RecurrentPPO(
                 "MultiInputLstmPolicy",
@@ -341,6 +342,7 @@ def _train_ppo(args, env, eval_env):
                 ent_coef=0.1,
                 vf_coef=0.5,
                 max_grad_norm=0.5,
+                target_kl=0.008,
                 policy_kwargs=recurrent_policy_kwargs,
                 tensorboard_log=args.log_dir,
                 device=args.device,
