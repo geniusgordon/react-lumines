@@ -31,6 +31,7 @@ import torch
 import torch.nn as nn
 from gymnasium import spaces
 from stable_baselines3 import DQN, PPO
+from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.monitor import Monitor
@@ -323,26 +324,49 @@ def _train_ppo(args, env, eval_env):
             net_arch=dict(pi=[128, 128], vf=[512, 512, 256]),
             share_features_extractor=False,
         )
-        model = PPO(
-            "MultiInputPolicy",
-            env,
-            learning_rate=linear_schedule(3e-5, 3e-6),
-            n_steps=4096,
-            batch_size=256,
-            n_epochs=10,
-            gamma=0.99,
-            gae_lambda=0.90,
-            clip_range=0.2,
-            clip_range_vf=0.2,
-            ent_coef=0.1,
-            vf_coef=0.5,
-            max_grad_norm=0.5,
-            target_kl=0.008,
-            policy_kwargs=policy_kwargs,
-            tensorboard_log=args.log_dir,
-            device=args.device,
-            verbose=1,
-        )
+        if args.recurrent:
+            recurrent_policy_kwargs = dict(policy_kwargs)
+            recurrent_policy_kwargs["lstm_hidden_size"] = 256
+            model = RecurrentPPO(
+                "MultiInputLstmPolicy",
+                env,
+                learning_rate=linear_schedule(3e-5, 3e-6),
+                n_steps=4096,
+                batch_size=256,
+                n_epochs=10,
+                gamma=0.99,
+                gae_lambda=0.90,
+                clip_range=0.2,
+                clip_range_vf=0.2,
+                ent_coef=0.1,
+                vf_coef=0.5,
+                max_grad_norm=0.5,
+                policy_kwargs=recurrent_policy_kwargs,
+                tensorboard_log=args.log_dir,
+                device=args.device,
+                verbose=1,
+            )
+        else:
+            model = PPO(
+                "MultiInputPolicy",
+                env,
+                learning_rate=linear_schedule(3e-5, 3e-6),
+                n_steps=4096,
+                batch_size=256,
+                n_epochs=10,
+                gamma=0.99,
+                gae_lambda=0.90,
+                clip_range=0.2,
+                clip_range_vf=0.2,
+                ent_coef=0.1,
+                vf_coef=0.5,
+                max_grad_norm=0.5,
+                target_kl=0.008,
+                policy_kwargs=policy_kwargs,
+                tensorboard_log=args.log_dir,
+                device=args.device,
+                verbose=1,
+            )
         reset_num_timesteps = True
 
     callbacks = [
@@ -417,6 +441,12 @@ if __name__ == "__main__":
         choices=["dqn", "ppo"],
         default="ppo",
         help="RL algorithm to use (default: ppo)",
+    )
+    parser.add_argument(
+        "--recurrent",
+        action="store_true",
+        default=False,
+        help="Use RecurrentPPO (LSTM) instead of flat PPO",
     )
     args = parser.parse_args()
 
