@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ws_eval import (
     compute_column_heights,
-    compute_dominant_color_chain,
+    compute_single_color_chain,
     compute_color_pattern_board,
     obs_to_numpy,
     BOARD_HEIGHT,
@@ -72,27 +72,43 @@ class TestComputeColumnHeights:
 
 
 # ---------------------------------------------------------------------------
-# compute_dominant_color_chain (PPO_30)
+# compute_single_color_chain (PPO_33)
 # ---------------------------------------------------------------------------
 
-class TestComputeDominantColorChain:
+class TestComputeSingleColorChain:
     def _empty_board(self):
         return [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
 
-    def test_empty_board(self):
-        assert compute_dominant_color_chain(self._empty_board()) == pytest.approx(0.0)
+    def test_empty_board_light(self):
+        assert compute_single_color_chain(self._empty_board(), 1) == pytest.approx(0.0)
+
+    def test_empty_board_dark(self):
+        assert compute_single_color_chain(self._empty_board(), 2) == pytest.approx(0.0)
 
     def test_single_light_pattern(self):
         board = self._empty_board()
         board[8][0] = 1; board[8][1] = 1; board[9][0] = 1; board[9][1] = 1
-        result = compute_dominant_color_chain(board)
+        result = compute_single_color_chain(board, 1)
         assert result == pytest.approx(1.0 / (BOARD_WIDTH - 1))
 
-    def test_matches_env(self):
+    def test_dark_pattern_not_counted_as_light(self):
+        board = self._empty_board()
+        board[8][0] = 2; board[8][1] = 2; board[9][0] = 2; board[9][1] = 2
+        assert compute_single_color_chain(board, 1) == pytest.approx(0.0)
+        assert compute_single_color_chain(board, 2) == pytest.approx(1.0 / (BOARD_WIDTH - 1))
+
+    def test_matches_env_light(self):
         env = _make_env_with_board()
         board = env._state.board
-        got = compute_dominant_color_chain(board)
-        expected = env._count_max_single_color_chain_from_board() / (BOARD_WIDTH - 1)
+        got = compute_single_color_chain(board, 1)
+        expected = env._count_single_color_chain(board, 1) / (BOARD_WIDTH - 1)
+        assert got == pytest.approx(expected, abs=1e-5)
+
+    def test_matches_env_dark(self):
+        env = _make_env_with_board()
+        board = env._state.board
+        got = compute_single_color_chain(board, 2)
+        expected = env._count_single_color_chain(board, 2) / (BOARD_WIDTH - 1)
         assert got == pytest.approx(expected, abs=1e-5)
 
 
@@ -147,12 +163,19 @@ class TestObsToNumpy:
         ws_obs = obs_to_numpy(obs_json)
         np.testing.assert_array_almost_equal(ws_obs["dark_pattern_board"], env_obs["dark_pattern_board"])
 
-    def test_dominant_color_chain(self):
+    def test_light_chain(self):
         env = _make_env_with_board()
         obs_json = self._env_state_to_obs_json(env)
         env_obs = env._build_obs()
         ws_obs = obs_to_numpy(obs_json)
-        np.testing.assert_array_almost_equal(ws_obs["dominant_color_chain"], env_obs["dominant_color_chain"])
+        np.testing.assert_array_almost_equal(ws_obs["light_chain"], env_obs["light_chain"])
+
+    def test_dark_chain(self):
+        env = _make_env_with_board()
+        obs_json = self._env_state_to_obs_json(env)
+        env_obs = env._build_obs()
+        ws_obs = obs_to_numpy(obs_json)
+        np.testing.assert_array_almost_equal(ws_obs["dark_chain"], env_obs["dark_chain"])
 
     def test_holding_score(self):
         env = _make_env_with_board()

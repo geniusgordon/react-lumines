@@ -169,6 +169,12 @@ python/.venv/bin/pytest python/tests/ -v        # Run Python tests
 
 Checkpoints are saved to `python/checkpoints/`. TensorBoard logs go to `python/logs/`.
 
+### Game Strategy
+
+See `python/STRATEGY.md` for the optimal alternating single-color combo strategy and the
+full reward design rationale (which signals encode which objectives, why pre-sweep shaping
+is color-agnostic, why post-sweep shaping is color-aware and in delta form).
+
 ### Python Game Package (`python/game/`)
 
 A pure-Python port of the TypeScript game logic (~5000 steps/sec vs ~50 for Node.js IPC):

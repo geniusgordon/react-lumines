@@ -9,19 +9,21 @@ Action spaces:
 
 Reward (per_block mode)
 -----------------------
-    reward = score_delta                        # primary: actual combo payoff (sparse, correct)
-           + single_color_chain_delta * 0.1    # dense delta: change in longest single-color chain
-           + post_sweep_chain * 0.05           # dense level: single-color chain after sweep + gravity
-           + death                              # survival: DEATH_PENALTY on game over, else 0
+    reward = score_delta                              # primary: actual combo payoff (sparse, ground truth)
+           + chain_delta_any_color * 0.03            # density aid: color-agnostic pre-sweep shaping
+           + post_sweep_light_delta * 0.05           # strategy shaping: color-aware post-sweep delta
+           + post_sweep_dark_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
+           + death                                    # survival: DEATH_PENALTY on game over, else 0
 
-    single_color_chain_delta: (chain_after_drop - chain_before), can be negative.
-    Rewards placements that extend the best same-color chain; penalises those that break it.
+    chain_delta_any_color: max(light_chain, dark_chain) after drop minus before drop.
+    Color-agnostic bootstrap signal. Weight kept small (0.03) so it doesn't mislead.
 
-    post_sweep_chain: longest consecutive same-color pattern-column run measured after
-    all ticks and gravity settling. Rewards leaving the board in a "chain-ready" state.
+    post_sweep_light_delta / post_sweep_dark_delta: per-color chain delta (current - previous step's
+    post-sweep value). Color-aware strategy shaping — rewards committing to one color per sweep cycle.
+    Delta form attributes reward only to the current action's net effect.
 
 reward_components keys emitted in info:
-    score_delta, single_color_chain_delta, post_sweep_chain, death, total
+    score_delta, chain_delta_any_color, post_sweep_light_delta, post_sweep_dark_delta, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -102,11 +104,14 @@ class LuminesEnvNative(gym.Env):
                 "timeline_x": spaces.Box(0, 15, shape=(1,), dtype=np.int32),
                 "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
-                "dominant_color_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
+                "light_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
+                "dark_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
             }
         )
 
         self._state = create_initial_state(self._seed)
+        self._prev_post_sweep_light_chain = 0.0
+        self._prev_post_sweep_dark_chain = 0.0
 
     # -------------------------------------------------------------------------
     # Gymnasium API
@@ -125,6 +130,8 @@ class LuminesEnvNative(gym.Env):
         self._seed = seed_str
         self._state = create_initial_state(seed_str)
         self._blocks_placed = 0
+        self._prev_post_sweep_light_chain = 0.0
+        self._prev_post_sweep_dark_chain = 0.0
         return self._build_obs(), {}
 
     def step(self, action: int):
@@ -188,10 +195,10 @@ class LuminesEnvNative(gym.Env):
         if self._state.status != "gameOver":
             self._blocks_placed += 1
 
-        # Measure single-color chain delta (can be negative).
+        # Measure color-agnostic chain delta (density aid, pre-sweep).
         chain_before = float(self._count_max_single_color_chain_from_board(board_before))
         chain_after_drop = float(self._count_max_single_color_chain_from_board())
-        single_color_chain_delta = chain_after_drop - chain_before
+        chain_delta_any_color = chain_after_drop - chain_before
 
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block.
@@ -223,18 +230,30 @@ class LuminesEnvNative(gym.Env):
             self._state.board = apply_gravity(board)
             self._state.falling_columns = []
 
-        # Measure post-sweep single-color chain (board readiness after combo + gravity settle).
-        post_sweep_chain = float(self._count_max_single_color_chain_from_board())
+        # Measure post-sweep per-color chain (strategy shaping, color-aware delta).
+        post_sweep_light = float(self._count_single_color_chain(self._state.board, 1))
+        post_sweep_dark = float(self._count_single_color_chain(self._state.board, 2))
+        post_sweep_light_delta = post_sweep_light - self._prev_post_sweep_light_chain
+        post_sweep_dark_delta = post_sweep_dark - self._prev_post_sweep_dark_chain
+        self._prev_post_sweep_light_chain = post_sweep_light
+        self._prev_post_sweep_dark_chain = post_sweep_dark
 
         score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + single_color_chain_delta * 0.1 + post_sweep_chain * 0.05 + death
+        reward = (
+            score_delta
+            + chain_delta_any_color * 0.03
+            + post_sweep_light_delta * 0.05
+            + post_sweep_dark_delta * 0.05
+            + death
+        )
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
-            "single_color_chain_delta": single_color_chain_delta,
-            "post_sweep_chain": post_sweep_chain,
+            "chain_delta_any_color": chain_delta_any_color,
+            "post_sweep_light_delta": post_sweep_light_delta,
+            "post_sweep_dark_delta": post_sweep_dark_delta,
             "death": death,
             "total": reward,
         }
@@ -344,17 +363,20 @@ class LuminesEnvNative(gym.Env):
                 run = 0
         return max_run
 
-    def _count_max_single_color_chain_from_board(self, board=None) -> int:
-        """Longest consecutive pattern-column run for the single best color."""
-        board = board if board is not None else self._state.board
-        light_cols: set[int] = set()
-        dark_cols: set[int] = set()
+    def _count_single_color_chain(self, board, color: int) -> int:
+        """Longest consecutive pattern-column run for a single specific color."""
+        cols: set[int] = set()
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):
                 c = board[row][col]
-                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    (light_cols if c == 1 else dark_cols).add(col)
-        return max(self._longest_run(light_cols), self._longest_run(dark_cols))
+                if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    cols.add(col)
+        return self._longest_run(cols)
+
+    def _count_max_single_color_chain_from_board(self, board=None) -> int:
+        """Longest consecutive pattern-column run for the single best color."""
+        board = board if board is not None else self._state.board
+        return max(self._count_single_color_chain(board, 1), self._count_single_color_chain(board, 2))
 
     def _build_color_board(self, color: int) -> np.ndarray:
         """Binary float32 (H×W): 1.0 where board cell == color."""
@@ -418,8 +440,12 @@ class LuminesEnvNative(gym.Env):
             "holding_score": np.array(
                 [min(s.timeline.holding_score / 10.0, 1.0)], dtype=np.float32
             ),
-            "dominant_color_chain": np.array(
-                [self._count_max_single_color_chain_from_board() / (BOARD_WIDTH - 1)],
+            "light_chain": np.array(
+                [self._count_single_color_chain(self._state.board, 1) / (BOARD_WIDTH - 1)],
+                dtype=np.float32,
+            ),
+            "dark_chain": np.array(
+                [self._count_single_color_chain(self._state.board, 2) / (BOARD_WIDTH - 1)],
                 dtype=np.float32,
             ),
         }

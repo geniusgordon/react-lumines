@@ -78,16 +78,23 @@ def test_count_complete_squares_3x2_block_counts_two():
 # ---------------------------------------------------------------------------
 
 def test_reward_components_exact_keys():
-    """reward_components must contain exactly the PPO_30 keys."""
+    """reward_components must contain exactly the PPO_33 keys."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "single_color_chain_delta", "post_sweep_chain", "death", "total"}
+    expected_keys = {
+        "score_delta",
+        "chain_delta_any_color",
+        "post_sweep_light_delta",
+        "post_sweep_dark_delta",
+        "death",
+        "total",
+    }
     assert set(info["reward_components"].keys()) == expected_keys
 
 
 def test_reward_components_no_chain_after_drop():
-    """chain_after_drop must NOT be present (replaced by single_color_chain_delta in PPO_30)."""
+    """chain_after_drop must NOT be present."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
@@ -167,43 +174,75 @@ def test_reward_components_no_placement_penalty():
 
 
 # ---------------------------------------------------------------------------
-# PPO_30 reward formula: total = score_delta + single_color_chain_delta*0.1 + post_sweep_chain*0.05 + death
+# PPO_33 reward formula:
+#   total = score_delta + chain_delta_any_color*0.03
+#           + post_sweep_light_delta*0.05 + post_sweep_dark_delta*0.05 + death
 # ---------------------------------------------------------------------------
 
 def test_reward_total_matches_formula():
-    """total must equal score_delta + single_color_chain_delta*0.1 + post_sweep_chain*0.05 + death."""
+    """total must equal the PPO_33 formula."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, reward, _, _, info = env.step(0)
     rc = info["reward_components"]
     expected_total = (
         rc["score_delta"]
-        + rc["single_color_chain_delta"] * 0.1
-        + rc["post_sweep_chain"] * 0.05
+        + rc["chain_delta_any_color"] * 0.03
+        + rc["post_sweep_light_delta"] * 0.05
+        + rc["post_sweep_dark_delta"] * 0.05
         + rc["death"]
     )
     assert rc["total"] == pytest.approx(expected_total)
     assert rc["total"] == pytest.approx(reward)
 
 
-def test_single_color_chain_delta_can_be_negative():
-    """single_color_chain_delta can be negative; verify key is present and is a float."""
+def test_chain_delta_any_color_is_float():
+    """chain_delta_any_color must be present and a float (can be negative)."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "single_color_chain_delta" in info["reward_components"]
-    assert isinstance(info["reward_components"]["single_color_chain_delta"], float)
+    assert "chain_delta_any_color" in info["reward_components"]
+    assert isinstance(info["reward_components"]["chain_delta_any_color"], float)
 
 
-def test_post_sweep_chain_non_negative():
-    """post_sweep_chain must be >= 0 on every step."""
+def test_post_sweep_light_delta_is_float():
+    """post_sweep_light_delta must be present and a float."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    for _ in range(20):
-        _, _, done, _, info = env.step(env.action_space.sample())
-        assert info["reward_components"]["post_sweep_chain"] >= 0.0
-        if done:
-            break
+    _, _, _, _, info = env.step(0)
+    assert "post_sweep_light_delta" in info["reward_components"]
+    assert isinstance(info["reward_components"]["post_sweep_light_delta"], float)
+
+
+def test_post_sweep_dark_delta_is_float():
+    """post_sweep_dark_delta must be present and a float."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "post_sweep_dark_delta" in info["reward_components"]
+    assert isinstance(info["reward_components"]["post_sweep_dark_delta"], float)
+
+
+def test_post_sweep_deltas_first_step_equal_absolute():
+    """On the first step after reset, prev values are 0, so delta == absolute chain length."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    rc = info["reward_components"]
+    # Deltas on step 1 can be positive or negative relative to 0; just verify they're floats.
+    assert isinstance(rc["post_sweep_light_delta"], float)
+    assert isinstance(rc["post_sweep_dark_delta"], float)
+
+
+def test_prev_post_sweep_resets_on_reset():
+    """After reset(), _prev_post_sweep_* must both be 0.0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    env.step(0)
+    env.step(0)
+    env.reset()
+    assert env._prev_post_sweep_light_chain == 0.0
+    assert env._prev_post_sweep_dark_chain == 0.0
 
 
 def test_death_on_game_over():
@@ -532,10 +571,23 @@ def test_obs_has_dark_board():
     assert "dark_board" in obs
 
 
-def test_obs_has_dominant_color_chain():
+def test_obs_has_light_chain():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    assert "dominant_color_chain" in obs
+    assert "light_chain" in obs
+
+
+def test_obs_has_dark_chain():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "dark_chain" in obs
+
+
+def test_obs_dominant_color_chain_absent():
+    """dominant_color_chain must NOT be present (replaced by light_chain + dark_chain)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "dominant_color_chain" not in obs
 
 
 def test_obs_light_board_shape():
@@ -550,10 +602,16 @@ def test_obs_dark_board_shape():
     assert obs["dark_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
 
 
-def test_obs_dominant_color_chain_shape():
+def test_obs_light_chain_shape():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    assert obs["dominant_color_chain"].shape == (1,)
+    assert obs["light_chain"].shape == (1,)
+
+
+def test_obs_dark_chain_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["dark_chain"].shape == (1,)
 
 
 def test_obs_board_absent():

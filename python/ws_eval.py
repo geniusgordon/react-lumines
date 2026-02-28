@@ -52,25 +52,21 @@ def compute_column_heights(board):
     return heights
 
 
-def compute_dominant_color_chain(board) -> float:
-    """Longest consecutive single-color pattern-column run, normalised to [0,1].
-    Mirrors env._count_max_single_color_chain_from_board() exactly."""
-    light_cols: set = set()
-    dark_cols: set = set()
+def compute_single_color_chain(board, color: int) -> float:
+    """Longest consecutive pattern-column run for a single color, normalised to [0,1].
+    Mirrors env._count_single_color_chain() exactly."""
+    cols: set = set()
     for row in range(BOARD_HEIGHT - 1):
         for col in range(BOARD_WIDTH - 1):
             c = board[row][col]
-            if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                (light_cols if c == 1 else dark_cols).add(col)
+            if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                cols.add(col)
 
-    def _run(col_set):
-        mx = cur = 0
-        for c in range(BOARD_WIDTH - 1):
-            cur = cur + 1 if c in col_set else 0
-            mx = max(mx, cur)
-        return mx
-
-    return float(max(_run(light_cols), _run(dark_cols))) / (BOARD_WIDTH - 1)
+    mx = cur = 0
+    for c in range(BOARD_WIDTH - 1):
+        cur = cur + 1 if c in cols else 0
+        mx = max(mx, cur)
+    return float(mx) / (BOARD_WIDTH - 1)
 
 
 def compute_color_pattern_board(board, color: int) -> np.ndarray:
@@ -117,7 +113,8 @@ def obs_to_numpy(obs_json: dict) -> dict:
         "timeline_x": np.array([timeline_x], dtype=np.int32),
         "game_timer": np.array([obs_json["gameTimer"]], dtype=np.int32),
         "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
-        "dominant_color_chain": np.array([compute_dominant_color_chain(board_list)], dtype=np.float32),
+        "light_chain": np.array([compute_single_color_chain(board_list, 1)], dtype=np.float32),
+        "dark_chain": np.array([compute_single_color_chain(board_list, 2)], dtype=np.float32),
     }
 
 
