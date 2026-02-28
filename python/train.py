@@ -7,7 +7,7 @@ Architecture:
                       Channels: light_board, dark_board, light_pattern_board, dark_pattern_board
     2. MLP branch   : current_block(4) + queue(12)
                       + timeline_x(1) + game_timer(1)
-                      + holding_score(1) + dominant_color_chain(1) = 20 values
+                      + holding_score(1) + light_chain(1) + dark_chain(1) = 21 values
                       → Linear(20→64) → ReLU
   Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
@@ -68,7 +68,7 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
 
     # Keys to route through the MLP branch (flattened and concatenated).
     # light_board, dark_board, light_pattern_board, dark_pattern_board are routed through the CNN branch.
-    MLP_KEYS = ["current_block", "queue", "timeline_x", "game_timer", "holding_score", "dominant_color_chain"]
+    MLP_KEYS = ["current_block", "queue", "timeline_x", "game_timer", "holding_score", "light_chain", "dark_chain"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
