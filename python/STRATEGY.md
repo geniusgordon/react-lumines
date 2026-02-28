@@ -87,6 +87,20 @@ on a board that already has a long chain gets rewarded regardless of whether the
 contributed. The delta (`current - previous step's post-sweep`) attributes reward only to
 the current action's net effect on board quality.
 
+### Why post-sweep is zeroed on actual sweep steps
+
+`post_sweep_*` is computed by simulating a clear on the *current* board. Over several placement
+steps, the simulated post-sweep chain grows and the positive deltas reward that buildup. When the
+timeline sweep fires for real, the board has already been cleared; computing post_sweep_* on this
+cleared board gives a much lower value. Without zeroing, the delta on that step would be:
+
+    delta = (low post-clear value) − (high pre-clear value) → large negative
+
+This would penalise the agent for the very scoring event the buildup was meant to produce — the
+opposite of correct. Zeroing prevents the spurious negative; the actual payoff is captured by
+`score_delta`. `_prev` is updated unconditionally even on sweep steps, so the *next* step's delta
+is relative to the post-clear board, correctly starting a fresh buildup cycle.
+
 ### Why `near_pattern_delta` and `initial_blocking_delta` are needed
 
 Before any complete 2×2 pattern exists, `chain_delta_any_color` fires zero and

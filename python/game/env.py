@@ -28,6 +28,11 @@ Reward (per_block mode)
     post_sweep_light_delta / post_sweep_dark_delta: per-color chain delta (current - previous step's
     post-sweep value). Color-aware strategy shaping — rewards committing to one color per sweep cycle.
     Delta form attributes reward only to the current action's net effect.
+    Zeroed when score_delta > 0 (actual sweep step) to prevent a spurious negative: after the sweep
+    clears the board, simulating another clear yields a much lower post_sweep value, so the delta would
+    be large and negative — incorrectly penalising the agent for the scoring event that the buildup was
+    meant to produce. The actual payoff is captured by score_delta; _prev is still updated so the next
+    step's delta starts from the post-clear board state, beginning a fresh buildup cycle.
 
     chain_blocking_delta: change in wrong-color 2×2 pattern count within the dominant chain's zone
     (chain_left-1 .. chain_right+1). Penalises placing blockers that cap vertical or lateral growth.
