@@ -13,6 +13,7 @@ Reward (per_block mode)
            + chain_delta_any_color * 0.03            # density aid: color-agnostic pre-sweep shaping
            + post_sweep_light_delta * 0.05           # strategy shaping: color-aware post-sweep delta
            + post_sweep_dark_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
+           + chain_blocking_delta   * -0.05          # blocking: new wrong-color 2×2 in chain zone
            + death                                    # survival: DEATH_PENALTY on game over, else 0
 
     chain_delta_any_color: max(light_chain, dark_chain) after drop minus before drop.
@@ -22,8 +23,12 @@ Reward (per_block mode)
     post-sweep value). Color-aware strategy shaping — rewards committing to one color per sweep cycle.
     Delta form attributes reward only to the current action's net effect.
 
+    chain_blocking_delta: change in wrong-color 2×2 pattern count within the dominant chain's zone
+    (chain_left-1 .. chain_right+1). Penalises placing blockers that cap vertical or lateral growth.
+
 reward_components keys emitted in info:
-    score_delta, chain_delta_any_color, post_sweep_light_delta, post_sweep_dark_delta, death, total
+    score_delta, chain_delta_any_color, post_sweep_light_delta, post_sweep_dark_delta,
+    chain_blocking_delta, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -232,6 +237,11 @@ class LuminesEnvNative(gym.Env):
 
         score_delta = float(self._state.score - prev_score)
 
+        # Measure chain zone blockers after gravity settling.
+        blockers_before = float(self._count_chain_zone_blockers(board_before))
+        blockers_after  = float(self._count_chain_zone_blockers())
+        chain_blocking_delta = blockers_after - blockers_before
+
         # Measure post-sweep per-color chain on simulated-cleared board.
         sim_board = self._simulate_clear_board(self._state.board)
         post_sweep_light = float(self._count_single_color_chain(sim_board, 1))
@@ -255,6 +265,7 @@ class LuminesEnvNative(gym.Env):
             + chain_delta_any_color * 0.03
             + post_sweep_light_delta * 0.05
             + post_sweep_dark_delta * 0.05
+            + chain_blocking_delta * -0.05
             + death
         )
         info = self._build_info()
@@ -263,6 +274,7 @@ class LuminesEnvNative(gym.Env):
             "chain_delta_any_color": chain_delta_any_color,
             "post_sweep_light_delta": post_sweep_light_delta,
             "post_sweep_dark_delta": post_sweep_dark_delta,
+            "chain_blocking_delta": chain_blocking_delta,
             "death": death,
             "total": reward,
         }
@@ -399,6 +411,55 @@ class LuminesEnvNative(gym.Env):
         """Longest consecutive pattern-column run for the single best color."""
         board = board if board is not None else self._state.board
         return max(self._count_single_color_chain(board, 1), self._count_single_color_chain(board, 2))
+
+    def _chain_range_for_color(self, board, color):
+        """Return (chain_left, chain_right) of the longest same-color 2×2 run, or None."""
+        cols: set[int] = set()
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    cols.add(col)
+        if not cols:
+            return None
+        best_left = best_right = 0
+        best_len = 0
+        run_left = run = 0
+        for c in range(BOARD_WIDTH - 1):
+            if c in cols:
+                if run == 0:
+                    run_left = c
+                run += 1
+                if run > best_len:
+                    best_len = run
+                    best_left = run_left
+                    best_right = c
+            else:
+                run = 0
+        return (best_left, best_right) if best_len > 0 else None
+
+    def _count_chain_zone_blockers(self, board=None) -> int:
+        """Count wrong-color 2×2 patterns within the dominant chain's zone (±1 col)."""
+        board = board if board is not None else self._state.board
+        lr = self._chain_range_for_color(board, 1)
+        dr = self._chain_range_for_color(board, 2)
+        light_len = (lr[1] - lr[0] + 1) if lr else 0
+        dark_len  = (dr[1] - dr[0] + 1) if dr else 0
+        if light_len == 0 and dark_len == 0:
+            return 0
+        if light_len >= dark_len:
+            dom_range, alt_color = lr, 2
+        else:
+            dom_range, alt_color = dr, 1
+        zone_left  = max(0, dom_range[0] - 1)
+        zone_right = min(BOARD_WIDTH - 2, dom_range[1] + 1)
+        count = 0
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(zone_left, zone_right + 1):
+                c = board[row][col]
+                if c == alt_color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    count += 1
+        return count
 
     def _build_color_board(self, color: int) -> np.ndarray:
         """Binary float32 (H×W): 1.0 where board cell == color."""

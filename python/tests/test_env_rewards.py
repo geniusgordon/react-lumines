@@ -87,6 +87,7 @@ def test_reward_components_exact_keys():
         "chain_delta_any_color",
         "post_sweep_light_delta",
         "post_sweep_dark_delta",
+        "chain_blocking_delta",
         "death",
         "total",
     }
@@ -190,6 +191,7 @@ def test_reward_total_matches_formula():
         + rc["chain_delta_any_color"] * 0.03
         + rc["post_sweep_light_delta"] * 0.05
         + rc["post_sweep_dark_delta"] * 0.05
+        + rc["chain_blocking_delta"] * -0.05
         + rc["death"]
     )
     assert rc["total"] == pytest.approx(expected_total)
@@ -722,3 +724,69 @@ def test_post_sweep_light_measures_chain_after_simulated_clear():
     # Chain count from surviving cells: 3 wide single row → no 2×2 patterns → chain = 0
     chain = env._count_single_color_chain(sim, 1)
     assert chain == 0  # single row, no 2×2 patterns remain
+
+
+# ---------------------------------------------------------------------------
+# chain_blocking_delta (PPO_34)
+# ---------------------------------------------------------------------------
+
+def test_chain_blocking_delta_zero_on_empty_board():
+    """No chain on empty board → blockers=0 → delta=0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
+    assert env._count_chain_zone_blockers() == 0
+
+
+def test_chain_blocking_delta_is_float():
+    """chain_blocking_delta must be present and be a float."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "chain_blocking_delta" in info["reward_components"]
+    assert isinstance(info["reward_components"]["chain_blocking_delta"], float)
+
+
+def test_chain_blocking_delta_positive_when_blocker_created():
+    """
+    Light chain at cols 0-1 (patterns at left edges 0, 1; cells at cols 0,1,2 rows 8-9).
+    chain_right = 1; zone = [max(0,0-1)=0 .. min(14,1+1)=2].
+    Adding a dark 2×2 at left edge 2 (cols 2-3, rows 6-7) falls inside the zone at
+    a different row, so the light pattern is unaffected → count increases.
+    """
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+
+    # Light cells at cols 0,1,2 rows 8-9 → patterns at left edges 0 and 1; chain_right=1
+    board_no_blocker = create_empty_board()
+    for c in range(3):  # cols 0,1,2
+        board_no_blocker[8][c] = 1
+        board_no_blocker[9][c] = 1
+
+    count_before = env._count_chain_zone_blockers(board_no_blocker)
+
+    # Dark 2×2 at left edge 2 (cols 2-3, rows 6-7) — different rows, no overlap with light chain
+    # zone = [0 .. 2], col 2 is inside zone
+    board_with_blocker = [row[:] for row in board_no_blocker]
+    board_with_blocker[6][2] = 2; board_with_blocker[6][3] = 2
+    board_with_blocker[7][2] = 2; board_with_blocker[7][3] = 2
+
+    count_after = env._count_chain_zone_blockers(board_with_blocker)
+    assert count_after > count_before
+
+
+def test_chain_blocking_delta_zero_when_no_alt_color_patterns_in_zone():
+    """When there are no alt-color 2×2 patterns in the zone, count is 0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+
+    # Light chain at cols 2-4; dark 2×2 far outside the zone (col 10)
+    board = create_empty_board()
+    for c in range(2, 6):
+        board[8][c] = 1
+        board[9][c] = 1
+    board[8][10] = 2; board[8][11] = 2
+    board[9][10] = 2; board[9][11] = 2
+
+    # zone is [max(0,2-1)=1 .. min(14,4+1)=5]; dark pattern at col 10 is outside
+    assert env._count_chain_zone_blockers(board) == 0

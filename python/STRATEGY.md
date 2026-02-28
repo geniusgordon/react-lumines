@@ -50,6 +50,7 @@ The most efficient Lumines strategy is **alternating single-color combos**:
 | `post_sweep_light_delta` | Strategy shaping — color-aware post-sweep delta | 0.05 |
 | `post_sweep_dark_delta` | Strategy shaping — color-aware post-sweep delta | 0.05 |
 | `chain_delta_any_color` | Density aid — color-agnostic pre-sweep bootstrap | 0.03 |
+| `chain_blocking_delta` | Blocking penalty — wrong-color 2×2 count change in chain zone | −0.05 |
 | `death` | Survival penalty | −3.0 on terminal |
 
 ### Why `score_delta` is ground truth
@@ -84,6 +85,27 @@ on a board that already has a long chain gets rewarded regardless of whether the
 contributed. The delta (`current - previous step's post-sweep`) attributes reward only to
 the current action's net effect on board quality.
 
+### Why `chain_blocking_delta` is needed
+
+`chain_delta_any_color` can only increase or stay flat when a block lands (completed 2×2
+patterns never disappear due to placement). This means neutral or bad moves get reward ≈ 0
+— there is no negative signal to discourage destructive placements.
+
+`chain_blocking_delta` fills this gap by counting **wrong-color 2×2 patterns inside the
+dominant chain's zone** (chain_left−1 to chain_right+1). An increase means the player just
+placed a blocker that caps horizontal or vertical growth of the dominant chain; the −0.05
+weight makes that a penalty. Coverage of ±1 column naturally handles both:
+
+- **Lateral blocking**: wrong-color patterns at the frontier columns prevent the chain from
+  extending left or right.
+- **Vertical blocking**: wrong-color patterns stacked inside the chain columns prevent the
+  sweep from clearing the full vertical extent.
+
+No `score_delta > 0` gating is applied (unlike `post_sweep_*_delta`) because the sweep
+moves left-to-right over multiple frames; blocking the right portion of the chain while the
+sweep is already mid-board is still a bad placement even if it doesn't reduce the score on
+this exact step.
+
 ---
 
 ## Guidance for Future Reward Changes
@@ -94,7 +116,9 @@ the current action's net effect on board quality.
 3. **Post-sweep signals encode strategy** — keep them color-aware and in delta form.
 4. **Post-sweep should outweigh pre-sweep** — currently 0.05 × 2 vs 0.03; maintain this
    ratio or increase post-sweep weight.
-5. **Adding a color-commitment bonus** (e.g. rewarding when both sweeps use the same
+5. **`chain_blocking_delta` provides the missing negative gradient** — keep it at −0.05
+   (small enough not to dominate, large enough to discourage blockers).
+6. **Adding a color-commitment bonus** (e.g. rewarding when both sweeps use the same
    dominant color) is a valid next step to further incentivise the alternating combo
    strategy.
 6. **The agent's target behavior**: commit to one color per sweep cycle, maximise that
