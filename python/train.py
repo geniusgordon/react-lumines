@@ -152,19 +152,77 @@ class EntropyScheduleCallback(BaseCallback):
         return True
 
 
+class GameScoreCallback(BaseCallback):
+    """Logs mean true game score (not shaped reward) to TensorBoard at each rollout end.
+
+    Reads ``finalScore`` from the step info dict whenever an episode ends.
+    Logged as ``rollout/ep_game_score_mean`` and ``rollout/ep_game_score_max``.
+    """
+
+    def __init__(self, verbose: int = 0):
+        super().__init__(verbose)
+        self._episode_scores: list[float] = []
+
+    def _on_step(self) -> bool:
+        dones = self.locals.get("dones", [])
+        infos = self.locals.get("infos", [])
+        for done, info in zip(dones, infos):
+            if done:
+                score = info.get("finalScore")
+                if score is not None:
+                    self._episode_scores.append(float(score))
+        return True
+
+    def _on_rollout_end(self) -> None:
+        if self._episode_scores:
+            self.logger.record("rollout/ep_game_score_mean", np.mean(self._episode_scores))
+            self.logger.record("rollout/ep_game_score_max", float(np.max(self._episode_scores)))
+            self._episode_scores = []
+
+
 class SyncAndSaveVecNormalizeCallback(BaseCallback):
-    """Syncs eval env obs normalization stats from train env, then saves stats to disk."""
-    def __init__(self, train_env: VecNormalize, eval_env: VecNormalize, path: str):
+    """Syncs eval env obs normalization stats from train env, saves stats, and logs
+    mean game score (true score, not shaped reward) over ``n_score_episodes`` eval
+    episodes as ``eval/mean_game_score`` / ``eval/max_game_score``."""
+
+    def __init__(
+        self,
+        train_env: VecNormalize,
+        eval_env: VecNormalize,
+        path: str,
+        n_score_episodes: int = 20,
+    ):
         super().__init__()
         self.train_env = train_env
         self.eval_env = eval_env
         self.path = path
+        self.n_score_episodes = n_score_episodes
 
     def _on_step(self) -> bool:
         # Keep eval env's obs normalization in sync with training env so the
         # policy sees the same observation distribution at eval time.
         self.eval_env.obs_rms = copy.deepcopy(self.train_env.obs_rms)
         self.train_env.save(self.path)
+
+        # Run dedicated eval episodes to measure the true game score, unaffected
+        # by reward shaping — makes runs with different reward functions comparable.
+        scores: list[float] = []
+        obs = self.eval_env.reset()
+        done_count = 0
+        while done_count < self.n_score_episodes:
+            action, _ = self.model.predict(obs, deterministic=True)
+            obs, _rewards, dones, infos = self.eval_env.step(action)
+            for done, info in zip(dones, infos):
+                if done:
+                    score = info.get("finalScore")
+                    if score is not None:
+                        scores.append(float(score))
+                    done_count += 1
+
+        if scores:
+            self.logger.record("eval/mean_game_score", np.mean(scores))
+            self.logger.record("eval/max_game_score", float(np.max(scores)))
+
         return True
 
 
@@ -234,6 +292,7 @@ def _train_dqn(args, env, eval_env):
             deterministic=True,
             render=False,
         ),
+        GameScoreCallback(),
     ]
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
@@ -304,6 +363,7 @@ def _train_ppo(args, env, eval_env):
             callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
         ),
         EntropyScheduleCallback(initial_ent=0.1, final_ent=0.05, total_steps=args.timesteps),
+        GameScoreCallback(),
     ]
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
