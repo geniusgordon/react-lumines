@@ -230,15 +230,24 @@ class LuminesEnvNative(gym.Env):
             self._state.board = apply_gravity(board)
             self._state.falling_columns = []
 
-        # Measure post-sweep per-color chain (strategy shaping, color-aware delta).
-        post_sweep_light = float(self._count_single_color_chain(self._state.board, 1))
-        post_sweep_dark = float(self._count_single_color_chain(self._state.board, 2))
-        post_sweep_light_delta = post_sweep_light - self._prev_post_sweep_light_chain
-        post_sweep_dark_delta = post_sweep_dark - self._prev_post_sweep_dark_chain
-        self._prev_post_sweep_light_chain = post_sweep_light
-        self._prev_post_sweep_dark_chain = post_sweep_dark
-
         score_delta = float(self._state.score - prev_score)
+
+        # Measure post-sweep per-color chain on simulated-cleared board.
+        sim_board = self._simulate_clear_board(self._state.board)
+        post_sweep_light = float(self._count_single_color_chain(sim_board, 1))
+        post_sweep_dark  = float(self._count_single_color_chain(sim_board, 2))
+
+        # On steps where the timeline scored (real sweep fired), do not penalise
+        # with a negative delta — zero it out.  _prev is still updated so the
+        # next step's delta is relative to the new board state.
+        if score_delta > 0:
+            post_sweep_light_delta = 0.0
+            post_sweep_dark_delta  = 0.0
+        else:
+            post_sweep_light_delta = post_sweep_light - self._prev_post_sweep_light_chain
+            post_sweep_dark_delta  = post_sweep_dark  - self._prev_post_sweep_dark_chain
+        self._prev_post_sweep_light_chain = post_sweep_light
+        self._prev_post_sweep_dark_chain  = post_sweep_dark
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
         reward = (
@@ -362,6 +371,19 @@ class LuminesEnvNative(gym.Env):
             else:
                 run = 0
         return max_run
+
+    def _simulate_clear_board(self, board) -> list:
+        """Return a copy of board with all 2×2 same-color pattern cells zeroed and gravity applied."""
+        cleared = [row[:] for row in board]
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = cleared[row][col]
+                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    cleared[row][col] = 0
+                    cleared[row][col + 1] = 0
+                    cleared[row + 1][col] = 0
+                    cleared[row + 1][col + 1] = 0
+        return apply_gravity(cleared)
 
     def _count_single_color_chain(self, board, color: int) -> int:
         """Longest consecutive pattern-column run for a single specific color."""

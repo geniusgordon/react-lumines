@@ -626,3 +626,99 @@ def test_obs_chain_length_absent():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
     assert "chain_length" not in obs
+
+
+# ---------------------------------------------------------------------------
+# _simulate_clear_board
+# ---------------------------------------------------------------------------
+
+def test_simulate_clear_board_removes_all_patterns():
+    """After _simulate_clear_board, no 2×2 same-color pattern should remain."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # Light 2×2 at bottom-left
+    board[8][0] = 1; board[8][1] = 1
+    board[9][0] = 1; board[9][1] = 1
+    # Dark 2×2 at bottom-right
+    board[8][4] = 2; board[8][5] = 2
+    board[9][4] = 2; board[9][5] = 2
+
+    result = env._simulate_clear_board(board)
+
+    # Verify no 2×2 same-color pattern exists in the result
+    for row in range(BOARD_HEIGHT - 1):
+        for col in range(BOARD_WIDTH - 1):
+            c = result[row][col]
+            if c != 0:
+                is_pattern = (
+                    c == result[row][col + 1] == result[row + 1][col] == result[row + 1][col + 1]
+                )
+                assert not is_pattern, f"Pattern found at row={row}, col={col}"
+
+
+def test_post_sweep_delta_zero_when_sweep_scores():
+    """When score_delta > 0 (real sweep fired), post_sweep_*_delta must both be 0.0."""
+    import python.game.env as env_module
+
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    # Set nonzero prev values so a negative delta would normally result.
+    env._prev_post_sweep_light_chain = 3.0
+    env._prev_post_sweep_dark_chain  = 2.0
+
+    # Patch update_timeline (score source in _step_per_block) to force score_delta > 0.
+    original_update_timeline = env_module.update_timeline
+
+    def patched_update_timeline(state, *args, **kwargs):
+        result = original_update_timeline(state, *args, **kwargs)
+        return result.__class__(**{**result.__dict__, "score": result.score + 100})
+
+    env_module.update_timeline = patched_update_timeline
+    try:
+        _, _, _, _, info = env.step(0)
+    finally:
+        env_module.update_timeline = original_update_timeline
+
+    rc = info["reward_components"]
+    assert rc["score_delta"] > 0, "score_delta must be positive for this test to be meaningful"
+    assert rc["post_sweep_light_delta"] == pytest.approx(0.0), (
+        f"expected post_sweep_light_delta=0 on sweep step, got {rc['post_sweep_light_delta']}"
+    )
+    assert rc["post_sweep_dark_delta"] == pytest.approx(0.0), (
+        f"expected post_sweep_dark_delta=0 on sweep step, got {rc['post_sweep_dark_delta']}"
+    )
+
+
+def test_post_sweep_light_measures_chain_after_simulated_clear():
+    """post_sweep_light should count light chains on the board after patterns are removed."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # Light 2×2 pattern (will be cleared)
+    board[8][0] = 1; board[8][1] = 1
+    board[9][0] = 1; board[9][1] = 1
+    # Surviving light cells that form a chain after clear (no 2×2 pattern)
+    # Place 3 isolated light cells in a row at bottom to form a chain of 1 after gravity
+    board[9][4] = 1; board[9][5] = 1
+    board[9][6] = 1; board[9][7] = 1
+    board[8][4] = 1; board[8][5] = 1
+    board[8][6] = 1; board[8][7] = 1
+    # This creates 2×2 patterns at cols 4,5,6 → will also be cleared
+    # Instead, use single-row surviving cells that won't form 2×2 patterns
+    board2 = create_empty_board()
+    # Light 2×2 at cols 0-1 (to be cleared)
+    board2[8][0] = 1; board2[8][1] = 1
+    board2[9][0] = 1; board2[9][1] = 1
+    # Single light row (not a 2×2 pattern — only one row tall)
+    board2[9][4] = 1; board2[9][5] = 1; board2[9][6] = 1
+
+    sim = env._simulate_clear_board(board2)
+    # The 2×2 at cols 0-1 should be gone; surviving cells at cols 4,5,6 remain
+    assert sim[9][0] == 0
+    assert sim[9][4] == 1
+    assert sim[9][5] == 1
+    assert sim[9][6] == 1
+    # Chain count from surviving cells: 3 wide single row → no 2×2 patterns → chain = 0
+    chain = env._count_single_color_chain(sim, 1)
+    assert chain == 0  # single row, no 2×2 patterns remain
