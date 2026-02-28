@@ -1,4 +1,4 @@
-# PPO+LSTM vs Flat PPO Comparison (PPO_31)
+# PPO+LSTM vs Flat PPO Comparison (LSTM_PPO)
 
 Date: 2026-02-28
 
@@ -16,7 +16,7 @@ score ceiling or by reaching the same score with fewer env steps.
 
 ## What Changes
 
-| | PPO_30 (baseline) | PPO_31 (LSTM) |
+| | PPO_30 (baseline) | LSTM_PPO (LSTM) |
 |---|---|---|
 | Algorithm | `stable_baselines3.PPO` | `sb3_contrib.RecurrentPPO` |
 | Feature extractor | `LuminesCNNExtractor` (128-dim) | Same, unchanged |
@@ -42,7 +42,7 @@ python python/train.py --algo ppo --recurrent --timesteps 5_000_000 --envs 16 --
 
 ## Evaluation
 
-**Primary metric**: `eval/mean_reward` vs env steps — compare curves for PPO_30 and PPO_31.
+**Primary metric**: `eval/mean_reward` vs env steps — compare curves for PPO_30 and LSTM_PPO.
 
 **Definitive metric**: `eval/mean_game_score` (true score, unaffected by reward shaping) —
 logged by `SyncAndSaveVecNormalizeCallback`.

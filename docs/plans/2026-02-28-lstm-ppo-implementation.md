@@ -1,4 +1,4 @@
-# PPO+LSTM Implementation Plan (PPO_31)
+# PPO+LSTM Implementation Plan (LSTM_PPO)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -123,12 +123,12 @@ Expected: Same as before — flat PPO starts cleanly. Confirms the flag doesn't 
 
 ```bash
 git add python/train.py
-git commit -m "feat(ppo31): add --recurrent flag for RecurrentPPO (LSTM) comparison"
+git commit -m "feat(lstm-ppo): add --recurrent flag for RecurrentPPO (LSTM) comparison"
 ```
 
 ---
 
-### Task 2: Launch the full PPO_31 training run
+### Task 2: Launch the full LSTM_PPO training run
 
 **Step 1: Stop PPO_30 if still running**
 
@@ -139,13 +139,13 @@ ps aux | grep train.py
 
 If running, kill it (it has plateaued and is degrading).
 
-**Step 2: Launch PPO_31**
+**Step 2: Launch LSTM_PPO**
 
 ```bash
 python python/train.py --algo ppo --recurrent --timesteps 5_000_000 --envs 16 --device mps
 ```
 
-Expected: TensorBoard log appears in `python/logs/PPO_31/`. First eval checkpoint at step ~50K.
+Expected: TensorBoard log appears in `python/logs/LSTM_PPO/`. First eval checkpoint at step ~50K.
 
 **Step 3: Confirm TensorBoard is logging**
 
@@ -154,4 +154,4 @@ After ~2 minutes:
 python python/inspect_logs.py
 ```
 
-Expected: Shows `PPO_31` as the latest run with initial scalars appearing.
+Expected: Shows `LSTM_PPO` as the latest run with initial scalars appearing.
