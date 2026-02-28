@@ -14,17 +14,57 @@ Usage:
     # Control render speed
     python python/eval.py --render --delay 0.05
 
+    # Step through one episode manually (Space/Enter=next, r=run, q=quit)
+    python python/eval.py --step --episodes 1
+
     # Use Node.js IPC env instead of pure Python env
     python python/eval.py --no-native
 """
 
 import argparse
+import copy
 import os
+import select
+import sys
+import termios
 import time
+import tty
 
 import numpy as np
-import sys
 sys.path.insert(0, os.path.dirname(__file__))
+
+
+def _getch():
+    """Read a single keypress from stdin without requiring Enter.
+    Arrow keys are returned as 'LEFT' or 'RIGHT'.
+    Uses os.read() to bypass Python's buffered IO so select() sees the right state.
+    """
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = os.read(fd, 1)
+        if ch == b"\x1b":
+            # Could be an arrow key escape sequence (\x1b [ D / C)
+            rlist, _, _ = select.select([fd], [], [], 0.05)
+            if rlist:
+                ch2 = os.read(fd, 1)
+                if ch2 == b"[":
+                    rlist2, _, _ = select.select([fd], [], [], 0.05)
+                    if rlist2:
+                        ch3 = os.read(fd, 1)
+                        if ch3 == b"D":
+                            return "LEFT"
+                        elif ch3 == b"C":
+                            return "RIGHT"
+        decoded = ch.decode("utf-8", errors="replace")
+        if decoded == "\x03":
+            raise KeyboardInterrupt
+        return decoded
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+
 from lumines_env import LuminesEnv
 from game.env import LuminesEnvNative
 
@@ -43,6 +83,9 @@ def _normalize_obs(vec_normalize, obs):
 
 
 def evaluate(args):
+    if args.step:
+        args.render = True
+
     if args.save_replay:
         args.native = False  # force TypeScript env for browser compatibility
         args.episodes = 1    # only record one episode
@@ -76,10 +119,28 @@ def evaluate(args):
         done = False
         episode_score = 0
         action_history = []
+        running = False       # step mode: False=paused, True=auto-running
+        snapshot_stack = []   # stack of snapshots for multi-level undo
+        last_action_desc = ""
+        last_info: dict = {}
 
         print(f"\n=== Episode {episode}/{args.episodes} (seed={seed}) ===")
 
         while not done:
+            # Save snapshot before stepping (native env only)
+            if hasattr(env, '_state'):
+                snapshot_stack.append((
+                    copy.deepcopy(env._state),
+                    env._blocks_placed,
+                    env._prev_post_sweep_light_chain,
+                    env._prev_post_sweep_dark_chain,
+                    {k: v.copy() for k, v in obs.items()} if isinstance(obs, dict) else obs.copy(),
+                    episode_score,
+                    action_history[:],
+                    last_action_desc,
+                    last_info,
+                ))
+
             predict_obs = _normalize_obs(vec_normalize, obs) if vec_normalize is not None else obs
             action, _ = model.predict(predict_obs, deterministic=args.deterministic)
             action_int = int(action.flat[0])
@@ -96,6 +157,8 @@ def evaluate(args):
             obs, reward, terminated, truncated, info = env.step(action_int)
             episode_score += reward
             done = terminated or truncated
+            last_action_desc = action_desc
+            last_info = info
 
             if args.render:
                 frame = env.render()
@@ -103,11 +166,15 @@ def evaluate(args):
                     # Clear previous render and print new one
                     print("\033[2J\033[H", end="")  # ANSI clear screen
                     print(f"Episode {episode} (seed={seed}) | Cumulative reward: {episode_score:.3f} | {action_desc}")
-                    print(frame)
                     rc = info.get("reward_components")
-                    if rc:
-                        parts = "  ".join(f"{k}: {v:+.3f}" for k, v in rc.items())
-                        print(f"  Reward: {parts}")
+                    board_lines = frame.split("\n")
+                    rc_lines = [f"{k}: {v:+.3f}" for k, v in rc.items()] if rc else []
+                    board_w = 24  # pad past board width (20) for a visual gap
+                    n = max(len(board_lines), len(rc_lines))
+                    for i in range(n):
+                        bl = board_lines[i] if i < len(board_lines) else ""
+                        rl = rc_lines[i] if i < len(rc_lines) else ""
+                        print(f"{bl:<{board_w}}{rl}")
                     recent = action_history[-20:]
                     if env.mode == "per_block" and recent:
                         cols = "".join(f"{c:4d}" for c, _ in recent)
@@ -117,8 +184,87 @@ def evaluate(args):
                         print(f"    rot{rots}")
                     else:
                         print(f"  History ({len(action_history)}): {', '.join(str(a) for a in recent)}")
-                    if args.delay > 0:
+                    if args.delay > 0 and not args.step:
                         time.sleep(args.delay)
+
+            if args.step:
+                undo_requested = False
+                while True:  # inner loop: re-enters after undo to show updated hint
+                    can_undo = bool(snapshot_stack)
+                    mode_hint = "[r=run]" if not running else "[r=pause]"
+                    back_hint = f"  ←: back ({len(snapshot_stack)})" if can_undo else ""
+                    print(f"  →/Space: next{back_hint}  {mode_hint}  q: quit", end="", flush=True)
+                    if not running:
+                        ch = _getch()
+                        if ch in ("RIGHT", " ", "\r", "\n"):
+                            print()
+                            break
+                        elif ch in ("r", "R"):
+                            running = True
+                            print(f"\n  [running — press r to pause]", flush=True)
+                            break
+                        elif ch in ("q", "Q"):
+                            print("\n  [quit episode]")
+                            done = True
+                            break
+                        elif ch == "LEFT" and can_undo:
+                            s_state, s_blocks, s_lchain, s_dchain, s_obs, s_score, s_hist, s_action_desc, s_info = snapshot_stack.pop()
+                            env._state = s_state
+                            env._blocks_placed = s_blocks
+                            env._prev_post_sweep_light_chain = s_lchain
+                            env._prev_post_sweep_dark_chain = s_dchain
+                            obs = s_obs
+                            episode_score = s_score
+                            action_history = s_hist
+                            last_action_desc = s_action_desc
+                            last_info = s_info
+                            done = False
+                            undo_requested = True
+                            # Full re-render of the restored state
+                            frame = env.render()
+                            if frame:
+                                print("\033[2J\033[H", end="")
+                                print(f"Episode {episode} (seed={seed}) | Cumulative reward: {episode_score:.3f} | {s_action_desc} [undo]")
+                                rc = s_info.get("reward_components")
+                                board_lines = frame.split("\n")
+                                rc_lines = [f"{k}: {v:+.3f}" for k, v in rc.items()] if rc else []
+                                board_w = 24
+                                n = max(len(board_lines), len(rc_lines))
+                                for i in range(n):
+                                    bl = board_lines[i] if i < len(board_lines) else ""
+                                    rl = rc_lines[i] if i < len(rc_lines) else ""
+                                    print(f"{bl:<{board_w}}{rl}")
+                                recent = action_history[-20:]
+                                if env.mode == "per_block" and recent:
+                                    cols = "".join(f"{c:4d}" for c, _ in recent)
+                                    rots = "".join(f"{r:4d}" for _, r in recent)
+                                    print(f"  History ({len(action_history)}):")
+                                    print(f"    col{cols}")
+                                    print(f"    rot{rots}")
+                                else:
+                                    print(f"  History ({len(action_history)}): {', '.join(str(a) for a in recent)}")
+                            continue  # re-show hint for restored state
+                    else:
+                        # Run mode: non-blocking check for 'r' to re-pause
+                        fd = sys.stdin.fileno()
+                        old = termios.tcgetattr(fd)
+                        try:
+                            tty.setraw(fd)
+                            rlist, _, _ = select.select([fd], [], [], 0)
+                            if rlist:
+                                ch = os.read(fd, 1).decode("utf-8", errors="replace")
+                                if ch == "\x03":
+                                    raise KeyboardInterrupt
+                                elif ch in ("r", "R"):
+                                    running = False
+                        finally:
+                            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+                        print()
+                        if args.delay > 0:
+                            time.sleep(args.delay)
+                        break
+                if undo_requested:
+                    continue  # outer: re-predict and re-execute from restored state
 
         # Final score from info (raw game score, not cumulative reward)
         final_score = info.get("finalScore", episode_score)
@@ -173,6 +319,11 @@ if __name__ == "__main__":
         help="Use stochastic (sampled) actions instead of argmax",
     )
     parser.set_defaults(deterministic=True)
+    parser.add_argument(
+        "--step",
+        action="store_true",
+        help="Pause after each rendered step and wait for keypress (Space/Enter=next, r=run, q=quit)",
+    )
     parser.add_argument(
         "--save-replay",
         dest="save_replay",
