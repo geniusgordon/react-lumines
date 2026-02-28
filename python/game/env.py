@@ -38,7 +38,6 @@ from .constants import BOARD_WIDTH, BOARD_HEIGHT, TIMELINE_SWEEP_INTERVAL
 from .board import apply_gravity
 from .patterns import detect_patterns
 from .timeline import update_timeline
-from .validation import find_drop_position
 from .state import (
     create_initial_state, get_rng,
     move_left, move_right, rotate_cw, rotate_ccw,
@@ -91,20 +90,19 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — color-aware board channels (PPO_31)
+        # Observation space — color-separated board channels (PPO_32)
         self.observation_space = spaces.Dict(
             {
                 "light_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "dark_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
-                "pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
-                "ghost_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "light_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "dark_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "current_block": spaces.Box(0, 2, shape=(2, 2), dtype=np.int8),
                 "queue": spaces.Box(0, 2, shape=(3, 2, 2), dtype=np.int8),
                 "timeline_x": spaces.Box(0, 15, shape=(1,), dtype=np.int32),
                 "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "dominant_color_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
-                "projected_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
             }
         )
 
@@ -386,89 +384,19 @@ class LuminesEnvNative(gym.Env):
                     count += 1
         return count
 
-    def _build_pattern_channel(self) -> np.ndarray:
-        """
-        Returns a (BOARD_HEIGHT, BOARD_WIDTH) float32 array where each cell's value
-        is the number of 2×2 same-color patterns it participates in, normalised to [0,1]
-        by dividing by 4 (max possible overlapping patterns per cell).
-        """
+    def _build_color_pattern_channel(self, color: int) -> np.ndarray:
+        """Cells participating in 2×2 same-color patterns for a single color, normalized /4."""
         board = self._state.board
         counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):
                 c = board[row][col]
-                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
                     counts[row][col]         += 1
                     counts[row][col + 1]     += 1
                     counts[row + 1][col]     += 1
                     counts[row + 1][col + 1] += 1
         return counts / 4.0
-
-    def _project_board(self) -> list:
-        """Board state after clearing marked cells and applying gravity."""
-        board = [row[:] for row in self._state.board]
-        for cell in self._state.marked_cells:
-            if 0 <= cell.y < BOARD_HEIGHT and 0 <= cell.x < BOARD_WIDTH:
-                board[cell.y][cell.x] = 0
-        return apply_gravity(board)
-
-    def _build_projected_pattern_board(self) -> np.ndarray:
-        """
-        Pattern channel computed on the projected board (after simulating clear of
-        marked_cells + gravity). When marked_cells is empty, equals _build_pattern_channel().
-        """
-        board = self._project_board()
-        counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                c = board[row][col]
-                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    counts[row][col]         += 1
-                    counts[row][col + 1]     += 1
-                    counts[row + 1][col]     += 1
-                    counts[row + 1][col + 1] += 1
-        return counts / 4.0
-
-    def _build_timeline_board(self) -> np.ndarray:
-        """
-        Returns pattern_board masked to columns strictly ahead of the timeline sweep
-        (column > timeline_x). Already-swept columns are zeroed out.
-        Gives the CNN a direct spatial view of the 'live' combo zone.
-        """
-        pattern = self._build_pattern_channel()
-        tx = self._state.timeline.x
-        result = pattern.copy()
-        result[:, :tx + 1] = 0.0
-        return result
-
-    def _build_ghost_channel(self) -> np.ndarray:
-        """
-        Returns a (BOARD_HEIGHT, BOARD_WIDTH) float32 array showing the board
-        after the current block hard-drops at its current X position.
-        Channel encodes cell occupancy: 0=empty, 1=occupied.
-        """
-        state = self._state
-        ghost_y = find_drop_position(
-            state.board,
-            state.current_block,
-            state.block_position_x,
-            state.block_position_y,
-            state.falling_columns,
-        )
-        ghost = np.array(
-            [[1.0 if state.board[r][c] != 0 else 0.0 for c in range(BOARD_WIDTH)]
-             for r in range(BOARD_HEIGHT)],
-            dtype=np.float32,
-        )
-        cells = state.current_block.pattern
-        bx = state.block_position_x
-        for dy in range(2):
-            for dx in range(2):
-                if cells[dy][dx] != 0:
-                    r, c = ghost_y + dy, bx + dx
-                    if 0 <= r < BOARD_HEIGHT and 0 <= c < BOARD_WIDTH:
-                        ghost[r][c] = 1.0
-        return ghost
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -479,8 +407,8 @@ class LuminesEnvNative(gym.Env):
         return {
             "light_board": self._build_color_board(1),
             "dark_board": self._build_color_board(2),
-            "pattern_board": self._build_pattern_channel(),
-            "ghost_board": self._build_ghost_channel(),
+            "light_pattern_board": self._build_color_pattern_channel(1),
+            "dark_pattern_board": self._build_color_pattern_channel(2),
             "current_block": np.array(s.current_block.pattern, dtype=np.int8),
             "queue": np.array(
                 [b.pattern for b in s.queue[:3]], dtype=np.int8
@@ -494,7 +422,6 @@ class LuminesEnvNative(gym.Env):
                 [self._count_max_single_color_chain_from_board() / (BOARD_WIDTH - 1)],
                 dtype=np.float32,
             ),
-            "projected_pattern_board": self._build_projected_pattern_board(),
         }
 
     def _build_info(self) -> dict:

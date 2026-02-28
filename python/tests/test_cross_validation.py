@@ -45,6 +45,8 @@ def test_reset_returns_correct_shapes():
 
     assert obs['light_board'].shape == (10, 16)
     assert obs['dark_board'].shape == (10, 16)
+    assert obs['light_pattern_board'].shape == (10, 16)
+    assert obs['dark_pattern_board'].shape == (10, 16)
     assert obs['dominant_color_chain'].shape == (1,)
     assert obs['current_block'].shape == (2, 2)
     assert obs['queue'].shape == (3, 2, 2)

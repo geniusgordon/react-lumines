@@ -52,10 +52,9 @@ A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 ```
 Observation (Dict)
  ├── light_board (10×16 f32)               ─┐
- ├── dark_board (10×16 f32)                ─┤
- ├── pattern_board (10×16 f32)             ─┤ CNN branch (5-channel input)
- ├── ghost_board (10×16 f32)               ─┤   4 × Conv2d(3×3, pad=1) → ReLU
- ├── projected_pattern_board (10×16 f32)  ─┘   Flatten → Linear(5120→64) → ReLU
+ ├── dark_board (10×16 f32)                ─┤ CNN branch (4-channel input)
+ ├── light_pattern_board (10×16 f32)       ─┤   4 × Conv2d(3×3, pad=1) → ReLU
+ ├── dark_pattern_board (10×16 f32)        ─┘   Flatten → Linear(5120→64) → ReLU
  │                                                                │
  ├── current_block (2×2) ──────┐                                  │
  ├── queue (3×2×2)  ───────────┤  MLP branch                      │
@@ -75,13 +74,11 @@ Observation (Dict)
 
 `light_board` is channel 1: binary float32 (10×16), 1.0 where board cell == color 1 (light). `dark_board` is channel 2: same encoding for color 2 (dark). Together they replace the old single `board` channel (which encoded 0/1/2 and forced the network to learn a threshold). Separate binary channels make color identity trivially readable for the CNN.
 
-`pattern_board` is channel 3. Each cell's value = number of 2×2 same-color patterns it participates in, normalised to [0,1]. The CNN can directly see where valuable overlap clusters are.
+`light_pattern_board` is channel 3: each cell's value = number of 2×2 light-only patterns it participates in, normalised to [0,1] by dividing by 4. `dark_pattern_board` is channel 4: the same metric for dark cells only. Splitting the pattern signal by color means the CNN can directly distinguish "good light cluster" from "good dark cluster" — critical for single-color chain strategy — without having to learn a threshold over a mixed channel.
 
-`ghost_board` is channel 4: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. Gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity.
+This replaces three channels from earlier runs (`pattern_board`, `ghost_board`, `projected_pattern_board`) with two color-separated ones. The net reduction (5 → 4 channels) drops a small amount of placement-simulation information (`ghost_board`) and post-clear projection (`projected_pattern_board`) while gaining clean per-color pattern signal that directly informs the color-aware reward.
 
-`projected_pattern_board` is channel 5: `pattern_board` computed on the board after simulating clear of `marked_cells` + gravity. When no cells are marked, it equals `pattern_board`. This lets the CNN reason about post-clear board quality at placement time — useful for chains that survive the sweep.
-
-None of the five CNN channels is in `MLP_KEYS`; all route exclusively through the CNN.
+None of the four CNN channels is in `MLP_KEYS`; all route exclusively through the CNN.
 
 `holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
 
@@ -266,7 +263,7 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_27 | 1.3M | 19.71 @ 1.25M | — | 0.72 | `norm_reward=True`, `clip_range_vf=0.2`, `vf_coef=0.5`. Value loss fixed (0.23, stable) but `norm_reward=True` compressed combo signal — below PPO_26. |
 | PPO_28 | ~1M | ~21.5 @ 900k | — | 0.68 | `norm_reward=False` (reverted), existing 8-component reward unchanged. Value loss 3.6→5.7 @ 1M — same drift trajectory as PPO_26 confirms 8-component reward variance is the root cause. |
 | PPO_29 | — | — | — | — | 4-component reward (`score_delta + chain_after_drop*0.05 + post_sweep_chain*0.05 + death`); `clip_range_vf=None`. Strips noisy components; measures goals directly. |
-| PPO_30 | — | — | — | — | Color-aware obs + obs space cleanup: `light_board`+`dark_board` replace `board`; `dominant_color_chain` replaces `chain_length`; 5 redundant keys removed (`timeline_board`, `block_position`, `score`, `frame`, `column_heights`). Color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). CNN 5 channels, MLP 20 inputs. |
+| PPO_30 | — | — | — | — | Color-aware obs + obs space cleanup: `light_board`+`dark_board` replace `board`; `dominant_color_chain` replaces `chain_length`; 5 redundant keys removed. Color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). Color-separated pattern boards: `light_pattern_board`+`dark_pattern_board` replace `pattern_board`+`ghost_board`+`projected_pattern_board`. CNN 4 channels, MLP 20 inputs. |
 
 ### PPO_10 post-mortem
 
@@ -337,11 +334,13 @@ PPO_29 simplified the reward to 4 components and removed conflicting signals —
 
 2. **`post_sweep_chain * 0.05`** now uses the same single-color metric, so it rewards leaving a clean same-color residue — not a mixed heap — after a sweep.
 
-3. **`light_board` + `dark_board`** CNN channels replace the single `board` channel (0/1/2 int8). Separate binary channels make color identity a trivial lookup for the CNN rather than a threshold the network must learn. CNN input expands from 5 → 6 channels.
+3. **`light_board` + `dark_board`** CNN channels replace the single `board` channel (0/1/2 int8). Separate binary channels make color identity a trivial lookup for the CNN rather than a threshold the network must learn.
 
-4. **`dominant_color_chain`** MLP scalar replaces `chain_length`. Reports the single-color chain (best of light vs dark), so the actor's MLP branch has accurate information about the chain quality it is shaping.
+4. **`light_pattern_board` + `dark_pattern_board`** replace the three-channel set (`pattern_board`, `ghost_board`, `projected_pattern_board`). Each channel counts 2×2 same-color patterns for its color, normalised to [0,1]. This gives the CNN direct per-color pattern signal — essential for the color-aware reward — while shedding the ghost placement simulation and post-clear projection that added complexity without matching the reward structure. Net CNN reduction: 5 → 4 channels.
 
-5. **Obs space cleanup** — five keys removed as redundant:
+5. **`dominant_color_chain`** MLP scalar replaces `chain_length`. Reports the single-color chain (best of light vs dark), so the actor's MLP branch has accurate information about the chain quality it is shaping.
+
+6. **Obs space cleanup** — five keys removed as redundant:
 
 | Key removed | Why |
 |-------------|-----|
@@ -351,7 +350,7 @@ PPO_29 simplified the reward to 4 components and removed conflicting signals —
 | `frame` | Unused in per-block mode — time advances via `ticks_per_block` internally. |
 | `column_heights` | Fully derivable from `light_board` + `dark_board` CNN channels. Adding 16 MLP values for information the CNN already has wastes parameter budget and risks gradient confusion between branches. |
 
-Net effect on architecture: CNN changes from conceptual 6 channels (PPO_29's 5 + `timeline_board`) to 5 (dropping `timeline_board`); MLP input shrinks from 38 → 20 (removing `block_position`(2) + `score`(1) + `frame`(1) + `column_heights`(16)).
+Net effect on architecture: CNN changes from PPO_29's 5 channels to 4 (`light_board`, `dark_board`, `light_pattern_board`, `dark_pattern_board` — drops `timeline_board`, `ghost_board`, `projected_pattern_board`; splits `pattern_board` into two color channels); MLP input shrinks from 38 → 20 (removing `block_position`(2) + `score`(1) + `frame`(1) + `column_heights`(16)).
 
 No hyperparameter changes from PPO_29. Breaking change (CNN channel count, obs key changes) — cannot resume from PPO_29 checkpoints.
 

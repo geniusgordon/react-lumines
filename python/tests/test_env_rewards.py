@@ -318,62 +318,103 @@ def test_obs_queue_shape_is_3():
 
 
 # ---------------------------------------------------------------------------
-# projected_pattern_board obs channel (PPO_26)
+# light_pattern_board / dark_pattern_board obs channels (PPO_32)
 # ---------------------------------------------------------------------------
 
-def test_obs_has_projected_pattern_board():
-    """Observation dict must contain 'projected_pattern_board' key."""
+def test_obs_has_light_pattern_board():
+    """Observation dict must contain 'light_pattern_board' key."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    assert "projected_pattern_board" in obs
+    assert "light_pattern_board" in obs
 
 
-def test_obs_projected_pattern_board_shape():
-    """projected_pattern_board must have shape (BOARD_HEIGHT, BOARD_WIDTH)."""
+def test_obs_has_dark_pattern_board():
+    """Observation dict must contain 'dark_pattern_board' key."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    assert obs["projected_pattern_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+    assert "dark_pattern_board" in obs
 
 
-def test_projected_pattern_board_no_marked_cells_equals_pattern_board():
-    """When marked_cells is empty, projected_pattern_board must equal pattern_board."""
+def test_obs_light_pattern_board_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["light_pattern_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_obs_dark_pattern_board_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["dark_pattern_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_obs_light_pattern_board_range():
+    """light_pattern_board values must be in [0, 1]."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert np.all(obs["light_pattern_board"] >= 0.0)
+    assert np.all(obs["light_pattern_board"] <= 1.0)
+
+
+def test_obs_dark_pattern_board_range():
+    """dark_pattern_board values must be in [0, 1]."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert np.all(obs["dark_pattern_board"] >= 0.0)
+    assert np.all(obs["dark_pattern_board"] <= 1.0)
+
+
+def test_light_pattern_board_zero_when_no_light_patterns():
+    """light_pattern_board must be all zeros when board has no light 2×2 patterns."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     board = create_empty_board()
-    for r in (8, 9):
-        for c in (0, 1):
-            board[r][c] = 1
-    env._state = env._state.__class__(**{
-        **env._state.__dict__,
-        "board": board,
-        "marked_cells": [],
-    })
+    # Place a dark 2×2 only
+    board[8][0] = 2; board[8][1] = 2
+    board[9][0] = 2; board[9][1] = 2
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
     obs = env._build_obs()
-    np.testing.assert_array_almost_equal(
-        obs["projected_pattern_board"], obs["pattern_board"]
-    )
+    assert np.all(obs["light_pattern_board"] == 0.0)
 
 
-def test_projected_pattern_board_clears_marked_cells():
-    """Marked cells should be removed from the projected board before pattern detection."""
+def test_dark_pattern_board_zero_when_no_dark_patterns():
+    """dark_pattern_board must be all zeros when board has no dark 2×2 patterns."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     board = create_empty_board()
-    # 2×2 pattern at rows 8-9, cols 4-5
-    for r in (8, 9):
-        for c in (4, 5):
-            board[r][c] = 2
-    # Mark all four cells for clearing
-    from python.game.types import Square
-    marked = [Square(x=c, y=r, color=2) for r in (8, 9) for c in (4, 5)]
-    env._state = env._state.__class__(**{
-        **env._state.__dict__,
-        "board": board,
-        "marked_cells": marked,
-    })
-    proj = env._build_projected_pattern_board()
-    # All cells cleared → board empty → no patterns
-    assert np.all(proj == 0.0)
+    # Place a light 2×2 only
+    board[8][0] = 1; board[8][1] = 1
+    board[9][0] = 1; board[9][1] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    obs = env._build_obs()
+    assert np.all(obs["dark_pattern_board"] == 0.0)
+
+
+def test_light_pattern_board_nonzero_for_light_2x2():
+    """light_pattern_board must be nonzero for cells in a light 2×2 pattern."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    board[8][4] = 1; board[8][5] = 1
+    board[9][4] = 1; board[9][5] = 1
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    obs = env._build_obs()
+    assert obs["light_pattern_board"][8][4] > 0.0
+    assert obs["light_pattern_board"][9][5] > 0.0
+
+
+def test_color_pattern_boards_do_not_overlap():
+    """A cell cannot be nonzero in both light and dark pattern boards."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    # light pattern at cols 0-1
+    board[8][0] = 1; board[8][1] = 1; board[9][0] = 1; board[9][1] = 1
+    # dark pattern at cols 4-5
+    board[8][4] = 2; board[8][5] = 2; board[9][4] = 2; board[9][5] = 2
+    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
+    obs = env._build_obs()
+    overlap = obs["light_pattern_board"] * obs["dark_pattern_board"]
+    assert np.all(overlap == 0.0)
 
 
 # ---------------------------------------------------------------------------
