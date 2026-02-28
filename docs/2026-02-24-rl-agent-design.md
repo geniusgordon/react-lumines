@@ -53,17 +53,14 @@ A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 Observation (Dict)
  ├── light_board (10×16 f32)               ─┐
  ├── dark_board (10×16 f32)                ─┤
- ├── pattern_board (10×16 f32)             ─┤ CNN branch (6-channel input)
+ ├── pattern_board (10×16 f32)             ─┤ CNN branch (5-channel input)
  ├── ghost_board (10×16 f32)               ─┤   4 × Conv2d(3×3, pad=1) → ReLU
- ├── timeline_board (10×16 f32)            ─┤   Flatten → Linear(5120→64) → ReLU
- ├── projected_pattern_board (10×16 f32)  ─┘
+ ├── projected_pattern_board (10×16 f32)  ─┘   Flatten → Linear(5120→64) → ReLU
  │                                                                │
  ├── current_block (2×2) ──────┐                                  │
  ├── queue (3×2×2)  ───────────┤  MLP branch                      │
- ├── block_position (2,) ──────┤  concat → Linear(34→64) → ReLU   │
- ├── timeline_x (1,)  ─────────┤                                  │
+ ├── timeline_x (1,)  ─────────┤  concat → Linear(20→64) → ReLU   │
  ├── game_timer (1,)  ──────────┤                                  │
- ├── column_heights (16,) ──────┤                                  │
  ├── holding_score (1,)  ───────┤                                  │
  └── dominant_color_chain (1,) ─┘                                  │
                                                                    │
@@ -73,7 +70,7 @@ Observation (Dict)
                     net_arch=dict(pi=[128,128], vf=[512,512,256])
 ```
 
-**MLP input size:** 4 + 12 + 2 + 1 + 1 + 16 + 1 + 1 = 38 values.
+**MLP input size:** 4 + 12 + 1 + 1 + 1 + 1 = 20 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
 `light_board` is channel 1: binary float32 (10×16), 1.0 where board cell == color 1 (light). `dark_board` is channel 2: same encoding for color 2 (dark). Together they replace the old single `board` channel (which encoded 0/1/2 and forced the network to learn a threshold). Separate binary channels make color identity trivially readable for the CNN.
@@ -82,11 +79,9 @@ Observation (Dict)
 
 `ghost_board` is channel 4: binary occupancy (0/1) of the board after the current block hard-drops at its current X position. Gives the agent direct placement planning information — it can see exactly where the falling block will land without having to learn to simulate gravity.
 
-`timeline_board` is channel 5: `pattern_board` masked to columns strictly ahead of the current sweep position (`column > timeline_x`). Already-swept columns are zeroed out. Gives the CNN a direct spatial view of the "live combo zone". The CNN can align `ghost_board` with `timeline_board` to learn "drop here to extend the active chain."
+`projected_pattern_board` is channel 5: `pattern_board` computed on the board after simulating clear of `marked_cells` + gravity. When no cells are marked, it equals `pattern_board`. This lets the CNN reason about post-clear board quality at placement time — useful for chains that survive the sweep.
 
-`projected_pattern_board` is channel 6: `pattern_board` computed on the board after simulating clear of `marked_cells` + gravity. When no cells are marked, it equals `pattern_board`. This lets the CNN reason about post-clear board quality at placement time — useful for chains that survive the sweep.
-
-None of the six CNN channels is in `MLP_KEYS`; all route exclusively through the CNN.
+None of the five CNN channels is in `MLP_KEYS`; all route exclusively through the CNN.
 
 `holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
 
@@ -96,7 +91,7 @@ The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,1
 
 Actor and critic use **separate** feature extractors (`share_features_extractor=False`). A shared extractor causes the critic's gradient to dominate the shared CNN/MLP weights, starving the actor of clean action-relevant features — PPO_10 demonstrated this with a clip fraction explosion to 0.42 and eval reward collapse from 11.6 → 1.9. Separate extractors let the critic specialise on board-quality prediction without conflicting with the actor.
 
-`score` and `frame` are excluded from the network inputs — they leak non-stationary scale information and are better left to the value baseline learned implicitly from returns.
+`score`, `frame`, `block_position`, `column_heights`, and `timeline_board` are excluded from the network inputs. `score` and `frame` leak non-stationary scale information. `block_position` is redundant in per-block mode — the action selects the column directly and `ghost_board` encodes the resulting drop. `column_heights` is derivable from the `light_board`/`dark_board` CNN channels and would add 16 MLP inputs for zero net information gain. `timeline_board` is also redundant — `pattern_board` combined with the `timeline_x` scalar encodes the same information with less specialised inductive bias.
 
 ---
 
@@ -271,7 +266,7 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_27 | 1.3M | 19.71 @ 1.25M | — | 0.72 | `norm_reward=True`, `clip_range_vf=0.2`, `vf_coef=0.5`. Value loss fixed (0.23, stable) but `norm_reward=True` compressed combo signal — below PPO_26. |
 | PPO_28 | ~1M | ~21.5 @ 900k | — | 0.68 | `norm_reward=False` (reverted), existing 8-component reward unchanged. Value loss 3.6→5.7 @ 1M — same drift trajectory as PPO_26 confirms 8-component reward variance is the root cause. |
 | PPO_29 | — | — | — | — | 4-component reward (`score_delta + chain_after_drop*0.05 + post_sweep_chain*0.05 + death`); `clip_range_vf=None`. Strips noisy components; measures goals directly. |
-| PPO_30 | — | — | — | — | Color-aware obs (`light_board`+`dark_board` channels replacing `board`; `dominant_color_chain` replacing `chain_length`) + color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). CNN 5→6 channels. |
+| PPO_30 | — | — | — | — | Color-aware obs + obs space cleanup: `light_board`+`dark_board` replace `board`; `dominant_color_chain` replaces `chain_length`; 5 redundant keys removed (`timeline_board`, `block_position`, `score`, `frame`, `column_heights`). Color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). CNN 5 channels, MLP 20 inputs. |
 
 ### PPO_10 post-mortem
 
@@ -346,7 +341,19 @@ PPO_29 simplified the reward to 4 components and removed conflicting signals —
 
 4. **`dominant_color_chain`** MLP scalar replaces `chain_length`. Reports the single-color chain (best of light vs dark), so the actor's MLP branch has accurate information about the chain quality it is shaping.
 
-No hyperparameter changes from PPO_29. Breaking change (CNN 5→6 channels, obs key renaming) — cannot resume from PPO_29 checkpoints.
+5. **Obs space cleanup** — five keys removed as redundant:
+
+| Key removed | Why |
+|-------------|-----|
+| `timeline_board` | `pattern_board` + `timeline_x` scalar encodes the same information. The masked channel adds a learned redundancy the CNN must resolve; cleaner to let the network combine the two inputs itself. |
+| `block_position` | In per-block mode the action selects the target column directly; current position during placement is irrelevant. `ghost_board` already shows the resulting drop location. |
+| `score` | Non-stationary cumulative value irrelevant to placement strategy. The reward signal carries all gradient information about score value. |
+| `frame` | Unused in per-block mode — time advances via `ticks_per_block` internally. |
+| `column_heights` | Fully derivable from `light_board` + `dark_board` CNN channels. Adding 16 MLP values for information the CNN already has wastes parameter budget and risks gradient confusion between branches. |
+
+Net effect on architecture: CNN changes from conceptual 6 channels (PPO_29's 5 + `timeline_board`) to 5 (dropping `timeline_board`); MLP input shrinks from 38 → 20 (removing `block_position`(2) + `score`(1) + `frame`(1) + `column_heights`(16)).
+
+No hyperparameter changes from PPO_29. Breaking change (CNN channel count, obs key changes) — cannot resume from PPO_29 checkpoints.
 
 ---
 

@@ -91,30 +91,17 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — color-aware board channels (PPO_30)
+        # Observation space — color-aware board channels (PPO_31)
         self.observation_space = spaces.Dict(
             {
                 "light_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "dark_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "ghost_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
-                "timeline_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "current_block": spaces.Box(0, 2, shape=(2, 2), dtype=np.int8),
-                "block_position": spaces.Box(
-                    low=np.array([-2, -2], dtype=np.int32),
-                    high=np.array([15, 9], dtype=np.int32),
-                    dtype=np.int32,
-                ),
                 "queue": spaces.Box(0, 2, shape=(3, 2, 2), dtype=np.int8),
                 "timeline_x": spaces.Box(0, 15, shape=(1,), dtype=np.int32),
-                "score": spaces.Box(
-                    0, np.iinfo(np.int32).max, shape=(1,), dtype=np.int32
-                ),
-                "frame": spaces.Box(
-                    0, np.iinfo(np.int32).max, shape=(1,), dtype=np.int32
-                ),
                 "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
-                "column_heights": spaces.Box(0, BOARD_HEIGHT, shape=(BOARD_WIDTH,), dtype=np.float32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "dominant_color_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "projected_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
@@ -494,19 +481,12 @@ class LuminesEnvNative(gym.Env):
             "dark_board": self._build_color_board(2),
             "pattern_board": self._build_pattern_channel(),
             "ghost_board": self._build_ghost_channel(),
-            "timeline_board": self._build_timeline_board(),
             "current_block": np.array(s.current_block.pattern, dtype=np.int8),
-            "block_position": np.array(
-                [s.block_position_x, s.block_position_y], dtype=np.int32
-            ),
             "queue": np.array(
                 [b.pattern for b in s.queue[:3]], dtype=np.int8
             ),
             "timeline_x": np.array([s.timeline.x], dtype=np.int32),
-            "score": np.array([s.score], dtype=np.int32),
-            "frame": np.array([s.frame], dtype=np.int32),
             "game_timer": np.array([s.game_timer], dtype=np.int32),
-            "column_heights": np.array(self._column_heights(), dtype=np.float32),
             "holding_score": np.array(
                 [min(s.timeline.holding_score / 10.0, 1.0)], dtype=np.float32
             ),

@@ -252,26 +252,12 @@ class TestObsToNumpy:
         ws_obs = obs_to_numpy(obs_json)
         np.testing.assert_array_almost_equal(ws_obs["pattern_board"], env_obs["pattern_board"])
 
-    def test_timeline_board(self):
-        env = _make_env_with_board()
-        obs_json = self._env_state_to_obs_json(env)
-        env_obs = env._build_obs()
-        ws_obs = obs_to_numpy(obs_json)
-        np.testing.assert_array_almost_equal(ws_obs["timeline_board"], env_obs["timeline_board"])
-
     def test_ghost_board(self):
         env = _make_env_with_board()
         obs_json = self._env_state_to_obs_json(env)
         env_obs = env._build_obs()
         ws_obs = obs_to_numpy(obs_json)
         np.testing.assert_array_almost_equal(ws_obs["ghost_board"], env_obs["ghost_board"])
-
-    def test_column_heights(self):
-        env = _make_env_with_board()
-        obs_json = self._env_state_to_obs_json(env)
-        env_obs = env._build_obs()
-        ws_obs = obs_to_numpy(obs_json)
-        np.testing.assert_array_almost_equal(ws_obs["column_heights"], env_obs["column_heights"])
 
     def test_dominant_color_chain(self):
         env = _make_env_with_board()

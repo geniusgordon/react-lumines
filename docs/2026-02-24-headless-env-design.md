@@ -89,26 +89,22 @@ type FrameAction =
 The Python `LuminesEnvNative` uses a shaped reward designed around the combo
 mechanic. See `docs/2026-02-24-rl-agent-design.md §4` for the full formula.
 
-**Summary (per_block mode):**
+**Summary (per_block mode, PPO_30+):**
 
 ```
-reward = score_delta
-       + chain_delta  × 0.3   # longest consecutive pattern-column run
-       + color_adj    × 0.1   # same-color neighbors at drop site
-       + height_reward        # -(aggregate board height / 160) × 0.5
-       + death_penalty        # -3.0 on game over
+reward = score_delta                         # actual combo payoff from timeline sweep
+       + single_color_chain_delta × 0.1     # delta in longest same-color chain (can be negative)
+       + post_sweep_chain × 0.05            # same-color chain after sweep + gravity settle
+       + death                               # -3.0 on game over, else 0
 ```
 
 **Rationale:**
 - `score_delta` is the primary objective — directly tied to game score.
-- `chain_delta` rewards the core Lumines skill: building long chains of
-  same-color patterns for the timeline to sweep in one pass.
-- `color_adj` provides dense signal for color consolidation without needing
-  the timeline to actually sweep.
-- Aggregate height penalty discourages board-wide filling, not just a single
-  column.
-- No flat survival bonus — timid play (avoiding risky placements to stay
-  alive) is not rewarded; the agent must score to maximise return.
+- `single_color_chain_delta` is a color-aware delta signal: rewards placements that extend the dominant single-color chain; penalises those that fragment it. Unlike earlier runs, it can go negative, making the gradient signal directional.
+- `post_sweep_chain` rewards leaving a clean same-color residue after a sweep — encouraging the alternating-combo strategy central to Lumines.
+- No flat survival bonus — the agent must score to maximise return.
+
+See `docs/2026-02-24-rl-agent-design.md §5` for full formula and design rationale history.
 
 ---
 

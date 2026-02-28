@@ -47,18 +47,15 @@ def test_reset_returns_correct_shapes():
     assert obs['dark_board'].shape == (10, 16)
     assert obs['dominant_color_chain'].shape == (1,)
     assert obs['current_block'].shape == (2, 2)
-    assert obs['block_position'].shape == (2,)
     assert obs['queue'].shape == (3, 2, 2)
     assert obs['timeline_x'].shape == (1,)
-    assert obs['score'].shape == (1,)
-    assert obs['frame'].shape == (1,)
     assert obs['game_timer'].shape == (1,)
 
 
 def test_initial_score_is_zero():
     env = LuminesEnvNative(mode='per_block', seed='test123')
-    obs, _ = env.reset()
-    assert obs['score'][0] == 0
+    env.reset()
+    assert env._state.score == 0
 
 
 def test_initial_game_timer():
@@ -76,8 +73,8 @@ def test_score_non_decreasing():
     actions = _random_actions(50)
     for a in actions:
         obs, reward, done, _, info = env.step(a)
-        assert obs['score'][0] >= prev_score
-        prev_score = obs['score'][0]
+        assert info['finalScore'] >= prev_score
+        prev_score = info['finalScore']
         if done:
             break
 
@@ -151,7 +148,7 @@ def test_reset_restarts_game():
         env.step(32)
 
     obs, _ = env.reset()
-    assert obs['score'][0] == 0
+    assert env._state.score == 0
     assert obs['game_timer'][0] == 3600
 
 

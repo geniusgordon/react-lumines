@@ -307,46 +307,6 @@ def test_reward_components_no_chain_delta():
 
 
 # ---------------------------------------------------------------------------
-# Observation features: column_heights
-# ---------------------------------------------------------------------------
-
-def test_obs_has_column_heights():
-    """Observation dict must contain 'column_heights' key."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    obs, _ = env.reset()
-    assert "column_heights" in obs
-
-
-def test_obs_column_heights_shape():
-    """column_heights must have shape (16,)."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    obs, _ = env.reset()
-    assert obs["column_heights"].shape == (16,)
-
-
-def test_obs_column_heights_empty_board():
-    """column_heights must be all zeros for empty board."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": create_empty_board()})
-    obs = env._build_obs()
-    assert (obs["column_heights"] == 0).all()
-
-
-def test_obs_column_heights_one_full_column():
-    """A column filled to the top should report height == BOARD_HEIGHT (10)."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    board = create_empty_board()
-    for row in range(BOARD_HEIGHT):
-        board[row][3] = 1
-    env._state = env._state.__class__(**{**env._state.__dict__, "board": board})
-    obs = env._build_obs()
-    assert obs["column_heights"][3] == BOARD_HEIGHT
-    assert obs["column_heights"][0] == 0
-
-
-# ---------------------------------------------------------------------------
 # Queue visibility
 # ---------------------------------------------------------------------------
 
