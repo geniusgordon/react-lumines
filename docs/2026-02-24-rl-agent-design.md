@@ -1,7 +1,7 @@
 # Lumines RL Agent — Architecture, Training & Run History
 
-**Date:** 2026-02-24 (updated 2026-02-28)
-**Status:** Implemented — PPO_30 in progress (PPO_29 complete)
+**Date:** 2026-02-24 (updated 2026-03-01)
+**Status:** Implemented — PPO_35 current
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -61,7 +61,8 @@ Observation (Dict)
  ├── timeline_x (1,)  ─────────┤  concat → Linear(20→64) → ReLU   │
  ├── game_timer (1,)  ──────────┤                                  │
  ├── holding_score (1,)  ───────┤                                  │
- └── dominant_color_chain (1,) ─┘                                  │
+ ├── light_chain (1,)  ────────┤                                  │
+ └── dark_chain (1,)  ─────────┘                                  │
                                                                    │
                         128-dim concat ←───────────────────────────
                                │
@@ -69,7 +70,7 @@ Observation (Dict)
                     net_arch=dict(pi=[128,128], vf=[512,512,256])
 ```
 
-**MLP input size:** 4 + 12 + 1 + 1 + 1 + 1 = 20 values.
+**MLP input size:** 4 + 12 + 1 + 1 + 1 + 1 + 1 = 21 values.
 **Combined output:** 128 dimensions (64 from each branch).
 
 `light_board` is channel 1: binary float32 (10×16), 1.0 where board cell == color 1 (light). `dark_board` is channel 2: same encoding for color 2 (dark). Together they replace the old single `board` channel (which encoded 0/1/2 and forced the network to learn a threshold). Separate binary channels make color identity trivially readable for the CNN.
@@ -82,7 +83,7 @@ None of the four CNN channels is in `MLP_KEYS`; all route exclusively through th
 
 `holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
 
-`dominant_color_chain` is the longest consecutive run of same-color pattern columns for the best single color, normalised by `BOARD_WIDTH - 1 = 15`. Unlike the old `chain_length` (which counted any-color patterns), this directly measures the single-color chain the agent should be building. Together with `holding_score`, it lets the agent condition on both the spatial span and color purity of the current combo zone.
+`light_chain` and `dark_chain` are the longest consecutive run of same-color pattern columns for each color respectively, normalised by `BOARD_WIDTH - 1 = 15`. Separate per-color scalars let the agent observe the current state of both colors independently — essential for conditioning on the color-aware reward signals (`post_sweep_light_delta`, `post_sweep_dark_delta`). Together with `holding_score`, they let the agent condition on both the spatial span and color purity of the current combo zone.
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
 
@@ -141,49 +142,32 @@ consecutive columns of same-color 2×2 patterns, then cashing out on the first
 empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 
 ```python
-reward = score_delta                          # primary: actual combo payoff from timeline sweep
-       + single_color_chain_delta * 0.1       # dense delta: change in longest single-color chain
-       + post_sweep_chain * 0.05              # dense level: single-color chain after sweep + gravity
-       + death                                # -3.0 on game over, else 0
+reward = score_delta                              # primary: actual combo payoff from timeline sweep
+       + chain_delta_any_color   * 0.03           # density aid: color-agnostic pre-sweep bootstrap
+       + near_pattern_delta      * 0.01           # initial aid: progress toward first 2×2 pattern
+       + post_sweep_light_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
+       + post_sweep_dark_delta   * 0.05           # strategy shaping: color-aware post-sweep delta
+       + chain_blocking_delta    * -0.05          # blocking: wrong-color 2×2 in chain zone
+       + initial_blocking_delta  * -0.03          # blocking: single-cell blocker of near-pattern
+       + death                                    # -3.0 on game over, else 0
 ```
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
-| `single_color_chain_delta * 0.1` | any sign | **Color-aware placement signal**: `chain_after_drop − chain_before`, where chain = longest consecutive same-color pattern-column run (best of light vs dark). Rewards extending the dominant color chain; penalises breaking it. Zero for neutral placements. |
-| `post_sweep_chain * 0.05` | ≥ 0 | **Board readiness signal**: same single-color chain metric measured after tick loop + gravity settling. Rewards leaving a clean same-color chain-ready board after the sweep. |
+| `chain_delta_any_color * 0.03` | any sign | Color-agnostic pre-sweep bootstrap: change in longest same-color pattern-column run (best of light vs dark). Kept small (0.03) so it doesn't mislead once chains form. |
+| `near_pattern_delta * 0.01` | ≥ 0 | Initial-phase aid: change in max near-pattern count (2–3 same-color cells in a 2×2, rest empty). Clipped ≥ 0 so completions don't produce a spurious negative. Fires mostly before the first 2×2 forms. |
+| `post_sweep_light_delta * 0.05` | any sign | Strategy shaping: change in light chain since previous step's post-sweep value. Zeroed when `score_delta > 0`. |
+| `post_sweep_dark_delta * 0.05` | any sign | Same for dark chain. |
+| `chain_blocking_delta * -0.05` | ≤ 0 | Blocking penalty: change in wrong-color 2×2 count inside dominant chain zone (±1 col). Penalises placements that cap lateral/vertical chain growth. |
+| `initial_blocking_delta * -0.03` | ≤ 0 | Near-pattern blocking penalty: change in blocked near-pattern count (3 cells of one color + 1 of the other). Penalises single-cell blockers that ruin near-patterns. |
 | `death` | −3.0 | Penalise game over |
 
-`info["reward_components"]` emits: `score_delta`, `single_color_chain_delta`, `post_sweep_chain`, `death`, `total`.
+`info["reward_components"]` emits all 7 components plus `total`.
 
 No flat survival bonus — the agent's incentive to survive comes from future scoring opportunities.
 
-### Why this design rewards the ideal Lumines strategy
-
-The ideal strategy is alternating single-color combos: build a wide chain of color A → sweep scores big → color B residue forms a chain-ready shape → build big B combo → repeat.
-
-| Situation | Signal |
-|---|---|
-| Place block that extends single-color chain from 4→7 | `single_color_chain_delta=+3` → `+0.30` |
-| Place block that doesn't touch chain (neutral) | `single_color_chain_delta=0` → `0` |
-| Place block that breaks a chain from 5→2 | `single_color_chain_delta=−3` → `−0.30` |
-| Big color-A sweep (score_delta=8), color-B residue forms 4-chain | `score_delta=8` + `post_sweep_chain=4 → +0.20` |
-| Big sweep but board is a mess afterward | `score_delta=8` + `post_sweep_chain≈0` |
-
-The alternating rhythm is directly rewarded: big score from a pure-color sweep + positive `post_sweep_chain` from well-shaped residue.
-
-### Design rationale
-
-PPO_29 used level-based chain counts (always ≥ 0) at two points per step. This was an improvement over earlier runs but had three residual problems:
-
-- **Color-blind**: `chain_after_drop` counted any-color patterns, so a mixed A+B chain looked as good as a pure A chain even though it scores worse.
-- **Level-based shaping conflates position and quality**: every block earns `0.05 × existing_chain` regardless of whether it improved anything.
-- **`post_sweep_chain` penalised good combos**: when a long chain is swept (big `score_delta`), `post_sweep_chain` dropped to near-zero → mixed signal that discouraged the desired behaviour.
-
-PPO_30 fixes all three:
-- **`single_color_chain_delta`** is color-aware and is a delta (can be negative), directly incentivising placements that increase the dominant-color chain.
-- **`post_sweep_chain`** is also single-color, rewarding a clean same-color residue — not a mixed heap.
-- **CNN observes color via separate binary channels** (`light_board`, `dark_board`) instead of a single 0/1/2 channel (PPO_29), making color identity trivially readable.
+See `python/STRATEGY.md` for full signal hierarchy and rationale.
 
 ---
 
@@ -264,6 +248,8 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_28 | ~1M | ~21.5 @ 900k | — | 0.68 | `norm_reward=False` (reverted), existing 8-component reward unchanged. Value loss 3.6→5.7 @ 1M — same drift trajectory as PPO_26 confirms 8-component reward variance is the root cause. |
 | PPO_29 | — | — | — | — | 4-component reward (`score_delta + chain_after_drop*0.05 + post_sweep_chain*0.05 + death`); `clip_range_vf=None`. Strips noisy components; measures goals directly. |
 | PPO_30 | — | — | — | — | Color-aware obs + obs space cleanup: `light_board`+`dark_board` replace `board`; `dominant_color_chain` replaces `chain_length`; 5 redundant keys removed. Color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). Color-separated pattern boards: `light_pattern_board`+`dark_pattern_board` replace `pattern_board`+`ghost_board`+`projected_pattern_board`. CNN 4 channels, MLP 20 inputs. |
+| PPO_31 | — | — | — | — | Flat PPO baseline with PPO_30 architecture. LSTM/RecurrentPPO is a separate parallel experiment (not a sequential run). |
+| PPO_32 | — | — | — | — | **Upcoming.** Full reward redesign: color-aware post-sweep deltas (`post_sweep_light_delta`+`post_sweep_dark_delta`); delta zeroed on scoring steps; `dominant_color_chain`→`light_chain`+`dark_chain` obs split (MLP 20→21); `chain_blocking_delta` penalty (−0.05); `near_pattern_delta` initial-phase aid (+0.01); `initial_blocking_delta` near-pattern blocker penalty (−0.03). See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
 
 ### PPO_10 post-mortem
 

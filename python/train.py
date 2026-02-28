@@ -8,7 +8,7 @@ Architecture:
     2. MLP branch   : current_block(4) + queue(12)
                       + timeline_x(1) + game_timer(1)
                       + holding_score(1) + light_chain(1) + dark_chain(1) = 21 values
-                      → Linear(20→64) → ReLU
+                      → Linear(21→64) → ReLU
   Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
 Usage:

@@ -11,13 +11,19 @@ Reward (per_block mode)
 -----------------------
     reward = score_delta                              # primary: actual combo payoff (sparse, ground truth)
            + chain_delta_any_color * 0.03            # density aid: color-agnostic pre-sweep shaping
+           + near_pattern_delta    * 0.01            # initial aid: progress toward first 2×2 pattern
            + post_sweep_light_delta * 0.05           # strategy shaping: color-aware post-sweep delta
            + post_sweep_dark_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
            + chain_blocking_delta   * -0.05          # blocking: new wrong-color 2×2 in chain zone
+           + initial_blocking_delta * -0.03          # blocking: single-cell blocker of a near-pattern
            + death                                    # survival: DEATH_PENALTY on game over, else 0
 
     chain_delta_any_color: max(light_chain, dark_chain) after drop minus before drop.
     Color-agnostic bootstrap signal. Weight kept small (0.03) so it doesn't mislead.
+
+    near_pattern_delta: change in max near-pattern count (2×2 regions with 2–3 same-color cells and
+    rest empty) after drop. Clipped to >= 0 so completions don't produce a spurious negative.
+    Fires only in the initial phase before chain_delta_any_color dominates.
 
     post_sweep_light_delta / post_sweep_dark_delta: per-color chain delta (current - previous step's
     post-sweep value). Color-aware strategy shaping — rewards committing to one color per sweep cycle.
@@ -26,9 +32,12 @@ Reward (per_block mode)
     chain_blocking_delta: change in wrong-color 2×2 pattern count within the dominant chain's zone
     (chain_left-1 .. chain_right+1). Penalises placing blockers that cap vertical or lateral growth.
 
+    initial_blocking_delta: change in blocked near-pattern count (2×2 regions with 3 cells of one
+    color and 1 cell of the other). Penalises single-cell blockers that ruin near-patterns.
+
 reward_components keys emitted in info:
-    score_delta, chain_delta_any_color, post_sweep_light_delta, post_sweep_dark_delta,
-    chain_blocking_delta, death, total
+    score_delta, chain_delta_any_color, near_pattern_delta, post_sweep_light_delta,
+    post_sweep_dark_delta, chain_blocking_delta, initial_blocking_delta, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -205,6 +214,13 @@ class LuminesEnvNative(gym.Env):
         chain_after_drop = float(self._count_max_single_color_chain_from_board())
         chain_delta_any_color = chain_after_drop - chain_before
 
+        # Near-pattern delta (pre-sweep): progress toward first 2×2.
+        # Clipped to >= 0: graduating a near-pattern to complete reduces near count
+        # but is already rewarded by chain_delta_any_color; don't double-penalise.
+        near_before     = float(self._count_max_near_patterns(board_before))
+        near_after_drop = float(self._count_max_near_patterns())
+        near_pattern_delta = max(0.0, near_after_drop - near_before)
+
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block.
         for _ in range(self.ticks_per_block):
@@ -242,6 +258,11 @@ class LuminesEnvNative(gym.Env):
         blockers_after  = float(self._count_chain_zone_blockers())
         chain_blocking_delta = blockers_after - blockers_before
 
+        # Blocked near-pattern delta (post-sweep): single-cell blocker of a near-pattern.
+        blocked_near_before = float(self._count_blocked_near_patterns(board_before))
+        blocked_near_after  = float(self._count_blocked_near_patterns())
+        initial_blocking_delta = blocked_near_after - blocked_near_before
+
         # Measure post-sweep per-color chain on simulated-cleared board.
         sim_board = self._simulate_clear_board(self._state.board)
         post_sweep_light = float(self._count_single_color_chain(sim_board, 1))
@@ -262,19 +283,23 @@ class LuminesEnvNative(gym.Env):
         death = DEATH_PENALTY if done else 0.0
         reward = (
             score_delta
-            + chain_delta_any_color * 0.03
-            + post_sweep_light_delta * 0.05
-            + post_sweep_dark_delta * 0.05
-            + chain_blocking_delta * -0.05
+            + chain_delta_any_color   * 0.03
+            + near_pattern_delta      * 0.01
+            + post_sweep_light_delta  * 0.05
+            + post_sweep_dark_delta   * 0.05
+            + chain_blocking_delta    * -0.05
+            + initial_blocking_delta  * -0.03
             + death
         )
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "chain_delta_any_color": chain_delta_any_color,
+            "near_pattern_delta": near_pattern_delta,
             "post_sweep_light_delta": post_sweep_light_delta,
             "post_sweep_dark_delta": post_sweep_dark_delta,
             "chain_blocking_delta": chain_blocking_delta,
+            "initial_blocking_delta": initial_blocking_delta,
             "death": death,
             "total": reward,
         }
@@ -437,6 +462,40 @@ class LuminesEnvNative(gym.Env):
             else:
                 run = 0
         return (best_left, best_right) if best_len > 0 else None
+
+    def _count_near_patterns(self, board, color: int) -> int:
+        """Count 2×2 regions with 2 or 3 cells of `color` and rest empty (no blocker).
+        Covers both '3 cell + 1 drop' and '2 cell + 2 drop' completion paths."""
+        count = 0
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                cells = [board[row][col], board[row][col + 1],
+                         board[row + 1][col], board[row + 1][col + 1]]
+                color_count = sum(c == color for c in cells)
+                empty_count = sum(c == 0 for c in cells)
+                if color_count + empty_count == 4 and color_count in (2, 3):
+                    count += 1
+        return count
+
+    def _count_max_near_patterns(self, board=None) -> int:
+        """Max near-pattern count over both colors."""
+        board = board if board is not None else self._state.board
+        return max(self._count_near_patterns(board, 1),
+                   self._count_near_patterns(board, 2))
+
+    def _count_blocked_near_patterns(self, board=None) -> int:
+        """Count 2×2 regions with 3 cells of one color and 1 cell of the other color."""
+        board = board if board is not None else self._state.board
+        count = 0
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                cells = [board[row][col], board[row][col + 1],
+                         board[row + 1][col], board[row + 1][col + 1]]
+                light = sum(c == 1 for c in cells)
+                dark  = sum(c == 2 for c in cells)
+                if (light == 3 and dark == 1) or (light == 1 and dark == 3):
+                    count += 1
+        return count
 
     def _count_chain_zone_blockers(self, board=None) -> int:
         """Count wrong-color 2×2 patterns within the dominant chain's zone (±1 col)."""
