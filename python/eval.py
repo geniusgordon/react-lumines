@@ -112,6 +112,7 @@ def evaluate(args):
     all_holding_scores: list[float] = []
     all_score_deltas: list[float] = []
     all_target_xs: list[int] = []
+    all_chain_lens: list[int] = []
 
     for episode in range(1, args.episodes + 1):
         if args.native:
@@ -130,6 +131,7 @@ def evaluate(args):
         last_info: dict = {}
         ep_holding_scores: list[float] = []
         ep_score_deltas: list[float] = []
+        ep_chain_lens: list[int] = []
 
         print(f"\n=== Episode {episode}/{args.episodes} (seed={seed}) ===")
 
@@ -173,6 +175,8 @@ def evaluate(args):
                 if isinstance(obs, dict) and "holding_score" in obs:
                     # holding_score is normalised to [0,1] by /10 in env; recover raw value
                     ep_holding_scores.append(float(obs["holding_score"].flat[0]) * 10.0)
+                if hasattr(env, "_count_max_single_color_chain_from_board"):
+                    ep_chain_lens.append(env._count_max_single_color_chain_from_board())
 
             if args.render:
                 frame = env.render()
@@ -283,6 +287,7 @@ def evaluate(args):
         scores.append(final_score)
         all_holding_scores.extend(ep_holding_scores)
         all_score_deltas.extend(ep_score_deltas)
+        all_chain_lens.extend(ep_chain_lens)
 
         ep_diag = ""
         if ep_holding_scores:
@@ -290,6 +295,7 @@ def evaluate(args):
         nonzero_deltas = [d for d in ep_score_deltas if d > 0]
         if nonzero_deltas:
             ep_diag += f"  score_delta(nonzero) n={len(nonzero_deltas)} mean={np.mean(nonzero_deltas):.2f} max={np.max(nonzero_deltas):.2f}"
+        ep_diag += f"  chain_len mean={np.mean(ep_chain_lens):.2f} max={int(np.max(ep_chain_lens))}" if ep_chain_lens else "  chain_len 0"
         print(f"Episode {episode} finished — score: {final_score:.0f}{ep_diag}")
         env.close()
 
@@ -312,6 +318,14 @@ def evaluate(args):
         print(f"score_delta    steps={len(all_score_deltas)}  "
               f"nonzero={len(nonzero)} ({100*len(nonzero)/len(all_score_deltas):.1f}%)  "
               + (f"mean={np.mean(nonzero):.2f}  max={np.max(nonzero):.2f}" if nonzero else "no score events"))
+
+    if all_chain_lens:
+        gt0 = sum(1 for c in all_chain_lens if c > 0)
+        print(f"chain_len      steps={len(all_chain_lens)}  "
+              f"mean={np.mean(all_chain_lens):.2f}  max={int(np.max(all_chain_lens))}  "
+              f"(>0: {gt0} / {len(all_chain_lens)} = {100*gt0/len(all_chain_lens):.1f}%)")
+    else:
+        print("chain_len      0 (no data — native env only)")
 
     if all_target_xs:
         col_counts = np.bincount(all_target_xs, minlength=15)

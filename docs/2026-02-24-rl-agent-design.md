@@ -1,6 +1,6 @@
 # Lumines RL Agent — Architecture, Training & Run History
 
-**Date:** 2026-02-24 (updated 2026-03-01)
+**Date:** 2026-02-24 (updated 2026-03-02)
 **Status:** Implemented — PPO_36 current
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
@@ -85,7 +85,9 @@ None of the four CNN channels is in `MLP_KEYS`; all route exclusively through th
 
 `holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
 
-`light_chain` and `dark_chain` are the longest consecutive run of same-color pattern columns for each color respectively, normalised by `BOARD_WIDTH - 1 = 15`. Separate per-color scalars let the agent observe each color's build-up state explicitly. Together with `holding_score`, they provide compact context for combo timing and are consistent with the potential-based reward features (`chain_max`, `purity`, `blockers`, `height`, `setup`).
+`light_chain` and `dark_chain` are the longest **connected** run of same-color pattern columns for each color respectively, normalised by `BOARD_WIDTH - 1 = 15`. "Connected" means each adjacent column pair in the chain has same-color 2×2 patterns whose top-left rows are within 1 of each other (`|row_a − row_b| ≤ 1`), ensuring the patterns actually share at least one cell. Separate per-color scalars let the agent observe each color's build-up state explicitly.
+
+> **Bug note (fixed 2026-03-02):** Prior to this fix, `_count_single_color_chain` counted any consecutive columns that each contained *any* same-color 2×2 pattern, ignoring row positions. On a dense or nearly-full board this produced large inflated values from accidental adjacencies at different heights. All runs that used `light_chain`/`dark_chain` observations (PPO_30 onward) or `single_color_chain_delta` reward shaping (PPO_30–34) received corrupted chain signals. This is a plausible contributing factor to those runs failing to learn the alternating-color strategy despite explicit chain-building incentives. See `python/STRATEGY.md` for the full analysis.
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
 
@@ -315,7 +317,7 @@ PPO_29 simplified the reward to 4 components and removed conflicting signals —
 
 **PPO_30 changes:**
 
-1. **`single_color_chain_delta * 0.1`** replaces both `chain_after_drop` terms. Measures change in longest consecutive same-color pattern run. Positive when a placement extends the dominant chain; zero for neutral placements; negative when a placement fragments it. The sign matches strategy.
+1. **`single_color_chain_delta * 0.1`** replaces both `chain_after_drop` terms. Measures change in longest consecutive same-color pattern run. Positive when a placement extends the dominant chain; zero for neutral placements; negative when a placement fragments it. The sign matches strategy. *(Note: the underlying `_count_single_color_chain` had a row-adjacency bug that inflated chain values on dense boards — see bug note in section 3. This shaping signal was noisy as a result.)*
 
 2. **`post_sweep_chain * 0.05`** now uses the same single-color metric, so it rewards leaving a clean same-color residue — not a mixed heap — after a sweep.
 

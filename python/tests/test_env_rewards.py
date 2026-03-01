@@ -112,41 +112,6 @@ def _make_env_with_board(board):
     return env
 
 
-def test_count_chain_length_empty_board():
-    env = _make_env_with_board(create_empty_board())
-    assert env._count_chain_length() == 0
-
-
-def test_count_chain_length_single_pattern():
-    """One 2×2 same-color square (cols 5-6, rows 8-9) → chain length 1."""
-    board = create_empty_board()
-    for r in (8, 9):
-        for c in (5, 6):
-            board[r][c] = 1
-    assert _make_env_with_board(board)._count_chain_length() == 1
-
-
-def test_count_chain_length_three_consecutive():
-    """4-wide same-color strip → patterns at cols 2, 3, 4 → chain length 3."""
-    board = create_empty_board()
-    for c in range(2, 6):   # cols 2,3,4,5 → patterns at left edges 2,3,4
-        board[8][c] = 1
-        board[9][c] = 1
-    assert _make_env_with_board(board)._count_chain_length() == 3
-
-
-def test_count_chain_length_gap_returns_longest_run():
-    """Patterns at cols 2,3 and 5,6 (gap at 4) → max chain length 2."""
-    board = create_empty_board()
-    for c in range(2, 5):   # cols 2,3,4 → patterns at 2,3
-        board[8][c] = 1
-        board[9][c] = 1
-    for c in range(5, 8):   # cols 5,6,7 → patterns at 5,6
-        board[8][c] = 2
-        board[9][c] = 2
-    assert _make_env_with_board(board)._count_chain_length() == 2
-
-
 # ---------------------------------------------------------------------------
 # Simplified reward structure (PPO Run 7)
 # ---------------------------------------------------------------------------

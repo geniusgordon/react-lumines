@@ -21,6 +21,43 @@ The most efficient Lumines strategy is **alternating single-color combos**:
 - A chain of N consecutive same-color pattern-columns scores proportionally more than N
   isolated patterns, due to the combo multiplier applied by the sweep.
 
+### Correct definition of "combo chain length"
+
+A **combo chain of length N** is a sequence of N consecutive columns where each adjacent
+pair of columns contains same-color 2×2 patterns that **share at least one cell**.
+
+Two 2×2 patterns — one with top-left at `(row_a, col)` and one at `(row_b, col+1)` —
+share a cell if and only if their 2-row windows overlap:
+
+```
+|row_a − row_b| ≤ 1
+```
+
+A chain is therefore a connected path through the board, not merely a set of occupied
+consecutive columns.  Two columns can both contain same-color 2×2 patterns yet be
+**disconnected** if their patterns are at entirely different heights (e.g. one at the top
+of the board and one at the bottom).
+
+#### Historical bug (fixed 2026-03-02)
+
+`_count_single_color_chain` prior to this fix collected all columns that contained *any*
+same-color 2×2 pattern and returned the longest consecutive run — without checking whether
+adjacent columns' patterns were at compatible row positions.  Consequences:
+
+- **Inflated chain metrics**: a nearly-full board produced long "chains" from accidental
+  same-color adjacencies scattered at different heights, particularly during early training
+  when random policies fill the board quickly.
+- **Misleading observations**: `light_chain` and `dark_chain` observation scalars fed this
+  inflated value to the policy, making the board look more combo-ready than it was.
+- **Corrupted reward signals**: any run that shaped reward on `single_color_chain_delta`
+  (PPO_30–34) received gradient from noise, not real chain-building behaviour.  This is
+  a plausible contributing factor to why those runs failed to learn the alternating-color
+  strategy despite explicit incentives.
+
+The fix (see `_count_single_color_chain` in `python/game/env.py`) uses a DP pass that
+tracks which row each column's patterns appear at and only extends a chain when the next
+column has a pattern within one row of the predecessor.
+
 ---
 
 ## What "Good Board State" Means

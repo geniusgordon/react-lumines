@@ -304,49 +304,6 @@ class LuminesEnvNative(gym.Env):
                 max_h = h
         return max_h
 
-    def _count_chain_length(self) -> int:
-        """Returns the longest consecutive run of columns with at least one pattern."""
-        if not self._state.detected_patterns:
-            return 0
-        cols_with_patterns = set(p.x for p in self._state.detected_patterns)
-        max_run = 0
-        run = 0
-        for c in range(BOARD_WIDTH - 1):  # pattern left edge can be 0..14
-            if c in cols_with_patterns:
-                run += 1
-                max_run = max(max_run, run)
-            else:
-                run = 0
-        return max_run
-
-    def _count_chain_length_from_board(self, board=None) -> int:
-        """
-        Like _count_chain_length but scans the board directly instead of using
-        self._state.detected_patterns. Use this immediately after hard_drop, before
-        the tick loop refreshes detected_patterns.
-
-        Optional board argument lets callers pass a projected board (e.g. after
-        simulating clear + gravity) without mutating state.
-        """
-        board = board if board is not None else self._state.board
-        cols_with_patterns: set[int] = set()
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                c = board[row][col]
-                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    cols_with_patterns.add(col)
-        if not cols_with_patterns:
-            return 0
-        max_run = 0
-        run = 0
-        for c in range(BOARD_WIDTH - 1):
-            if c in cols_with_patterns:
-                run += 1
-                max_run = max(max_run, run)
-            else:
-                run = 0
-        return max_run
-
     def _longest_run(self, col_set: set) -> int:
         max_run = run = 0
         for c in range(BOARD_WIDTH - 1):
@@ -358,14 +315,39 @@ class LuminesEnvNative(gym.Env):
         return max_run
 
     def _count_single_color_chain(self, board, color: int) -> int:
-        """Longest consecutive pattern-column run for a single specific color."""
-        cols: set[int] = set()
+        """Longest consecutive pattern-column chain for a single color.
+
+        Two patterns at (row_a, col) and (row_b, col+1) are connected only if
+        their 2-row windows overlap: |row_a - row_b| <= 1.  The old set-based
+        approach ignored row positions, so it falsely chained patterns in the
+        same column-pair that were at completely different heights.
+
+        DP: dp[row] = longest chain ending at a pattern whose top-left is at
+        (current_col, row).  For each new pattern at (col, row_b) we look back
+        at prev_dp[row_b-1], prev_dp[row_b], prev_dp[row_b+1] and take the best.
+        """
+        # pattern_rows[col] = set of top-left rows with a same-color 2x2 at that col
+        pattern_rows: list[set[int]] = [set() for _ in range(BOARD_WIDTH - 1)]
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):
                 c = board[row][col]
                 if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    cols.add(col)
-        return self._longest_run(cols)
+                    pattern_rows[col].add(row)
+
+        max_chain = 0
+        prev_dp: dict[int, int] = {}  # row -> chain length ending at (prev_col, row)
+        for col in range(BOARD_WIDTH - 1):
+            if not pattern_rows[col]:
+                prev_dp = {}
+                continue
+            curr_dp: dict[int, int] = {}
+            for row in pattern_rows[col]:
+                best = max(prev_dp.get(row - 1, 0), prev_dp.get(row, 0), prev_dp.get(row + 1, 0))
+                curr_dp[row] = best + 1
+                if curr_dp[row] > max_chain:
+                    max_chain = curr_dp[row]
+            prev_dp = curr_dp
+        return max_chain
 
     def _count_max_single_color_chain_from_board(self, board=None) -> int:
         """Longest consecutive pattern-column run for the single best color."""
