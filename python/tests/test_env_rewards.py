@@ -461,12 +461,11 @@ def test_obs_chain_length_absent():
 
 
 # ---------------------------------------------------------------------------
-# proj_light_pattern_board / proj_dark_pattern_board observation channels (PPO_37)
-# timeline_col was removed in PPO_37 (timeline position available via timeline_x scalar)
+# proj_light_pattern_board / proj_dark_pattern_board observation channels (PPO_36)
 # ---------------------------------------------------------------------------
 
 def test_obs_has_projected_pattern_boards():
-    """Observation dict must contain projected pattern board keys (PPO_37)."""
+    """Observation dict must contain projected pattern board keys (PPO_36)."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
     assert "proj_light_pattern_board" in obs

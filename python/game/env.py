@@ -84,7 +84,7 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — color-separated board channels + projected post-clear boards (PPO_37)
+        # Observation space — color-separated board channels + projected post-clear boards (PPO_36)
         # CNN channels (7): light_board, dark_board, light_pattern_board, dark_pattern_board,
         #                    proj_light_pattern_board, proj_dark_pattern_board, timeline_col
         # timeline_col is kept so the CNN can spatially anchor both live and projected pattern
