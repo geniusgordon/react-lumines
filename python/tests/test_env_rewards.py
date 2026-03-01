@@ -877,3 +877,123 @@ def test_timeline_col_at_column_max():
     obs = env._build_obs()
     assert np.all(obs["timeline_col"][:, BOARD_WIDTH - 1] == 1.0)
     assert np.all(obs["timeline_col"][:, :BOARD_WIDTH - 1] == 0.0)
+
+
+# ---------------------------------------------------------------------------
+# PPO_34 reward formula: score_delta + PATTERN_LAMBDA * patterns_formed + death
+# ---------------------------------------------------------------------------
+
+def test_reward_components_ppo34_exact_keys():
+    """reward_components must contain exactly the PPO_34 keys."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    expected_keys = {"score_delta", "patterns_formed", "death", "total"}
+    assert set(info["reward_components"].keys()) == expected_keys
+
+
+def test_reward_total_matches_ppo34_formula():
+    """total must equal score_delta + PATTERN_LAMBDA * patterns_formed + death."""
+    from python.game.env import PATTERN_LAMBDA
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, reward, _, _, info = env.step(0)
+    rc = info["reward_components"]
+    expected = rc["score_delta"] + PATTERN_LAMBDA * rc["patterns_formed"] + rc["death"]
+    assert rc["total"] == pytest.approx(expected)
+    assert reward == pytest.approx(rc["total"])
+
+
+def test_patterns_formed_is_nonnegative():
+    """patterns_formed must always be >= 0 (clamped)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    for action in range(30):
+        _, _, done, _, info = env.step(action % 60)
+        assert info["reward_components"]["patterns_formed"] >= 0
+        if done:
+            break
+
+
+def test_patterns_formed_positive_when_2x2_created():
+    """Placing a block that completes a 2×2 pattern gives patterns_formed >= 1."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+
+    # Board: light cell at [8][1] and [9][1] — right half of a potential 2×2 at col 0
+    board = create_empty_board()
+    board[8][1] = 1
+    board[9][1] = 1
+
+    # Current block: all-light [[1,1],[1,1]]
+    cb = env._state.current_block
+    light_block = cb.__class__(pattern=[[1, 1], [1, 1]], id=cb.id)
+
+    env._state = env._state.__class__(**{
+        **env._state.__dict__,
+        "board": board,
+        "block_position_x": 0,
+        "block_position_y": 0,
+        "current_block": light_block,
+    })
+
+    # Action 0: target_x=0, rotation=0 — block lands at cols 0-1, rows 8-9
+    # Before: 0 complete 2×2 patterns
+    # After:  light at [8][0],[8][1],[9][0],[9][1] → 1 complete 2×2 pattern
+    _, _, _, _, info = env.step(0)
+    assert info["reward_components"]["patterns_formed"] >= 1
+
+
+def test_patterns_formed_zero_when_no_pattern_created():
+    """Placing a block into an isolated empty area gives patterns_formed == 0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+
+    # Empty board, mixed block [[1,2],[2,1]] → can't form same-color 2×2
+    board = create_empty_board()
+    cb = env._state.current_block
+    mixed_block = cb.__class__(pattern=[[1, 2], [2, 1]], id=cb.id)
+
+    env._state = env._state.__class__(**{
+        **env._state.__dict__,
+        "board": board,
+        "block_position_x": 7,   # center, isolated
+        "block_position_y": 0,
+        "current_block": mixed_block,
+    })
+
+    _, _, _, _, info = env.step(28)  # action 28 = target_x=7, rotation=0
+    assert info["reward_components"]["patterns_formed"] == 0
+
+
+def test_no_shaping_reward_in_ppo34():
+    """shaping_reward must NOT be present in PPO_34 reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "shaping_reward" not in info["reward_components"]
+
+
+def test_no_phi_terms_in_ppo34():
+    """phi_prev, phi_next, potential_delta must NOT be in PPO_34 reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "phi_prev" not in info["reward_components"]
+    assert "phi_next" not in info["reward_components"]
+    assert "potential_delta" not in info["reward_components"]
+
+
+def test_ppo34_reward_formula_holds_across_many_steps():
+    """formula total = score_delta + PATTERN_LAMBDA * patterns_formed + death for 50 steps."""
+    from python.game.env import PATTERN_LAMBDA
+    env = LuminesEnvNative(mode="per_block", seed="99")
+    env.reset()
+    for action in range(50):
+        _, reward, done, _, info = env.step(action % 60)
+        rc = info["reward_components"]
+        expected = rc["score_delta"] + PATTERN_LAMBDA * rc["patterns_formed"] + rc["death"]
+        assert rc["total"] == pytest.approx(expected, abs=1e-6)
+        assert reward == pytest.approx(rc["total"], abs=1e-6)
+        if done:
+            env.reset()
