@@ -44,6 +44,7 @@ from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecNorm
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from lumines_env import LuminesEnv
+from rnd import RNDVecWrapper, RNDCallback
 
 
 # ---------------------------------------------------------------------------
@@ -360,12 +361,29 @@ def _train_ppo(args, env, eval_env):
         eval_env = VecNormalize.load(norm_stats_path, eval_env)
         eval_env.training = False
         eval_env.norm_reward = False
+        vec_normalize = env  # keep reference for VecNormalize.save() calls
+        rnd_wrapper = None
+        rnd_state_path = os.path.join(args.checkpoint_dir, "rnd_state.pt")
+        if args.rnd_beta > 0:
+            rnd_wrapper = RNDVecWrapper(env, beta=args.rnd_beta, device=args.device)
+            if os.path.exists(rnd_state_path):
+                RNDVecWrapper.load_state(rnd_state_path, rnd_wrapper)
+                print(f"Loaded RND state from {rnd_state_path}")
+            env = rnd_wrapper
+
         loader = RecurrentPPO if args.recurrent else PPO
         model = loader.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
         reset_num_timesteps = False
     else:
         env = VecNormalize(env, norm_obs=True, norm_reward=False)
         eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, training=False)
+        vec_normalize = env  # keep reference for VecNormalize.save() calls
+
+        rnd_wrapper = None
+        if args.rnd_beta > 0:
+            rnd_wrapper = RNDVecWrapper(env, beta=args.rnd_beta, device=args.device)
+            env = rnd_wrapper
+
         policy_kwargs = dict(
             features_extractor_class=LuminesCNNExtractor,
             features_extractor_kwargs=dict(features_dim=128),
@@ -432,15 +450,21 @@ def _train_ppo(args, env, eval_env):
             n_eval_episodes=args.eval_episodes,
             deterministic=True,
             render=False,
-            callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
+            callback_after_eval=SyncAndSaveVecNormalizeCallback(vec_normalize, eval_env, norm_stats_path),
         ),
         EntropyScheduleCallback(initial_ent=0.15, final_ent=0.05, total_steps=args.timesteps),
         GameScoreCallback(),
     ]
+    if rnd_wrapper is not None:
+        callbacks.append(RNDCallback(rnd_wrapper, lr=args.rnd_lr))
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
 
-    env.save(norm_stats_path)
+    vec_normalize.save(norm_stats_path)
+    if rnd_wrapper is not None:
+        rnd_state_path = os.path.join(args.checkpoint_dir, "rnd_state.pt")
+        rnd_wrapper.save(rnd_state_path)
+        print(f"RND state saved to {rnd_state_path}")
     final_path = os.path.join(args.checkpoint_dir, "final_ppo")
     model.save(final_path)
     print(f"\nTraining complete. Model saved to {final_path}.zip")
@@ -496,6 +520,20 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="Use RecurrentPPO (LSTM) instead of flat PPO",
+    )
+    parser.add_argument(
+        "--rnd-beta",
+        dest="rnd_beta",
+        type=float,
+        default=0.0,
+        help="RND intrinsic reward weight (0 = disabled). Recommended starting value: 0.01",
+    )
+    parser.add_argument(
+        "--rnd-lr",
+        dest="rnd_lr",
+        type=float,
+        default=1e-4,
+        help="RND predictor optimizer learning rate (default: 1e-4)",
     )
     args = parser.parse_args()
 
