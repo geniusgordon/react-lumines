@@ -51,15 +51,7 @@ from .state import (
 
 # Reward hyperparameters
 DEATH_PENALTY = -3.0
-SHAPING_LAMBDA = 0.10
-SHAPING_GAMMA = 0.99
-
-PHI_W_CHAIN = 1.0
-PHI_W_PURITY = 0.6
-PHI_W_BLOCKERS = 0.8
-PHI_W_HEIGHT = 0.3
-PHI_W_SETUP = 0.2
-PHI_W_PRECLEAR = 0.1
+PATTERN_LAMBDA = 0.3
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -123,10 +115,6 @@ class LuminesEnvNative(gym.Env):
         )
 
         self._state = create_initial_state(self._seed)
-        self._prev_post_sweep_light_chain = 0.0
-        self._prev_post_sweep_dark_chain = 0.0
-        sim_board = self._simulate_clear_board(self._state.board)
-        self._prev_phi, _ = self._compute_potential(sim_board)
 
     # -------------------------------------------------------------------------
     # Gymnasium API
@@ -145,10 +133,6 @@ class LuminesEnvNative(gym.Env):
         self._seed = seed_str
         self._state = create_initial_state(seed_str)
         self._blocks_placed = 0
-        self._prev_post_sweep_light_chain = 0.0
-        self._prev_post_sweep_dark_chain = 0.0
-        sim_board = self._simulate_clear_board(self._state.board)
-        self._prev_phi, _ = self._compute_potential(sim_board)
         return self._build_obs(), {}
 
     def step(self, action: int):
@@ -184,6 +168,8 @@ class LuminesEnvNative(gym.Env):
 
         rng = get_rng(self._state)
 
+        board_before_drop = [row[:] for row in self._state.board]
+
         # 1. Apply rotations
         for _ in range(rotation % 4):
             self._state = rotate_cw(self._state)
@@ -205,6 +191,19 @@ class LuminesEnvNative(gym.Env):
 
         # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
+
+        # Count patterns formed by this placement (before timeline sweeps any away).
+        # Build a settled snapshot: falling cells (not yet on board) are written
+        # back and gravity applied, giving the board state after physics resolves.
+        settled_board = [row[:] for row in self._state.board]
+        for fc in self._state.falling_columns:
+            for cell in fc.cells:
+                if 0 <= cell.y < BOARD_HEIGHT:
+                    settled_board[cell.y][fc.x] = cell.color
+        settled_board = apply_gravity(settled_board)
+        patterns_before = self._count_complete_squares_from_board(board_before_drop)
+        patterns_after = self._count_complete_squares_from_board(settled_board)
+        patterns_formed = max(0, patterns_after - patterns_before)
 
         if self._state.status != "gameOver":
             self._blocks_placed += 1
@@ -240,36 +239,14 @@ class LuminesEnvNative(gym.Env):
             self._state.falling_columns = []
 
         score_delta = float(self._state.score - prev_score)
-        sim_board = self._simulate_clear_board(self._state.board)
-        post_sweep_light = float(self._count_single_color_chain(sim_board, 1))
-        post_sweep_dark = float(self._count_single_color_chain(sim_board, 2))
-        self._prev_post_sweep_light_chain = post_sweep_light
-        self._prev_post_sweep_dark_chain = post_sweep_dark
-
-        phi_next, phi_components = self._compute_potential(
-            sim_board, preclear_board=self._state.board
-        )
-        phi_prev = self._prev_phi
-        potential_delta = SHAPING_GAMMA * phi_next - phi_prev
-        shaping_reward = SHAPING_LAMBDA * potential_delta
-        self._prev_phi = phi_next
-
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + shaping_reward + death
+        reward = score_delta + PATTERN_LAMBDA * patterns_formed + death
+
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
-            "phi_prev": phi_prev,
-            "phi_next": phi_next,
-            "potential_delta": potential_delta,
-            "shaping_reward": shaping_reward,
-            "chain_max": phi_components["chain_max"],
-            "purity": phi_components["purity"],
-            "blockers": phi_components["blockers"],
-            "height": phi_components["height"],
-            "setup": phi_components["setup"],
-            "preclear_patterns": phi_components["preclear_patterns"],
+            "patterns_formed": float(patterns_formed),
             "death": death,
             "total": reward,
         }
