@@ -3,8 +3,8 @@ train.py — DQN/PPO training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
-    1. CNN branch   : 4-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
-                      Channels: light_board, dark_board, light_pattern_board, dark_pattern_board
+    1. CNN branch   : 5-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
+                      Channels: light_board, dark_board, light_pattern_board, dark_pattern_board, timeline_col
     2. MLP branch   : current_block(4) + queue(12)
                       + timeline_x(1) + game_timer(1)
                       + holding_score(1) + light_chain(1) + dark_chain(1) = 21 values
@@ -74,9 +74,9 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         super().__init__(observation_space, features_dim)
         branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16, 4 channels: light_board + dark_board + light_pattern_board + dark_pattern_board) ----
+        # ---- CNN branch (board: 10×16, 5 channels: light_board + dark_board + light_pattern_board + dark_pattern_board + timeline_col) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=3, padding=1),   # stem: 4 → 32 channels
+            nn.Conv2d(5, 32, kernel_size=3, padding=1),   # stem: 5 → 32 channels
             nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 5×5
             nn.ReLU(),
@@ -108,7 +108,8 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         dark  = observations["dark_board"].float()                # [B, 10, 16], binary 0/1
         lp    = observations["light_pattern_board"].float()       # [B, 10, 16], values 0–1
         dp    = observations["dark_pattern_board"].float()        # [B, 10, 16], values 0–1
-        x = torch.stack([light, dark, lp, dp], dim=1)            # [B, 4, 10, 16]
+        tl    = observations["timeline_col"].float()              # [B, 10, 16], binary 0/1
+        x = torch.stack([light, dark, lp, dp, tl], dim=1)        # [B, 5, 10, 16]
         cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs
