@@ -369,19 +369,6 @@ class LuminesEnvNative(gym.Env):
                 run = 0
         return max_run
 
-    def _simulate_clear_board(self, board) -> list:
-        """Return a copy of board with all 2×2 same-color pattern cells zeroed and gravity applied."""
-        cleared = [row[:] for row in board]
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                c = cleared[row][col]
-                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    cleared[row][col] = 0
-                    cleared[row][col + 1] = 0
-                    cleared[row + 1][col] = 0
-                    cleared[row + 1][col + 1] = 0
-        return apply_gravity(cleared)
-
     def _count_single_color_chain(self, board, color: int) -> int:
         """Longest consecutive pattern-column run for a single specific color."""
         cols: set[int] = set()
@@ -397,147 +384,9 @@ class LuminesEnvNative(gym.Env):
         board = board if board is not None else self._state.board
         return max(self._count_single_color_chain(board, 1), self._count_single_color_chain(board, 2))
 
-    def _chain_range_for_color(self, board, color):
-        """Return (chain_left, chain_right) of the longest same-color 2×2 run, or None."""
-        cols: set[int] = set()
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                c = board[row][col]
-                if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    cols.add(col)
-        if not cols:
-            return None
-        best_left = best_right = 0
-        best_len = 0
-        run_left = run = 0
-        for c in range(BOARD_WIDTH - 1):
-            if c in cols:
-                if run == 0:
-                    run_left = c
-                run += 1
-                if run > best_len:
-                    best_len = run
-                    best_left = run_left
-                    best_right = c
-            else:
-                run = 0
-        return (best_left, best_right) if best_len > 0 else None
-
-    def _count_near_patterns(self, board, color: int) -> int:
-        """Count 2×2 regions with 2 or 3 cells of `color` and rest empty (no blocker).
-        Covers both '3 cell + 1 drop' and '2 cell + 2 drop' completion paths."""
-        count = 0
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                cells = [board[row][col], board[row][col + 1],
-                         board[row + 1][col], board[row + 1][col + 1]]
-                color_count = sum(c == color for c in cells)
-                empty_count = sum(c == 0 for c in cells)
-                if color_count + empty_count == 4 and color_count in (2, 3):
-                    count += 1
-        return count
-
-    def _count_max_near_patterns(self, board=None) -> int:
-        """Max near-pattern count over both colors."""
-        board = board if board is not None else self._state.board
-        return max(self._count_near_patterns(board, 1),
-                   self._count_near_patterns(board, 2))
-
-    def _count_blocked_near_patterns(self, board=None) -> int:
-        """Count 2×2 regions with 3 cells of one color and 1 cell of the other color."""
-        board = board if board is not None else self._state.board
-        count = 0
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                cells = [board[row][col], board[row][col + 1],
-                         board[row + 1][col], board[row + 1][col + 1]]
-                light = sum(c == 1 for c in cells)
-                dark  = sum(c == 2 for c in cells)
-                if (light == 3 and dark == 1) or (light == 1 and dark == 3):
-                    count += 1
-        return count
-
-    def _count_chain_zone_blockers(self, board=None) -> int:
-        """Count wrong-color 2×2 patterns within the dominant chain's zone (±1 col)."""
-        board = board if board is not None else self._state.board
-        lr = self._chain_range_for_color(board, 1)
-        dr = self._chain_range_for_color(board, 2)
-        light_len = (lr[1] - lr[0] + 1) if lr else 0
-        dark_len  = (dr[1] - dr[0] + 1) if dr else 0
-        if light_len == 0 and dark_len == 0:
-            return 0
-        if light_len >= dark_len:
-            dom_range, alt_color = lr, 2
-        else:
-            dom_range, alt_color = dr, 1
-        zone_left  = max(0, dom_range[0] - 1)
-        zone_right = min(BOARD_WIDTH - 2, dom_range[1] + 1)
-        count = 0
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(zone_left, zone_right + 1):
-                c = board[row][col]
-                if c == alt_color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    count += 1
-        return count
-
-    def _compute_potential(self, board, preclear_board=None) -> tuple[float, dict]:
-        """Potential on post-clear board, plus optional pre-clear structure signal."""
-        preclear_board = board if preclear_board is None else preclear_board
-        chain_light = float(self._count_single_color_chain(board, 1))
-        chain_dark = float(self._count_single_color_chain(board, 2))
-        chain_max = max(chain_light, chain_dark) / float(BOARD_WIDTH - 1)
-        dominant_color = 1 if chain_light >= chain_dark else 2
-
-        total_filled = 0
-        dom_filled = 0
-        for row in range(BOARD_HEIGHT):
-            for col in range(BOARD_WIDTH):
-                c = board[row][col]
-                if c != 0:
-                    total_filled += 1
-                    if c == dominant_color:
-                        dom_filled += 1
-        purity = float(dom_filled / total_filled) if total_filled > 0 else 0.0
-
-        max_windows = float((BOARD_HEIGHT - 1) * (BOARD_WIDTH - 1))
-        blockers = float(self._count_chain_zone_blockers(board)) / max_windows
-        height = float(self._max_column_height_from_board(board)) / float(BOARD_HEIGHT)
-        setup = float(self._count_max_near_patterns(board)) / max_windows
-        preclear_patterns = float(self._count_complete_squares_from_board(preclear_board)) / max_windows
-
-        phi = (
-            PHI_W_CHAIN * chain_max
-            + PHI_W_PURITY * purity
-            - PHI_W_BLOCKERS * blockers
-            - PHI_W_HEIGHT * height
-            + PHI_W_SETUP * setup
-            + PHI_W_PRECLEAR * preclear_patterns
-        )
-        return phi, {
-            "chain_max": chain_max,
-            "purity": purity,
-            "blockers": blockers,
-            "height": height,
-            "setup": setup,
-            "preclear_patterns": preclear_patterns,
-        }
-
     def _build_color_board(self, color: int) -> np.ndarray:
         """Binary float32 (H×W): 1.0 where board cell == color."""
         return (np.array(self._state.board, dtype=np.float32) == color).astype(np.float32)
-
-    def _count_patterns_in_zone(self, col_set: set) -> int:
-        """Count 2×2 same-color patterns whose left-edge column is in col_set."""
-        board = self._state.board
-        count = 0
-        for row in range(BOARD_HEIGHT - 1):
-            for col in range(BOARD_WIDTH - 1):
-                if col not in col_set:
-                    continue
-                c = board[row][col]
-                if c != 0 and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    count += 1
-        return count
 
     def _count_complete_squares(self) -> int:
         """Count all 2×2 same-color squares on the board (overlapping squares counted separately)."""
