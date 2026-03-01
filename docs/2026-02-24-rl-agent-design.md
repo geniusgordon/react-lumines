@@ -107,7 +107,7 @@ Actor and critic use **separate** feature extractors (`share_features_extractor=
 | `n_steps` | 4096 per env (65 536 total per rollout) |
 | `batch_size` | 256 |
 | `n_epochs` | 10 |
-| `gae_lambda` | 0.90 |
+| `gae_lambda` | 0.97 |
 | `share_features_extractor` | `False` (separate actor/critic extractors) |
 | `features_dim` | 128 (64 from CNN branch + 64 from MLP branch) |
 | `net_arch` | `pi=[128,128], vf=[512,512,256]` |
@@ -250,7 +250,8 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_34 | — | — | — | — | Simplified to `score_delta + 0.3*patterns_formed + death`. Added `timeline_col` (H×W binary) as 5th CNN channel. `patterns_formed` = net new 2×2 same-color squares created by each placement. |
 | PPO_35 | — | — | — | — | Remove `patterns_formed` shaping entirely: `reward = score_delta + death`. `patterns_formed` was a local attractor — agent maximised isolated 2×2 squares without discovering the sweep combo mechanic. Initial entropy raised 0.1→0.15 to maintain exploration before first sweep event. |
 | PPO_36 | — | — | — | — | **Entropy floor + cosine LR restart + projected pattern boards (hypotheses 1 & 2).** `EntropyScheduleCallback` clamped to floor `0.02`; cosine LR with warm restarts (`n_restarts=3`). Two new CNN channels: `proj_light_pattern_board`, `proj_dark_pattern_board` (post-clear+gravity projected boards). `timeline_col` retained (7 CNN channels total). `game_timer` removed from obs. Sparse PPO_35 reward unchanged. Breaking change; cannot resume from PPO_35. |
-| PPO_37 | — | — | — | — | **RecurrentPPO / LSTM (hypothesis 3: algorithm ceiling).** Already wired via `--recurrent` flag. LSTM maintains hidden state for "which color am I building toward". Useful if a Markov policy cannot express the alternating-color strategy. Run only if PPO_36 fails to break the plateau. |
+| PPO_37 | — | — | — | — | **GAE lambda tuning (credit assignment hypothesis).** `gae_lambda` 0.90→0.97; no other changes. At 6 steps the combined credit factor rises from ~0.50 to ~0.83, giving chain-building placements substantially stronger gradient signal. Tests whether credit assignment was the bottleneck preventing chain discovery. |
+| PPO_38 | — | — | — | — | **RecurrentPPO / LSTM (hypothesis 3: algorithm ceiling).** Already wired via `--recurrent` flag. LSTM maintains hidden state for "which color am I building toward". Useful if a Markov policy cannot express the alternating-color strategy. Run only if PPO_37 fails to break the plateau. |
 
 ### PPO_10 post-mortem
 
