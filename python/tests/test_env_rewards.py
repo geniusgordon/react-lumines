@@ -808,3 +808,72 @@ def test_chain_blocking_delta_zero_when_no_alt_color_patterns_in_zone():
 
     # zone is [max(0,2-1)=1 .. min(14,4+1)=5]; dark pattern at col 10 is outside
     assert env._count_chain_zone_blockers(board) == 0
+
+
+# ---------------------------------------------------------------------------
+# timeline_col observation channel (PPO_34)
+# ---------------------------------------------------------------------------
+
+def test_obs_has_timeline_col():
+    """Observation dict must contain 'timeline_col' key."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "timeline_col" in obs
+
+
+def test_timeline_col_shape():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["timeline_col"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+
+
+def test_timeline_col_dtype():
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert obs["timeline_col"].dtype == np.float32
+
+
+def test_timeline_col_binary_values():
+    """timeline_col must contain only 0.0 and 1.0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    unique = set(np.unique(obs["timeline_col"]))
+    assert unique.issubset({0.0, 1.0})
+
+
+def test_timeline_col_marks_correct_column():
+    """timeline_col must be 1.0 in every row of timeline_x, 0.0 elsewhere."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    tx = env._state.timeline.x
+    obs = env._build_obs()
+    assert np.all(obs["timeline_col"][:, tx] == 1.0)
+    for col in range(BOARD_WIDTH):
+        if col != tx:
+            assert np.all(obs["timeline_col"][:, col] == 0.0)
+
+
+def test_timeline_col_at_column_zero():
+    """When timeline_x == 0, column 0 must be all 1.0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    new_tl = env._state.timeline.__class__(
+        **{**env._state.timeline.__dict__, "x": 0}
+    )
+    env._state = env._state.__class__(**{**env._state.__dict__, "timeline": new_tl})
+    obs = env._build_obs()
+    assert np.all(obs["timeline_col"][:, 0] == 1.0)
+    assert np.all(obs["timeline_col"][:, 1:] == 0.0)
+
+
+def test_timeline_col_at_column_max():
+    """When timeline_x == BOARD_WIDTH-1, last column must be all 1.0."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    new_tl = env._state.timeline.__class__(
+        **{**env._state.timeline.__dict__, "x": BOARD_WIDTH - 1}
+    )
+    env._state = env._state.__class__(**{**env._state.__dict__, "timeline": new_tl})
+    obs = env._build_obs()
+    assert np.all(obs["timeline_col"][:, BOARD_WIDTH - 1] == 1.0)
+    assert np.all(obs["timeline_col"][:, :BOARD_WIDTH - 1] == 0.0)
