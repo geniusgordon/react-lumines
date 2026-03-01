@@ -23,7 +23,6 @@ def main():
     print(f"board shape:         {len(obs['board'])}×{len(obs['board'][0])}")
     print(f"current_block shape: {obs['current_block'].shape}")
     print(f"queue shape:         {obs['queue'].shape}")
-    print(f"game_timer:          {obs['game_timer'][0]}")
     print()
 
     total_reward = 0.0
@@ -32,7 +31,7 @@ def main():
         obs, reward, terminated, truncated, info = env.step(action)
         total_reward += reward
         print(f"step {i+1:2d}  action={action:2d}  reward={reward:.0f}  "
-              f"score={obs['score'][0]}  timer={obs['game_timer'][0]}  done={terminated}")
+              f"score={obs['score'][0]}  done={terminated}")
         if terminated:
             break
 

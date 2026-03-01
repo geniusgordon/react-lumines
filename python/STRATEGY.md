@@ -42,59 +42,35 @@ The most efficient Lumines strategy is **alternating single-color combos**:
 
 ## Reward Design Rationale
 
-### From-scratch reward equation
+### Reward equation (PPO_35)
 
 For per-block mode:
 
 ```
-reward_t = score_delta_t
-         + SHAPING_LAMBDA * (SHAPING_GAMMA * Phi(s_{t+1}) - Phi(s_t))
-         + death_t
+reward_t = score_delta_t + death_t
 ```
 
-- `score_delta_t`: real game points gained this step (ground truth objective).
-- `Phi(s)`: board quality potential (dense strategy signal).
-- `death_t`: `-3.0` on terminal, else `0`.
+- `score_delta_t`: real game points gained from timeline clearing this step.
+- `death_t`: `-3.0` on terminal step, else `0`.
 
-This is potential-based shaping, so shaping helps exploration but does not redefine the
-real objective.
+### Why no shaping
 
-### Potential design (post-clear simulated board)
+Every board-state signal considered — height, variance, fill, chain length, color purity
+— encodes implicit strategy assumptions. None are truly neutral:
 
-`Phi` is computed on the board after simulated clear + gravity (not raw pre-sweep board):
+- **`patterns_formed`** (PPO_34): created a local optimum where the agent maximized
+  isolated 2×2 same-color squares without ever discovering the sweep combo mechanic.
+  The agent could get consistent gradient from making patterns anywhere, so it never
+  needed to learn that patterns must align with the timeline to score.
+- **Height / variance / fill**: penalizes height universally, but a tall single-color
+  chain is *good* if the sweep is about to clear it.
+- **Chain / purity**: assumes the alternating single-color strategy is correct, baking
+  in the answer rather than letting the agent discover it.
 
-```
-Phi = 1.0 * chain_max
-    + 0.6 * purity
-    - 0.8 * blockers
-    - 0.3 * height
-    + 0.2 * setup
-    + 0.1 * preclear_patterns
-```
+`n_steps=4096` spans approximately 682 full sweep cycles per rollout
+(4096 blocks × 40 ticks/block ÷ 240 ticks/sweep). Credit assignment from sweep events
+back to placement decisions is handled by the rollout length, not by shaping.
 
-All terms are normalized to `[0, 1]`:
-
-- `chain_max`: longest same-color consecutive 2×2 chain.
-- `purity`: dominant-color ratio among filled cells.
-- `blockers`: opposite-color 2×2 blockers inside dominant chain zone.
-- `height`: tallest column height ratio.
-- `setup`: near-pattern opportunity density (2 or 3 cells of same color + empty remainder).
-- `preclear_patterns`: complete 2×2 density on the current pre-clear board.
-
-### Why this design
-
-1. `score_delta` remains the true objective and largest signal.
-2. One coherent shaping term replaces many hand-tuned deltas.
-3. Post-clear evaluation aligns shaping with real sweep-cycle strategy.
-4. Negative pressure (`blockers`, `height`) and positive pressure (`chain_max`, `purity`, `setup`, `preclear_patterns`)
-   are balanced in the same potential.
-
-### Guidance for tuning
-
-1. Keep `score_delta` unscaled.
-2. Tune `SHAPING_LAMBDA` first (`0.10` early training, lower later).
-3. Keep `SHAPING_GAMMA` aligned with PPO discount (default `0.99`).
-4. If policy becomes too conservative, reduce `w_height` or `w_blockers`.
-5. If opening phase is weak, increase `w_setup` slightly.
-6. If early combo formation is still sparse, increase `w_preclear` slightly.
-7. Target behavior remains: commit to one color for the current sweep cycle, then switch naturally after clear.
+Pure `score_delta` keeps the true objective as the only training signal. The agent must
+discover the combo mechanic through exploration — which is what the higher initial
+entropy (`0.15`) is for.

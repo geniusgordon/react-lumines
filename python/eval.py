@@ -108,6 +108,11 @@ def evaluate(args):
     render_mode = "ansi" if args.render else None
     scores = []
 
+    # Diagnostic accumulators (across all episodes)
+    all_holding_scores: list[float] = []
+    all_score_deltas: list[float] = []
+    all_target_xs: list[int] = []
+
     for episode in range(1, args.episodes + 1):
         if args.native:
             env = LuminesEnvNative(mode="per_block", render_mode=render_mode)
@@ -123,6 +128,8 @@ def evaluate(args):
         snapshot_stack = []   # stack of snapshots for multi-level undo
         last_action_desc = ""
         last_info: dict = {}
+        ep_holding_scores: list[float] = []
+        ep_score_deltas: list[float] = []
 
         print(f"\n=== Episode {episode}/{args.episodes} (seed={seed}) ===")
 
@@ -157,6 +164,15 @@ def evaluate(args):
             done = terminated or truncated
             last_action_desc = action_desc
             last_info = info
+
+            # Diagnostics
+            if env.mode == "per_block":
+                all_target_xs.append(target_x)
+                rc = info.get("reward_components", {})
+                ep_score_deltas.append(rc.get("score_delta", 0.0))
+                if isinstance(obs, dict) and "holding_score" in obs:
+                    # holding_score is normalised to [0,1] by /10 in env; recover raw value
+                    ep_holding_scores.append(float(obs["holding_score"].flat[0]) * 10.0)
 
             if args.render:
                 frame = env.render()
@@ -265,7 +281,16 @@ def evaluate(args):
         # Final score from info (raw game score, not cumulative reward)
         final_score = info.get("finalScore", episode_score)
         scores.append(final_score)
-        print(f"Episode {episode} finished — score: {final_score:.0f}")
+        all_holding_scores.extend(ep_holding_scores)
+        all_score_deltas.extend(ep_score_deltas)
+
+        ep_diag = ""
+        if ep_holding_scores:
+            ep_diag += f"  holding_score mean={np.mean(ep_holding_scores):.2f} max={np.max(ep_holding_scores):.2f}"
+        nonzero_deltas = [d for d in ep_score_deltas if d > 0]
+        if nonzero_deltas:
+            ep_diag += f"  score_delta(nonzero) n={len(nonzero_deltas)} mean={np.mean(nonzero_deltas):.2f} max={np.max(nonzero_deltas):.2f}"
+        print(f"Episode {episode} finished — score: {final_score:.0f}{ep_diag}")
         env.close()
 
     # Summary
@@ -274,6 +299,32 @@ def evaluate(args):
     print(f"Mean score: {sum(scores) / len(scores):.1f}")
     print(f"Max score:  {max(scores):.1f}")
     print(f"Min score:  {min(scores):.1f}")
+
+    # Diagnostics summary
+    if all_holding_scores:
+        print(f"\n--- Diagnostics ---")
+        print(f"holding_score  mean={np.mean(all_holding_scores):.3f}  "
+              f"max={np.max(all_holding_scores):.1f}  "
+              f"(>3: {sum(1 for h in all_holding_scores if h > 3)} / {len(all_holding_scores)} steps)")
+
+    if all_score_deltas:
+        nonzero = [d for d in all_score_deltas if d > 0]
+        print(f"score_delta    steps={len(all_score_deltas)}  "
+              f"nonzero={len(nonzero)} ({100*len(nonzero)/len(all_score_deltas):.1f}%)  "
+              + (f"mean={np.mean(nonzero):.2f}  max={np.max(nonzero):.2f}" if nonzero else "no score events"))
+
+    if all_target_xs:
+        col_counts = np.bincount(all_target_xs, minlength=15)
+        total_placements = len(all_target_xs)
+        center_frac = sum(col_counts[6:10]) / total_placements * 100
+        top3 = sorted(range(15), key=lambda c: col_counts[c], reverse=True)[:3]
+        top3_str = ", ".join(f"col{c}={col_counts[c]/total_placements*100:.1f}%" for c in top3)
+        print(f"column dist    center(6-9)={center_frac:.1f}%  top3: {top3_str}")
+        col_bar = "  " + "".join(f"{c:3d}" for c in range(15))
+        col_pct = "  " + "".join(f"{col_counts[c]/total_placements*100:3.0f}" for c in range(15))
+        print(f"  cols: {col_bar}")
+        print(f"  pct%: {col_pct}")
+
     print("=" * 40)
 
 

@@ -9,24 +9,13 @@ Action spaces:
 
 Reward (per_block mode)
 -----------------------
-    reward = score_delta + shaping_reward + death
+    reward = score_delta + death
 
-    shaping_reward = SHAPING_LAMBDA * (SHAPING_GAMMA * phi_next - phi_prev)
-
-    Potential phi is computed from the post-clear simulated board and combines:
-    - chain_max: longest same-color chain (normalized)
-    - purity: dominant-color concentration among filled cells
-    - blockers: opposite-color 2x2 blockers in dominant chain zone (normalized, penalized)
-    - height: tallest column (normalized, penalized)
-    - setup: near-pattern opportunities (normalized)
-    - preclear_patterns: complete 2x2 density on the current (pre-clear) board
-
-    This is potential-based shaping: dense guidance while keeping score_delta as
-    the primary objective.
+    score_delta: game points gained from timeline clearing this step.
+    death:       DEATH_PENALTY (-3.0) on terminal step, else 0.0.
 
 reward_components keys emitted in info:
-    score_delta, phi_prev, phi_next, potential_delta, shaping_reward,
-    chain_max, purity, blockers, height, setup, preclear_patterns, death, total
+    score_delta, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -51,7 +40,6 @@ from .state import (
 
 # Reward hyperparameters
 DEATH_PENALTY = -3.0
-PATTERN_LAMBDA = 0.3
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -96,21 +84,27 @@ class LuminesEnvNative(gym.Env):
         else:
             self.action_space = spaces.Discrete(len(FRAME_ACTIONS))
 
-        # Observation space — color-separated board channels (PPO_32)
+        # Observation space — color-separated board channels + projected post-clear boards (PPO_37)
+        # CNN channels (7): light_board, dark_board, light_pattern_board, dark_pattern_board,
+        #                    proj_light_pattern_board, proj_dark_pattern_board, timeline_col
+        # timeline_col is kept so the CNN can spatially anchor both live and projected pattern
+        # channels relative to the sweep position (patterns at col < timeline_x vs >= timeline_x
+        # have different strategic value — only ahead-of-timeline patterns are projected-clear).
         self.observation_space = spaces.Dict(
             {
                 "light_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "dark_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "light_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "dark_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "proj_light_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "proj_dark_pattern_board": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
+                "timeline_col": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
                 "current_block": spaces.Box(0, 2, shape=(2, 2), dtype=np.int8),
                 "queue": spaces.Box(0, 2, shape=(3, 2, 2), dtype=np.int8),
                 "timeline_x": spaces.Box(0, 15, shape=(1,), dtype=np.int32),
-                "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "light_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "dark_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
-                "timeline_col": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
             }
         )
 
@@ -168,8 +162,6 @@ class LuminesEnvNative(gym.Env):
 
         rng = get_rng(self._state)
 
-        board_before_drop = [row[:] for row in self._state.board]
-
         # 1. Apply rotations
         for _ in range(rotation % 4):
             self._state = rotate_cw(self._state)
@@ -191,19 +183,6 @@ class LuminesEnvNative(gym.Env):
 
         # 3. Hard drop — also spawns the next block immediately
         self._state = hard_drop(self._state, rng)
-
-        # Count patterns formed by this placement (before timeline sweeps any away).
-        # Build a settled snapshot: falling cells (not yet on board) are written
-        # back and gravity applied, giving the board state after physics resolves.
-        settled_board = [row[:] for row in self._state.board]
-        for fc in self._state.falling_columns:
-            for cell in fc.cells:
-                if 0 <= cell.y < BOARD_HEIGHT:
-                    settled_board[cell.y][fc.x] = cell.color
-        settled_board = apply_gravity(settled_board)
-        patterns_before = self._count_complete_squares_from_board(board_before_drop)
-        patterns_after = self._count_complete_squares_from_board(settled_board)
-        patterns_formed = max(0, patterns_after - patterns_before)
 
         if self._state.status != "gameOver":
             self._blocks_placed += 1
@@ -241,12 +220,11 @@ class LuminesEnvNative(gym.Env):
         score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + PATTERN_LAMBDA * patterns_formed + death
+        reward = score_delta + death
 
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
-            "patterns_formed": float(patterns_formed),
             "death": death,
             "total": reward,
         }
@@ -422,6 +400,39 @@ class LuminesEnvNative(gym.Env):
         mask[:, self._state.timeline.x] = 1.0
         return mask
 
+    def _build_projected_board(self) -> list:
+        """Return a copy of the board after clearing only patterns ahead of the timeline + gravity.
+
+        Only patterns with left edge >= timeline_x are cleared: these will actually be swept
+        during the current pass. Patterns behind the timeline (sq.x < timeline_x) formed
+        after the sweep already passed — they won't clear until the next full sweep cycle and
+        are irrelevant to the immediate post-clear projection.
+        """
+        board = [row[:] for row in self._state.board]
+        timeline_x = self._state.timeline.x
+        for sq in self._state.detected_patterns:
+            if sq.x >= timeline_x:
+                for dy in range(2):
+                    for dx in range(2):
+                        row, col = sq.y + dy, sq.x + dx
+                        if 0 <= row < BOARD_HEIGHT and 0 <= col < BOARD_WIDTH:
+                            board[row][col] = 0
+        return apply_gravity(board)
+
+    def _build_projected_color_pattern_channel(self, color: int) -> np.ndarray:
+        """Like _build_color_pattern_channel but on the projected (post-clear+gravity) board."""
+        board = self._build_projected_board()
+        counts = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
+        for row in range(BOARD_HEIGHT - 1):
+            for col in range(BOARD_WIDTH - 1):
+                c = board[row][col]
+                if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
+                    counts[row][col]         += 1
+                    counts[row][col + 1]     += 1
+                    counts[row + 1][col]     += 1
+                    counts[row + 1][col + 1] += 1
+        return counts / 4.0
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -433,12 +444,14 @@ class LuminesEnvNative(gym.Env):
             "dark_board": self._build_color_board(2),
             "light_pattern_board": self._build_color_pattern_channel(1),
             "dark_pattern_board": self._build_color_pattern_channel(2),
+            "proj_light_pattern_board": self._build_projected_color_pattern_channel(1),
+            "proj_dark_pattern_board": self._build_projected_color_pattern_channel(2),
+            "timeline_col": self._build_timeline_col(),
             "current_block": np.array(s.current_block.pattern, dtype=np.int8),
             "queue": np.array(
                 [b.pattern for b in s.queue[:3]], dtype=np.int8
             ),
             "timeline_x": np.array([s.timeline.x], dtype=np.int32),
-            "game_timer": np.array([s.game_timer], dtype=np.int32),
             "holding_score": np.array(
                 [min(s.timeline.holding_score / 10.0, 1.0)], dtype=np.float32
             ),
@@ -450,7 +463,6 @@ class LuminesEnvNative(gym.Env):
                 [self._count_single_color_chain(self._state.board, 2) / (BOARD_WIDTH - 1)],
                 dtype=np.float32,
             ),
-            "timeline_col": self._build_timeline_col(),
         }
 
     def _build_info(self) -> dict:

@@ -1,7 +1,7 @@
 # Lumines RL Agent — Architecture, Training & Run History
 
 **Date:** 2026-02-24 (updated 2026-03-01)
-**Status:** Implemented — PPO_35 current
+**Status:** Implemented — PPO_37 current
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -52,9 +52,11 @@ A two-branch `LuminesCNNExtractor` feeds into SB3's `MultiInputPolicy`.
 ```
 Observation (Dict)
  ├── light_board (10×16 f32)               ─┐
- ├── dark_board (10×16 f32)                ─┤ CNN branch (4-channel input)
+ ├── dark_board (10×16 f32)                ─┤ CNN branch (6-channel input, PPO_37)
  ├── light_pattern_board (10×16 f32)       ─┤   4 × Conv2d(3×3, pad=1) → ReLU
- ├── dark_pattern_board (10×16 f32)        ─┘   Flatten → Linear(5120→64) → ReLU
+ ├── dark_pattern_board (10×16 f32)        ─┤   Flatten → Linear(5120→64) → ReLU
+ ├── proj_light_pattern_board (10×16 f32)  ─┤   (post-clear+gravity projected boards)
+ ├── proj_dark_pattern_board (10×16 f32)   ─┘
  │                                                                │
  ├── current_block (2×2) ──────┐                                  │
  ├── queue (3×2×2)  ───────────┤  MLP branch                      │
@@ -113,7 +115,7 @@ Actor and critic use **separate** feature extractors (`share_features_extractor=
 | `max_grad_norm` | 0.5 |
 | `target_kl` | 0.008 |
 | `gamma` | 0.99 |
-| `ent_coef` | 0.1 → 0.03 (linear decay via `EntropyScheduleCallback`) |
+| `ent_coef` | 0.15 → 0.05 (linear decay via `EntropyScheduleCallback`) |
 | Learning rate | 3×10⁻⁵ → 1×10⁻⁷ (linear decay) |
 | Eval episodes | 100 |
 | Device | `mps` (Apple Silicon) |
@@ -136,37 +138,30 @@ The eval env's obs normalization stats (`obs_rms`) must stay in sync with the tr
 
 ## 5. Reward Function
 
-The reward is designed around Lumines' core scoring mechanic: the timeline
-sweeps left-to-right, accumulating `holding_score` while passing over
-consecutive columns of same-color 2×2 patterns, then cashing out on the first
-empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
+Pure sparse reward — no shaping terms.
 
 ```python
-reward = score_delta
-       + SHAPING_LAMBDA * (SHAPING_GAMMA * phi_next - phi_prev)
-       + death                                    # -3.0 on game over, else 0
+reward = score_delta + death    # -3.0 on game over, else 0
 ```
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
-| `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
-| `shaping_reward` | any sign | Potential-based shaping term from post-clear board quality: `lambda * (gamma * phi_next - phi_prev)`. |
-| `phi.chain_max` | [0,1] | Longest same-color chain on simulated post-clear board. |
-| `phi.purity` | [0,1] | Dominant-color concentration among filled cells. |
-| `phi.blockers` | [0,1] | Opposite-color 2×2 blockers in dominant chain zone (penalized in `phi`). |
-| `phi.height` | [0,1] | Tallest-column ratio (penalized in `phi`). |
-| `phi.setup` | [0,1] | Near-pattern opportunity density. |
-| `phi.preclear_patterns` | [0,1] | Complete 2×2 density on current pre-clear board. |
+| `score_delta` | ≥ 0 | Actual game score from timeline sweeps (only training signal) |
 | `death` | −3.0 | Penalise game over |
 
-`info["reward_components"]` now emits:
-`score_delta`, `phi_prev`, `phi_next`, `potential_delta`, `shaping_reward`,
-`chain_max`, `purity`, `blockers`, `height`, `setup`, `preclear_patterns`,
-`death`, `total`.
+`info["reward_components"]` emits: `score_delta`, `death`, `total`.
 
-No flat survival bonus — the agent's incentive to survive comes from future scoring opportunities.
+Every board-state shaping signal considered (height, variance, fill, chain, purity,
+`patterns_formed`) encodes implicit strategy assumptions. `patterns_formed` in PPO_34
+created a local optimum: the agent maximised isolated 2×2 squares without discovering
+the sweep combo mechanic. Removing all shaping forces the agent to optimise only for
+actual sweep-cleared score.
 
-See `python/STRATEGY.md` for full signal hierarchy and rationale.
+Credit assignment is not the bottleneck: `n_steps=4096` spans ~682 full sweep cycles per
+rollout (4096 blocks × 40 ticks/block ÷ 240 ticks/sweep). Higher initial entropy (0.15)
+prevents premature policy collapse before the first sweep event.
+
+See `python/STRATEGY.md` for full rationale.
 
 ---
 
@@ -250,6 +245,11 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_31 | — | — | — | — | Flat PPO baseline with PPO_30 architecture. LSTM/RecurrentPPO is a separate parallel experiment (not a sequential run). |
 | PPO_32 | — | — | — | — | Full color-aware reward redesign: `chain_delta_any_color*0.03 + open_pattern_delta*0.01 + post_sweep_light_delta*0.05 + post_sweep_dark_delta*0.05 + chain_blocking_delta*-0.05 + ruined_pattern_delta*-0.03` on top of `score_delta` and `death`. See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
 | PPO_33 | — | — | — | — | Potential-based redesign: `score_delta + lambda*(gamma*phi_next - phi_prev) + death`, with `phi = w_chain*chain_max + w_purity*purity - w_blockers*blockers - w_height*height + w_setup*setup` on the post-clear simulated board. See `docs/plans/2026-03-01-ppo33-reward-redesign.md`. |
+| PPO_34 | — | — | — | — | Simplified to `score_delta + 0.3*patterns_formed + death`. Added `timeline_col` (H×W binary) as 5th CNN channel. `patterns_formed` = net new 2×2 same-color squares created by each placement. |
+| PPO_35 | — | — | — | — | Remove `patterns_formed` shaping entirely: `reward = score_delta + death`. `patterns_formed` was a local attractor — agent maximised isolated 2×2 squares without discovering the sweep combo mechanic. Initial entropy raised 0.1→0.15 to maintain exploration before first sweep event. |
+| PPO_36 | — | — | — | — | **Entropy floor + cosine LR restart (hypothesis 1: entropy collapse).** `EntropyScheduleCallback` clamped to floor `0.02` so `ent_coef` never fully collapses. Linear LR replaced with cosine decay + warm restarts (`n_restarts=3`): 3 LR cycles over the run, each spike to `3e-5` forcing re-exploration. Sparse PPO_35 reward unchanged. No arch change; checkpoint-compatible with PPO_35. |
+| PPO_37 | — | — | — | — | **Re-add post-clear projected pattern boards (hypothesis 2: missing visibility).** Two new CNN channels: `proj_light_pattern_board`, `proj_dark_pattern_board` — the color-separated pattern boards after simulating clear + gravity on current detected patterns. `timeline_col` removed to keep CNN at 6 channels (timeline position still available via `timeline_x` MLP scalar). CNN 5→6 channels. Breaking change; cannot resume from PPO_35/36. Sparse PPO_35 reward unchanged. |
+| PPO_38 | — | — | — | — | **RecurrentPPO / LSTM (hypothesis 3: algorithm ceiling).** Already wired via `--recurrent` flag. LSTM maintains hidden state for "which color am I building toward". Useful if a Markov policy cannot express the alternating-color strategy. Run only if PPO_36/37 fail to break the plateau. |
 
 ### PPO_10 post-mortem
 
@@ -339,6 +339,50 @@ PPO_29 simplified the reward to 4 components and removed conflicting signals —
 Net effect on architecture: CNN changes from PPO_29's 5 channels to 4 (`light_board`, `dark_board`, `light_pattern_board`, `dark_pattern_board` — drops `timeline_board`, `ghost_board`, `projected_pattern_board`; splits `pattern_board` into two color channels); MLP input shrinks from 38 → 20 (removing `block_position`(2) + `score`(1) + `frame`(1) + `column_heights`(16)).
 
 No hyperparameter changes from PPO_29. Breaking change (CNN channel count, obs key changes) — cannot resume from PPO_29 checkpoints.
+
+### PPO_34 Rationale
+
+PPO_33's potential-based shaping (`phi`) combined six board-quality components and required careful weight tuning. PPO_34 simplified to a single, interpretable shaping term: `patterns_formed` — the net new 2×2 same-color squares created by each placement — weighted at 0.3.
+
+Additionally, PPO_34 added `timeline_col` as a 5th CNN input channel: a binary H×W mask (1.0 in every row of the current timeline column, 0.0 elsewhere). This gives the CNN spatial awareness of the sweep position, enabling it to learn that patterns ahead of the sweep are more valuable than patterns behind it.
+
+### PPO_35 Rationale
+
+PPO_34 plateaued because `patterns_formed` created a local optimum. The agent could achieve consistent, dense gradient by maximising isolated 2×2 same-color squares anywhere on the board — this is achievable without ever learning how the timeline sweep scores chains. A board full of scattered 2×2 patterns scores nothing if they don't form consecutive columns ahead of the sweep.
+
+**Why sparse-only?** Every board-state signal (height, variance, fill, chain, purity) encodes implicit strategy assumptions. Removing all shaping forces the agent to optimise for actual sweep-cleared score. `n_steps=4096` gives ~682 full sweep cycles per rollout, so credit assignment from sweep events to earlier placements is handled by rollout length, not shaping.
+
+**Why raise initial entropy to 0.15?** Without the dense `patterns_formed` gradient, early training has sparse rewards — the agent may see no sweep score for many episodes. Higher initial entropy maintains exploration diversity during this cold-start period, preventing premature collapse to a degenerate policy before any sweep events are observed.
+
+### PPO_36 Rationale
+
+PPO_35 (sparse `score_delta + death`) performs similarly to PPO_16–34 (~22–24 eval score), confirming reward design was a red herring. Three bottleneck candidates were identified; PPO_36 tests hypothesis 1: **entropy collapse**.
+
+Entropy typically decays to ~0.05 by 500k steps. Once the policy locks into a local strategy (e.g. center-column dumping), near-zero entropy prevents exploration of the color-alternation strategy. PPO_36 addresses this with two changes:
+
+1. **Entropy floor** (`floor_ent=0.02`): `EntropyScheduleCallback._on_step` clamps `ent_coef` to `max(floor, scheduled)`. The policy always retains minimum exploration pressure, preventing complete collapse even after the linear decay completes.
+
+2. **Cosine LR with warm restarts** (`n_restarts=3`): Three LR cycles over the full training run, each starting at `3e-5` and decaying to `3e-6`. The periodic LR spikes perturb the policy away from local optima, analogous to simulated annealing restarts.
+
+**Prediction**: If eval score breaks above 24 and entropy loss stays less negative than PPO_35 at the same step count, entropy collapse was the bottleneck. If the plateau persists, move to PPO_37.
+
+**No architecture or observation change.** Sparse reward formula unchanged from PPO_35.
+
+### PPO_37 Rationale
+
+PPO_36 tests entropy collapse; PPO_37 tests hypothesis 2: **missing post-clear board visibility**.
+
+The only run that exceeded 24 was PPO_26, which included a `projected_pattern_board` CNN channel — the pattern board after simulating clear + gravity. PPO_30 removed it when switching to color-separated channels, and no subsequent run recovered that ceiling.
+
+PPO_37 re-adds this signal in color-separated form:
+- `proj_light_pattern_board`: 2×2 light patterns on the board after clearing current detected patterns and applying gravity.
+- `proj_dark_pattern_board`: same for dark.
+
+Computing the projected board: take a copy of `self._state.board`, zero out all cells belonging to `self._state.detected_patterns`, then call `apply_gravity`. Build the color pattern channels on this projected board using the same `/ 4.0` normalisation as the live channels.
+
+`timeline_col` is removed to keep the CNN at 6 channels. Timeline position remains available to the MLP branch via the `timeline_x` scalar.
+
+**Prediction**: If this breaks the plateau (comparable to PPO_26's ~24.19 peak), missing post-clear visibility was the bottleneck, cleanly separated from reward design.
 
 ---
 

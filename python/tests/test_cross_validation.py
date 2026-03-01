@@ -52,19 +52,12 @@ def test_reset_returns_correct_shapes():
     assert obs['current_block'].shape == (2, 2)
     assert obs['queue'].shape == (3, 2, 2)
     assert obs['timeline_x'].shape == (1,)
-    assert obs['game_timer'].shape == (1,)
 
 
 def test_initial_score_is_zero():
     env = LuminesEnvNative(mode='per_block', seed='test123')
     env.reset()
     assert env._state.score == 0
-
-
-def test_initial_game_timer():
-    env = LuminesEnvNative(mode='per_block', seed='test123')
-    obs, _ = env.reset()
-    assert obs['game_timer'][0] == 3600
 
 
 def test_score_non_decreasing():
@@ -78,21 +71,6 @@ def test_score_non_decreasing():
         obs, reward, done, _, info = env.step(a)
         assert info['finalScore'] >= prev_score
         prev_score = info['finalScore']
-        if done:
-            break
-
-
-def test_game_timer_decreases():
-    """game_timer should decrease over time."""
-    env = LuminesEnvNative(mode='per_block', seed='test123')
-    obs, _ = env.reset()
-
-    prev_timer = int(obs['game_timer'][0])
-    actions = _random_actions(20)
-    for a in actions:
-        obs, _, done, _, _ = env.step(a)
-        assert obs['game_timer'][0] <= prev_timer
-        prev_timer = int(obs['game_timer'][0])
         if done:
             break
 
@@ -152,7 +130,6 @@ def test_reset_restarts_game():
 
     obs, _ = env.reset()
     assert env._state.score == 0
-    assert obs['game_timer'][0] == 3600
 
 
 def test_timeline_advances():

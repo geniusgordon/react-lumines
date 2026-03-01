@@ -111,7 +111,6 @@ def obs_to_numpy(obs_json: dict) -> dict:
         "current_block": current_block,
         "queue": queue,
         "timeline_x": np.array([timeline_x], dtype=np.int32),
-        "game_timer": np.array([obs_json["gameTimer"]], dtype=np.int32),
         "holding_score": np.array([min(float(obs_json.get("holdingScore", 0)) / 10.0, 1.0)], dtype=np.float32),
         "light_chain": np.array([compute_single_color_chain(board_list, 1)], dtype=np.float32),
         "dark_chain": np.array([compute_single_color_chain(board_list, 2)], dtype=np.float32),

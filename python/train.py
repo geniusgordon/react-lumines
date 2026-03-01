@@ -3,12 +3,15 @@ train.py — DQN/PPO training for the Lumines RL agent.
 
 Architecture:
   Two-branch features extractor fed into SB3 MultiInputPolicy:
-    1. CNN branch   : 5-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
-                      Channels: light_board, dark_board, light_pattern_board, dark_pattern_board, timeline_col
+    1. CNN branch   : 7-channel board input (10×16) → 4 × Conv2d(3×3,pad=1) → flatten → Linear(5120→64) → ReLU
+                      Channels: light_board, dark_board, light_pattern_board, dark_pattern_board,
+                                proj_light_pattern_board, proj_dark_pattern_board, timeline_col
+                      (timeline_col retained: gives CNN spatial anchor for the sweep boundary so it can
+                       correctly interpret live vs projected pattern channels relative to the sweep)
     2. MLP branch   : current_block(4) + queue(12)
-                      + timeline_x(1) + game_timer(1)
-                      + holding_score(1) + light_chain(1) + dark_chain(1) = 21 values
-                      → Linear(21→64) → ReLU
+                      + timeline_x(1)
+                      + holding_score(1) + light_chain(1) + dark_chain(1) = 20 values
+                      → Linear(20→64) → ReLU
   Both branches concatenated (128-dim) → SB3 Q-network / policy head.
 
 Usage:
@@ -54,6 +57,32 @@ def linear_schedule(initial_lr: float, final_lr: float):
     return func
 
 
+def cosine_warmrestart_schedule(
+    initial_lr: float,
+    final_lr: float,
+    n_restarts: int = 3,
+):
+    """Cosine decay with warm restarts (Loshchilov & Hutter 2017).
+
+    Divides total training into ``n_restarts`` equal cycles. Within each cycle
+    the LR follows a half-cosine from ``initial_lr`` → ``final_lr``. At each
+    restart it jumps back to ``initial_lr``, forcing the policy to re-explore
+    beyond local optima.
+
+    SB3 passes ``progress_remaining`` ∈ [1.0 → 0.0] as training advances.
+    """
+    import math
+
+    def func(progress_remaining: float) -> float:
+        progress = 1.0 - progress_remaining          # 0.0 → 1.0
+        cycle_len = 1.0 / n_restarts
+        cycle_pos = (progress % cycle_len) / cycle_len   # position within current cycle [0, 1)
+        cosine_factor = 0.5 * (1.0 + math.cos(math.pi * cycle_pos))
+        return final_lr + cosine_factor * (initial_lr - final_lr)
+
+    return func
+
+
 # ---------------------------------------------------------------------------
 # Features extractor
 # ---------------------------------------------------------------------------
@@ -67,16 +96,19 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
     """
 
     # Keys to route through the MLP branch (flattened and concatenated).
-    # light_board, dark_board, light_pattern_board, dark_pattern_board are routed through the CNN branch.
-    MLP_KEYS = ["current_block", "queue", "timeline_x", "game_timer", "holding_score", "light_chain", "dark_chain"]
+    # light_board, dark_board, light_pattern_board, dark_pattern_board,
+    # proj_light_pattern_board, proj_dark_pattern_board, timeline_col are routed through the CNN branch.
+    MLP_KEYS = ["current_block", "queue", "timeline_x", "holding_score", "light_chain", "dark_chain"]
 
     def __init__(self, observation_space: spaces.Dict, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
         branch_dim = features_dim // 2
 
-        # ---- CNN branch (board: 10×16, 5 channels: light_board + dark_board + light_pattern_board + dark_pattern_board + timeline_col) ----
+        # ---- CNN branch (board: 10×16, 7 channels: light_board + dark_board + light_pattern_board
+        #                  + dark_pattern_board + proj_light_pattern_board + proj_dark_pattern_board
+        #                  + timeline_col) ----
         self.cnn = nn.Sequential(
-            nn.Conv2d(5, 32, kernel_size=3, padding=1),   # stem: 5 → 32 channels
+            nn.Conv2d(7, 32, kernel_size=3, padding=1),   # stem: 7 → 32 channels
             nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, padding=1),  # RF: 5×5
             nn.ReLU(),
@@ -103,13 +135,15 @@ class LuminesCNNExtractor(BaseFeaturesExtractor):
         )
 
     def forward(self, observations: dict) -> torch.Tensor:
-        # CNN branch — stack 4 color-separated channels as input
+        # CNN branch — stack 7 channels as input
         light = observations["light_board"].float()               # [B, 10, 16], binary 0/1
         dark  = observations["dark_board"].float()                # [B, 10, 16], binary 0/1
         lp    = observations["light_pattern_board"].float()       # [B, 10, 16], values 0–1
         dp    = observations["dark_pattern_board"].float()        # [B, 10, 16], values 0–1
-        tl    = observations["timeline_col"].float()              # [B, 10, 16], binary 0/1
-        x = torch.stack([light, dark, lp, dp, tl], dim=1)        # [B, 5, 10, 16]
+        plp   = observations["proj_light_pattern_board"].float()  # [B, 10, 16], projected post-clear, values 0–1
+        pdp   = observations["proj_dark_pattern_board"].float()   # [B, 10, 16], projected post-clear, values 0–1
+        tl    = observations["timeline_col"].float()              # [B, 10, 16], binary sweep position
+        x = torch.stack([light, dark, lp, dp, plp, pdp, tl], dim=1)  # [B, 7, 10, 16]
         cnn_out = self.cnn_linear(self.cnn(x))
 
         # MLP branch — flatten and concatenate all scalar obs
@@ -140,16 +174,22 @@ def make_env(seed: int, native: bool = False):
 # ---------------------------------------------------------------------------
 
 class EntropyScheduleCallback(BaseCallback):
-    """Linearly decays ent_coef from initial_ent to final_ent over total_steps."""
-    def __init__(self, initial_ent: float, final_ent: float, total_steps: int):
+    """Linearly decays ent_coef from initial_ent to final_ent over total_steps.
+
+    ``floor_ent`` sets a hard lower bound so entropy never fully collapses — the
+    policy always retains some exploration pressure even late in training.
+    """
+    def __init__(self, initial_ent: float, final_ent: float, total_steps: int, floor_ent: float = 0.02):
         super().__init__()
         self.initial_ent = initial_ent
         self.final_ent = final_ent
         self.total_steps = total_steps
+        self.floor_ent = floor_ent
 
     def _on_step(self) -> bool:
         progress = min(1.0, self.model.num_timesteps / self.total_steps)
-        self.model.ent_coef = self.initial_ent + progress * (self.final_ent - self.initial_ent)
+        scheduled = self.initial_ent + progress * (self.final_ent - self.initial_ent)
+        self.model.ent_coef = max(self.floor_ent, scheduled)
         return True
 
 
@@ -332,7 +372,7 @@ def _train_ppo(args, env, eval_env):
             model = RecurrentPPO(
                 "MultiInputLstmPolicy",
                 env,
-                learning_rate=linear_schedule(3e-5, 3e-6),
+                learning_rate=cosine_warmrestart_schedule(3e-5, 3e-6, n_restarts=3),
                 n_steps=4096,
                 batch_size=256,
                 n_epochs=10,
@@ -353,7 +393,7 @@ def _train_ppo(args, env, eval_env):
             model = PPO(
                 "MultiInputPolicy",
                 env,
-                learning_rate=linear_schedule(3e-5, 3e-6),
+                learning_rate=cosine_warmrestart_schedule(3e-5, 3e-6, n_restarts=3),
                 n_steps=4096,
                 batch_size=256,
                 n_epochs=10,
@@ -388,7 +428,7 @@ def _train_ppo(args, env, eval_env):
             render=False,
             callback_after_eval=SyncAndSaveVecNormalizeCallback(env, eval_env, norm_stats_path),
         ),
-        EntropyScheduleCallback(initial_ent=0.1, final_ent=0.05, total_steps=args.timesteps),
+        EntropyScheduleCallback(initial_ent=0.15, final_ent=0.05, total_steps=args.timesteps),
         GameScoreCallback(),
     ]
 

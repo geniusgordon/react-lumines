@@ -6,7 +6,7 @@ Date: 2026-02-28
 
 - **Action space**: Discrete(60) per-block mode (15 cols × 4 rotations), Discrete(7) per-frame
 - **Observations**: Multi-channel spatial board (light_board, dark_board, light_pattern_board, dark_pattern_board) + scalar features
-- **Reward**: Shaped — score delta + single-color chain delta + post-sweep chain level + death penalty
+- **Reward**: Sparse — `score_delta + death` only (PPO_35); no shaping terms
 - **Partial observability**: Agent sees current block + 3 upcoming queue blocks only. Future blocks are unknown at decision time, even though the seed fully determines the sequence.
 - **Effective planning horizon**: 4 blocks max
 

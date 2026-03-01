@@ -89,7 +89,6 @@ class LuminesEnv(gym.Env):
                 "frame": spaces.Box(
                     0, np.iinfo(np.int32).max, shape=(1,), dtype=np.int32
                 ),
-                "game_timer": spaces.Box(0, 3600, shape=(1,), dtype=np.int32),
             }
         )
 
@@ -172,7 +171,6 @@ class LuminesEnv(gym.Env):
             "timeline_x": np.array([obs["timelineX"]], dtype=np.int32),
             "score": np.array([obs["score"]], dtype=np.int32),
             "frame": np.array([obs["frame"]], dtype=np.int32),
-            "game_timer": np.array([obs["gameTimer"]], dtype=np.int32),
         }
 
     def _encode_action(self, action: int) -> Any:

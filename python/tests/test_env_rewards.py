@@ -461,188 +461,118 @@ def test_obs_chain_length_absent():
 
 
 # ---------------------------------------------------------------------------
-# timeline_col observation channel (PPO_34)
+# proj_light_pattern_board / proj_dark_pattern_board observation channels (PPO_37)
+# timeline_col was removed in PPO_37 (timeline position available via timeline_x scalar)
 # ---------------------------------------------------------------------------
 
+def test_obs_has_projected_pattern_boards():
+    """Observation dict must contain projected pattern board keys (PPO_37)."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    obs, _ = env.reset()
+    assert "proj_light_pattern_board" in obs
+    assert "proj_dark_pattern_board" in obs
+
+
 def test_obs_has_timeline_col():
-    """Observation dict must contain 'timeline_col' key."""
+    """timeline_col must still be present: CNN needs it to anchor live/projected channels to sweep position."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
     assert "timeline_col" in obs
 
 
-def test_timeline_col_shape():
+def test_projected_pattern_board_shape():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    assert obs["timeline_col"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+    assert obs["proj_light_pattern_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
+    assert obs["proj_dark_pattern_board"].shape == (BOARD_HEIGHT, BOARD_WIDTH)
 
 
-def test_timeline_col_dtype():
+def test_projected_pattern_board_dtype():
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    assert obs["timeline_col"].dtype == np.float32
+    assert obs["proj_light_pattern_board"].dtype == np.float32
+    assert obs["proj_dark_pattern_board"].dtype == np.float32
 
 
-def test_timeline_col_binary_values():
-    """timeline_col must contain only 0.0 and 1.0."""
+def test_projected_pattern_board_range():
+    """Values must be in [0.0, 1.0]."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     obs, _ = env.reset()
-    unique = set(np.unique(obs["timeline_col"]))
-    assert unique.issubset({0.0, 1.0})
+    assert np.all(obs["proj_light_pattern_board"] >= 0.0)
+    assert np.all(obs["proj_light_pattern_board"] <= 1.0)
+    assert np.all(obs["proj_dark_pattern_board"] >= 0.0)
+    assert np.all(obs["proj_dark_pattern_board"] <= 1.0)
 
 
-def test_timeline_col_marks_correct_column():
-    """timeline_col must be 1.0 in every row of timeline_x, 0.0 elsewhere."""
+def test_projected_board_clears_ahead_of_timeline_patterns():
+    """Projected board must clear patterns ahead of the timeline, leave behind-timeline patterns intact."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    tx = env._state.timeline.x
+    from game.patterns import detect_patterns
+    from game.types import Timeline
+
+    # Place a 2x2 light pattern at col=0 (bottom two rows)
+    board = [[0] * BOARD_WIDTH for _ in range(BOARD_HEIGHT - 2)] + [
+        [1, 1] + [0] * (BOARD_WIDTH - 2),
+        [1, 1] + [0] * (BOARD_WIDTH - 2),
+    ]
+    # Set timeline to col=0 so col=0 pattern is AT/ahead of sweep — should be projected-clear
+    tl = env._state.timeline.__class__(**{**env._state.timeline.__dict__, "x": 0})
+    env._state = env._state.__class__(**{
+        **env._state.__dict__,
+        "board": board,
+        "timeline": tl,
+        "detected_patterns": detect_patterns(board),
+    })
     obs = env._build_obs()
-    assert np.all(obs["timeline_col"][:, tx] == 1.0)
-    for col in range(BOARD_WIDTH):
-        if col != tx:
-            assert np.all(obs["timeline_col"][:, col] == 0.0)
+    assert np.sum(obs["light_pattern_board"]) > 0         # live channel shows pattern
+    assert np.sum(obs["proj_light_pattern_board"]) == 0.0 # projected: pattern cleared (ahead of timeline)
 
-
-def test_timeline_col_at_column_zero():
-    """When timeline_x == 0, column 0 must be all 1.0."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    new_tl = env._state.timeline.__class__(
-        **{**env._state.timeline.__dict__, "x": 0}
-    )
-    env._state = env._state.__class__(**{**env._state.__dict__, "timeline": new_tl})
-    obs = env._build_obs()
-    assert np.all(obs["timeline_col"][:, 0] == 1.0)
-    assert np.all(obs["timeline_col"][:, 1:] == 0.0)
-
-
-def test_timeline_col_at_column_max():
-    """When timeline_x == BOARD_WIDTH-1, last column must be all 1.0."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    new_tl = env._state.timeline.__class__(
-        **{**env._state.timeline.__dict__, "x": BOARD_WIDTH - 1}
-    )
-    env._state = env._state.__class__(**{**env._state.__dict__, "timeline": new_tl})
-    obs = env._build_obs()
-    assert np.all(obs["timeline_col"][:, BOARD_WIDTH - 1] == 1.0)
-    assert np.all(obs["timeline_col"][:, :BOARD_WIDTH - 1] == 0.0)
+    # Now set timeline to col=2 so col=0 pattern is BEHIND the sweep — should NOT be projected-clear
+    tl2 = env._state.timeline.__class__(**{**env._state.timeline.__dict__, "x": 2})
+    env._state = env._state.__class__(**{**env._state.__dict__, "timeline": tl2})
+    obs2 = env._build_obs()
+    assert np.sum(obs2["light_pattern_board"]) > 0         # live channel still shows pattern
+    assert np.sum(obs2["proj_light_pattern_board"]) > 0    # projected: behind-timeline pattern NOT cleared
 
 
 # ---------------------------------------------------------------------------
-# PPO_34 reward formula: score_delta + PATTERN_LAMBDA * patterns_formed + death
+# PPO_35 reward formula: score_delta + death (no shaping)
 # ---------------------------------------------------------------------------
 
-def test_reward_components_ppo34_exact_keys():
-    """reward_components must contain exactly the PPO_34 keys."""
+def test_reward_components_ppo35_exact_keys():
+    """reward_components must contain exactly the PPO_35 keys."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "patterns_formed", "death", "total"}
+    expected_keys = {"score_delta", "death", "total"}
     assert set(info["reward_components"].keys()) == expected_keys
 
+def test_patterns_formed_absent_in_ppo35():
+    """patterns_formed must NOT be present in PPO_35 reward_components."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    _, _, _, _, info = env.step(0)
+    assert "patterns_formed" not in info["reward_components"]
 
-def test_reward_total_matches_ppo34_formula():
-    """total must equal score_delta + PATTERN_LAMBDA * patterns_formed + death."""
-    from python.game.env import PATTERN_LAMBDA
+def test_reward_total_matches_ppo35_formula():
+    """total must equal score_delta + death."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, reward, _, _, info = env.step(0)
     rc = info["reward_components"]
-    expected = rc["score_delta"] + PATTERN_LAMBDA * rc["patterns_formed"] + rc["death"]
+    expected = rc["score_delta"] + rc["death"]
     assert rc["total"] == pytest.approx(expected)
     assert reward == pytest.approx(rc["total"])
 
-
-def test_patterns_formed_is_nonnegative():
-    """patterns_formed must always be >= 0 (clamped)."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    for action in range(30):
-        _, _, done, _, info = env.step(action % 60)
-        assert info["reward_components"]["patterns_formed"] >= 0
-        if done:
-            break
-
-
-def test_patterns_formed_positive_when_2x2_created():
-    """Placing a block that completes a 2×2 pattern gives patterns_formed >= 1."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-
-    # Board: light cell at [8][1] and [9][1] — right half of a potential 2×2 at col 0
-    board = create_empty_board()
-    board[8][1] = 1
-    board[9][1] = 1
-
-    # Current block: all-light [[1,1],[1,1]]
-    cb = env._state.current_block
-    light_block = cb.__class__(pattern=[[1, 1], [1, 1]], id=cb.id)
-
-    env._state = env._state.__class__(**{
-        **env._state.__dict__,
-        "board": board,
-        "block_position_x": 0,
-        "block_position_y": 0,
-        "current_block": light_block,
-    })
-
-    # Action 0: target_x=0, rotation=0 — block lands at cols 0-1, rows 8-9
-    # Before: 0 complete 2×2 patterns
-    # After:  light at [8][0],[8][1],[9][0],[9][1] → 1 complete 2×2 pattern
-    _, _, _, _, info = env.step(0)
-    assert info["reward_components"]["patterns_formed"] >= 1
-
-
-def test_patterns_formed_zero_when_no_pattern_created():
-    """Placing a block into an isolated empty area gives patterns_formed == 0."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-
-    # Empty board, mixed block [[1,2],[2,1]] → can't form same-color 2×2
-    board = create_empty_board()
-    cb = env._state.current_block
-    mixed_block = cb.__class__(pattern=[[1, 2], [2, 1]], id=cb.id)
-
-    env._state = env._state.__class__(**{
-        **env._state.__dict__,
-        "board": board,
-        "block_position_x": 7,   # center, isolated
-        "block_position_y": 0,
-        "current_block": mixed_block,
-    })
-
-    _, _, _, _, info = env.step(28)  # action 28 = target_x=7, rotation=0
-    assert info["reward_components"]["patterns_formed"] == 0
-
-
-def test_no_shaping_reward_in_ppo34():
-    """shaping_reward must NOT be present in PPO_34 reward_components."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, _, _, info = env.step(0)
-    assert "shaping_reward" not in info["reward_components"]
-
-
-def test_no_phi_terms_in_ppo34():
-    """phi_prev, phi_next, potential_delta must NOT be in PPO_34 reward_components."""
-    env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    _, _, _, _, info = env.step(0)
-    assert "phi_prev" not in info["reward_components"]
-    assert "phi_next" not in info["reward_components"]
-    assert "potential_delta" not in info["reward_components"]
-
-
-def test_ppo34_reward_formula_holds_across_many_steps():
-    """formula total = score_delta + PATTERN_LAMBDA * patterns_formed + death for 50 steps."""
-    from python.game.env import PATTERN_LAMBDA
+def test_ppo35_reward_formula_holds_across_many_steps():
+    """formula total = score_delta + death for 50 steps."""
     env = LuminesEnvNative(mode="per_block", seed="99")
     env.reset()
     for action in range(50):
         _, reward, done, _, info = env.step(action % 60)
         rc = info["reward_components"]
-        expected = rc["score_delta"] + PATTERN_LAMBDA * rc["patterns_formed"] + rc["death"]
+        expected = rc["score_delta"] + rc["death"]
         assert rc["total"] == pytest.approx(expected, abs=1e-6)
         assert reward == pytest.approx(rc["total"], abs=1e-6)
         if done:
