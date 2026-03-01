@@ -89,7 +89,7 @@ type FrameAction =
 The Python `LuminesEnvNative` uses a shaped reward designed around the combo
 mechanic. See `docs/2026-02-24-rl-agent-design.md §4` for the full formula.
 
-**Summary (per_block mode, current / PPO_33):**
+**Summary (per_block mode, current / PPO_34):**
 
 ```
 reward = score_delta
@@ -101,7 +101,8 @@ reward = score_delta
 - `score_delta` is the primary objective — directly tied to game score.
 - potential-based shaping (`Phi`) provides dense guidance while keeping score as the true objective.
 - `Phi` is computed on the post-clear simulated board from normalized features:
-  `chain_max`, `purity`, `blockers`, `height`, `setup`.
+  `chain_max`, `purity`, `blockers`, `height`, `setup`, plus
+  `preclear_patterns` from the current board.
 - No flat survival bonus — the agent must score to maximise return.
 
 See `docs/2026-02-24-rl-agent-design.md §5` for full formula and design rationale history.

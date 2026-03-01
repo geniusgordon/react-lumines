@@ -19,13 +19,14 @@ Reward (per_block mode)
     - blockers: opposite-color 2x2 blockers in dominant chain zone (normalized, penalized)
     - height: tallest column (normalized, penalized)
     - setup: near-pattern opportunities (normalized)
+    - preclear_patterns: complete 2x2 density on the current (pre-clear) board
 
     This is potential-based shaping: dense guidance while keeping score_delta as
     the primary objective.
 
 reward_components keys emitted in info:
     score_delta, phi_prev, phi_next, potential_delta, shaping_reward,
-    chain_max, purity, blockers, height, setup, death, total
+    chain_max, purity, blockers, height, setup, preclear_patterns, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -58,6 +59,7 @@ PHI_W_PURITY = 0.6
 PHI_W_BLOCKERS = 0.8
 PHI_W_HEIGHT = 0.3
 PHI_W_SETUP = 0.2
+PHI_W_PRECLEAR = 0.1
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -243,7 +245,9 @@ class LuminesEnvNative(gym.Env):
         self._prev_post_sweep_light_chain = post_sweep_light
         self._prev_post_sweep_dark_chain = post_sweep_dark
 
-        phi_next, phi_components = self._compute_potential(sim_board)
+        phi_next, phi_components = self._compute_potential(
+            sim_board, preclear_board=self._state.board
+        )
         phi_prev = self._prev_phi
         potential_delta = SHAPING_GAMMA * phi_next - phi_prev
         shaping_reward = SHAPING_LAMBDA * potential_delta
@@ -264,6 +268,7 @@ class LuminesEnvNative(gym.Env):
             "blockers": phi_components["blockers"],
             "height": phi_components["height"],
             "setup": phi_components["setup"],
+            "preclear_patterns": phi_components["preclear_patterns"],
             "death": death,
             "total": reward,
         }
@@ -497,8 +502,9 @@ class LuminesEnvNative(gym.Env):
                     count += 1
         return count
 
-    def _compute_potential(self, board) -> tuple[float, dict]:
-        """Potential function on post-clear board plus its normalized components."""
+    def _compute_potential(self, board, preclear_board=None) -> tuple[float, dict]:
+        """Potential on post-clear board, plus optional pre-clear structure signal."""
+        preclear_board = board if preclear_board is None else preclear_board
         chain_light = float(self._count_single_color_chain(board, 1))
         chain_dark = float(self._count_single_color_chain(board, 2))
         chain_max = max(chain_light, chain_dark) / float(BOARD_WIDTH - 1)
@@ -519,6 +525,7 @@ class LuminesEnvNative(gym.Env):
         blockers = float(self._count_chain_zone_blockers(board)) / max_windows
         height = float(self._max_column_height_from_board(board)) / float(BOARD_HEIGHT)
         setup = float(self._count_max_near_patterns(board)) / max_windows
+        preclear_patterns = float(self._count_complete_squares_from_board(preclear_board)) / max_windows
 
         phi = (
             PHI_W_CHAIN * chain_max
@@ -526,6 +533,7 @@ class LuminesEnvNative(gym.Env):
             - PHI_W_BLOCKERS * blockers
             - PHI_W_HEIGHT * height
             + PHI_W_SETUP * setup
+            + PHI_W_PRECLEAR * preclear_patterns
         )
         return phi, {
             "chain_max": chain_max,
@@ -533,6 +541,7 @@ class LuminesEnvNative(gym.Env):
             "blockers": blockers,
             "height": height,
             "setup": setup,
+            "preclear_patterns": preclear_patterns,
         }
 
     def _build_color_board(self, color: int) -> np.ndarray:
@@ -554,7 +563,10 @@ class LuminesEnvNative(gym.Env):
 
     def _count_complete_squares(self) -> int:
         """Count all 2×2 same-color squares on the board (overlapping squares counted separately)."""
-        board = self._state.board
+        return self._count_complete_squares_from_board(self._state.board)
+
+    def _count_complete_squares_from_board(self, board) -> int:
+        """Count all 2x2 same-color squares on an arbitrary board."""
         count = 0
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):

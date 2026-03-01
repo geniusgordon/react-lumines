@@ -93,6 +93,7 @@ def test_reward_components_exact_keys():
         "blockers",
         "height",
         "setup",
+        "preclear_patterns",
         "death",
         "total",
     }
@@ -239,6 +240,19 @@ def test_shape_components_are_normalized_ranges():
     assert 0.0 <= rc["blockers"] <= 1.0
     assert 0.0 <= rc["height"] <= 1.0
     assert 0.0 <= rc["setup"] <= 1.0
+    assert 0.0 <= rc["preclear_patterns"] <= 1.0
+
+
+def test_preclear_patterns_positive_when_board_has_2x2():
+    """preclear_patterns should be >0 when current board contains complete 2x2 patterns."""
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    board = create_empty_board()
+    board[8][0] = 1; board[8][1] = 1
+    board[9][0] = 1; board[9][1] = 1
+    sim = env._simulate_clear_board(board)
+    _phi, comps = env._compute_potential(sim, preclear_board=board)
+    assert comps["preclear_patterns"] > 0.0
 
 
 def test_prev_phi_resets_on_reset():

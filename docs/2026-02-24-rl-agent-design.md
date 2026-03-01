@@ -156,11 +156,13 @@ reward = score_delta
 | `phi.blockers` | [0,1] | Opposite-color 2×2 blockers in dominant chain zone (penalized in `phi`). |
 | `phi.height` | [0,1] | Tallest-column ratio (penalized in `phi`). |
 | `phi.setup` | [0,1] | Near-pattern opportunity density. |
+| `phi.preclear_patterns` | [0,1] | Complete 2×2 density on current pre-clear board. |
 | `death` | −3.0 | Penalise game over |
 
 `info["reward_components"]` now emits:
 `score_delta`, `phi_prev`, `phi_next`, `potential_delta`, `shaping_reward`,
-`chain_max`, `purity`, `blockers`, `height`, `setup`, `death`, `total`.
+`chain_max`, `purity`, `blockers`, `height`, `setup`, `preclear_patterns`,
+`death`, `total`.
 
 No flat survival bonus — the agent's incentive to survive comes from future scoring opportunities.
 
@@ -248,6 +250,7 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_31 | — | — | — | — | Flat PPO baseline with PPO_30 architecture. LSTM/RecurrentPPO is a separate parallel experiment (not a sequential run). |
 | PPO_32 | — | — | — | — | Full color-aware reward redesign: `chain_delta_any_color*0.03 + open_pattern_delta*0.01 + post_sweep_light_delta*0.05 + post_sweep_dark_delta*0.05 + chain_blocking_delta*-0.05 + ruined_pattern_delta*-0.03` on top of `score_delta` and `death`. See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
 | PPO_33 | — | — | — | — | Potential-based redesign: `score_delta + lambda*(gamma*phi_next - phi_prev) + death`, with `phi = w_chain*chain_max + w_purity*purity - w_blockers*blockers - w_height*height + w_setup*setup` on the post-clear simulated board. See `docs/plans/2026-03-01-ppo33-reward-redesign.md`. |
+| PPO_34 | — | — | — | — | Implemented follow-up on PPO_33: keep the same reward equation and add `w_preclear*preclear_patterns` to potential, where `preclear_patterns` is normalized complete 2×2 density on the current board. See `docs/plans/2026-03-01-ppo34-preclear-shaping.md`. |
 
 ### PPO_10 post-mortem
 
