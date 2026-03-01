@@ -203,6 +203,7 @@ class GameScoreCallback(BaseCallback):
     def __init__(self, verbose: int = 0):
         super().__init__(verbose)
         self._episode_scores: list[float] = []
+        self._episode_peak_combo: list[float] = []
 
     def _on_step(self) -> bool:
         dones = self.locals.get("dones", [])
@@ -212,6 +213,7 @@ class GameScoreCallback(BaseCallback):
                 score = info.get("finalScore")
                 if score is not None:
                     self._episode_scores.append(float(score))
+                self._episode_peak_combo.append(float(info.get("peakComboLen", 0.0)))
         return True
 
     def _on_rollout_end(self) -> None:
@@ -219,6 +221,10 @@ class GameScoreCallback(BaseCallback):
             self.logger.record("rollout/ep_game_score_mean", np.mean(self._episode_scores))
             self.logger.record("rollout/ep_game_score_max", float(np.max(self._episode_scores)))
             self._episode_scores = []
+        if self._episode_peak_combo:
+            self.logger.record("rollout/ep_peak_combo_len_mean", np.mean(self._episode_peak_combo))
+            self.logger.record("rollout/ep_peak_combo_len_max", float(np.max(self._episode_peak_combo)))
+            self._episode_peak_combo = []
 
 
 class SyncAndSaveVecNormalizeCallback(BaseCallback):

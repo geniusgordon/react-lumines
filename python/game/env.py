@@ -109,6 +109,7 @@ class LuminesEnvNative(gym.Env):
         )
 
         self._state = create_initial_state(self._seed)
+        self._peak_combo_len: int = 0
 
     # -------------------------------------------------------------------------
     # Gymnasium API
@@ -127,6 +128,7 @@ class LuminesEnvNative(gym.Env):
         self._seed = seed_str
         self._state = create_initial_state(seed_str)
         self._blocks_placed = 0
+        self._peak_combo_len = 0
         return self._build_obs(), {}
 
     def step(self, action: int):
@@ -187,6 +189,9 @@ class LuminesEnvNative(gym.Env):
         if self._state.status != "gameOver":
             self._blocks_placed += 1
 
+        # Check peak combo after placement (before timeline ticks clear anything)
+        self._peak_combo_len = max(self._peak_combo_len, self._count_max_single_color_chain_from_board())
+
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block.
         for _ in range(self.ticks_per_block):
@@ -216,6 +221,9 @@ class LuminesEnvNative(gym.Env):
             self._state = copy.copy(self._state)
             self._state.board = apply_gravity(board)
             self._state.falling_columns = []
+
+        # Check peak combo after settling (final board state for this step)
+        self._peak_combo_len = max(self._peak_combo_len, self._count_max_single_color_chain_from_board())
 
         score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
@@ -256,6 +264,8 @@ class LuminesEnvNative(gym.Env):
         # Always tick one frame
         rng = get_rng(self._state)
         self._state = tick(self._state, rng)
+
+        self._peak_combo_len = max(self._peak_combo_len, self._count_max_single_color_chain_from_board())
 
         score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
@@ -470,6 +480,7 @@ class LuminesEnvNative(gym.Env):
             "finalScore": self._state.score,
             "framesElapsed": self._state.frame,
             "blocksPlaced": self._blocks_placed,
+            "peakComboLen": self._peak_combo_len,
         }
 
     def _render_ascii(self) -> str:
