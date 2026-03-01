@@ -1,7 +1,7 @@
 # Lumines RL Agent — Architecture, Training & Run History
 
 **Date:** 2026-02-24 (updated 2026-03-02)
-**Status:** Implemented — PPO_36 current
+**Status:** Implemented — PPO_38 current
 **Files:** `python/train.py`, `python/eval.py`, `python/game/env.py`
 
 ---
@@ -171,7 +171,8 @@ See `python/STRATEGY.md` for full rationale.
 
 | File | Purpose |
 |------|---------|
-| `python/train.py` | Training entry point — `--algo ppo\|dqn`, builds envs, runs training |
+| `python/train.py` | Training entry point — `--algo ppo\|dqn`, `--rnd-beta`, builds envs, runs training |
+| `python/rnd.py` | RND exploration bonus — `RNDTargetNetwork`, `RNDPredictorNetwork`, `RNDVecWrapper`, `RNDCallback` |
 | `python/eval.py` | Evaluation — loads a checkpoint, runs episodes, reports scores, optional ASCII render |
 | `python/game/env.py` | Pure-Python gymnasium environment (`LuminesEnvNative`) |
 | `python/game/` | Pure-Python game logic (board, blocks, physics, timeline, etc.) |
@@ -191,6 +192,9 @@ python python/train.py --resume
 
 # Custom run
 python python/train.py --timesteps 3000000 --envs 16 --device mps
+
+# PPO_38: with RND exploration bonus
+python python/train.py --timesteps 3000000 --envs 16 --device mps --rnd-beta 0.01
 ```
 
 PPO checkpoints: `python/checkpoints/lumines_ppo_<N>_steps.zip`
@@ -251,7 +255,8 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_35 | — | — | — | — | Remove `patterns_formed` shaping entirely: `reward = score_delta + death`. `patterns_formed` was a local attractor — agent maximised isolated 2×2 squares without discovering the sweep combo mechanic. Initial entropy raised 0.1→0.15 to maintain exploration before first sweep event. |
 | PPO_36 | — | — | — | — | **Entropy floor + cosine LR restart + projected pattern boards (hypotheses 1 & 2).** `EntropyScheduleCallback` clamped to floor `0.02`; cosine LR with warm restarts (`n_restarts=3`). Two new CNN channels: `proj_light_pattern_board`, `proj_dark_pattern_board` (post-clear+gravity projected boards). `timeline_col` retained (7 CNN channels total). `game_timer` removed from obs. Sparse PPO_35 reward unchanged. Breaking change; cannot resume from PPO_35. |
 | PPO_37 | — | — | — | — | **GAE lambda tuning (credit assignment hypothesis).** `gae_lambda` 0.90→0.97; no other changes. At 6 steps the combined credit factor rises from ~0.50 to ~0.83, giving chain-building placements substantially stronger gradient signal. Tests whether credit assignment was the bottleneck preventing chain discovery. |
-| PPO_38 | — | — | — | — | **RecurrentPPO / LSTM (hypothesis 3: algorithm ceiling).** Already wired via `--recurrent` flag. LSTM maintains hidden state for "which color am I building toward". Useful if a Markov policy cannot express the alternating-color strategy. Run only if PPO_37 fails to break the plateau. |
+| PPO_38 | — | — | — | — | **RND exploration bonus (hypothesis: exploration bottleneck).** `--rnd-beta 0.01`. `RNDVecWrapper` stacked outside `VecNormalize` adds `β * r_int` to rewards each step; `r_int = ‖target(board_obs) − predictor(board_obs)‖².mean()` — higher for novel board configurations. `RNDCallback` trains the predictor at each rollout end. New TensorBoard metrics: `rnd/mean_r_int` (should decay), `rnd/predictor_loss` (should decrease), `rnd/r_int_std`. Tests whether count-based exploration pushes the policy past the center-column local optimum toward the alternating single-color combo strategy. See `python/rnd.py` and `docs/plans/2026-03-02-rnd-design.md`. |
+| PPO_39 | — | — | — | — | **RecurrentPPO / LSTM (hypothesis 3: algorithm ceiling).** Already wired via `--recurrent` flag. LSTM maintains hidden state for "which color am I building toward". Useful if a Markov policy cannot express the alternating-color strategy. Run only if PPO_37 and PPO_38 fail to break the plateau. |
 
 ### PPO_10 post-mortem
 
@@ -383,6 +388,24 @@ Computing the projected board: take a copy of `self._state.board`, zero out all 
 **Prediction**: If eval score breaks above 24, one or both of these changes was the bottleneck. If the plateau persists, move to PPO_37 (RecurrentPPO).
 
 **Breaking change**: Cannot resume from PPO_35. Sparse reward formula unchanged.
+
+### PPO_38 Rationale
+
+PPO_37 tests whether better credit assignment (higher `gae_lambda`) is the bottleneck. PPO_38 tests the complementary hypothesis: the agent has enough credit signal but is stuck in a local optimum it cannot escape through entropy alone.
+
+The center-column dumping strategy (survive by filling the center, score on incidental sweeps) is stable under pure `score_delta` reward — it reliably produces some score, so entropy decay eventually locks the policy there. The alternating single-color combo strategy requires first discovering that building same-color patterns ahead of the sweep produces large `score_delta` spikes, which requires visiting novel board configurations that a converged policy never reaches.
+
+**RND (Random Network Distillation, Burda et al. 2018)** provides count-based exploration bonus without baking in any strategy assumptions. A frozen random `target` network maps board observations to 128-dim embeddings; a trained `predictor` network learns to match it. States seen often have low prediction error (small `r_int`); novel states have high error (large `r_int`). The agent is rewarded for visiting unfamiliar board configurations, nudging it away from the local optimum and toward the alternating-color strategy.
+
+**Architecture:**
+- `RNDVecWrapper` wraps outside `VecNormalize` so RND sees normalized obs (same distribution as the policy)
+- `r_int` is normalized by a Welford running std and clipped to `[0, 5.0]` to guard against non-stationarity
+- `RNDCallback` trains the predictor each rollout with Adam lr=1e-4 on up to 8192 subsampled observations
+- Opt-in via `--rnd-beta 0.01`; `rnd_state.pt` saved alongside `vecnormalize.pkl` for resume
+
+**Key metrics:** `rnd/mean_r_int` should start high and decay as the predictor learns familiar states; `rnd/predictor_loss` should trend down; `rollout/ep_peak_combo_len_mean` is the primary signal for whether combo discovery improves.
+
+**Prediction:** If `ep_peak_combo_len_mean` increases and eval score breaks above 24, exploration was the bottleneck. If `rnd/mean_r_int` decays but scores don't improve, increase `--rnd-beta` to 0.05. If scores collapse vs baseline, reduce to 0.001.
 
 ---
 
