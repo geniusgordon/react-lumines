@@ -165,7 +165,7 @@ class RNDVecWrapper(VecEnvWrapper):
     @staticmethod
     def load_state(path: str, wrapper: "RNDVecWrapper") -> None:
         """Load predictor weights + stats into an existing wrapper in-place."""
-        state = torch.load(path, map_location=wrapper.device, weights_only=True)
+        state = torch.load(path, map_location=wrapper.device, weights_only=False)
         wrapper.predictor.load_state_dict(state["predictor"])
         wrapper._r_int_count = state["r_int_count"]
         wrapper._r_int_mean = state["r_int_mean"]
