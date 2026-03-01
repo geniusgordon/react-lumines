@@ -118,6 +118,7 @@ class LuminesEnvNative(gym.Env):
                 "holding_score": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "light_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
                 "dark_chain": spaces.Box(0, 1, shape=(1,), dtype=np.float32),
+                "timeline_col": spaces.Box(0, 1, shape=(BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32),
             }
         )
 
@@ -589,6 +590,12 @@ class LuminesEnvNative(gym.Env):
                     counts[row + 1][col + 1] += 1
         return counts / 4.0
 
+    def _build_timeline_col(self) -> np.ndarray:
+        """Binary float32 (H×W): 1.0 in every row of the current timeline column."""
+        mask = np.zeros((BOARD_HEIGHT, BOARD_WIDTH), dtype=np.float32)
+        mask[:, self._state.timeline.x] = 1.0
+        return mask
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -617,6 +624,7 @@ class LuminesEnvNative(gym.Env):
                 [self._count_single_color_chain(self._state.board, 2) / (BOARD_WIDTH - 1)],
                 dtype=np.float32,
             ),
+            "timeline_col": self._build_timeline_col(),
         }
 
     def _build_info(self) -> dict:
