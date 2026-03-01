@@ -145,3 +145,56 @@ def test_rnd_wrapper_save_load_roundtrip(tmp_path):
 
     # Check running stats match
     assert wrapper._r_int_count == wrapper2._r_int_count
+
+
+# ---------------------------------------------------------------------------
+# RNDCallback test
+# ---------------------------------------------------------------------------
+
+def test_rnd_callback_logs_metrics_and_reduces_loss():
+    """RNDCallback trains predictor and logs loss/r_int metrics over multiple rollout_ends."""
+    from rnd import RNDVecWrapper, RNDCallback
+    from stable_baselines3 import PPO
+    from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+    from stable_baselines3.common.monitor import Monitor
+    from game.env import LuminesEnvNative
+
+    def make():
+        return Monitor(LuminesEnvNative(mode="per_block", seed="0"))
+
+    venv = DummyVecEnv([make] * 2)
+    venv = VecNormalize(venv, norm_obs=True, norm_reward=False)
+    wrapper = RNDVecWrapper(venv, beta=0.01, device="cpu")
+
+    policy_kwargs = dict(net_arch=dict(pi=[32], vf=[32]))
+    model = PPO(
+        "MultiInputPolicy",
+        wrapper,
+        n_steps=64,
+        batch_size=32,
+        n_epochs=1,
+        policy_kwargs=policy_kwargs,
+        verbose=0,
+    )
+
+    losses_recorded = []
+
+    class LossRecorder(RNDCallback):
+        def _on_rollout_end(self):
+            super()._on_rollout_end()
+            # Access last recorded loss via logger (SB3 stores in name_to_value)
+            loss = self.logger.name_to_value.get("rnd/predictor_loss", None)
+            if loss is not None:
+                losses_recorded.append(loss)
+
+    callback = LossRecorder(wrapper, lr=1e-3)
+    model.learn(total_timesteps=640, callback=callback)
+
+    assert len(losses_recorded) > 0, "callback never fired"
+    # With enough rollouts (>=5), the second half should trend lower than the first half
+    if len(losses_recorded) >= 5:
+        first_half = np.mean(losses_recorded[: len(losses_recorded) // 2])
+        second_half = np.mean(losses_recorded[len(losses_recorded) // 2 :])
+        assert second_half < first_half, (
+            f"predictor loss should trend down: {losses_recorded}"
+        )
