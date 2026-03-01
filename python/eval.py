@@ -132,9 +132,6 @@ def evaluate(args):
                 snapshot_stack.append((
                     copy.deepcopy(env._state),
                     env._blocks_placed,
-                    env._prev_phi,
-                    env._prev_post_sweep_light_chain,
-                    env._prev_post_sweep_dark_chain,
                     {k: v.copy() for k, v in obs.items()} if isinstance(obs, dict) else obs.copy(),
                     episode_score,
                     action_history[:],
@@ -209,12 +206,9 @@ def evaluate(args):
                             done = True
                             break
                         elif ch == "LEFT" and can_undo:
-                            s_state, s_blocks, s_phi, s_lchain, s_dchain, s_obs, s_score, s_hist, s_action_desc, s_info = snapshot_stack.pop()
+                            s_state, s_blocks, s_obs, s_score, s_hist, s_action_desc, s_info = snapshot_stack.pop()
                             env._state = s_state
                             env._blocks_placed = s_blocks
-                            env._prev_phi = s_phi
-                            env._prev_post_sweep_light_chain = s_lchain
-                            env._prev_post_sweep_dark_chain = s_dchain
                             obs = s_obs
                             episode_score = s_score
                             action_history = s_hist
