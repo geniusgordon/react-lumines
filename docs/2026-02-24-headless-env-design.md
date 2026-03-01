@@ -89,19 +89,19 @@ type FrameAction =
 The Python `LuminesEnvNative` uses a shaped reward designed around the combo
 mechanic. See `docs/2026-02-24-rl-agent-design.md §4` for the full formula.
 
-**Summary (per_block mode, PPO_30+):**
+**Summary (per_block mode, current / PPO_33):**
 
 ```
-reward = score_delta                         # actual combo payoff from timeline sweep
-       + single_color_chain_delta × 0.1     # delta in longest same-color chain (can be negative)
-       + post_sweep_chain × 0.05            # same-color chain after sweep + gravity settle
+reward = score_delta
+       + SHAPING_LAMBDA * (SHAPING_GAMMA * Phi(s_next) - Phi(s_prev))
        + death                               # -3.0 on game over, else 0
 ```
 
 **Rationale:**
 - `score_delta` is the primary objective — directly tied to game score.
-- `single_color_chain_delta` is a color-aware delta signal: rewards placements that extend the dominant single-color chain; penalises those that fragment it. Unlike earlier runs, it can go negative, making the gradient signal directional.
-- `post_sweep_chain` rewards leaving a clean same-color residue after a sweep — encouraging the alternating-combo strategy central to Lumines.
+- potential-based shaping (`Phi`) provides dense guidance while keeping score as the true objective.
+- `Phi` is computed on the post-clear simulated board from normalized features:
+  `chain_max`, `purity`, `blockers`, `height`, `setup`.
 - No flat survival bonus — the agent must score to maximise return.
 
 See `docs/2026-02-24-rl-agent-design.md §5` for full formula and design rationale history.

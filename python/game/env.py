@@ -9,41 +9,23 @@ Action spaces:
 
 Reward (per_block mode)
 -----------------------
-    reward = score_delta                              # primary: actual combo payoff (sparse, ground truth)
-           + chain_delta_any_color * 0.03            # density aid: color-agnostic pre-sweep shaping
-           + open_pattern_delta    * 0.01             # bootstrap aid: progress toward first 2×2 pattern
-           + post_sweep_light_delta * 0.05           # strategy shaping: color-aware post-sweep delta
-           + post_sweep_dark_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
-           + chain_blocking_delta   * -0.05          # blocking: new wrong-color 2×2 in chain zone
-           + ruined_pattern_delta   * -0.03          # blocking: single-cell blocker of a near-pattern
-           + death                                    # survival: DEATH_PENALTY on game over, else 0
+    reward = score_delta + shaping_reward + death
 
-    chain_delta_any_color: max(light_chain, dark_chain) after drop minus before drop.
-    Color-agnostic bootstrap signal. Weight kept small (0.03) so it doesn't mislead.
+    shaping_reward = SHAPING_LAMBDA * (SHAPING_GAMMA * phi_next - phi_prev)
 
-    open_pattern_delta: change in max near-pattern count (2×2 regions with 2–3 same-color cells and
-    rest empty, no blocker present) after drop. Clipped to >= 0 so completions don't produce a
-    spurious negative. Fires only in the initial phase before chain_delta_any_color dominates.
+    Potential phi is computed from the post-clear simulated board and combines:
+    - chain_max: longest same-color chain (normalized)
+    - purity: dominant-color concentration among filled cells
+    - blockers: opposite-color 2x2 blockers in dominant chain zone (normalized, penalized)
+    - height: tallest column (normalized, penalized)
+    - setup: near-pattern opportunities (normalized)
 
-    post_sweep_light_delta / post_sweep_dark_delta: per-color chain delta (current - previous step's
-    post-sweep value). Color-aware strategy shaping — rewards committing to one color per sweep cycle.
-    Delta form attributes reward only to the current action's net effect.
-    Zeroed when score_delta > 0 (actual sweep step) to prevent a spurious negative: after the sweep
-    clears the board, simulating another clear yields a much lower post_sweep value, so the delta would
-    be large and negative — incorrectly penalising the agent for the scoring event that the buildup was
-    meant to produce. The actual payoff is captured by score_delta; _prev is still updated so the next
-    step's delta starts from the post-clear board state, beginning a fresh buildup cycle.
-
-    chain_blocking_delta: change in wrong-color 2×2 pattern count within the dominant chain's zone
-    (chain_left-1 .. chain_right+1). Penalises placing blockers that cap vertical or lateral growth.
-
-    ruined_pattern_delta: change in blocked near-pattern count (2×2 regions with 3 cells of one
-    color and 1 cell of the other) measured immediately after placement (pre-sweep). Penalises
-    single-cell blockers that ruin near-patterns.
+    This is potential-based shaping: dense guidance while keeping score_delta as
+    the primary objective.
 
 reward_components keys emitted in info:
-    score_delta, chain_delta_any_color, open_pattern_delta, post_sweep_light_delta,
-    post_sweep_dark_delta, chain_blocking_delta, ruined_pattern_delta, death, total
+    score_delta, phi_prev, phi_next, potential_delta, shaping_reward,
+    chain_max, purity, blockers, height, setup, death, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -68,6 +50,14 @@ from .state import (
 
 # Reward hyperparameters
 DEATH_PENALTY = -3.0
+SHAPING_LAMBDA = 0.10
+SHAPING_GAMMA = 0.99
+
+PHI_W_CHAIN = 1.0
+PHI_W_PURITY = 0.6
+PHI_W_BLOCKERS = 0.8
+PHI_W_HEIGHT = 0.3
+PHI_W_SETUP = 0.2
 
 FRAME_ACTIONS = [
     "MOVE_LEFT",
@@ -132,6 +122,8 @@ class LuminesEnvNative(gym.Env):
         self._state = create_initial_state(self._seed)
         self._prev_post_sweep_light_chain = 0.0
         self._prev_post_sweep_dark_chain = 0.0
+        sim_board = self._simulate_clear_board(self._state.board)
+        self._prev_phi, _ = self._compute_potential(sim_board)
 
     # -------------------------------------------------------------------------
     # Gymnasium API
@@ -152,6 +144,8 @@ class LuminesEnvNative(gym.Env):
         self._blocks_placed = 0
         self._prev_post_sweep_light_chain = 0.0
         self._prev_post_sweep_dark_chain = 0.0
+        sim_board = self._simulate_clear_board(self._state.board)
+        self._prev_phi, _ = self._compute_potential(sim_board)
         return self._build_obs(), {}
 
     def step(self, action: int):
@@ -187,9 +181,6 @@ class LuminesEnvNative(gym.Env):
 
         rng = get_rng(self._state)
 
-        # Capture board state BEFORE drop for delta computation
-        board_before = [row[:] for row in self._state.board]
-
         # 1. Apply rotations
         for _ in range(rotation % 4):
             self._state = rotate_cw(self._state)
@@ -214,23 +205,6 @@ class LuminesEnvNative(gym.Env):
 
         if self._state.status != "gameOver":
             self._blocks_placed += 1
-
-        # Measure color-agnostic chain delta (density aid, pre-sweep).
-        chain_before = float(self._count_max_single_color_chain_from_board(board_before))
-        chain_after_drop = float(self._count_max_single_color_chain_from_board())
-        chain_delta_any_color = chain_after_drop - chain_before
-
-        # Open-pattern delta (pre-sweep): progress toward first 2×2.
-        # Clipped to >= 0: graduating a near-pattern to complete reduces near count
-        # but is already rewarded by chain_delta_any_color; don't double-penalise.
-        near_before     = float(self._count_max_near_patterns(board_before))
-        near_after_drop = float(self._count_max_near_patterns())
-        open_pattern_delta = max(0.0, near_after_drop - near_before)
-
-        # Ruined-pattern delta (pre-sweep): single-cell blocker introduced by placement.
-        blocked_near_before     = float(self._count_blocked_near_patterns(board_before))
-        blocked_near_after_drop = float(self._count_blocked_near_patterns())
-        ruined_pattern_delta    = blocked_near_after_drop - blocked_near_before
 
         # 4. Advance timeline by ticks_per_block ticks to simulate the sweep
         # progressing while the player was placing this block.
@@ -263,49 +237,33 @@ class LuminesEnvNative(gym.Env):
             self._state.falling_columns = []
 
         score_delta = float(self._state.score - prev_score)
-
-        # Measure chain zone blockers after gravity settling.
-        blockers_before = float(self._count_chain_zone_blockers(board_before))
-        blockers_after  = float(self._count_chain_zone_blockers())
-        chain_blocking_delta = blockers_after - blockers_before
-
-        # Measure post-sweep per-color chain on simulated-cleared board.
         sim_board = self._simulate_clear_board(self._state.board)
         post_sweep_light = float(self._count_single_color_chain(sim_board, 1))
-        post_sweep_dark  = float(self._count_single_color_chain(sim_board, 2))
-
-        # On steps where the timeline scored (real sweep fired), do not penalise
-        # with a negative delta — zero it out.  _prev is still updated so the
-        # next step's delta is relative to the new board state.
-        if score_delta > 0:
-            post_sweep_light_delta = 0.0
-            post_sweep_dark_delta  = 0.0
-        else:
-            post_sweep_light_delta = post_sweep_light - self._prev_post_sweep_light_chain
-            post_sweep_dark_delta  = post_sweep_dark  - self._prev_post_sweep_dark_chain
+        post_sweep_dark = float(self._count_single_color_chain(sim_board, 2))
         self._prev_post_sweep_light_chain = post_sweep_light
-        self._prev_post_sweep_dark_chain  = post_sweep_dark
+        self._prev_post_sweep_dark_chain = post_sweep_dark
+
+        phi_next, phi_components = self._compute_potential(sim_board)
+        phi_prev = self._prev_phi
+        potential_delta = SHAPING_GAMMA * phi_next - phi_prev
+        shaping_reward = SHAPING_LAMBDA * potential_delta
+        self._prev_phi = phi_next
+
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = (
-            score_delta
-            + chain_delta_any_color   * 0.03
-            + open_pattern_delta      * 0.01
-            + post_sweep_light_delta  * 0.05
-            + post_sweep_dark_delta   * 0.05
-            + chain_blocking_delta    * -0.05
-            + ruined_pattern_delta    * -0.03
-            + death
-        )
+        reward = score_delta + shaping_reward + death
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
-            "chain_delta_any_color": chain_delta_any_color,
-            "open_pattern_delta": open_pattern_delta,
-            "post_sweep_light_delta": post_sweep_light_delta,
-            "post_sweep_dark_delta": post_sweep_dark_delta,
-            "chain_blocking_delta": chain_blocking_delta,
-            "ruined_pattern_delta": ruined_pattern_delta,
+            "phi_prev": phi_prev,
+            "phi_next": phi_next,
+            "potential_delta": potential_delta,
+            "shaping_reward": shaping_reward,
+            "chain_max": phi_components["chain_max"],
+            "purity": phi_components["purity"],
+            "blockers": phi_components["blockers"],
+            "height": phi_components["height"],
+            "setup": phi_components["setup"],
             "death": death,
             "total": reward,
         }
@@ -361,6 +319,19 @@ class LuminesEnvNative(gym.Env):
     def _max_column_height(self) -> int:
         """Returns the height of the tallest column (0 = empty board, BOARD_HEIGHT = full)."""
         return max(self._column_heights())
+
+    def _max_column_height_from_board(self, board) -> int:
+        """Returns tallest-column height for an arbitrary board."""
+        max_h = 0
+        for col in range(BOARD_WIDTH):
+            h = 0
+            for row in range(BOARD_HEIGHT):
+                if board[row][col] != 0:
+                    h = BOARD_HEIGHT - row
+                    break
+            if h > max_h:
+                max_h = h
+        return max_h
 
     def _count_chain_length(self) -> int:
         """Returns the longest consecutive run of columns with at least one pattern."""
@@ -525,6 +496,44 @@ class LuminesEnvNative(gym.Env):
                 if c == alt_color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
                     count += 1
         return count
+
+    def _compute_potential(self, board) -> tuple[float, dict]:
+        """Potential function on post-clear board plus its normalized components."""
+        chain_light = float(self._count_single_color_chain(board, 1))
+        chain_dark = float(self._count_single_color_chain(board, 2))
+        chain_max = max(chain_light, chain_dark) / float(BOARD_WIDTH - 1)
+        dominant_color = 1 if chain_light >= chain_dark else 2
+
+        total_filled = 0
+        dom_filled = 0
+        for row in range(BOARD_HEIGHT):
+            for col in range(BOARD_WIDTH):
+                c = board[row][col]
+                if c != 0:
+                    total_filled += 1
+                    if c == dominant_color:
+                        dom_filled += 1
+        purity = float(dom_filled / total_filled) if total_filled > 0 else 0.0
+
+        max_windows = float((BOARD_HEIGHT - 1) * (BOARD_WIDTH - 1))
+        blockers = float(self._count_chain_zone_blockers(board)) / max_windows
+        height = float(self._max_column_height_from_board(board)) / float(BOARD_HEIGHT)
+        setup = float(self._count_max_near_patterns(board)) / max_windows
+
+        phi = (
+            PHI_W_CHAIN * chain_max
+            + PHI_W_PURITY * purity
+            - PHI_W_BLOCKERS * blockers
+            - PHI_W_HEIGHT * height
+            + PHI_W_SETUP * setup
+        )
+        return phi, {
+            "chain_max": chain_max,
+            "purity": purity,
+            "blockers": blockers,
+            "height": height,
+            "setup": setup,
+        }
 
     def _build_color_board(self, color: int) -> np.ndarray:
         """Binary float32 (H×W): 1.0 where board cell == color."""

@@ -83,7 +83,7 @@ None of the four CNN channels is in `MLP_KEYS`; all route exclusively through th
 
 `holding_score` is a normalised scalar (clamped to [0,1] by dividing by 10) in the MLP branch. The agent can condition on combo state: knowing `holding_score=3` makes extending the chain more valuable than building isolated patterns elsewhere.
 
-`light_chain` and `dark_chain` are the longest consecutive run of same-color pattern columns for each color respectively, normalised by `BOARD_WIDTH - 1 = 15`. Separate per-color scalars let the agent observe the current state of both colors independently — essential for conditioning on the color-aware reward signals (`post_sweep_light_delta`, `post_sweep_dark_delta`). Together with `holding_score`, they let the agent condition on both the spatial span and color purity of the current combo zone.
+`light_chain` and `dark_chain` are the longest consecutive run of same-color pattern columns for each color respectively, normalised by `BOARD_WIDTH - 1 = 15`. Separate per-color scalars let the agent observe each color's build-up state explicitly. Together with `holding_score`, they provide compact context for combo timing and are consistent with the potential-based reward features (`chain_max`, `purity`, `blockers`, `height`, `setup`).
 
 The critic uses a deeper network (`vf=[512,512,256]`) than the actor (`pi=[128,128]`) because the value function must model complex board state → future return relationships, while the policy only needs to choose among 60 discrete actions.
 
@@ -142,28 +142,25 @@ consecutive columns of same-color 2×2 patterns, then cashing out on the first
 empty column. Longer *chains* of consecutive pattern columns → bigger payouts.
 
 ```python
-reward = score_delta                              # primary: actual combo payoff from timeline sweep
-       + chain_delta_any_color   * 0.03           # density aid: color-agnostic pre-sweep bootstrap
-       + open_pattern_delta      * 0.01           # bootstrap aid: progress toward first 2×2 pattern
-       + post_sweep_light_delta  * 0.05           # strategy shaping: color-aware post-sweep delta
-       + post_sweep_dark_delta   * 0.05           # strategy shaping: color-aware post-sweep delta
-       + chain_blocking_delta    * -0.05          # blocking: wrong-color 2×2 in chain zone
-       + ruined_pattern_delta    * -0.03          # blocking: single-cell blocker of near-pattern
+reward = score_delta
+       + SHAPING_LAMBDA * (SHAPING_GAMMA * phi_next - phi_prev)
        + death                                    # -3.0 on game over, else 0
 ```
 
 | Component | Range | Purpose |
 |-----------|-------|---------|
 | `score_delta` | ≥ 0 | Actual game score from timeline sweeps (primary objective) |
-| `chain_delta_any_color * 0.03` | any sign | Color-agnostic pre-sweep bootstrap: change in longest same-color pattern-column run (best of light vs dark). Kept small (0.03) so it doesn't mislead once chains form. |
-| `open_pattern_delta * 0.01` | ≥ 0 | Initial-phase aid: change in max near-pattern count (2–3 same-color cells in a 2×2, rest empty). Clipped ≥ 0 so completions don't produce a spurious negative. Fires mostly before the first 2×2 forms. |
-| `post_sweep_light_delta * 0.05` | any sign | Strategy shaping: change in light chain since previous step's post-sweep value. **Zeroed when `score_delta > 0`** — after the sweep clears the board, the simulated post-sweep value drops sharply, making the raw delta large and negative. This would spuriously punish the agent for the combo that the buildup was designed to produce; `score_delta` handles the actual payoff. `_prev` is still updated so the next step's delta is relative to the post-clear board, starting a new buildup cycle. |
-| `post_sweep_dark_delta * 0.05` | any sign | Same for dark chain. |
-| `chain_blocking_delta * -0.05` | ≤ 0 | Blocking penalty: change in wrong-color 2×2 count inside dominant chain zone (±1 col). Penalises placements that cap lateral/vertical chain growth. |
-| `ruined_pattern_delta * -0.03` | ≤ 0 | Near-pattern blocking penalty: change in blocked near-pattern count (3 cells of one color + 1 of the other). Penalises single-cell blockers that ruin near-patterns. |
+| `shaping_reward` | any sign | Potential-based shaping term from post-clear board quality: `lambda * (gamma * phi_next - phi_prev)`. |
+| `phi.chain_max` | [0,1] | Longest same-color chain on simulated post-clear board. |
+| `phi.purity` | [0,1] | Dominant-color concentration among filled cells. |
+| `phi.blockers` | [0,1] | Opposite-color 2×2 blockers in dominant chain zone (penalized in `phi`). |
+| `phi.height` | [0,1] | Tallest-column ratio (penalized in `phi`). |
+| `phi.setup` | [0,1] | Near-pattern opportunity density. |
 | `death` | −3.0 | Penalise game over |
 
-`info["reward_components"]` emits all 7 components plus `total`.
+`info["reward_components"]` now emits:
+`score_delta`, `phi_prev`, `phi_next`, `potential_delta`, `shaping_reward`,
+`chain_max`, `purity`, `blockers`, `height`, `setup`, `death`, `total`.
 
 No flat survival bonus — the agent's incentive to survive comes from future scoring opportunities.
 
@@ -249,7 +246,8 @@ Eval automatically loads `vecnormalize.pkl` from the checkpoint directory.
 | PPO_29 | — | — | — | — | 4-component reward (`score_delta + chain_after_drop*0.05 + post_sweep_chain*0.05 + death`); `clip_range_vf=None`. Strips noisy components; measures goals directly. |
 | PPO_30 | — | — | — | — | Color-aware obs + obs space cleanup: `light_board`+`dark_board` replace `board`; `dominant_color_chain` replaces `chain_length`; 5 redundant keys removed. Color-aware reward (`single_color_chain_delta*0.1 + post_sweep_chain*0.05`). Color-separated pattern boards: `light_pattern_board`+`dark_pattern_board` replace `pattern_board`+`ghost_board`+`projected_pattern_board`. CNN 4 channels, MLP 20 inputs. |
 | PPO_31 | — | — | — | — | Flat PPO baseline with PPO_30 architecture. LSTM/RecurrentPPO is a separate parallel experiment (not a sequential run). |
-| PPO_32 | — | — | — | — | **Upcoming.** Full reward redesign: color-aware post-sweep deltas (`post_sweep_light_delta`+`post_sweep_dark_delta`); delta zeroed on scoring steps; `dominant_color_chain`→`light_chain`+`dark_chain` obs split (MLP 20→21); `chain_blocking_delta` penalty (−0.05); `open_pattern_delta` initial-phase aid (+0.01); `ruined_pattern_delta` near-pattern blocker penalty (−0.03). See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
+| PPO_32 | — | — | — | — | Full color-aware reward redesign: `chain_delta_any_color*0.03 + open_pattern_delta*0.01 + post_sweep_light_delta*0.05 + post_sweep_dark_delta*0.05 + chain_blocking_delta*-0.05 + ruined_pattern_delta*-0.03` on top of `score_delta` and `death`. See `docs/plans/2026-03-01-ppo32-reward-redesign.md`. |
+| PPO_33 | — | — | — | — | Potential-based redesign: `score_delta + lambda*(gamma*phi_next - phi_prev) + death`, with `phi = w_chain*chain_max + w_purity*purity - w_blockers*blockers - w_height*height + w_setup*setup` on the post-clear simulated board. See `docs/plans/2026-03-01-ppo33-reward-redesign.md`. |
 
 ### PPO_10 post-mortem
 

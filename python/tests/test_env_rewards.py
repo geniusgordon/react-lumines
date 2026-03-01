@@ -78,18 +78,21 @@ def test_count_complete_squares_3x2_block_counts_two():
 # ---------------------------------------------------------------------------
 
 def test_reward_components_exact_keys():
-    """reward_components must contain exactly the PPO_32 keys."""
+    """reward_components must contain exactly the potential-shaping keys."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
     expected_keys = {
         "score_delta",
-        "chain_delta_any_color",
-        "open_pattern_delta",
-        "post_sweep_light_delta",
-        "post_sweep_dark_delta",
-        "chain_blocking_delta",
-        "ruined_pattern_delta",
+        "phi_prev",
+        "phi_next",
+        "potential_delta",
+        "shaping_reward",
+        "chain_max",
+        "purity",
+        "blockers",
+        "height",
+        "setup",
         "death",
         "total",
     }
@@ -177,79 +180,82 @@ def test_reward_components_no_placement_penalty():
 
 
 # ---------------------------------------------------------------------------
-# PPO_32 reward formula:
-#   total = score_delta + chain_delta_any_color*0.03 + open_pattern_delta*0.01
-#           + post_sweep_light_delta*0.05 + post_sweep_dark_delta*0.05
-#           + chain_blocking_delta*-0.05 + ruined_pattern_delta*-0.03 + death
+# Potential-based reward formula:
+#   total = score_delta + shaping_reward + death
 # ---------------------------------------------------------------------------
 
 def test_reward_total_matches_formula():
-    """total must equal the PPO_32 formula."""
+    """total must equal the potential-based reward formula."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, reward, _, _, info = env.step(0)
     rc = info["reward_components"]
     expected_total = (
         rc["score_delta"]
-        + rc["chain_delta_any_color"]  * 0.03
-        + rc["open_pattern_delta"]     * 0.01
-        + rc["post_sweep_light_delta"] * 0.05
-        + rc["post_sweep_dark_delta"]  * 0.05
-        + rc["chain_blocking_delta"]   * -0.05
-        + rc["ruined_pattern_delta"]   * -0.03
+        + rc["shaping_reward"]
         + rc["death"]
     )
     assert rc["total"] == pytest.approx(expected_total)
     assert rc["total"] == pytest.approx(reward)
 
 
-def test_chain_delta_any_color_is_float():
-    """chain_delta_any_color must be present and a float (can be negative)."""
+def test_potential_delta_is_float():
+    """potential_delta must be present and a float."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "chain_delta_any_color" in info["reward_components"]
-    assert isinstance(info["reward_components"]["chain_delta_any_color"], float)
+    assert "potential_delta" in info["reward_components"]
+    assert isinstance(info["reward_components"]["potential_delta"], float)
 
 
-def test_post_sweep_light_delta_is_float():
-    """post_sweep_light_delta must be present and a float."""
+def test_shaping_reward_is_float():
+    """shaping_reward must be present and a float."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "post_sweep_light_delta" in info["reward_components"]
-    assert isinstance(info["reward_components"]["post_sweep_light_delta"], float)
+    assert "shaping_reward" in info["reward_components"]
+    assert isinstance(info["reward_components"]["shaping_reward"], float)
 
 
-def test_post_sweep_dark_delta_is_float():
-    """post_sweep_dark_delta must be present and a float."""
+def test_phi_values_are_float():
+    """phi_prev and phi_next must both be present and floats."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "post_sweep_dark_delta" in info["reward_components"]
-    assert isinstance(info["reward_components"]["post_sweep_dark_delta"], float)
+    assert "phi_prev" in info["reward_components"]
+    assert "phi_next" in info["reward_components"]
+    assert isinstance(info["reward_components"]["phi_prev"], float)
+    assert isinstance(info["reward_components"]["phi_next"], float)
 
 
-def test_post_sweep_deltas_first_step_equal_absolute():
-    """On the first step after reset, prev values are 0, so delta == absolute chain length."""
+def test_shape_components_are_normalized_ranges():
+    """Potential feature components should stay in [0, 1]."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
     rc = info["reward_components"]
-    # Deltas on step 1 can be positive or negative relative to 0; just verify they're floats.
-    assert isinstance(rc["post_sweep_light_delta"], float)
-    assert isinstance(rc["post_sweep_dark_delta"], float)
+    assert 0.0 <= rc["chain_max"] <= 1.0
+    assert 0.0 <= rc["purity"] <= 1.0
+    assert 0.0 <= rc["blockers"] <= 1.0
+    assert 0.0 <= rc["height"] <= 1.0
+    assert 0.0 <= rc["setup"] <= 1.0
 
 
-def test_prev_post_sweep_resets_on_reset():
-    """After reset(), _prev_post_sweep_* must both be 0.0."""
+def test_prev_phi_resets_on_reset():
+    """After reset(), _prev_phi must match the reset state's potential."""
+    from python.game.env import SHAPING_GAMMA, SHAPING_LAMBDA
     env = LuminesEnvNative(mode="per_block", seed="42")
-    env.reset()
-    env.step(0)
-    env.step(0)
-    env.reset()
-    assert env._prev_post_sweep_light_chain == 0.0
-    assert env._prev_post_sweep_dark_chain == 0.0
+    env.reset(seed=123)
+    _, _, _, _, info1 = env.step(0)
+    rc1 = info1["reward_components"]
+    expected_phi_next = (rc1["shaping_reward"] / SHAPING_LAMBDA + rc1["phi_prev"]) / SHAPING_GAMMA
+    assert rc1["phi_next"] == pytest.approx(expected_phi_next)
+
+    env.reset(seed=123)
+    _, _, _, _, info2 = env.step(0)
+    rc2 = info2["reward_components"]
+    # With same reset seed, baseline phi_prev should be reproducible.
+    assert rc2["phi_prev"] == pytest.approx(rc1["phi_prev"])
 
 
 def test_death_on_game_over():
@@ -664,15 +670,12 @@ def test_simulate_clear_board_removes_all_patterns():
                 assert not is_pattern, f"Pattern found at row={row}, col={col}"
 
 
-def test_post_sweep_delta_zero_when_sweep_scores():
-    """When score_delta > 0 (real sweep fired), post_sweep_*_delta must both be 0.0."""
+def test_potential_shaping_still_applies_when_sweep_scores():
+    """Even when score_delta > 0, potential shaping remains well-defined."""
     import python.game.env as env_module
 
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
-    # Set nonzero prev values so a negative delta would normally result.
-    env._prev_post_sweep_light_chain = 3.0
-    env._prev_post_sweep_dark_chain  = 2.0
 
     # Patch update_timeline (score source in _step_per_block) to force score_delta > 0.
     original_update_timeline = env_module.update_timeline
@@ -689,12 +692,8 @@ def test_post_sweep_delta_zero_when_sweep_scores():
 
     rc = info["reward_components"]
     assert rc["score_delta"] > 0, "score_delta must be positive for this test to be meaningful"
-    assert rc["post_sweep_light_delta"] == pytest.approx(0.0), (
-        f"expected post_sweep_light_delta=0 on sweep step, got {rc['post_sweep_light_delta']}"
-    )
-    assert rc["post_sweep_dark_delta"] == pytest.approx(0.0), (
-        f"expected post_sweep_dark_delta=0 on sweep step, got {rc['post_sweep_dark_delta']}"
-    )
+    assert np.isfinite(rc["shaping_reward"])
+    assert np.isfinite(rc["potential_delta"])
 
 
 def test_post_sweep_light_measures_chain_after_simulated_clear():
@@ -744,12 +743,12 @@ def test_chain_blocking_delta_zero_on_empty_board():
 
 
 def test_chain_blocking_delta_is_float():
-    """chain_blocking_delta must be present and be a float."""
+    """Normalized blockers feature must be present and be a float."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    assert "chain_blocking_delta" in info["reward_components"]
-    assert isinstance(info["reward_components"]["chain_blocking_delta"], float)
+    assert "blockers" in info["reward_components"]
+    assert isinstance(info["reward_components"]["blockers"], float)
 
 
 def test_chain_blocking_delta_positive_when_blocker_created():
