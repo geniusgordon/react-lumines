@@ -194,37 +194,97 @@ class EntropyScheduleCallback(BaseCallback):
 
 
 class GameScoreCallback(BaseCallback):
-    """Logs mean true game score (not shaped reward) to TensorBoard at each rollout end.
+    """Logs per-rollout metrics to TensorBoard.
 
-    Reads ``finalScore`` from the step info dict whenever an episode ends.
-    Logged as ``rollout/ep_game_score_mean`` and ``rollout/ep_game_score_max``.
+    Per-episode (accumulated on done):
+      rollout/ep_game_score_mean, rollout/ep_game_score_max
+      rollout/ep_game_score_std        — spread of returns; high = inconsistent policy
+      rollout/ep_peak_combo_len_mean, rollout/ep_peak_combo_len_max
+      rollout/death_rate               — fraction of episodes that ended by death
+
+    Per-step (accumulated every step):
+      rollout/score_delta_mean         — mean game points earned per step
+      rollout/holding_shaping_mean     — mean potential-based shaping signal per step
+
+    Action distribution (per-step, per_block mode only):
+      rollout/action_col_left_frac     — fraction of placements in cols 0–4
+      rollout/action_col_center_frac   — fraction of placements in cols 5–9
+      rollout/action_col_right_frac    — fraction of placements in cols 10–14
+      rollout/action_rot0_frac .. rollout/action_rot3_frac
     """
 
     def __init__(self, verbose: int = 0):
         super().__init__(verbose)
         self._episode_scores: list[float] = []
         self._episode_peak_combo: list[float] = []
+        self._episode_deaths: list[float] = []
+        self._score_deltas: list[float] = []
+        self._shapings: list[float] = []
+        self._actions: list[int] = []
 
     def _on_step(self) -> bool:
         dones = self.locals.get("dones", [])
         infos = self.locals.get("infos", [])
+        actions = self.locals.get("actions", [])
+
+        for info in infos:
+            rc = info.get("reward_components", {})
+            if rc:
+                self._score_deltas.append(float(rc.get("score_delta", 0.0)))
+                self._shapings.append(float(rc.get("holding_shaping", 0.0)))
+
+        for a in actions:
+            self._actions.append(int(a))
+
         for done, info in zip(dones, infos):
             if done:
                 score = info.get("finalScore")
                 if score is not None:
                     self._episode_scores.append(float(score))
                 self._episode_peak_combo.append(float(info.get("peakComboLen", 0.0)))
+                rc = info.get("reward_components", {})
+                self._episode_deaths.append(1.0 if rc.get("death", 0.0) < 0 else 0.0)
+
         return True
 
     def _on_rollout_end(self) -> None:
         if self._episode_scores:
             self.logger.record("rollout/ep_game_score_mean", np.mean(self._episode_scores))
             self.logger.record("rollout/ep_game_score_max", float(np.max(self._episode_scores)))
+            self.logger.record("rollout/ep_game_score_std", float(np.std(self._episode_scores)))
             self._episode_scores = []
+
         if self._episode_peak_combo:
             self.logger.record("rollout/ep_peak_combo_len_mean", np.mean(self._episode_peak_combo))
             self.logger.record("rollout/ep_peak_combo_len_max", float(np.max(self._episode_peak_combo)))
             self._episode_peak_combo = []
+
+        if self._episode_deaths:
+            self.logger.record("rollout/death_rate", float(np.mean(self._episode_deaths)))
+            self._episode_deaths = []
+
+        if self._score_deltas:
+            self.logger.record("rollout/score_delta_mean", float(np.mean(self._score_deltas)))
+            self._score_deltas = []
+
+        if self._shapings:
+            self.logger.record("rollout/holding_shaping_mean", float(np.mean(self._shapings)))
+            self._shapings = []
+
+        if self._actions:
+            actions = np.array(self._actions)
+            n = len(actions)
+            # per_block: action = target_x * 4 + rotation  (x in 0..14, rot in 0..3)
+            # Only meaningful for Discrete(60); skip if action space is different
+            if actions.max() < 60:
+                cols = actions // 4
+                rots = actions % 4
+                self.logger.record("rollout/action_col_left_frac",   float(np.mean(cols <= 4)))
+                self.logger.record("rollout/action_col_center_frac", float(np.mean((cols >= 5) & (cols <= 9))))
+                self.logger.record("rollout/action_col_right_frac",  float(np.mean(cols >= 10)))
+                for r in range(4):
+                    self.logger.record(f"rollout/action_rot{r}_frac", float(np.mean(rots == r)))
+            self._actions = []
 
 
 class SyncAndSaveVecNormalizeCallback(BaseCallback):
