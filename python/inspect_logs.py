@@ -133,7 +133,6 @@ def assess(ea: EventAccumulator) -> None:
 
     ent = last_val("train/entropy_loss")
     if ent is not None:
-        # In SB3 entropy_loss = -ent_coef * entropy, so more negative = more exploration
         flag = "COLLAPSED" if ent > -1.0 else ("LOW" if ent > -2.0 else "OK")
         print(f"  Entropy loss       : {ent:.3f}  [{flag}]  (more negative = more exploration)")
 
@@ -141,16 +140,6 @@ def assess(ea: EventAccumulator) -> None:
     if pg is not None:
         flag = "STALLED" if abs(pg) < 0.001 else "OK"
         print(f"  Policy grad loss   : {pg:.4f}  [{flag}]")
-
-    f, s = trend("rollout/ep_rew_mean")
-    if f is not None:
-        direction = "UP" if s > f * 1.02 else ("DOWN" if s < f * 0.98 else "FLAT")
-        print(f"  Reward trend (last 10): {f:.3f} → {s:.3f}  [{direction}]")
-
-    f, s = trend("eval/mean_reward")
-    if f is not None:
-        direction = "UP" if s > f * 1.02 else ("DOWN" if s < f * 0.98 else "FLAT")
-        print(f"  Eval reward trend  : {f:.3f} → {s:.3f}  [{direction}]")
 
     kl = last_val("train/approx_kl")
     if kl is not None:
@@ -161,6 +150,42 @@ def assess(ea: EventAccumulator) -> None:
     if cf is not None:
         flag = "HIGH" if cf > 0.3 else "OK"
         print(f"  Clip fraction      : {cf:.3f}  [{flag}]  (target <0.1–0.2; high = LR too large)")
+
+    # --- reward trend ---
+    f, s = trend("rollout/ep_rew_mean")
+    if f is not None:
+        direction = "UP" if s > f * 1.02 else ("DOWN" if s < f * 0.98 else "FLAT")
+        print(f"  Reward trend (last 10): {f:.3f} → {s:.3f}  [{direction}]")
+
+    f, s = trend("eval/mean_reward")
+    if f is not None:
+        direction = "UP" if s > f * 1.02 else ("DOWN" if s < f * 0.98 else "FLAT")
+        print(f"  Eval reward trend  : {f:.3f} → {s:.3f}  [{direction}]")
+
+    # --- game score (true objective) ---
+    f, s = trend("eval/mean_game_score")
+    if f is not None:
+        direction = "UP" if s > f * 1.02 else ("DOWN" if s < f * 0.98 else "FLAT")
+        print(f"  Game score trend   : {f:.1f} → {s:.1f}  [{direction}]")
+
+    gs = last_val("eval/mean_game_score")
+    if gs is not None:
+        print(f"  Last eval game score: {gs:.1f}")
+
+    # --- combo mechanic ---
+    combo = last_val("rollout/ep_peak_combo_len_mean")
+    if combo is not None:
+        flag = "NOT DISCOVERED" if combo < 0.5 else ("LOW" if combo < 2.0 else "OK")
+        print(f"  Peak combo len     : {combo:.2f}  [{flag}]  (>2 = agent builds combos)")
+
+    # --- RND (only present in RND runs) ---
+    pred_loss = last_val("rnd/predictor_loss")
+    if pred_loss is not None:
+        f_p, s_p = trend("rnd/predictor_loss")
+        direction = "DECREASING" if (f_p and s_p and s_p < f_p * 0.95) else "FLAT/STUCK"
+        r_int = last_val("rnd/mean_r_int")
+        r_int_str = f"  r_int={r_int:.4f}" if r_int is not None else ""
+        print(f"  RND predictor loss : {pred_loss:.4f}  [{direction}]{r_int_str}")
 
 
 def main() -> None:

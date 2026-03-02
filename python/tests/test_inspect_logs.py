@@ -60,3 +60,40 @@ def test_summarize_outputs_curve_line(capsys):
     assert "curve" in out
     assert "→" in out
     assert "last 5" not in out
+
+
+def _make_ea(tag_values: dict):
+    """Build a mock EventAccumulator from {tag: [value, ...]} dict."""
+    from unittest.mock import MagicMock
+    ea = MagicMock()
+    ea.Tags.return_value = {"scalars": list(tag_values.keys())}
+    def scalars_side_effect(tag):
+        return [FakeEvent(i, v) for i, v in enumerate(tag_values[tag])]
+    ea.Scalars.side_effect = scalars_side_effect
+    return ea
+
+
+def test_assess_game_score_improving(capsys):
+    from inspect_logs import assess
+    vals = list(range(1, 21))  # steadily rising
+    ea = _make_ea({"eval/mean_game_score": vals})
+    assess(ea)
+    out = capsys.readouterr().out
+    assert "game score" in out.lower() or "mean_game_score" in out.lower()
+
+
+def test_assess_rnd_predictor_loss_shown(capsys):
+    from inspect_logs import assess
+    vals = [1.0, 0.9, 0.8, 0.7, 0.6]
+    ea = _make_ea({"rnd/predictor_loss": vals})
+    assess(ea)
+    out = capsys.readouterr().out
+    assert "predictor" in out.lower()
+
+
+def test_assess_combo_len_zero_flagged(capsys):
+    from inspect_logs import assess
+    ea = _make_ea({"rollout/ep_peak_combo_len_mean": [0.0] * 20})
+    assess(ea)
+    out = capsys.readouterr().out
+    assert "combo" in out.lower()
