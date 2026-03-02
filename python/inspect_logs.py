@@ -16,6 +16,32 @@ except ImportError:
     sys.exit(1)
 
 
+def percentile_curve(events, n_points=11):
+    """Return smoothed values at n_points evenly-spaced percentiles (0%..100%).
+
+    Each point is the mean of the ~10% of events nearest to that percentile
+    mark, which smooths noise while preserving trend shape.
+    """
+    if not events:
+        return []
+    if len(events) == 1:
+        return [events[0].value] * n_points
+
+    vals = [e.value for e in events]
+    N = len(vals)
+    window = max(1, N // 10)
+    result = []
+    for i in range(n_points):
+        center = round(i / (n_points - 1) * (N - 1))
+        lo = max(0, center - window // 2)
+        hi = min(N, lo + window)
+        # ensure window doesn't shrink at edges
+        if hi - lo < window and lo > 0:
+            lo = max(0, hi - window)
+        result.append(sum(vals[lo:hi]) / (hi - lo))
+    return result
+
+
 TAGS_OF_INTEREST = [
     "rollout/ep_rew_mean",
     "rollout/ep_len_mean",
