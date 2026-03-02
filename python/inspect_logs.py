@@ -69,13 +69,21 @@ def summarize(ea: EventAccumulator, tag: str) -> None:
     events = ea.Scalars(tag)
     if not events:
         return
+
     steps = [e.step for e in events]
     vals = [e.value for e in events]
-    last5 = list(zip(steps[-5:], vals[-5:]))
+    peak_idx = vals.index(max(vals))
+
+    curve = percentile_curve(events)
+    curve_str = "→".join(f"{v:>6.1f}" for v in curve)
+    pct_labels = "  ".join(f"{i*10:>5}%" for i in range(11))
+
     print(f"  {tag}")
-    print(f"    range : {steps[0]:>10,} → {steps[-1]:>10,}  ({len(steps)} points)")
-    print(f"    values: first={vals[0]:.4f}  last={vals[-1]:.4f}  min={min(vals):.4f}  max={max(vals):.4f}")
-    print(f"    last 5: {[(s, round(v, 4)) for s, v in last5]}")
+    print(f"    steps : {steps[0]:>10,} → {steps[-1]:>10,}  ({len(steps)} points)")
+    print(f"    values: first={vals[0]:.4f}  last={vals[-1]:.4f}"
+          f"  min={min(vals):.4f}  max={max(vals):.4f}  (peak @ step {steps[peak_idx]:,})")
+    print(f"    curve : {curve_str}")
+    print(f"             {pct_labels}")
 
 
 def assess(ea: EventAccumulator) -> None:

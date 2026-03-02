@@ -43,3 +43,20 @@ def test_percentile_curve_smooths_spike():
     events[50].value = 1000.0
     curve = percentile_curve(events)
     assert curve[5] < 200
+
+
+def test_summarize_outputs_curve_line(capsys):
+    from inspect_logs import summarize
+    from unittest.mock import MagicMock
+
+    events = [FakeEvent(i * 1000, float(i)) for i in range(20)]
+
+    ea = MagicMock()
+    ea.Tags.return_value = {"scalars": ["my/metric"]}
+    ea.Scalars.return_value = events
+
+    summarize(ea, "my/metric")
+    out = capsys.readouterr().out
+    assert "curve" in out
+    assert "→" in out
+    assert "last 5" not in out
