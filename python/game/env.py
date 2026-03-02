@@ -9,13 +9,17 @@ Action spaces:
 
 Reward (per_block mode)
 -----------------------
-    reward = score_delta + death
+    reward = score_delta + death + shaping
 
-    score_delta: game points gained from timeline clearing this step.
-    death:       DEATH_PENALTY (-3.0) on terminal step, else 0.0.
+    score_delta:  game points gained from timeline clearing this step.
+    death:        DEATH_PENALTY (-3.0) on terminal step, else 0.0.
+    shaping:      potential-based holding-score shaping (Ng 1999), only when
+                  potential_shaping=True (default):
+                      shaping = shaping_gamma * holding_score_after - holding_score_before
+                  Spreads reward over buildup steps; policy-invariant for episodic tasks.
 
 reward_components keys emitted in info:
-    score_delta, death, total
+    score_delta, death, holding_shaping, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -66,12 +70,16 @@ class LuminesEnvNative(gym.Env):
         seed: Optional[str] = None,
         render_mode: Optional[str] = None,
         blocks_per_sweep: int = 6,
+        potential_shaping: bool = True,
+        shaping_gamma: float = 0.99,
     ):
         super().__init__()
 
         self.mode = mode
         self._seed = seed or ""
         self.render_mode = render_mode
+        self.potential_shaping = potential_shaping
+        self.shaping_gamma = shaping_gamma
         self._blocks_placed = 0
         # How many timeline ticks to advance per block placement.
         # One full sweep = BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL ticks.
@@ -154,6 +162,7 @@ class LuminesEnvNative(gym.Env):
 
     def _step_per_block(self, action: int):
         prev_score = self._state.score
+        prev_holding = self._state.timeline.holding_score
 
         target_x = action // 4
         rotation = action % 4
@@ -228,12 +237,19 @@ class LuminesEnvNative(gym.Env):
         score_delta = float(self._state.score - prev_score)
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
-        reward = score_delta + death
+
+        shaping = 0.0
+        if self.potential_shaping:
+            new_holding = self._state.timeline.holding_score
+            shaping = self.shaping_gamma * new_holding - prev_holding
+
+        reward = score_delta + death + shaping
 
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "death": death,
+            "holding_shaping": shaping,
             "total": reward,
         }
         return self._build_obs(), reward, done, False, info

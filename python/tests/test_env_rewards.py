@@ -501,42 +501,42 @@ def test_projected_board_clears_ahead_of_timeline_patterns():
 
 
 # ---------------------------------------------------------------------------
-# PPO_35 reward formula: score_delta + death (no shaping)
+# Reward formula: score_delta + death + holding_shaping
 # ---------------------------------------------------------------------------
 
 def test_reward_components_ppo35_exact_keys():
-    """reward_components must contain exactly the PPO_35 keys."""
+    """reward_components must contain exactly the expected keys (includes holding_shaping)."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
-    expected_keys = {"score_delta", "death", "total"}
+    expected_keys = {"score_delta", "death", "holding_shaping", "total"}
     assert set(info["reward_components"].keys()) == expected_keys
 
 def test_patterns_formed_absent_in_ppo35():
-    """patterns_formed must NOT be present in PPO_35 reward_components."""
+    """patterns_formed must NOT be present in reward_components."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, _, _, _, info = env.step(0)
     assert "patterns_formed" not in info["reward_components"]
 
 def test_reward_total_matches_ppo35_formula():
-    """total must equal score_delta + death."""
+    """total must equal score_delta + death + holding_shaping."""
     env = LuminesEnvNative(mode="per_block", seed="42")
     env.reset()
     _, reward, _, _, info = env.step(0)
     rc = info["reward_components"]
-    expected = rc["score_delta"] + rc["death"]
+    expected = rc["score_delta"] + rc["death"] + rc["holding_shaping"]
     assert rc["total"] == pytest.approx(expected)
     assert reward == pytest.approx(rc["total"])
 
 def test_ppo35_reward_formula_holds_across_many_steps():
-    """formula total = score_delta + death for 50 steps."""
+    """formula total = score_delta + death + holding_shaping for 50 steps."""
     env = LuminesEnvNative(mode="per_block", seed="99")
     env.reset()
     for action in range(50):
         _, reward, done, _, info = env.step(action % 60)
         rc = info["reward_components"]
-        expected = rc["score_delta"] + rc["death"]
+        expected = rc["score_delta"] + rc["death"] + rc["holding_shaping"]
         assert rc["total"] == pytest.approx(expected, abs=1e-6)
         assert reward == pytest.approx(rc["total"], abs=1e-6)
         if done:

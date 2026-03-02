@@ -50,6 +50,7 @@ TAGS_OF_INTEREST = [
     "rollout/ep_peak_combo_len_mean",
     "rollout/ep_peak_combo_len_max",
     "rollout/ep_len_mean",
+    "rollout/ep_holding_shaping_mean",
     # --- eval ---
     "eval/mean_reward",
     "eval/mean_game_score",
