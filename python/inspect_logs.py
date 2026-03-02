@@ -43,16 +43,32 @@ def percentile_curve(events, n_points=11):
 
 
 TAGS_OF_INTEREST = [
+    # --- rollout (game) ---
     "rollout/ep_rew_mean",
+    "rollout/ep_game_score_mean",
+    "rollout/ep_game_score_max",
+    "rollout/ep_peak_combo_len_mean",
+    "rollout/ep_peak_combo_len_max",
     "rollout/ep_len_mean",
+    # --- eval ---
     "eval/mean_reward",
+    "eval/mean_game_score",
+    "eval/max_game_score",
     "eval/mean_ep_length",
+    # --- train ---
     "train/explained_variance",
     "train/entropy_loss",
     "train/value_loss",
     "train/policy_gradient_loss",
     "train/approx_kl",
     "train/clip_fraction",
+    "train/learning_rate",
+    # --- rnd (only present in RND runs) ---
+    "rnd/mean_r_int",
+    "rnd/r_int_std",
+    "rnd/predictor_loss",
+    # --- infrastructure ---
+    "time/fps",
 ]
 
 
