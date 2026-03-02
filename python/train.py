@@ -44,7 +44,7 @@ from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecNorm
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from lumines_env import LuminesEnv
-from rnd import RNDVecWrapper, RNDCallback
+from rnd import RNDVecWrapper, RNDCallback, IdentityVecWrapper
 
 
 # ---------------------------------------------------------------------------
@@ -370,6 +370,7 @@ def _train_ppo(args, env, eval_env):
                 RNDVecWrapper.load_state(rnd_state_path, rnd_wrapper)
                 print(f"Loaded RND state from {rnd_state_path}")
             env = rnd_wrapper
+            eval_env = IdentityVecWrapper(eval_env)  # match wrapper depth
 
         loader = RecurrentPPO if args.recurrent else PPO
         model = loader.load(checkpoint, env=env, device=args.device, tensorboard_log=args.log_dir)
@@ -383,6 +384,7 @@ def _train_ppo(args, env, eval_env):
         if args.rnd_beta > 0:
             rnd_wrapper = RNDVecWrapper(env, beta=args.rnd_beta, device=args.device)
             env = rnd_wrapper
+            eval_env = IdentityVecWrapper(eval_env)  # match wrapper depth
 
         policy_kwargs = dict(
             features_extractor_class=LuminesCNNExtractor,

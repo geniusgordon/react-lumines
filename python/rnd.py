@@ -172,6 +172,16 @@ class RNDVecWrapper(VecEnvWrapper):
         wrapper._r_int_var = state["r_int_var"]
 
 
+class IdentityVecWrapper(VecEnvWrapper):
+    """No-op wrapper — matches RNDVecWrapper's wrapper depth for EvalCallback compatibility."""
+
+    def reset(self):
+        return self.venv.reset()
+
+    def step_wait(self):
+        return self.venv.step_wait()
+
+
 # ---------------------------------------------------------------------------
 # Callback
 # ---------------------------------------------------------------------------
