@@ -204,7 +204,7 @@ class GameScoreCallback(BaseCallback):
 
     Per-step (accumulated every step):
       rollout/score_delta_mean         — mean game points earned per step
-      rollout/holding_shaping_mean     — mean potential-based shaping signal per step
+      rollout/chain_shaping_mean       — mean chain extension bonus per step
 
     Action distribution (per-step, per_block mode only):
       rollout/action_col_left_frac     — fraction of placements in cols 0–4
@@ -219,7 +219,7 @@ class GameScoreCallback(BaseCallback):
         self._episode_peak_combo: list[float] = []
         self._episode_deaths: list[float] = []
         self._score_deltas: list[float] = []
-        self._shapings: list[float] = []
+        self._chain_shapings: list[float] = []
         self._actions: list[int] = []
 
     def _on_step(self) -> bool:
@@ -231,7 +231,7 @@ class GameScoreCallback(BaseCallback):
             rc = info.get("reward_components", {})
             if rc:
                 self._score_deltas.append(float(rc.get("score_delta", 0.0)))
-                self._shapings.append(float(rc.get("holding_shaping", 0.0)))
+                self._chain_shapings.append(float(rc.get("chain_shaping", 0.0)))
 
         for a in actions:
             self._actions.append(int(a))
@@ -267,9 +267,9 @@ class GameScoreCallback(BaseCallback):
             self.logger.record("rollout/score_delta_mean", float(np.mean(self._score_deltas)))
             self._score_deltas = []
 
-        if self._shapings:
-            self.logger.record("rollout/holding_shaping_mean", float(np.mean(self._shapings)))
-            self._shapings = []
+        if self._chain_shapings:
+            self.logger.record("rollout/chain_shaping_mean", float(np.mean(self._chain_shapings)))
+            self._chain_shapings = []
 
         if self._actions:
             actions = np.array(self._actions)

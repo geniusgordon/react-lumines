@@ -53,7 +53,7 @@ TAGS_OF_INTEREST = [
     "rollout/ep_len_mean",
     "rollout/death_rate",
     "rollout/score_delta_mean",
-    "rollout/holding_shaping_mean",
+    "rollout/chain_shaping_mean",
     # --- rollout (action distribution) ---
     "rollout/action_col_left_frac",
     "rollout/action_col_center_frac",
@@ -209,12 +209,15 @@ def assess(ea: EventAccumulator) -> None:
 
     # --- reward decomposition ---
     sd = last_val("rollout/score_delta_mean")
-    sh = last_val("rollout/holding_shaping_mean")
     if sd is not None:
         print(f"  Score delta/step   : {sd:.4f}  (game points earned per block placed)")
-    if sh is not None:
-        flag = "OK" if abs(sh) < 0.1 else "HIGH"
-        print(f"  Holding shaping/step: {sh:.4f}  [{flag}]  (should trend toward 0 as policy matures)")
+    cs = last_val("rollout/chain_shaping_mean")
+    if cs is not None:
+        f_cs, s_cs = trend("rollout/chain_shaping_mean")
+        direction = ""
+        if f_cs is not None:
+            direction = "  GROWING" if s_cs > f_cs * 1.05 else ("  SHRINKING" if s_cs < f_cs * 0.95 else "  FLAT")
+        print(f"  Chain shaping/step  : {cs:.4f}{direction}  (growing = agent building longer chains)")
 
     # --- action distribution ---
     col_l = last_val("rollout/action_col_left_frac")

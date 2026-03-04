@@ -79,35 +79,49 @@ column has a pattern within one row of the predecessor.
 
 ## Reward Design Rationale
 
-### Reward equation (PPO_35)
+### Reward equation (PPO_44)
 
 For per-block mode:
 
 ```
-reward_t = score_delta_t + death_t
+reward_t = score_delta_t + death_t + chain_shaping_t
 ```
 
 - `score_delta_t`: real game points gained from timeline clearing this step.
 - `death_t`: `-3.0` on terminal step, else `0`.
+- `chain_shaping_t`: one-sided chain extension bonus (see below).
 
-### Why no shaping
+`holding_score` is still included in the observation so the policy can see how much
+score is pending, but it is no longer used as a shaping term — the game env already
+flushes it into `score_delta` at sweep end.
 
-Every board-state signal considered — height, variance, fill, chain length, color purity
-— encodes implicit strategy assumptions. None are truly neutral:
+### Chain shaping (PPO_44)
 
-- **`patterns_formed`** (PPO_34): created a local optimum where the agent maximized
-  isolated 2×2 same-color squares without ever discovering the sweep combo mechanic.
-  The agent could get consistent gradient from making patterns anywhere, so it never
-  needed to learn that patterns must align with the timeline to score.
-- **Height / variance / fill**: penalizes height universally, but a tall single-color
-  chain is *good* if the sweep is about to clear it.
-- **Chain / purity**: assumes the alternating single-color strategy is correct, baking
-  in the answer rather than letting the agent discover it.
+PPO_43 ran 10M steps with pure `score_delta` but produced near-uniform action distribution
+(rotation all ~0.25, columns all ~0.33) — the policy never differentiated from random.
+`score_delta` is too sparse: even random play occasionally creates patterns, masking the
+positional gradient.
 
-`n_steps=4096` spans approximately 682 full sweep cycles per rollout
-(4096 blocks × 40 ticks/block ÷ 240 ticks/sweep). Credit assignment from sweep events
-back to placement decisions is handled by the rollout length, not by shaping.
+Chain shaping adds a dense signal at placement time:
 
-Pure `score_delta` keeps the true objective as the only training signal. The agent must
-discover the combo mechanic through exploration — which is what the higher initial
-entropy (`0.15`) is for.
+```
+light_delta = new_light_chain - prev_light_chain
+dark_delta  = new_dark_chain  - prev_dark_chain
+chain_shaping = coeff * (max(0, light_delta) * new_light_chain
+                       + max(0, dark_delta)  * new_dark_chain)
+```
+
+`coeff=0.02` (configurable via `chain_shaping_coeff`).
+
+**Why scale by new chain length**: extending a 6-chain should pay more than starting
+a new 1-chain, to incentivize consolidation over scattered isolated patterns (the PPO_34
+failure mode). This is the key difference from PPO_30–34's fixed-bonus chain reward.
+
+**Why one-sided (no penalty on drop)**: when a chain is swept, `score_delta` already
+rewards it. Penalising the drop would teach the agent to *avoid* being swept. The
+asymmetry introduces a small bias vs strict potential shaping, but is acceptable here
+because chain drops are caused by the automatic sweep, not by agent choice.
+
+**Note**: the game's own scoring is linear (no in-game combo multiplier). Chains are
+strategically superior because they use fewer cells per pattern (shared edges), keeping
+the board lower. The chain shaping encodes this structural advantage as an explicit signal.

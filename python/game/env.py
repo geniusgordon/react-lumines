@@ -9,17 +9,17 @@ Action spaces:
 
 Reward (per_block mode)
 -----------------------
-    reward = score_delta + death + shaping
+    reward = score_delta + death + chain_shaping
 
-    score_delta:  game points gained from timeline clearing this step.
-    death:        DEATH_PENALTY (-3.0) on terminal step, else 0.0.
-    shaping:      potential-based holding-score shaping (Ng 1999), only when
-                  potential_shaping=True (default):
-                      shaping = shaping_gamma * holding_score_after - holding_score_before
-                  Spreads reward over buildup steps; policy-invariant for episodic tasks.
+    score_delta:   game points gained from timeline clearing this step.
+    death:         DEATH_PENALTY (-3.0) on terminal step, else 0.0.
+    chain_shaping: one-sided chain extension bonus, scaled by new chain length:
+                       coeff * (max(0, Δlight) * new_light + max(0, Δdark) * new_dark)
+                   Fires at placement time; no penalty on chain drop (sweep already
+                   rewarded via score_delta).
 
 reward_components keys emitted in info:
-    score_delta, death, holding_shaping, total
+    score_delta, death, chain_shaping, total
 
 Per-frame mode uses a simpler sparse reward: score_delta + death_penalty.
 """
@@ -70,16 +70,14 @@ class LuminesEnvNative(gym.Env):
         seed: Optional[str] = None,
         render_mode: Optional[str] = None,
         blocks_per_sweep: int = 6,
-        potential_shaping: bool = True,
-        shaping_gamma: float = 0.99,
+        chain_shaping_coeff: float = 0.02,
     ):
         super().__init__()
 
         self.mode = mode
         self._seed = seed or ""
         self.render_mode = render_mode
-        self.potential_shaping = potential_shaping
-        self.shaping_gamma = shaping_gamma
+        self.chain_shaping_coeff = chain_shaping_coeff
         self._blocks_placed = 0
         # How many timeline ticks to advance per block placement.
         # One full sweep = BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL ticks.
@@ -162,7 +160,8 @@ class LuminesEnvNative(gym.Env):
 
     def _step_per_block(self, action: int):
         prev_score = self._state.score
-        prev_holding = self._state.timeline.holding_score
+        prev_light_chain = self._count_single_color_chain(self._state.board, 1)
+        prev_dark_chain  = self._count_single_color_chain(self._state.board, 2)
 
         target_x = action // 4
         rotation = action % 4
@@ -238,18 +237,27 @@ class LuminesEnvNative(gym.Env):
         done = self._state.status == "gameOver"
         death = DEATH_PENALTY if done else 0.0
 
-        shaping = 0.0
-        if self.potential_shaping:
-            new_holding = self._state.timeline.holding_score
-            shaping = self.shaping_gamma * new_holding - prev_holding
+        # Chain extension bonus: reward growing the longest same-color chain,
+        # scaled by the new chain length so extending a longer chain pays more.
+        # One-sided (no penalty on drop): sweep clears are already rewarded via score_delta.
+        chain_shaping = 0.0
+        if self.chain_shaping_coeff > 0.0:
+            new_light_chain = self._count_single_color_chain(self._state.board, 1)
+            new_dark_chain  = self._count_single_color_chain(self._state.board, 2)
+            light_delta = new_light_chain - prev_light_chain
+            dark_delta  = new_dark_chain  - prev_dark_chain
+            chain_shaping = self.chain_shaping_coeff * (
+                max(0, light_delta) * new_light_chain +
+                max(0, dark_delta)  * new_dark_chain
+            )
 
-        reward = score_delta + death + shaping
+        reward = score_delta + death + chain_shaping
 
         info = self._build_info()
         info["reward_components"] = {
             "score_delta": score_delta,
             "death": death,
-            "holding_shaping": shaping,
+            "chain_shaping": chain_shaping,
             "total": reward,
         }
         return self._build_obs(), reward, done, False, info
