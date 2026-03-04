@@ -190,6 +190,48 @@ def assess(ea: EventAccumulator) -> None:
         flag = "NOT DISCOVERED" if combo < 0.5 else ("LOW" if combo < 2.0 else "OK")
         print(f"  Peak combo len     : {combo:.2f}  [{flag}]  (>2 = agent builds combos)")
 
+    # --- consistency ---
+    gs_std = last_val("rollout/ep_game_score_std")
+    gs_mean = last_val("rollout/ep_game_score_mean")
+    if gs_std is not None and gs_mean is not None and gs_mean > 0:
+        cv = gs_std / gs_mean
+        flag = "HIGH" if cv > 1.0 else ("OK" if cv < 0.6 else "MODERATE")
+        print(f"  Score consistency  : std={gs_std:.1f}  cv={cv:.2f}  [{flag}]  (cv<0.6 = consistent)")
+
+    # --- survival ---
+    death_rate = last_val("rollout/death_rate")
+    if death_rate is not None:
+        f_d, s_d = trend("rollout/death_rate")
+        direction = ""
+        if f_d is not None:
+            direction = "  IMPROVING" if s_d < f_d * 0.95 else ("  WORSENING" if s_d > f_d * 1.05 else "  FLAT")
+        print(f"  Death rate         : {death_rate:.2f}{direction}  (lower = agent survives longer)")
+
+    # --- reward decomposition ---
+    sd = last_val("rollout/score_delta_mean")
+    sh = last_val("rollout/holding_shaping_mean")
+    if sd is not None:
+        print(f"  Score delta/step   : {sd:.4f}  (game points earned per block placed)")
+    if sh is not None:
+        flag = "OK" if abs(sh) < 0.1 else "HIGH"
+        print(f"  Holding shaping/step: {sh:.4f}  [{flag}]  (should trend toward 0 as policy matures)")
+
+    # --- action distribution ---
+    col_l = last_val("rollout/action_col_left_frac")
+    col_c = last_val("rollout/action_col_center_frac")
+    col_r = last_val("rollout/action_col_right_frac")
+    if col_l is not None:
+        dominated = max(col_l, col_c, col_r)
+        flag = "BIASED" if dominated > 0.6 else "OK"
+        print(f"  Column placement   : L={col_l:.2f}  C={col_c:.2f}  R={col_r:.2f}  [{flag}]  (uniform~0.33 each)")
+
+    rot_fracs = [last_val(f"rollout/action_rot{r}_frac") for r in range(4)]
+    if all(v is not None for v in rot_fracs):
+        dominated = max(rot_fracs)
+        flag = "BIASED" if dominated > 0.6 else "OK"
+        rots_str = "  ".join(f"r{r}={rot_fracs[r]:.2f}" for r in range(4))
+        print(f"  Rotation use       : {rots_str}  [{flag}]  (uniform~0.25 each)")
+
     # --- RND (only present in RND runs) ---
     pred_loss = last_val("rnd/predictor_loss")
     if pred_loss is not None:
