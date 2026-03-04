@@ -40,3 +40,4 @@ python/logs/
 
 # Git worktrees
 .worktrees/
+.claude/
