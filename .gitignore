@@ -37,6 +37,7 @@ __pycache__/
 python/.venv/
 python/checkpoints/
 python/logs/
+python/demos/
 
 # Git worktrees
 .worktrees/
