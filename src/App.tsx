@@ -6,6 +6,7 @@ import {
   LeaderboardScreen,
   ReplayScreen,
   AiWatchScreen,
+  TrainingScreen,
 } from '@/screens';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/leaderboard" element={<LeaderboardScreen />} />
         <Route path="/replays/:id" element={<ReplayScreen />} />
         <Route path="/ai-watch" element={<AiWatchScreen />} />
+        <Route path="/training" element={<TrainingScreen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

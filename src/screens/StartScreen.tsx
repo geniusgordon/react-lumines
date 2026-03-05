@@ -1,4 +1,4 @@
-import { Play, ChartNoAxesColumn, Bot } from 'lucide-react';
+import { Play, ChartNoAxesColumn, Bot, GraduationCap } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -58,6 +58,16 @@ export const StartScreen: React.FC = () => {
             fullWidth
           >
             Watch AI
+          </Button>
+
+          <Button
+            size="lg"
+            onClick={() => navigate('/training')}
+            variant="secondary"
+            icon={GraduationCap}
+            fullWidth
+          >
+            Training
           </Button>
         </div>
 
