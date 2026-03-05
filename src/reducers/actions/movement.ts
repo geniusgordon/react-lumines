@@ -1,4 +1,4 @@
-import type { GameState, GameAction } from '@/types/game';
+import type { GameState } from '@/types/game';
 import { rotateBlockPattern } from '@/utils/gameLogic/blocks';
 import { isValidPosition } from '@/utils/gameLogic/collision';
 import {
@@ -11,7 +11,6 @@ import {
  */
 export function handleBlockMovement(
   state: GameState,
-  _action: GameAction,
   direction: 'left' | 'right'
 ): GameState {
   const offset = direction === 'left' ? -1 : 1;
@@ -39,7 +38,6 @@ export function handleBlockMovement(
  */
 export function handleBlockRotation(
   state: GameState,
-  _action: GameAction,
   direction: 'cw' | 'ccw'
 ): GameState {
   const clockwise = direction === 'cw';

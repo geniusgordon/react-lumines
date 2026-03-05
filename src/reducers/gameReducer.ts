@@ -59,16 +59,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handleRestoreState(state, action);
 
     case 'MOVE_LEFT':
-      return handleBlockMovement(state, action, 'left');
+      return handleBlockMovement(state, 'left');
 
     case 'MOVE_RIGHT':
-      return handleBlockMovement(state, action, 'right');
+      return handleBlockMovement(state, 'right');
 
     case 'ROTATE_CW':
-      return handleBlockRotation(state, action, 'cw');
+      return handleBlockRotation(state, 'cw');
 
     case 'ROTATE_CCW':
-      return handleBlockRotation(state, action, 'ccw');
+      return handleBlockRotation(state, 'ccw');
 
     case 'SOFT_DROP':
       return handleSoftDrop(state, getRNG());

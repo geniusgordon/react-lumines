@@ -61,8 +61,7 @@ export function handleHardDrop(
   let stateToProcess = state;
   if (state.mode === 'training') {
     const snapshot: GameState = { ...state, undoStack: [] };
-    const newUndoStack = [...state.undoStack, snapshot].slice(-20); // cap at 20
-    stateToProcess = { ...state, undoStack: newUndoStack };
+    stateToProcess = { ...state, undoStack: [...state.undoStack, snapshot].slice(-20) };
   }
 
   const dropPosition = findDropPosition(

@@ -45,6 +45,18 @@ export function detectPatterns(board: GameBoard): Square[] {
 }
 
 /**
+ * Return all 4 cell coordinates of a 2x2 pattern
+ */
+export function getPatternCells(pattern: Square): Square[] {
+  return [
+    { x: pattern.x, y: pattern.y, color: pattern.color },
+    { x: pattern.x + 1, y: pattern.y, color: pattern.color },
+    { x: pattern.x, y: pattern.y + 1, color: pattern.color },
+    { x: pattern.x + 1, y: pattern.y + 1, color: pattern.color },
+  ];
+}
+
+/**
  * Check if a column contains any part of detected 2x2 patterns
  * Returns the patterns that have their left edge in this column
  */

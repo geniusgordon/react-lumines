@@ -1,5 +1,5 @@
 import type { GameState } from '@/types/game';
-import { detectPatterns } from '@/utils/gameLogic/patterns';
+import { detectPatterns, getPatternCells } from '@/utils/gameLogic/patterns';
 import { clearMarkedCellsAndApplyGravity } from '@/utils/gameLogic/physics';
 
 /**
@@ -16,13 +16,7 @@ export function handleManualSweep(state: GameState): GameState {
   const markedCells: typeof state.markedCells = [];
 
   for (const pattern of state.detectedPatterns) {
-    const cells = [
-      { x: pattern.x,     y: pattern.y,     color: pattern.color },
-      { x: pattern.x + 1, y: pattern.y,     color: pattern.color },
-      { x: pattern.x,     y: pattern.y + 1, color: pattern.color },
-      { x: pattern.x + 1, y: pattern.y + 1, color: pattern.color },
-    ];
-    for (const cell of cells) {
+    for (const cell of getPatternCells(pattern)) {
       const key = `${cell.x},${cell.y}`;
       if (!markedSet.has(key)) {
         markedCells.push(cell);
