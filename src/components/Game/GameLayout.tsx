@@ -8,13 +8,17 @@ import { ScoreDisplay } from '../ScoreDisplay';
 
 export interface GameLayoutProps {
   gameState: GameState;
+  trainingMode?: boolean;
 }
 
 /**
  * GameLayout represents the complete game interface layout
  * Handles positioning of the queue, game board, and score display
  */
-export const GameLayout: React.FC<GameLayoutProps> = ({ gameState }) => {
+export const GameLayout: React.FC<GameLayoutProps> = ({
+  gameState,
+  trainingMode = false,
+}) => {
   return (
     <div className="bg-game-background gap-block-size relative flex flex-row">
       <div style={{ width: 'calc(2 * var(--spacing-block-size))' }}>
@@ -22,7 +26,7 @@ export const GameLayout: React.FC<GameLayoutProps> = ({ gameState }) => {
       </div>
 
       <div className="flex-1">
-        <GameBoard gameState={gameState} />
+        <GameBoard gameState={gameState} trainingMode={trainingMode} />
       </div>
 
       <div style={{ width: 'calc(2 * var(--spacing-block-size))' }}>

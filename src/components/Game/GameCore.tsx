@@ -23,6 +23,7 @@ interface GameCoreProps {
   gameLoop: UseGameLoopReturn;
   scale: UseResponsiveScaleReturn;
   replayMode?: boolean;
+  trainingMode?: boolean;
   exportReplay: () => ReplayData | null;
 }
 
@@ -33,6 +34,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
   gameLoop,
   scale,
   replayMode = false,
+  trainingMode = false,
   exportReplay,
 }) => {
   const { isRunning, currentFPS, manualStep } = gameLoop;
@@ -65,7 +67,7 @@ export const GameCore: React.FC<GameCoreProps> = ({
           transformOrigin: 'center center',
         }}
       >
-        <GameLayout gameState={gameState} />
+        <GameLayout gameState={gameState} trainingMode={trainingMode} />
       </div>
 
       <Countdown gameState={gameState} />
