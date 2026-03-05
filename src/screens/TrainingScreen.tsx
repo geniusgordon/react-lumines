@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { GameCore } from '@/components/Game/GameCore';
 import { TrainingHUD } from '@/components/TrainingHUD';
+import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import { useGame } from '@/hooks/useGame';
 import { useGameControls } from '@/hooks/useGameControls';
 import { useGameLoop } from '@/hooks/useGameLoop';
@@ -19,24 +20,32 @@ export function TrainingScreen() {
     enabled: gameState.status === 'playing',
   });
 
-  // Standard controls (move, rotate, hard drop)
+  // Training controls: remove A/D (reserved for undo/sweep)
+  const trainingControls = {
+    ...DEFAULT_CONTROLS,
+    moveLeft: ['ArrowLeft'],
+    moveRight: ['ArrowRight'],
+  };
+
+  // Standard controls (move, rotate, hard drop) with training key overrides
   const controls = useGameControls(gameState, actions, {
+    controlsConfig: trainingControls,
     enableKeyRepeat: false,
   });
 
-  // Training-specific controls: S = sweep, Ctrl+Z = undo
+  // Training-specific controls: A = undo, S = sweep
   const handleTrainingKey = useCallback(
     (e: KeyboardEvent) => {
       if (gameState.status !== 'playing') return;
+      // A key → UNDO
+      if (e.code === 'KeyA' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        _dispatch({ type: 'UNDO' });
+      }
       // S key → MANUAL_SWEEP
       if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         _dispatch({ type: 'MANUAL_SWEEP' });
-      }
-      // Ctrl+Z → UNDO
-      if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        _dispatch({ type: 'UNDO' });
       }
     },
     [gameState.status, _dispatch]

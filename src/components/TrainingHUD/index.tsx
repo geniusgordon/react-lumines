@@ -102,8 +102,8 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({ gameState }) => {
 
       {/* Key hints */}
       <div className="space-y-0.5 border-t border-gray-700/50 pt-2 text-xs text-gray-600">
+        <div>[A] Undo</div>
         <div>[S] Sweep</div>
-        <div>[Ctrl+Z] Undo</div>
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ from game.env import LuminesEnvNative
 from game.blocks import rotate_block_pattern
 from game.types import Block
 from game.validation import find_drop_position
-from game.constants import BOARD_WIDTH, BOARD_HEIGHT
+from game.constants import BOARD_WIDTH, BOARD_HEIGHT, TIMELINE_SWEEP_INTERVAL
 
 
 def _compute_ghost(state, cursor_col: int, cursor_rot: int):
@@ -60,8 +60,8 @@ _CELL_CHARS = {
     0: ".",   # empty
     1: "□",   # light board cell
     2: "■",   # dark board cell
-    3: "◦",   # ghost light (where piece will land)
-    4: "·",   # ghost dark
+    3: "o",   # ghost light (where piece will land)
+    4: "x",   # ghost dark
 }
 
 
@@ -165,6 +165,7 @@ def play(seed: str, demos_dir: str) -> None:
     """Run one human-played game and save the demo on quit or game over."""
     env = LuminesEnvNative(mode="per_block", seed=seed)
     env.reset(seed=int(seed) if seed.isdigit() else None)
+    env._state.game_timer = 7 * BOARD_WIDTH * TIMELINE_SWEEP_INTERVAL  # 5 sweeps
 
     cursor_col = 7
     cursor_rot = 0

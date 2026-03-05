@@ -415,9 +415,14 @@ def _train_ppo(args, env, eval_env):
     if args.resume is not None:
         checkpoint = args.resume if args.resume else os.path.join(args.checkpoint_dir, "best_model_ppo")
         print(f"Resuming PPO from {checkpoint} ...")
-        env = VecNormalize.load(norm_stats_path, env)
+        if os.path.exists(norm_stats_path):
+            env = VecNormalize.load(norm_stats_path, env)
+            eval_env = VecNormalize.load(norm_stats_path, eval_env)
+        else:
+            print(f"No VecNormalize stats found at {norm_stats_path}, starting with fresh normalizer.")
+            env = VecNormalize(env, norm_obs=True, norm_reward=False)
+            eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, training=False)
         env.training = True
-        eval_env = VecNormalize.load(norm_stats_path, eval_env)
         eval_env.training = False
         eval_env.norm_reward = False
         vec_normalize = env  # keep reference for VecNormalize.save() calls
@@ -501,6 +506,18 @@ def _train_ppo(args, env, eval_env):
         EntropyScheduleCallback(initial_ent=0.15, final_ent=0.05, total_steps=args.timesteps),
         GameScoreCallback(),
     ]
+
+    if not reset_num_timesteps:
+        # SB3's configure_logger subtracts 1 when reset_num_timesteps=False, reusing the
+        # existing run directory. Force a new numbered directory by setting the logger manually.
+        import glob as _glob
+        from stable_baselines3.common.logger import configure as _sb3_configure
+        existing = _glob.glob(os.path.join(args.log_dir, "PPO_*"))
+        ids = [int(p.split("_")[-1]) for p in existing if p.split("_")[-1].isdigit()]
+        next_id = max(ids, default=0) + 1
+        new_log_dir = os.path.join(args.log_dir, f"PPO_{next_id}")
+        model.set_logger(_sb3_configure(new_log_dir, ["stdout", "tensorboard"]))
+        print(f"TensorBoard logging to {new_log_dir}")
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=reset_num_timesteps)
 
