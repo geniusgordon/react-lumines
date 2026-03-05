@@ -33,3 +33,28 @@ def test_compute_ghost_respects_rotation():
     # At minimum, both return a 2x2 pattern
     assert len(block0.pattern) == 2
     assert len(block1.pattern) == 2
+
+
+def test_render_play_contains_score():
+    from play import _render_play
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    output = _render_play(env, cursor_col=7, cursor_rot=0)
+    assert "Score" in output
+
+
+def test_render_play_shows_cursor_col():
+    from play import _render_play
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    output = _render_play(env, cursor_col=5, cursor_rot=2)
+    assert "Col: 5" in output
+    assert "Rot: 2" in output
+
+
+def test_render_play_shows_controls():
+    from play import _render_play
+    env = LuminesEnvNative(mode="per_block", seed="42")
+    env.reset()
+    output = _render_play(env, cursor_col=7, cursor_rot=0)
+    assert "Space" in output or "drop" in output.lower()
