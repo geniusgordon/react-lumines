@@ -15,6 +15,8 @@ import {
   handleSetDebugMode,
   handleRestoreState,
   handleGameTick,
+  handleManualSweep,
+  handleUndo,
 } from './actions';
 
 // Re-export for backward compatibility
@@ -76,6 +78,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'TICK':
       return handleGameTick(state, getRNG());
+
+    case 'MANUAL_SWEEP':
+      return handleManualSweep(state);
+
+    case 'UNDO':
+      return handleUndo(state);
 
     default:
       if (state.debugMode) {

@@ -77,3 +77,49 @@ describe('training mode undo stack', () => {
     expect(s.undoStack.length).toBeLessThanOrEqual(20);
   });
 });
+
+describe('MANUAL_SWEEP', () => {
+  it('clears all detected patterns and updates score', () => {
+    // Build a state with a known pattern on the board
+    const s = makeTrainingState();
+    // Place 2x2 same-color block manually by setting board cells
+    const board = s.board.map(row => [...row]);
+    board[8][0] = 1; board[8][1] = 1;
+    board[9][0] = 1; board[9][1] = 1;
+    const stateWithPattern = gameReducer(
+      { ...s, board },
+      { type: 'TICK' }
+    );
+    expect(stateWithPattern.detectedPatterns.length).toBeGreaterThan(0);
+
+    const swept = gameReducer(stateWithPattern, { type: 'MANUAL_SWEEP' });
+
+    expect(swept.detectedPatterns).toHaveLength(0);
+    expect(swept.score).toBeGreaterThan(0);
+    expect(swept.markedCells).toHaveLength(0);
+  });
+
+  it('is a no-op when no patterns exist', () => {
+    const s = makeTrainingState();
+    const swept = gameReducer(s, { type: 'MANUAL_SWEEP' });
+    expect(swept).toBe(s); // same reference = no change
+  });
+});
+
+describe('UNDO', () => {
+  it('restores state to before last hard drop', () => {
+    const s = makeTrainingState();
+    const boardBefore = s.board;
+    const afterDrop = gameReducer(s, { type: 'HARD_DROP' });
+    const afterUndo = gameReducer(afterDrop, { type: 'UNDO' });
+
+    expect(afterUndo.board).toEqual(boardBefore);
+    expect(afterUndo.undoStack).toHaveLength(0);
+  });
+
+  it('is a no-op when undoStack is empty', () => {
+    const s = makeTrainingState();
+    const result = gameReducer(s, { type: 'UNDO' });
+    expect(result).toBe(s);
+  });
+});

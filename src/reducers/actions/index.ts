@@ -28,3 +28,6 @@ export {
   handleBlockDrop,
   updatePatternDetection,
 } from './gameTick';
+
+// Training actions
+export { handleManualSweep, handleUndo } from './training';
