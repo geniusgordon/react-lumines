@@ -57,14 +57,22 @@ export function handleHardDrop(
     return state;
   }
 
+  // Training mode: save snapshot before placement (exclude undoStack to avoid nesting)
+  let stateToProcess = state;
+  if (state.mode === 'training') {
+    const snapshot: GameState = { ...state, undoStack: [] };
+    const newUndoStack = [...state.undoStack, snapshot].slice(-20); // cap at 20
+    stateToProcess = { ...state, undoStack: newUndoStack };
+  }
+
   const dropPosition = findDropPosition(
-    state.board,
-    state.currentBlock,
-    state.blockPosition,
-    state.fallingColumns
+    stateToProcess.board,
+    stateToProcess.currentBlock,
+    stateToProcess.blockPosition,
+    stateToProcess.fallingColumns
   );
   const newState = {
-    ...state,
+    ...stateToProcess,
     blockPosition: dropPosition,
   };
   return placeBlockAndApplyPhysics(newState, newState.frame, rng);

@@ -45,3 +45,35 @@ describe('training mode tick', () => {
     expect(s.gameTimer).toBe(initialTimer);
   });
 });
+
+describe('training mode undo stack', () => {
+  it('pushes a snapshot to undoStack on HARD_DROP in training mode', () => {
+    const state = makeTrainingState();
+    expect(state.undoStack).toHaveLength(0);
+
+    const after = gameReducer(state, { type: 'HARD_DROP' });
+
+    expect(after.undoStack).toHaveLength(1);
+    // Snapshot should not contain its own undo stack
+    expect(after.undoStack[0].undoStack).toHaveLength(0);
+  });
+
+  it('does not push undo snapshot in normal mode', () => {
+    const state = {
+      ...createInitialGameState('test-seed', false, 'normal'),
+      status: 'playing' as const,
+    };
+    const after = gameReducer(state, { type: 'HARD_DROP' });
+    expect(after.undoStack).toHaveLength(0);
+  });
+
+  it('caps undoStack at 20 entries', () => {
+    let s = makeTrainingState();
+    // Drop 25 blocks
+    for (let i = 0; i < 25; i++) {
+      s = gameReducer(s, { type: 'HARD_DROP' });
+      if (s.status === 'gameOver') break;
+    }
+    expect(s.undoStack.length).toBeLessThanOrEqual(20);
+  });
+});
