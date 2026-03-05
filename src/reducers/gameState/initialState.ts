@@ -15,7 +15,8 @@ import { SeededRNG } from '@/utils/seededRNG';
  */
 export function createInitialGameState(
   seed: string | undefined,
-  debugMode: boolean = false
+  debugMode: boolean = false,
+  mode: 'normal' | 'training' = 'normal'
 ): GameState {
   const rng = new SeededRNG(seed);
   const currentBlock = generateRandomBlock(rng);
@@ -74,5 +75,9 @@ export function createInitialGameState(
 
     // Debug mode
     debugMode,
+
+    // Training mode
+    mode,
+    undoStack: [],
   };
 }

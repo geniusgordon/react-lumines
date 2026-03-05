@@ -74,7 +74,9 @@ export type GameActionType =
   | 'START_GAME'
   | 'SET_DEBUG_MODE' // Toggle debug mode and logging
   | 'SKIP_COUNTDOWN' // Skip countdown and start game immediately
-  | 'RESTORE_STATE'; // Restore game state from snapshot
+  | 'RESTORE_STATE' // Restore game state from snapshot
+  | 'MANUAL_SWEEP' // Training: trigger full left-to-right sweep
+  | 'UNDO'; // Training: restore state before last placement
 
 // Game action structure
 export interface GameAction {
@@ -124,6 +126,10 @@ export interface GameState {
 
   // Debug mode
   debugMode: boolean; // Enable debug logging and manual stepping
+
+  // Training mode
+  mode: 'normal' | 'training';
+  undoStack: GameState[]; // max 20 entries; snapshots never include undoStack themselves
 }
 
 // Control mapping

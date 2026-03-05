@@ -284,4 +284,6 @@ export const gameState: GameState = {
   rngState: 495,
   lastUpdateTime: 0,
   debugMode: true,
+  mode: 'normal',
+  undoStack: [],
 };
