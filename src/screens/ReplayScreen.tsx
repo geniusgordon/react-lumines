@@ -53,7 +53,7 @@ export function ReplayScreen() {
   if (error) {
     return (
       <div className="bg-game-background flex h-full w-full items-center justify-center">
-        <p className="text-2xl font-bold text-red-400">Error: {error}</p>
+        <p className="text-2xl font-bold text-destructive">Error: {error}</p>
       </div>
     );
   }
@@ -83,7 +83,7 @@ export function ReplayScreen() {
           message={
             <>
               Are you sure you want to delete{' '}
-              <span className="font-semibold text-purple-400">
+              <span className="font-semibold text-primary">
                 {replay?.data.metadata?.playerName || 'Anonymous'}'s Game -{' '}
                 {replay?.data.metadata?.finalScore?.toLocaleString() || 'N/A'}
               </span>

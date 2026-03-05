@@ -1,7 +1,7 @@
 import { Bug, Play, SkipForward, Zap, Shuffle } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '../Button';
+import { Button } from '@/components/ui/button';
 
 interface PrimaryControlsProps {
   debugMode: boolean;
@@ -42,38 +42,32 @@ export function PrimaryControls({
 
   return (
     <div className="space-y-3">
-      <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+      <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
         Controls
       </div>
 
       <div className="flex gap-2">
         <Button
           onClick={onToggleDebugMode}
-          variant={debugMode ? 'warning' : 'secondary'}
-          size="md"
-          icon={debugMode ? Play : Bug}
-          fullWidth
+          variant={debugMode ? 'destructive' : 'secondary'}
+          className="w-full"
         >
+          {debugMode ? <Play /> : <Bug />}
           {debugMode ? 'Exit Debug' : 'Debug Mode'}
         </Button>
       </div>
 
       {gameStatus === 'countdown' && (
         <div className="flex gap-2">
-          <Button
-            onClick={onSkipCountdown}
-            variant="primary"
-            size="md"
-            icon={Zap}
-            fullWidth
-          >
+          <Button onClick={onSkipCountdown} className="w-full">
+            <Zap />
             Skip Countdown
           </Button>
         </div>
       )}
 
       <div className="space-y-2">
-        <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           New Game with Seed
         </div>
         <div className="flex items-center gap-2">
@@ -82,16 +76,15 @@ export function PrimaryControls({
             value={seedInput}
             onChange={handleSeedInputChange}
             placeholder="Seed (optional)"
-            className="w-36 rounded-md bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            className="w-36 rounded-md bg-muted px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-ring focus:outline-none"
             title="Enter custom seed or leave empty for random"
           />
           <Button
             onClick={handleRestartWithSeed}
             variant="secondary"
-            size="md"
-            icon={Shuffle}
             className="flex-1"
           >
+            <Shuffle />
             Restart
           </Button>
         </div>
@@ -99,7 +92,7 @@ export function PrimaryControls({
 
       {debugMode && gameStatus === 'playing' && (
         <div className="space-y-2">
-          <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+          <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Frame Stepping
           </div>
 
@@ -110,16 +103,11 @@ export function PrimaryControls({
               max="999"
               value={stepCount}
               onChange={handleStepCountChange}
-              className="w-24 rounded-md bg-gray-800 px-4 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-24 rounded-md bg-muted px-4 py-2 text-sm text-foreground focus:border-ring focus:outline-none"
               title="Number of frames to advance"
             />
-            <Button
-              onClick={() => onManualStep(stepCount)}
-              variant="primary"
-              size="md"
-              icon={SkipForward}
-              className="flex-1"
-            >
+            <Button onClick={() => onManualStep(stepCount)} className="flex-1">
+              <SkipForward />
               Step {stepCount}
             </Button>
           </div>
@@ -131,8 +119,8 @@ export function PrimaryControls({
                 onClick={() => setStepCount(preset)}
                 className={`rounded px-2 py-1 text-xs transition-all ${
                   stepCount === preset
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground hover:bg-accent'
                 }`}
                 title={`Set to ${preset} frame${preset === 1 ? '' : 's'}`}
               >

@@ -1,3 +1,4 @@
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import type { ControlsConfig } from '@/types/game';
 import { formatKey } from '@/utils/keyboard';
@@ -9,18 +10,12 @@ interface KeyboardShortcutsProps {
 export function KeyboardShortcuts({
   controlsConfig = DEFAULT_CONTROLS,
 }: KeyboardShortcutsProps) {
-  // Helper function to render key badges
   const renderKeys = (keys: string[]) => (
-    <div className="flex gap-1">
+    <KbdGroup>
       {keys.map(key => (
-        <kbd
-          key={key}
-          className="rounded-md border border-gray-600/50 bg-gray-700/80 px-2 py-1 font-mono text-xs text-gray-200 shadow-sm"
-        >
-          {formatKey(key)}
-        </kbd>
+        <Kbd key={key}>{formatKey(key)}</Kbd>
       ))}
-    </div>
+    </KbdGroup>
   );
 
   const controls = [
@@ -36,14 +31,16 @@ export function KeyboardShortcuts({
   ];
 
   return (
-    <div className="rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 backdrop-blur-sm">
-      <h3 className="mb-3 text-sm font-semibold tracking-wide text-gray-300">
+    <div className="border-border bg-muted rounded-lg border p-4 backdrop-blur-sm">
+      <h3 className="text-foreground mb-3 text-sm font-semibold tracking-wide">
         Controls
       </h3>
       <div className="space-y-2">
         {controls.map(({ label, keys }) => (
           <div key={label} className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">{label}:</span>
+            <span className="text-muted-foreground text-xs font-medium">
+              {label}:
+            </span>
             {renderKeys(keys)}
           </div>
         ))}

@@ -1,4 +1,4 @@
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/button';
 import type { PlayerHighScore } from '@/types/database';
 
 import { EmptyState } from './EmptyState';
@@ -21,7 +21,7 @@ export const PlayerHighScoresBoard: React.FC<PlayerHighScoresBoardProps> = ({
   if (loading) {
     return (
       <div className="py-16 text-center">
-        <p className="text-gray-400">Loading player high scores...</p>
+        <p className="text-muted-foreground">Loading player high scores...</p>
       </div>
     );
   }
@@ -29,8 +29,10 @@ export const PlayerHighScoresBoard: React.FC<PlayerHighScoresBoardProps> = ({
   if (error) {
     return (
       <div className="py-16 text-center">
-        <p className="mb-4 text-red-400">Failed to load player high scores</p>
-        <p className="mb-4 text-sm text-gray-400">{error}</p>
+        <p className="text-destructive mb-4">
+          Failed to load player high scores
+        </p>
+        <p className="text-muted-foreground mb-4 text-sm">{error}</p>
         <div className="flex justify-center">
           <Button onClick={onRetry} variant="secondary" className="w-auto">
             Retry
@@ -55,22 +57,24 @@ export const PlayerHighScoresBoard: React.FC<PlayerHighScoresBoardProps> = ({
       {playerHighScores.map((entry, index) => (
         <div
           key={entry.player_name}
-          className="block w-full rounded-lg border border-gray-700/30 bg-gray-800/50 p-4"
+          className="border-border bg-card block w-full rounded-lg border p-4"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold tabular-nums text-gray-300">
+              <div className="bg-secondary text-secondary-foreground flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold tabular-nums">
                 #{index + 1}
               </div>
               <div>
-                <h3 className="font-semibold text-white">
+                <h3 className="text-foreground font-semibold">
                   {entry.player_name}
                 </h3>
-                <p className="text-left text-xs text-gray-400">Best score</p>
+                <p className="text-muted-foreground text-left text-xs">
+                  Best score
+                </p>
               </div>
             </div>
             <div className="text-right">
-              <div className="font-bold tabular-nums text-white">
+              <div className="text-foreground font-bold tabular-nums">
                 {entry.max_score.toLocaleString()}
               </div>
             </div>

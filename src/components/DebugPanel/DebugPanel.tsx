@@ -51,7 +51,7 @@ export function DebugPanel({
         style={{ ...getZIndexStyle(UI_Z_INDEX.SYSTEM_OVERLAY) }}
       >
         <DebugModeBanner isVisible={gameState.debugMode} />
-        <div className="flex max-h-[calc(100vh-10rem)] flex-col rounded-lg border border-gray-600/50 bg-gray-900/95 shadow-xl backdrop-blur-sm">
+        <div className="flex max-h-[calc(100vh-10rem)] flex-col rounded-lg border border-border bg-card/95 shadow-xl backdrop-blur-sm">
           <DebugPanelHeader
             isExpanded={isExpanded}
             onToggleExpanded={() => setIsExpanded(!isExpanded)}

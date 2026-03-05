@@ -2,7 +2,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
-import { Button } from '@/components/Button';
 import {
   TabNavigation,
   ReplayImport,
@@ -10,6 +9,7 @@ import {
   OnlineLeaderboard,
   PlayerHighScoresBoard,
 } from '@/components/LeaderBoard';
+import { Button } from '@/components/ui/button';
 import { useOnlineLeaderboard } from '@/hooks/useOnlineLeaderboard';
 import { usePlayerHighScores } from '@/hooks/usePlayerHighScores';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
@@ -113,12 +113,12 @@ export function LeaderboardScreen() {
 
   return (
     <div className="bg-game-background flex h-full w-full flex-col items-center justify-center overflow-hidden p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-gray-700/50 bg-gray-900/95 p-8">
+      <div className="border-border bg-card w-full max-w-2xl rounded-2xl border p-8">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-foreground mb-2 text-4xl font-bold tracking-tight">
             Leaderboard
           </h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-muted-foreground text-sm">
             {currentView === 'player-scores' ? (
               <>
                 {playerScoresLoading
@@ -182,9 +182,9 @@ export function LeaderboardScreen() {
         <Button
           onClick={() => navigate('/')}
           variant="secondary"
-          icon={ArrowLeft}
-          fullWidth
+          className="w-full"
         >
+          <ArrowLeft />
           Back to Menu
         </Button>
       </div>

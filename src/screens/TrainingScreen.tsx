@@ -1,9 +1,10 @@
-import { useCallback, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { GameCore } from '@/components/Game/GameCore';
 import { TrainingHUD } from '@/components/TrainingHUD';
+import { Button } from '@/components/ui/button';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import { useGame } from '@/hooks/useGame';
 import { useGameControls } from '@/hooks/useGameControls';
@@ -12,7 +13,11 @@ import { useResponsiveScale } from '@/hooks/useResponsiveScale';
 
 export function TrainingScreen() {
   const navigate = useNavigate();
-  const { gameState, actions, _dispatch } = useGame(undefined, false, 'training');
+  const { gameState, actions, _dispatch } = useGame(
+    undefined,
+    false,
+    'training'
+  );
   const scale = useResponsiveScale({ minScale: 0.5, maxScale: 2, padding: 40 });
 
   // Game loop: runs TICK for RAF rendering (training mode TICK only updates fallingColumns)
@@ -36,7 +41,9 @@ export function TrainingScreen() {
   // Training-specific controls: A = undo, S = sweep
   const handleTrainingKey = useCallback(
     (e: KeyboardEvent) => {
-      if (gameState.status !== 'playing') return;
+      if (gameState.status !== 'playing') {
+        return;
+      }
       // A key → UNDO
       if (e.code === 'KeyA' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
@@ -78,15 +85,16 @@ export function TrainingScreen() {
     <div className="bg-game-background relative flex h-screen w-full flex-col items-center justify-center">
       {/* Header */}
       <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-4 py-3">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-gray-400 transition-colors hover:text-white"
+          className="text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft size={16} />
-          <span className="text-sm">Menu</span>
-        </button>
-        <span className="text-sm font-semibold text-gray-300">Training</span>
-        <span className="text-sm text-gray-500">Score: {gameState.score}</span>
+          <ArrowLeft />
+          Menu
+        </Button>
+        <span className="text-sm font-semibold text-foreground">Training</span>
+        <span className="text-sm text-muted-foreground">Score: {gameState.score}</span>
       </div>
 
       {/* Game area + HUD side by side */}

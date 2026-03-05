@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import type { GameState, GameAction } from '@/types/game';
+
 import { BOARD_WIDTH, FRAME_INTERVAL_MS } from '@/constants/gameConfig';
+import type { GameState, GameAction } from '@/types/game';
 
 const DEFAULT_WS_URL = 'ws://localhost:8765';
 
@@ -42,7 +43,9 @@ export function useAiLoop(
   const wsRef = useRef<WebSocket | null>(null);
   const gameStateRef = useRef(gameState);
   const decidingRef = useRef(false);
-  const pendingActionRef = useRef<{ targetX: number; rotation: number } | null>(null);
+  const pendingActionRef = useRef<{ targetX: number; rotation: number } | null>(
+    null
+  );
   const lastBlockIdRef = useRef<string | null>(null);
   const ticksRemainingRef = useRef(0);
   const rafRef = useRef<number>(0);
@@ -68,7 +71,7 @@ export function useAiLoop(
     ws.onclose = () => setIsConnected(false);
     ws.onerror = () => setIsConnected(false);
 
-    ws.onmessage = (event) => {
+    ws.onmessage = event => {
       const actionInt = parseInt(event.data, 10);
       if (!isNaN(actionInt)) {
         pendingActionRef.current = {
@@ -120,9 +123,13 @@ export function useAiLoop(
         const clampedTarget = Math.max(0, Math.min(targetX, maxX));
         const clampedDx = clampedTarget - currentX;
         if (clampedDx < 0) {
-          for (let i = 0; i < -clampedDx; i++) dispatch({ type: 'MOVE_LEFT' });
+          for (let i = 0; i < -clampedDx; i++) {
+            dispatch({ type: 'MOVE_LEFT' });
+          }
         } else if (clampedDx > 0) {
-          for (let i = 0; i < clampedDx; i++) dispatch({ type: 'MOVE_RIGHT' });
+          for (let i = 0; i < clampedDx; i++) {
+            dispatch({ type: 'MOVE_RIGHT' });
+          }
         }
         dispatch({ type: 'HARD_DROP' });
         ticksRemainingRef.current = TICKS_PER_BLOCK;
@@ -167,7 +174,9 @@ export function useAiLoop(
 
   // RAF loop with fixed timestep
   useEffect(() => {
-    if (gameState.status !== 'playing' && gameState.status !== 'countdown') return;
+    if (gameState.status !== 'playing' && gameState.status !== 'countdown') {
+      return;
+    }
 
     let accumulated = 0;
     let lastTime = performance.now();

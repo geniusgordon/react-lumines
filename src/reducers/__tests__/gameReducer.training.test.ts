@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { gameReducer } from '@/reducers/gameReducer';
 import { createInitialGameState } from '@/reducers/gameState/initialState';
 import type { GameState } from '@/types/game';
@@ -73,7 +74,9 @@ describe('training mode undo stack', () => {
     // Drop 25 blocks
     for (let i = 0; i < 25; i++) {
       s = gameReducer(s, { type: 'HARD_DROP' });
-      if (s.status === 'gameOver') break;
+      if (s.status === 'gameOver') {
+        break;
+      }
     }
     expect(s.undoStack.length).toBeLessThanOrEqual(20);
   });
@@ -85,12 +88,11 @@ describe('MANUAL_SWEEP', () => {
     const s = makeTrainingState();
     // Place 2x2 same-color block manually by setting board cells
     const board = s.board.map(row => [...row]);
-    board[8][0] = 1; board[8][1] = 1;
-    board[9][0] = 1; board[9][1] = 1;
-    const stateWithPattern = gameReducer(
-      { ...s, board },
-      { type: 'TICK' }
-    );
+    board[8][0] = 1;
+    board[8][1] = 1;
+    board[9][0] = 1;
+    board[9][1] = 1;
+    const stateWithPattern = gameReducer({ ...s, board }, { type: 'TICK' });
     expect(stateWithPattern.detectedPatterns.length).toBeGreaterThan(0);
 
     const swept = gameReducer(stateWithPattern, { type: 'MANUAL_SWEEP' });

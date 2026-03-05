@@ -18,20 +18,22 @@ export const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({
   return (
     <Link
       to={`/replays/${replayId}`}
-      className="block w-full cursor-pointer rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 transition-all duration-200 hover:border-gray-600/50 hover:bg-gray-700/50"
+      className="border-border bg-card hover:bg-accent/50 block w-full cursor-pointer rounded-lg border p-4 transition-all duration-200"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold tabular-nums text-gray-300">
+          <div className="bg-secondary text-secondary-foreground flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold tabular-nums">
             #{rank}
           </div>
           <div>
-            <h3 className="font-semibold text-white">{playerName}</h3>
-            <p className="text-left text-xs text-gray-400">{date}</p>
+            <h3 className="text-foreground font-semibold">{playerName}</h3>
+            <p className="text-muted-foreground text-left text-xs">{date}</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="font-bold tabular-nums text-white">{score.toLocaleString()}</div>
+          <div className="text-foreground font-bold tabular-nums">
+            {score.toLocaleString()}
+          </div>
         </div>
       </div>
     </Link>

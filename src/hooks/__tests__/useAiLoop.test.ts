@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+
+import { createInitialGameState, gameReducer } from '@/reducers/gameReducer';
+
 import { useAiLoop } from '../useAiLoop';
-import { createInitialGameState } from '@/reducers/gameReducer';
-import { gameReducer } from '@/reducers/gameReducer';
 
 describe('useAiLoop', () => {
   it('starts disconnected', () => {

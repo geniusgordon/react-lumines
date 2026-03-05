@@ -221,7 +221,14 @@ export function useGameControls(
         }
       }
     },
-    [gameState.status, debugMode, enableKeyRepeat, keyRepeatDelay, disabled, actions]
+    [
+      gameState.status,
+      debugMode,
+      enableKeyRepeat,
+      keyRepeatDelay,
+      disabled,
+      actions,
+    ]
   );
 
   // Handle key release

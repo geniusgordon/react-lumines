@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
+
+import type { Square } from '@/types/game';
 import {
   computeChainLengths,
   computeCellContributions,
   computeComboGroups,
   computeColumnDistances,
 } from '@/utils/trainingMetrics';
-import type { Square } from '@/types/game';
 
 describe('computeColumnDistances', () => {
   it('returns 0 for columns 7 and 8 (center of 16-wide board)', () => {

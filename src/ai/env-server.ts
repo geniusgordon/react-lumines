@@ -15,15 +15,22 @@
  *   {"cmd": "close"}
  */
 
-import { writeFileSync } from 'fs';
 import { randomUUID } from 'crypto';
-import { LuminesEnv, type StepMode, type BlockAction, type FrameAction } from './LuminesEnv.js';
+import { writeFileSync } from 'fs';
+
+import {
+  LuminesEnv,
+  type StepMode,
+  type BlockAction,
+  type FrameAction,
+} from './LuminesEnv.js';
 
 // Parse --mode argument
 const args = process.argv.slice(2);
 const modeIdx = args.indexOf('--mode');
 const mode: StepMode =
-  modeIdx !== -1 && (args[modeIdx + 1] === 'per_frame' || args[modeIdx + 1] === 'per_block')
+  modeIdx !== -1 &&
+  (args[modeIdx + 1] === 'per_frame' || args[modeIdx + 1] === 'per_block')
     ? (args[modeIdx + 1] as StepMode)
     : 'per_block';
 
@@ -114,7 +121,9 @@ process.stdin.on('data', (chunk: string) => {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
+    if (!trimmed) {
+      continue;
+    }
     try {
       const cmd = JSON.parse(trimmed) as Command;
       handleCommand(cmd);

@@ -1,7 +1,7 @@
 import { Upload } from 'lucide-react';
 import { useRef } from 'react';
 
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/button';
 
 interface ReplayImportProps {
   onFileImport: (file: File) => Promise<void>;
@@ -39,9 +39,9 @@ export const ReplayImport: React.FC<ReplayImportProps> = ({
         <Button
           onClick={handleImportClick}
           variant="secondary"
-          icon={Upload}
-          fullWidth
+          className="w-full"
         >
+          <Upload />
           Import Replay
         </Button>
         <input
@@ -57,8 +57,8 @@ export const ReplayImport: React.FC<ReplayImportProps> = ({
         <div
           className={`mb-4 rounded-lg p-3 text-center text-sm ${
             importMessage.includes('success')
-              ? 'border border-green-700/50 bg-green-900/50 text-green-300'
-              : 'border border-red-700/50 bg-red-900/50 text-red-300'
+              ? 'border border-success/50 bg-success/20 text-success'
+              : 'border border-destructive/50 bg-destructive/20 text-destructive'
           }`}
         >
           {importMessage}

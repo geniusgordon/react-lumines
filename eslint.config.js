@@ -9,7 +9,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'python/'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -52,12 +52,11 @@ export default tseslint.config(
       'import/no-unresolved': 'error',
       'import/no-duplicates': 'error',
       'import/newline-after-import': 'error',
-      'import/no-unused-modules': 'warn',
     },
     settings: {
       'import/resolver': {
         typescript: {
-          alwaysTryTypes: true,
+          alwaysTryTypes: false,
           project: './tsconfig.json',
         },
         alias: {
@@ -67,8 +66,15 @@ export default tseslint.config(
       },
     },
   },
-  eslintPluginPrettierRecommended,
-  storybook.configs['flat/recommended'],
+  { ...eslintPluginPrettierRecommended, files: ['**/*.{ts,tsx}'] },
+  ...storybook.configs['flat/recommended'].map(config => ({ ...config, files: ['**/*.stories.{ts,tsx}'] })),
+  // Shadcn/ui generated files - disable react-refresh warnings
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   // Custom rules - applied last to ensure they take precedence
   {
     rules: {

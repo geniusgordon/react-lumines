@@ -8,6 +8,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { getZIndexStyle, UI_Z_INDEX } from '@/constants/zIndex';
 
 import { ProgressBar } from './ProgressBar';
@@ -51,7 +52,7 @@ export function ReplayController({
 
   return (
     <div
-      className="rounded-lg border border-gray-600/50 bg-gray-900/95 px-6 py-4 shadow-xl backdrop-blur-sm"
+      className="rounded-lg border border-border bg-card/95 px-6 py-4 shadow-xl backdrop-blur-sm"
       style={{
         ...getZIndexStyle(UI_Z_INDEX.DROPDOWN),
         transform: 'translateZ(0)',
@@ -59,59 +60,65 @@ export function ReplayController({
     >
       <div className="flex flex-1 items-center justify-center gap-4">
         <div className="flex w-[120px] justify-end">
-          <button
+          <Button
+            size="icon"
+            variant="ghost"
             onClick={onRestart}
-            className="p-1 text-gray-400 transition-colors hover:text-white"
             aria-label="Restart"
           >
-            <RotateCcw size={16} />
-          </button>
+            <RotateCcw />
+          </Button>
         </div>
 
-        <button
+        <Button
+          size="icon"
+          variant="ghost"
           onClick={() => onStepFrames(-stepAmount)}
-          className="p-1 text-gray-400 transition-colors hover:text-white"
           aria-label={`Step back ${stepAmount} frames`}
         >
-          <SkipBack size={20} />
-        </button>
+          <SkipBack />
+        </Button>
 
-        <button
+        <Button
+          size="icon"
+          variant="ghost"
           onClick={() => onStepFrames(-1)}
-          className="p-1 text-gray-400 transition-colors hover:text-white"
           aria-label="Step back 1 frame"
         >
-          <StepBack size={18} />
-        </button>
+          <StepBack />
+        </Button>
 
         {/* Main Play/Pause Button */}
-        <button
+        <Button
+          size="icon"
           onClick={onPlayPause}
-          className="rounded-full bg-white p-2 text-black transition-transform hover:scale-105"
+          className="rounded-full bg-foreground text-background hover:scale-105 hover:bg-foreground"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (
-            <Pause size={20} fill="currentColor" />
+            <Pause fill="currentColor" />
           ) : (
-            <Play size={20} fill="currentColor" />
+            <Play fill="currentColor" />
           )}
-        </button>
+        </Button>
 
-        <button
+        <Button
+          size="icon"
+          variant="ghost"
           onClick={() => onStepFrames(1)}
-          className="p-1 text-gray-400 transition-colors hover:text-white"
           aria-label="Step forward 1 frame"
         >
-          <StepForward size={18} />
-        </button>
+          <StepForward />
+        </Button>
 
-        <button
+        <Button
+          size="icon"
+          variant="ghost"
           onClick={() => onStepFrames(stepAmount)}
-          className="p-1 text-gray-400 transition-colors hover:text-white"
           aria-label={`Step forward ${stepAmount} frames`}
         >
-          <SkipForward size={20} />
-        </button>
+          <SkipForward />
+        </Button>
 
         <div className="w-[120px] overflow-visible">
           <SpeedSelector
@@ -122,7 +129,7 @@ export function ReplayController({
         </div>
       </div>
 
-      <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
         <span className="min-w-[35px] text-right font-mono tabular-nums">
           {formatTime(currentFrame)}
         </span>
@@ -141,7 +148,7 @@ export function ReplayController({
       </div>
 
       <div className="mt-1 text-center">
-        <span className="font-mono text-xs text-gray-500">
+        <span className="font-mono text-xs text-muted-foreground">
           {currentFrame.toLocaleString()} / {totalFrames.toLocaleString()}
         </span>
       </div>

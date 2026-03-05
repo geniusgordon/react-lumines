@@ -1,6 +1,7 @@
 import { ChevronDown, ClipboardList, Copy } from 'lucide-react';
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 import { logGameState } from '@/utils/debugLogger';
@@ -76,10 +77,10 @@ export function AdvancedSection({
   };
 
   return (
-    <div className="border-t border-gray-700/50 pt-4">
+    <div className="border-t border-border pt-4">
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex w-full items-center justify-between text-xs font-medium tracking-wide text-gray-400 uppercase transition-colors hover:text-gray-300"
+        className="flex w-full items-center justify-between text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-foreground"
       >
         <span>Advanced</span>
         <ChevronDown
@@ -89,23 +90,23 @@ export function AdvancedSection({
 
       {showAdvanced && (
         <div className="mt-3 space-y-3">
-          <div className="rounded-md bg-gray-800/30 p-3">
+          <div className="rounded-md bg-muted/30 p-3">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-500">Debug Mode:</span>
+                <span className="text-muted-foreground">Debug Mode:</span>
                 <span
                   className={
-                    gameState.debugMode ? 'text-orange-400' : 'text-gray-400'
+                    gameState.debugMode ? 'text-primary' : 'text-muted-foreground'
                   }
                 >
                   {gameState.debugMode ? 'Manual' : 'Auto'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Logging:</span>
+                <span className="text-muted-foreground">Logging:</span>
                 <span
                   className={
-                    gameState.debugMode ? 'text-green-400' : 'text-gray-400'
+                    gameState.debugMode ? 'text-success' : 'text-muted-foreground'
                   }
                 >
                   {gameState.debugMode ? 'Enabled' : 'Disabled'}
@@ -116,56 +117,56 @@ export function AdvancedSection({
 
           {/* Debug Tools Section */}
           <div className="space-y-2">
-            <div className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Debug Tools
             </div>
 
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleLogState}
-                className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
+                variant="secondary"
+                size="sm"
+                className="flex-1 text-xs"
                 title="Log detailed game state analysis to console"
               >
-                <div className="flex items-center justify-center gap-1">
-                  <ClipboardList className="h-3 w-3" />
-                  Log State
-                </div>
-              </button>
+                <ClipboardList className="size-3" />
+                Log State
+              </Button>
 
-              <button
+              <Button
                 onClick={handleCopyData}
-                className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
+                variant="secondary"
+                size="sm"
+                className="flex-1 text-xs"
                 title="Copy comprehensive debug data to clipboard"
               >
-                <div className="flex items-center justify-center gap-1">
-                  <Copy className="h-3 w-3" />
-                  Copy Data
-                </div>
-              </button>
+                <Copy className="size-3" />
+                Copy Data
+              </Button>
             </div>
 
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={handleLogReplay}
-                className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
+                variant="secondary"
+                size="sm"
+                className="flex-1 text-xs"
                 title="Log replay data to console"
               >
-                <div className="flex items-center justify-center gap-1">
-                  <ClipboardList className="h-3 w-3" />
-                  Log Replay
-                </div>
-              </button>
+                <ClipboardList className="size-3" />
+                Log Replay
+              </Button>
 
-              <button
+              <Button
                 onClick={handleCopyReplay}
-                className="flex-1 rounded-md bg-gray-700 px-3 py-2 text-xs text-gray-300 transition-colors hover:bg-gray-600"
+                variant="secondary"
+                size="sm"
+                className="flex-1 text-xs"
                 title="Copy replay data to clipboard"
               >
-                <div className="flex items-center justify-center gap-1">
-                  <Copy className="h-3 w-3" />
-                  Copy Replay
-                </div>
-              </button>
+                <Copy className="size-3" />
+                Copy Replay
+              </Button>
             </div>
           </div>
         </div>

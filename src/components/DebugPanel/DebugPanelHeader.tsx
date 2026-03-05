@@ -10,14 +10,14 @@ export function DebugPanelHeader({
   onToggleExpanded,
 }: DebugPanelHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b border-gray-700/50 p-3">
+    <div className="flex items-center justify-between border-b border-border p-3">
       <div className="flex items-center gap-2">
-        <Settings className="h-5 w-5 text-gray-500" />
-        <h3 className="font-semibold text-gray-200">Debug Panel</h3>
+        <Settings className="h-5 w-5 text-muted-foreground" />
+        <h3 className="font-semibold text-foreground">Debug Panel</h3>
       </div>
       <button
         onClick={onToggleExpanded}
-        className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-700/50 hover:text-gray-200"
+        className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
         title={isExpanded ? 'Collapse panel' : 'Expand panel'}
       >
         <ChevronDown

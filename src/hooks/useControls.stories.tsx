@@ -37,7 +37,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
   const controlsReturn = useGameControls(gameState, actions, options);
 
   return (
-    <div className="min-h-screen space-y-6 bg-gray-900 p-6 text-white">
+    <div className="min-h-screen space-y-6 bg-background p-6 text-foreground">
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">useControls Hook Demo</h2>
 
@@ -45,21 +45,21 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">Game State</h3>
-            <div className="space-y-1 rounded bg-gray-800 p-3 font-mono text-sm">
+            <div className="space-y-1 rounded bg-muted p-3 font-mono text-sm">
               <div>
                 Status:{' '}
-                <span className="text-blue-400">{gameState.status}</span>
+                <span className="text-primary">{gameState.status}</span>
               </div>
               <div>
-                Frame: <span className="text-green-400">{gameState.frame}</span>
+                Frame: <span className="text-success">{gameState.frame}</span>
               </div>
               <div>
                 Score:{' '}
-                <span className="text-yellow-400">{gameState.score}</span>
+                <span className="text-warning">{gameState.score}</span>
               </div>
               <div>
                 Debug Mode:{' '}
-                <span className="text-purple-400">
+                <span className="text-primary">
                   {gameState.debugMode ? 'ON' : 'OFF'}
                 </span>
               </div>
@@ -68,10 +68,10 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
 
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">Controls State</h3>
-            <div className="space-y-1 rounded bg-gray-800 p-3 font-mono text-sm">
+            <div className="space-y-1 rounded bg-muted p-3 font-mono text-sm">
               <div>
                 Pressed Keys:{' '}
-                <span className="text-yellow-400">
+                <span className="text-warning">
                   {controlsReturn.pressedKeys.size}
                 </span>
               </div>
@@ -82,15 +82,15 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         {/* Currently Pressed Keys */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Currently Pressed Keys</h3>
-          <div className="min-h-[40px] rounded bg-gray-800 p-3">
+          <div className="min-h-[40px] rounded bg-muted p-3">
             {controlsReturn.pressedKeys.size === 0 ? (
-              <span className="text-sm text-gray-500">No keys pressed</span>
+              <span className="text-sm text-muted-foreground">No keys pressed</span>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {Array.from(controlsReturn.pressedKeys).map(key => (
                   <span
                     key={key}
-                    className="block rounded bg-blue-600 px-2 py-1 text-xs"
+                    className="block rounded bg-primary px-2 py-1 text-xs text-primary-foreground"
                   >
                     {key}
                   </span>
@@ -106,14 +106,14 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             {Object.entries(options?.controlsConfig || DEFAULT_CONTROLS).map(
               ([action, keys]) => (
-                <div key={action} className="rounded bg-gray-800 p-3">
-                  <div className="font-semibold text-blue-400 capitalize">
+                <div key={action} className="rounded bg-muted p-3">
+                  <div className="font-semibold text-primary capitalize">
                     {action.replace(/([A-Z])/g, ' $1').trim()}
                   </div>
-                  <div className="text-gray-300">
+                  <div className="text-foreground">
                     {keys.map((key: string, index: number) => (
                       <span key={key}>
-                        <code className="rounded bg-gray-700 px-1">{key}</code>
+                        <code className="rounded bg-secondary px-1">{key}</code>
                         {index < keys.length - 1 ? ', ' : ''}
                       </span>
                     ))}
@@ -127,7 +127,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         {/* Instructions */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Instructions</h3>
-          <div className="space-y-2 rounded bg-gray-800 p-4 text-sm">
+          <div className="space-y-2 rounded bg-muted p-4 text-sm">
             <p>🎮 Try the controls and watch the state update in real-time!</p>
             <p>
               🔧 Switch between different configurations to see behavior changes

@@ -1,9 +1,9 @@
 import { ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { getZIndexStyle, UI_Z_INDEX } from '@/constants/zIndex';
-
-import { Button } from '../Button';
+import { cn } from '@/lib/utils';
 
 export interface SpeedSelectorProps {
   speed: number;
@@ -52,30 +52,27 @@ export function SpeedSelector({ speed, onSpeedChange }: SpeedSelectorProps) {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Speed Selector Button */}
-      <Button
-        onClick={() => setIsOpen(!isOpen)}
-        size="sm"
-        variant="secondary"
-        icon={ChevronDown}
-        iconClassName={isOpen ? 'rotate-180' : ''}
-      >
+      <Button onClick={() => setIsOpen(!isOpen)} size="sm" variant="secondary">
+        <ChevronDown
+          className={cn('transition-transform', isOpen && 'rotate-180')}
+        />
         <span className="font-mono tabular-nums">{currentSpeedLabel}</span>
       </Button>
 
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute bottom-full left-0 mb-2 w-24 rounded-md bg-gray-800 py-1 shadow-lg ring-1 ring-black/20"
+          className="absolute bottom-full left-0 mb-2 w-24 rounded-md bg-muted py-1 shadow-lg ring-1 ring-black/20"
           style={{ ...getZIndexStyle(UI_Z_INDEX.DROPDOWN) }}
         >
           {SPEED_OPTIONS.map(option => (
             <button
               key={option.value}
               onClick={() => handleSpeedSelect(option.value)}
-              className={`block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-700 ${
+              className={`block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
                 speed === option.value
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground'
               }`}
             >
               <span className="font-mono tabular-nums">{option.label}</span>

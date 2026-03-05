@@ -91,17 +91,17 @@ export function ProgressBar({
       {/* Progress Bar Container */}
       <div
         ref={progressRef}
-        className="group relative h-2 cursor-pointer rounded-full bg-gray-700 transition-all hover:h-3"
+        className="group relative h-2 cursor-pointer rounded-full bg-muted transition-all hover:h-3"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         {/* Background Progress */}
-        <div className="h-full rounded-full bg-gray-600" />
+        <div className="h-full rounded-full bg-secondary" />
 
         {/* Filled Progress */}
         <div
-          className="absolute top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"
+          className="absolute top-0 h-full rounded-full bg-primary"
           style={{ width: `${displayProgress * 100}%` }}
         />
 
@@ -123,7 +123,7 @@ export function ProgressBar({
           >
             <div className="text-center tabular-nums">
               <div>{formatTime(currentDisplayFrame)}</div>
-              <div className="text-gray-400">Frame {currentDisplayFrame}</div>
+              <div className="text-muted-foreground">Frame {currentDisplayFrame}</div>
             </div>
             {/* Tooltip Arrow */}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-t-4 border-r-2 border-l-2 border-t-black/80 border-r-transparent border-l-transparent" />

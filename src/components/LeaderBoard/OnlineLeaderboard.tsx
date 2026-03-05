@@ -1,4 +1,4 @@
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/button';
 import type { TopLeaderboardEntry } from '@/types/database';
 
 import { EmptyState } from './EmptyState';
@@ -34,7 +34,7 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
   if (loading) {
     return (
       <div className="py-16 text-center">
-        <p className="text-gray-400">Loading online leaderboard...</p>
+        <p className="text-muted-foreground">Loading online leaderboard...</p>
       </div>
     );
   }
@@ -42,8 +42,10 @@ export const OnlineLeaderboard: React.FC<OnlineLeaderboardProps> = ({
   if (error) {
     return (
       <div className="py-16 text-center">
-        <p className="mb-4 text-red-400">Failed to load online leaderboard</p>
-        <p className="mb-4 text-sm text-gray-400">{error}</p>
+        <p className="text-destructive mb-4">
+          Failed to load online leaderboard
+        </p>
+        <p className="text-muted-foreground mb-4 text-sm">{error}</p>
         <div className="flex justify-center">
           <Button onClick={onRetry} variant="secondary" className="w-auto">
             Retry

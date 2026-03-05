@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { LuminesEnv } from '../LuminesEnv';
 
 describe('LuminesEnv', () => {
@@ -124,7 +125,9 @@ describe('LuminesEnv', () => {
 
       expect(Array.isArray(result.appliedInputs)).toBe(true);
       // rotation=2 → 2 ROTATE_CW
-      const rotations = result.appliedInputs.filter(i => i.type === 'ROTATE_CW');
+      const rotations = result.appliedInputs.filter(
+        i => i.type === 'ROTATE_CW'
+      );
       expect(rotations).toHaveLength(2);
       // always ends with HARD_DROP
       const lastInput = result.appliedInputs[result.appliedInputs.length - 1];
@@ -136,7 +139,9 @@ describe('LuminesEnv', () => {
 
     it('appliedInputs rotation=0 has no ROTATE_CW', () => {
       const result = env.step({ targetX: 7, rotation: 0 });
-      const rotations = result.appliedInputs.filter(i => i.type === 'ROTATE_CW');
+      const rotations = result.appliedInputs.filter(
+        i => i.type === 'ROTATE_CW'
+      );
       expect(rotations).toHaveLength(0);
     });
 

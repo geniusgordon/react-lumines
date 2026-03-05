@@ -25,10 +25,13 @@ export function computeColumnDistances(boardWidth: number): number[] {
  * A chain extends to the next column if it has a pattern of the same color
  * within 1 row of the predecessor pattern's y position.
  */
-export function computeChainLengths(
-  patterns: Square[]
-): { light: number; dark: number } {
-  if (patterns.length === 0) return { light: 0, dark: 0 };
+export function computeChainLengths(patterns: Square[]): {
+  light: number;
+  dark: number;
+} {
+  if (patterns.length === 0) {
+    return { light: 0, dark: 0 };
+  }
 
   const byColor: Record<1 | 2, Square[]> = { 1: [], 2: [] };
   for (const p of patterns) {
@@ -38,7 +41,9 @@ export function computeChainLengths(
   }
 
   function longestChain(colorPatterns: Square[]): number {
-    if (colorPatterns.length === 0) return 0;
+    if (colorPatterns.length === 0) {
+      return 0;
+    }
 
     // Sort by column then row
     const sorted = [...colorPatterns].sort((a, b) =>
@@ -51,7 +56,9 @@ export function computeChainLengths(
     for (let i = 1; i < sorted.length; i++) {
       for (let j = i - 1; j >= 0; j--) {
         const colDiff = sorted[i].x - sorted[j].x;
-        if (colDiff > 1) break; // sorted by col, can stop early
+        if (colDiff > 1) {
+          break;
+        } // sorted by col, can stop early
         if (colDiff === 1 && Math.abs(sorted[i].y - sorted[j].y) <= 1) {
           dp[i] = Math.max(dp[i], dp[j] + 1);
         }
@@ -96,7 +103,9 @@ export function computeCellContributions(
  * Two patterns are adjacent if they share at least one cell (i.e., x/y differ by ≤1).
  */
 export function computeComboGroups(patterns: Square[]): ComboGroup[] {
-  if (patterns.length === 0) return [];
+  if (patterns.length === 0) {
+    return [];
+  }
 
   const visited = new Set<number>();
   const groups: ComboGroup[] = [];
@@ -116,7 +125,9 @@ export function computeComboGroups(patterns: Square[]): ComboGroup[] {
   }
 
   for (let i = 0; i < patterns.length; i++) {
-    if (visited.has(i)) continue;
+    if (visited.has(i)) {
+      continue;
+    }
 
     // BFS flood fill
     const queue = [i];
@@ -143,7 +154,9 @@ export function computeComboGroups(patterns: Square[]): ComboGroup[] {
     const groupPatterns = groupIndices.map(idx => patterns[idx]);
     const uniqueCells = new Set<string>();
     for (const p of groupPatterns) {
-      for (const c of cellsOfPattern(p)) uniqueCells.add(c);
+      for (const c of cellsOfPattern(p)) {
+        uniqueCells.add(c);
+      }
     }
 
     const patternCount = groupPatterns.length;

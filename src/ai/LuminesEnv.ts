@@ -12,9 +12,9 @@
  *   'per_frame'           — agent sends one discrete input per tick
  */
 
+import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
 import { gameReducer } from '@/reducers/gameReducer';
 import { createInitialGameState } from '@/reducers/gameState/initialState';
-import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
 import type { GameState } from '@/types/game';
 
 // ---------------------------------------------------------------------------
@@ -97,7 +97,9 @@ export class LuminesEnv {
    * Returns the initial observation at the first playable frame.
    */
   reset(seed?: string): Observation {
-    if (seed !== undefined) this.seed = seed;
+    if (seed !== undefined) {
+      this.seed = seed;
+    }
     this.state = this.initState(this.seed);
     this.blocksPlaced = 0;
     return this.buildObservation();
@@ -147,7 +149,9 @@ export class LuminesEnv {
         const row = by + dy;
         if (row >= 0 && row < BOARD_HEIGHT && col >= 0 && col < BOARD_WIDTH) {
           const cell = s.currentBlock.pattern[dy][dx];
-          if (cell !== 0) display[row][col] = cell === 1 ? 3 : 4;
+          if (cell !== 0) {
+            display[row][col] = cell === 1 ? 3 : 4;
+          }
         }
       }
     }
@@ -161,14 +165,26 @@ export class LuminesEnv {
         .map((c, col) => {
           if (col === s.timeline.x) {
             // Timeline column indicator (overrides cell rendering)
-            if (c === 0) return '|';
-            if (c === 1 || c === 3) return 'I';
+            if (c === 0) {
+              return '|';
+            }
+            if (c === 1 || c === 3) {
+              return 'I';
+            }
             return 'i';
           }
-          if (c === 0) return '.';
-          if (c === 1) return '□';
-          if (c === 2) return '■';
-          if (c === 3) return 'o'; // current block (light)
+          if (c === 0) {
+            return '.';
+          }
+          if (c === 1) {
+            return '□';
+          }
+          if (c === 2) {
+            return '■';
+          }
+          if (c === 3) {
+            return 'o';
+          } // current block (light)
           return 'x'; // current block (dark)
         })
         .join('');
@@ -228,14 +244,18 @@ export class LuminesEnv {
       for (let i = 0; i < -dx; i++) {
         const prevX = this.state.blockPosition.x;
         this.state = gameReducer(this.state, { type: 'MOVE_LEFT' });
-        if (this.state.blockPosition.x === prevX) break; // wall/block collision
+        if (this.state.blockPosition.x === prevX) {
+          break;
+        } // wall/block collision
         appliedInputs.push({ type: 'MOVE_LEFT', frame: inputFrame });
       }
     } else if (dx > 0) {
       for (let i = 0; i < dx; i++) {
         const prevX = this.state.blockPosition.x;
         this.state = gameReducer(this.state, { type: 'MOVE_RIGHT' });
-        if (this.state.blockPosition.x === prevX) break;
+        if (this.state.blockPosition.x === prevX) {
+          break;
+        }
         appliedInputs.push({ type: 'MOVE_RIGHT', frame: inputFrame });
       }
     }

@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
 import { ArrowLeft, Wifi, WifiOff } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { GameCore } from '@/components/Game/GameCore';
-import { useGame } from '@/hooks/useGame';
+import { Button } from '@/components/ui/button';
 import { useAiLoop } from '@/hooks/useAiLoop';
-import { useResponsiveScale } from '@/hooks/useResponsiveScale';
+import { useGame } from '@/hooks/useGame';
 import { useGameControls } from '@/hooks/useGameControls';
+import { useResponsiveScale } from '@/hooks/useResponsiveScale';
 
 const DEFAULT_WS_URL = 'ws://localhost:8765';
 const LS_KEY = 'ai-watch-ws-url';
@@ -21,7 +22,10 @@ export function AiWatchScreen() {
   const { gameState, actions, _dispatch } = useGame();
   const aiLoop = useAiLoop(gameState, _dispatch, { wsUrl });
   const scale = useResponsiveScale({ minScale: 0.5, maxScale: 2, padding: 40 });
-  const controls = useGameControls(gameState, actions, { enableKeyRepeat: false, disabled: true });
+  const controls = useGameControls(gameState, actions, {
+    enableKeyRepeat: false,
+    disabled: true,
+  });
 
   // Auto-start when screen loads
   useEffect(() => {
@@ -48,48 +52,49 @@ export function AiWatchScreen() {
   return (
     <div className="bg-game-background relative flex h-screen w-full flex-col items-center justify-center">
       {/* Header bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">
-        <button
+      <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-4 py-3">
+        <Button
+          variant="ghost"
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft size={16} />
-          <span className="text-sm">Menu</span>
-        </button>
+          <ArrowLeft />
+          Menu
+        </Button>
 
         <div className="flex items-center gap-2 text-sm">
           {aiLoop.isConnected ? (
             <>
-              <Wifi size={14} className="text-green-400" />
-              <span className="text-green-400">AI Connected</span>
-              <span className="text-gray-600">({wsUrl})</span>
+              <Wifi size={14} className="text-success" />
+              <span className="text-success">AI Connected</span>
+              <span className="text-muted-foreground">({wsUrl})</span>
             </>
           ) : (
             <>
-              <WifiOff size={14} className="text-yellow-400" />
+              <WifiOff size={14} className="text-warning" />
               <form
-                onSubmit={(e) => { e.preventDefault(); applyUrl(draft); }}
+                onSubmit={e => {
+                  e.preventDefault();
+                  applyUrl(draft);
+                }}
                 className="flex items-center gap-1"
               >
                 <input
                   type="text"
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  className="rounded border border-gray-600 bg-gray-800 px-2 py-0.5 text-xs text-white w-52 focus:outline-none focus:border-gray-400"
+                  onChange={e => setDraft(e.target.value)}
+                  className="w-52 rounded border border-border bg-muted px-2 py-0.5 text-xs text-foreground focus:border-ring focus:outline-none"
                   spellCheck={false}
                 />
-                <button
-                  type="submit"
-                  className="rounded bg-gray-700 px-2 py-0.5 text-xs text-white hover:bg-gray-600"
-                >
+                <Button type="submit" variant="secondary" size="sm">
                   Connect
-                </button>
+                </Button>
               </form>
             </>
           )}
         </div>
 
-        <div className="text-sm text-gray-500">{aiLoop.currentFPS} fps</div>
+        <div className="text-sm text-muted-foreground">{aiLoop.currentFPS} fps</div>
       </div>
 
       {/* Game */}

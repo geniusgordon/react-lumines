@@ -2,7 +2,6 @@
 export { GridCell } from './GridCell';
 export { Block } from './Block';
 export { BoardGrid } from './BoardGrid';
-export { Button } from './Button';
 export { DebugPanel } from './DebugPanel';
 export { GameBoard } from './GameBoard';
 export { PauseMenu } from './Game';
@@ -21,7 +20,6 @@ export * from './LeaderBoard';
 export type { GridCellProps } from './GridCell';
 export type { BlockProps } from './Block';
 export type { BoardGridProps } from './BoardGrid';
-export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export type { CurrentBlockProps } from './CurrentBlock';
 export type { GameBoardProps } from './GameBoard';
 export type { ReplayHeaderProps } from './ReplayHeader';
