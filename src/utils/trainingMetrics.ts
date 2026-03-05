@@ -21,57 +21,17 @@ export function computeColumnDistances(boardWidth: number): number[] {
 }
 
 /**
- * Compute the longest horizontal chain length per color using DP.
- * A chain extends to the next column if it has a pattern of the same color
- * within 1 row of the predecessor pattern's y position.
+ * Compute the largest connected group size per color using flood-fill.
+ * Delegates to computeComboGroups for accurate connectivity.
  */
 export function computeChainLengths(patterns: Square[]): {
   light: number;
   dark: number;
 } {
-  if (patterns.length === 0) {
-    return { light: 0, dark: 0 };
-  }
-
-  const byColor: Record<1 | 2, Square[]> = { 1: [], 2: [] };
-  for (const p of patterns) {
-    if (p.color === 1 || p.color === 2) {
-      byColor[p.color].push(p);
-    }
-  }
-
-  function longestChain(colorPatterns: Square[]): number {
-    if (colorPatterns.length === 0) {
-      return 0;
-    }
-
-    // Sort by column then row
-    const sorted = [...colorPatterns].sort((a, b) =>
-      a.x !== b.x ? a.x - b.x : a.y - b.y
-    );
-
-    // dp[i] = longest chain ending at pattern i
-    const dp = sorted.map(() => 1);
-
-    for (let i = 1; i < sorted.length; i++) {
-      for (let j = i - 1; j >= 0; j--) {
-        const colDiff = sorted[i].x - sorted[j].x;
-        if (colDiff > 1) {
-          break;
-        } // sorted by col, can stop early
-        if (colDiff === 1 && Math.abs(sorted[i].y - sorted[j].y) <= 1) {
-          dp[i] = Math.max(dp[i], dp[j] + 1);
-        }
-      }
-    }
-
-    return Math.max(...dp);
-  }
-
-  return {
-    light: longestChain(byColor[1]),
-    dark: longestChain(byColor[2]),
-  };
+  const groups = computeComboGroups(patterns);
+  const light = Math.max(0, ...groups.filter(g => g.color === 1).map(g => g.patternCount));
+  const dark  = Math.max(0, ...groups.filter(g => g.color === 2).map(g => g.patternCount));
+  return { light, dark };
 }
 
 /**

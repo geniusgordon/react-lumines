@@ -181,17 +181,19 @@ def test_relay_through_column_not_allowed_without_direct_path():
 
 
 def test_relay_through_column_works_when_rows_are_adjacent():
-    """Col 1 has patterns at rows 0 and 1 (adjacent).  Col 0 connects via row 0,
-    col 2 connects via row 1 — the dp allows this because row 1 in col 1 is
-    reachable from row 0 in col 0 (offset = 1), and row 2 in col 2 can reach
-    row 1 in col 1."""
+    """All 4 patterns form one connected group under flood-fill.
+
+    Patterns: (row=0,col=0), (row=0,col=1), (row=1,col=1), (row=2,col=2).
+    Each pair of consecutive patterns has |row|<=1 AND |col|<=1, so all are
+    reachable from each other via flood-fill → group size = 4.
+    """
     env = make_env()
     board = create_empty_board()
     place_2x2(board, row=0, col=0, color=L)
     place_2x2(board, row=0, col=1, color=L)
     place_2x2(board, row=1, col=1, color=L)  # overlaps with row-0 pattern in col 1
     place_2x2(board, row=2, col=2, color=L)  # connects to row-1 in col 1 (offset=1)
-    assert env._count_single_color_chain(board, L) == 3
+    assert env._count_single_color_chain(board, L) == 4
 
 
 # ---------------------------------------------------------------------------

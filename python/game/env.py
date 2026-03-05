@@ -339,39 +339,39 @@ class LuminesEnvNative(gym.Env):
         return max_run
 
     def _count_single_color_chain(self, board, color: int) -> int:
-        """Longest consecutive pattern-column chain for a single color.
+        """Largest connected group of same-color 2×2 patterns (flood-fill).
 
-        Two patterns at (row_a, col) and (row_b, col+1) are connected only if
-        their 2-row windows overlap: |row_a - row_b| <= 1.  The old set-based
-        approach ignored row positions, so it falsely chained patterns in the
-        same column-pair that were at completely different heights.
-
-        DP: dp[row] = longest chain ending at a pattern whose top-left is at
-        (current_col, row).  For each new pattern at (col, row_b) we look back
-        at prev_dp[row_b-1], prev_dp[row_b], prev_dp[row_b+1] and take the best.
+        Two patterns are adjacent if their 2×2 regions overlap:
+        |row_a - row_b| <= 1 AND |col_a - col_b| <= 1.
         """
-        # pattern_rows[col] = set of top-left rows with a same-color 2x2 at that col
-        pattern_rows: list[set[int]] = [set() for _ in range(BOARD_WIDTH - 1)]
+        patterns = []
         for row in range(BOARD_HEIGHT - 1):
             for col in range(BOARD_WIDTH - 1):
                 c = board[row][col]
                 if c == color and c == board[row][col + 1] == board[row + 1][col] == board[row + 1][col + 1]:
-                    pattern_rows[col].add(row)
+                    patterns.append((row, col))
 
-        max_chain = 0
-        prev_dp: dict[int, int] = {}  # row -> chain length ending at (prev_col, row)
-        for col in range(BOARD_WIDTH - 1):
-            if not pattern_rows[col]:
-                prev_dp = {}
+        if not patterns:
+            return 0
+
+        visited = set()
+        max_size = 0
+        for i, (ri, ci) in enumerate(patterns):
+            if i in visited:
                 continue
-            curr_dp: dict[int, int] = {}
-            for row in pattern_rows[col]:
-                best = max(prev_dp.get(row - 1, 0), prev_dp.get(row, 0), prev_dp.get(row + 1, 0))
-                curr_dp[row] = best + 1
-                if curr_dp[row] > max_chain:
-                    max_chain = curr_dp[row]
-            prev_dp = curr_dp
-        return max_chain
+            queue = [i]
+            visited.add(i)
+            size = 0
+            while queue:
+                idx = queue.pop()
+                size += 1
+                r, c = patterns[idx]
+                for j, (rj, cj) in enumerate(patterns):
+                    if j not in visited and abs(r - rj) <= 1 and abs(c - cj) <= 1:
+                        visited.add(j)
+                        queue.append(j)
+            max_size = max(max_size, size)
+        return max_size
 
     def _count_max_single_color_chain_from_board(self, board=None) -> int:
         """Longest consecutive pattern-column run for the single best color."""
