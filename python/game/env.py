@@ -70,7 +70,7 @@ class LuminesEnvNative(gym.Env):
         seed: Optional[str] = None,
         render_mode: Optional[str] = None,
         blocks_per_sweep: int = 6,
-        chain_shaping_coeff: float = 0.02,
+        chain_shaping_coeff: float = 0.05,
     ):
         super().__init__()
 
