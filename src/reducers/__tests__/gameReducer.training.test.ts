@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { gameReducer } from '@/reducers/gameReducer';
 import { createInitialGameState } from '@/reducers/gameState/initialState';
+import type { GameState } from '@/types/game';
 
 function makeTrainingState() {
   const s = createInitialGameState('test-seed', false, 'training');
@@ -13,7 +14,7 @@ describe('training mode tick', () => {
     const initialTimelineX = state.timeline.x;
 
     // Run enough ticks to normally advance the timeline
-    let s = state;
+    let s: GameState = state;
     for (let i = 0; i < state.timeline.sweepInterval + 5; i++) {
       s = gameReducer(s, { type: 'TICK' });
     }
@@ -25,7 +26,7 @@ describe('training mode tick', () => {
     const state = makeTrainingState();
     const initialY = state.blockPosition.y;
 
-    let s = state;
+    let s: GameState = state;
     for (let i = 0; i < state.dropInterval + 5; i++) {
       s = gameReducer(s, { type: 'TICK' });
     }
@@ -37,7 +38,7 @@ describe('training mode tick', () => {
     const state = makeTrainingState();
     const initialTimer = state.gameTimer;
 
-    let s = state;
+    let s: GameState = state;
     for (let i = 0; i < 10; i++) {
       s = gameReducer(s, { type: 'TICK' });
     }
@@ -68,7 +69,7 @@ describe('training mode undo stack', () => {
   });
 
   it('caps undoStack at 20 entries', () => {
-    let s = makeTrainingState();
+    let s: GameState = makeTrainingState();
     // Drop 25 blocks
     for (let i = 0; i < 25; i++) {
       s = gameReducer(s, { type: 'HARD_DROP' });

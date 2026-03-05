@@ -10,16 +10,21 @@ import { Timeline as TimelineComponent } from '../Timeline';
 import { DetectedPatterns } from './DetectedPatterns';
 import FallingBlocks from './FallingBlocks';
 import { MarkedCells } from './MarkedCells';
+import { TrainingOverlay } from './TrainingOverlay';
 
 export interface GameBoardProps {
   gameState: GameState;
+  trainingMode?: boolean;
 }
 
 /**
  * GameBoard represents the core 16x10 playing field
  * Contains the grid, current falling block, and timeline
  */
-export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({
+  gameState,
+  trainingMode = false,
+}) => {
   return (
     <div className="border-game-grid relative border-1">
       <div
@@ -48,7 +53,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ gameState }) => {
 
       <FallingBlocks fallingColumns={gameState.fallingColumns} />
 
-      <TimelineComponent timeline={gameState.timeline} />
+      {trainingMode && (
+        <TrainingOverlay detectedPatterns={gameState.detectedPatterns} />
+      )}
+
+      {!trainingMode && <TimelineComponent timeline={gameState.timeline} />}
     </div>
   );
 };

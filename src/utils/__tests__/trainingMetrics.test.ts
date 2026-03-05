@@ -4,7 +4,6 @@ import {
   computeCellContributions,
   computeComboGroups,
   computeColumnDistances,
-  type ComboGroup,
 } from '@/utils/trainingMetrics';
 import type { Square } from '@/types/game';
 
