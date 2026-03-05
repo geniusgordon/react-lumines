@@ -128,3 +128,85 @@ def _render_play(env, cursor_col: int, cursor_rot: int) -> str:
     )
 
     return "\n".join(lines)
+
+
+def _getch():
+    """Read a single keypress; arrow keys returned as 'LEFT'/'RIGHT'."""
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = os.read(fd, 1)
+        if ch == b"\x1b":
+            rlist, _, _ = select.select([fd], [], [], 0.05)
+            if rlist:
+                ch2 = os.read(fd, 1)
+                if ch2 == b"[":
+                    rlist2, _, _ = select.select([fd], [], [], 0.05)
+                    if rlist2:
+                        ch3 = os.read(fd, 1)
+                        if ch3 == b"D":
+                            return "LEFT"
+                        elif ch3 == b"C":
+                            return "RIGHT"
+        decoded = ch.decode("utf-8", errors="replace")
+        if decoded == "\x03":
+            raise KeyboardInterrupt
+        return decoded
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+
+def play(seed: str, demos_dir: str) -> None:
+    """Run one human-played game and save the demo on quit or game over."""
+    env = LuminesEnvNative(mode="per_block", seed=seed)
+    env.reset(seed=int(seed) if seed.isdigit() else None)
+
+    cursor_col = 7
+    cursor_rot = 0
+    actions: list[list[int]] = []
+    done = False
+
+    print(f"Starting game with seed={seed!r}. Use ←/→ to move, z/x to rotate, Space to drop, q to quit.")
+
+    while not done:
+        # Render
+        frame = _render_play(env, cursor_col, cursor_rot)
+        print("\033[2J\033[H", end="")   # clear screen
+        print(frame, flush=True)
+
+        # Input
+        ch = _getch()
+
+        if ch == "LEFT":
+            cursor_col = max(0, cursor_col - 1)
+        elif ch == "RIGHT":
+            cursor_col = min(BOARD_WIDTH - 2, cursor_col + 1)
+        elif ch in ("z", "Z"):
+            cursor_rot = (cursor_rot - 1) % 4
+        elif ch in ("x", "X"):
+            cursor_rot = (cursor_rot + 1) % 4
+        elif ch in (" ", "\r", "\n"):
+            action = cursor_col * 4 + cursor_rot
+            _, _, terminated, _, info = env.step(action)
+            actions.append([cursor_col, cursor_rot])
+            done = terminated
+            cursor_col = 7
+            cursor_rot = 0
+        elif ch in ("q", "Q"):
+            break
+
+    # Render final board
+    final_frame = _render_play(env, cursor_col, cursor_rot)
+    print("\033[2J\033[H", end="")
+    print(final_frame)
+
+    final_score = env._state.score
+    blocks_placed = env._blocks_placed
+    print(f"\nGame over! Score: {final_score}  Blocks: {blocks_placed}")
+
+    if actions:
+        path = _save_demo(demos_dir, seed, actions, final_score, blocks_placed)
+        print(f"Demo saved → {path}")
+    else:
+        print("No moves recorded, demo not saved.")
