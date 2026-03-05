@@ -58,3 +58,19 @@ def test_render_play_shows_controls():
     env.reset()
     output = _render_play(env, cursor_col=7, cursor_rot=0)
     assert "Space" in output or "drop" in output.lower()
+
+
+import json, tempfile, os
+
+
+def test_save_demo_creates_file():
+    from play import _save_demo
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = _save_demo(tmpdir, seed="99", actions=[[7, 0], [3, 2]], final_score=100, blocks_placed=2)
+        assert os.path.exists(path)
+        with open(path) as f:
+            data = json.load(f)
+        assert data["seed"] == "99"
+        assert data["actions"] == [[7, 0], [3, 2]]
+        assert data["final_score"] == 100
+        assert data["version"] == 1

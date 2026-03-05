@@ -210,3 +210,44 @@ def play(seed: str, demos_dir: str) -> None:
         print(f"Demo saved → {path}")
     else:
         print("No moves recorded, demo not saved.")
+
+
+def _save_demo(
+    demos_dir: str,
+    seed: str,
+    actions: list,
+    final_score: int,
+    blocks_placed: int,
+) -> str:
+    """Save demo to demos_dir/<seed>_<timestamp>.json. Returns path."""
+    os.makedirs(demos_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{seed}_{timestamp}.json"
+    path = os.path.join(demos_dir, filename)
+    data = {
+        "version": 1,
+        "seed": seed,
+        "actions": actions,
+        "final_score": final_score,
+        "blocks_placed": blocks_placed,
+    }
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+    return path
+
+
+if __name__ == "__main__":
+    import random
+
+    parser = argparse.ArgumentParser(description="Play Lumines and record a demo")
+    parser.add_argument("--seed", default=None, help="Game seed (default: random)")
+    parser.add_argument(
+        "--demos-dir",
+        dest="demos_dir",
+        default="python/demos",
+        help="Directory to save demo JSON files",
+    )
+    args = parser.parse_args()
+
+    seed = args.seed if args.seed is not None else str(random.randint(0, 999_999))
+    play(seed=seed, demos_dir=args.demos_dir)
