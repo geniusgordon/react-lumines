@@ -63,6 +63,11 @@ function handleGameTimer(state: GameState): GameState {
  * Handle countdown and timer logic
  */
 export function handleCountdownAndTimer(state: GameState): GameState {
+  // Training mode: no game timer, skip countdown progression
+  if (state.mode === 'training') {
+    return { ...state, frame: state.frame + 1 };
+  }
+
   if (state.status === 'countdown') {
     return handleCountdown(state);
   }
@@ -146,6 +151,16 @@ export function handleGameTick(
   // Only process game logic if we're in playing state
   if (newState.status !== 'playing') {
     return newState;
+  }
+
+  // Training mode: only update pattern detection and falling columns (gravity after sweep/undo)
+  if (newState.mode === 'training') {
+    newState = updatePatternDetection(newState);
+    const { newBoard, newFallingColumns } = updateFallingColumns(
+      newState.board,
+      newState.fallingColumns
+    );
+    return { ...newState, board: newBoard, fallingColumns: newFallingColumns };
   }
 
   // Handle block dropping and placement
