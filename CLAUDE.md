@@ -167,6 +167,20 @@ python python/eval.py --render --episodes 3     # ASCII render to watch agent pl
 python/.venv/bin/pytest python/tests/ -v        # Run Python tests
 ```
 
+### Human Demo & Behavioral Cloning Pipeline
+
+Collect human gameplay, build a dataset, and warm-start the RL policy via supervised learning:
+
+```bash
+python python/play.py --seed 42                 # Record a human demo → python/demos/<seed>_<timestamp>.json
+python python/extract_demos.py                  # Convert all demos → python/demos/dataset.npz
+python python/bc_pretrain.py                    # BC pretrain PPO → python/checkpoints/bc_pretrained_ppo
+python python/bc_pretrain.py --algo dqn         # BC pretrain DQN → python/checkpoints/bc_pretrained_dqn
+python python/train.py --resume python/checkpoints/bc_pretrained_ppo  # RL fine-tune from BC checkpoint
+```
+
+`bc_pretrain.py` options: `--steps 10000`, `--batch-size 256`, `--lr 1e-4`, `--device mps`.
+
 Checkpoints are saved to `python/checkpoints/`. TensorBoard logs go to `python/logs/`.
 
 ### Game Strategy

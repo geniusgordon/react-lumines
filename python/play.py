@@ -22,6 +22,8 @@ import termios
 import tty
 from datetime import datetime
 
+import copy
+
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -82,7 +84,7 @@ def _render_play(env, cursor_col: int, cursor_rot: int) -> str:
     lines = []
 
     # Controls header
-    lines.append("  ←/→ move   z/x rotate   Space drop   q quit")
+    lines.append("  ←/→ move   z/x rotate   Space/↓ drop   u undo   q quit")
     lines.append(f"  Col: {cursor_col}   Rot: {cursor_rot}")
     lines.append("")
 
@@ -149,6 +151,8 @@ def _getch():
                             return "LEFT"
                         elif ch3 == b"C":
                             return "RIGHT"
+                        elif ch3 == b"B":
+                            return "DOWN"
         decoded = ch.decode("utf-8", errors="replace")
         if decoded == "\x03":
             raise KeyboardInterrupt
@@ -165,6 +169,7 @@ def play(seed: str, demos_dir: str) -> None:
     cursor_col = 7
     cursor_rot = 0
     actions: list[list[int]] = []
+    history: list[tuple] = []  # undo snapshots: (state, blocks_placed, actions_copy)
     done = False
 
     print(f"Starting game with seed={seed!r}. Use ←/→ to move, z/x to rotate, Space to drop, q to quit.")
@@ -186,13 +191,19 @@ def play(seed: str, demos_dir: str) -> None:
             cursor_rot = (cursor_rot - 1) % 4
         elif ch in ("x", "X"):
             cursor_rot = (cursor_rot + 1) % 4
-        elif ch in (" ", "\r", "\n"):
+        elif ch in (" ", "\r", "\n", "DOWN"):
+            history.append((copy.deepcopy(env._state), env._blocks_placed, list(actions)))
             action = cursor_col * 4 + cursor_rot
             _, _, terminated, _, info = env.step(action)
             actions.append([cursor_col, cursor_rot])
             done = terminated
             cursor_col = 7
             cursor_rot = 0
+        elif ch in ("u", "U"):
+            if history:
+                env._state, env._blocks_placed, actions = history.pop()
+                cursor_col = 7
+                cursor_rot = 0
         elif ch in ("q", "Q"):
             break
 
