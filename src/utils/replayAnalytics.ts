@@ -3,7 +3,7 @@ import { computeChainLengths } from '@/utils/trainingMetrics';
 
 export const KEY_MOMENT_THRESHOLD = 5;
 
-export function computeReplayAnalytics(snapshots: StateSnapshot[]): ReplayAnalytics {
+export function computeReplayAnalytics(snapshots: StateSnapshot[], placementCounts: number[]): ReplayAnalytics {
   if (snapshots.length === 0) {
     return {
       scoreTimeline: [],
@@ -18,7 +18,6 @@ export function computeReplayAnalytics(snapshots: StateSnapshot[]): ReplayAnalyt
 
   const scoreTimeline: ScorePoint[] = [];
   const keyMoments: KeyMoment[] = [];
-  const columnCounts = Array(16).fill(0);
   let peakChainLength = 0;
   let peakChainFrame = 0;
   const scoreDistribution = { small: 0, medium: 0, large: 0 };
@@ -51,20 +50,11 @@ export function computeReplayAnalytics(snapshots: StateSnapshot[]): ReplayAnalyt
       peakChainFrame = frame;
     }
 
-    // Column heatmap: accumulate non-empty cells per column
-    const board = gameState.board;
-    for (let col = 0; col < board.length; col++) {
-      for (let row = 0; row < board[col].length; row++) {
-        if (board[col][row] !== 0) {
-          columnCounts[col]++;
-        }
-      }
-    }
-
+    // Column heatmap: use placement counts passed in from simulation
     prevScore = score;
   }
 
-  const columnMax = Math.max(...columnCounts, 1);
+  const columnMax = Math.max(...placementCounts, 1);
 
   // Board efficiency from final snapshot
   const finalState = snapshots[snapshots.length - 1].gameState;
@@ -91,7 +81,7 @@ export function computeReplayAnalytics(snapshots: StateSnapshot[]): ReplayAnalyt
     peakChainFrame,
     boardEfficiency,
     keyMoments,
-    columnHeatmap: { counts: columnCounts, max: columnMax },
+    columnHeatmap: { counts: placementCounts, max: columnMax },
     scoreDistribution,
   };
 }

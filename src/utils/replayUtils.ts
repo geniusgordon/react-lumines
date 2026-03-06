@@ -147,8 +147,8 @@ export function expandReplayDataWithSnapshots(
   replayData: ReplayData
 ): ExpandedReplayData {
   const frameActions = expandReplayData(replayData);
-  const snapshots = createSnapshotsForReplay(replayData.seed, frameActions);
-  const analytics = computeReplayAnalytics(snapshots);
+  const { snapshots, placementCounts } = createSnapshotsForReplay(replayData.seed, frameActions);
+  const analytics = computeReplayAnalytics(snapshots, placementCounts);
 
   return {
     ...replayData,
@@ -240,8 +240,9 @@ export function findBestSnapshot(
 export function createSnapshotsForReplay(
   seed: string,
   frameActions: FrameActions[]
-): StateSnapshot[] {
+): { snapshots: StateSnapshot[]; placementCounts: number[] } {
   const snapshots: StateSnapshot[] = [];
+  const placementCounts = Array(16).fill(0);
 
   // Create initial game state with replay seed
   let gameState: GameState = createInitialGameState(seed, false);
@@ -262,6 +263,14 @@ export function createSnapshotsForReplay(
 
     // Apply user actions for this frame
     for (const userAction of frameData.userActions) {
+      // Track placements: record block x before HARD_DROP (block is 2 wide)
+      if (userAction.type === 'HARD_DROP') {
+        const x = gameState.blockPosition.x;
+        placementCounts[x] = (placementCounts[x] ?? 0) + 1;
+        if (x + 1 < placementCounts.length) {
+          placementCounts[x + 1] = (placementCounts[x + 1] ?? 0) + 1;
+        }
+      }
       gameState = gameReducer(gameState, userAction);
     }
 
@@ -277,5 +286,5 @@ export function createSnapshotsForReplay(
     }
   }
 
-  return snapshots;
+  return { snapshots, placementCounts };
 }
