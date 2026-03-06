@@ -10,7 +10,7 @@ import { Timeline as TimelineComponent } from '../Timeline';
 import { DetectedPatterns } from './DetectedPatterns';
 import FallingBlocks from './FallingBlocks';
 import { MarkedCells } from './MarkedCells';
-import { TrainingOverlay } from './TrainingOverlay';
+import { PatternHeatmap } from './PatternHeatmap';
 
 export interface GameBoardProps {
   gameState: GameState;
@@ -54,7 +54,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <FallingBlocks fallingColumns={gameState.fallingColumns} />
 
       {trainingMode && (
-        <TrainingOverlay detectedPatterns={gameState.detectedPatterns} />
+        <PatternHeatmap detectedPatterns={gameState.detectedPatterns} />
       )}
 
       {!trainingMode && <TimelineComponent timeline={gameState.timeline} />}

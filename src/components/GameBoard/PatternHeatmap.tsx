@@ -8,7 +8,7 @@ import {
   computeColumnDistances,
 } from '@/utils/trainingMetrics';
 
-interface TrainingOverlayProps {
+export interface PatternHeatmapProps {
   detectedPatterns: Square[];
 }
 
@@ -26,7 +26,7 @@ function distanceColor(distance: number): string {
   return `rgba(255, 100, 50, ${alpha})`;
 }
 
-export const TrainingOverlay: React.FC<TrainingOverlayProps> = ({
+export const PatternHeatmap: React.FC<PatternHeatmapProps> = ({
   detectedPatterns,
 }) => {
   const contributions = computeCellContributions(detectedPatterns);

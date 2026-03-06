@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { ReplayController } from '@/components/ReplayController';
 import { ReplayHUD } from '@/components/ReplayHUD';
@@ -19,6 +19,8 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   scale,
   replayData,
 }) => {
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
   const {
     gameState,
     gameLoop,
@@ -58,6 +60,8 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
           currentFrame={currentFrame}
           totalFrames={totalFrames}
           sourceReplayId={replayData.id}
+          showHeatmap={showHeatmap}
+          onToggleHeatmap={() => setShowHeatmap(v => !v)}
         />
         <div>
           <GameCore
@@ -67,6 +71,7 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
             gameLoop={gameLoop}
             scale={scale}
             replayMode={true}
+            trainingMode={showHeatmap}
             exportReplay={exportReplay}
           />
         </div>
