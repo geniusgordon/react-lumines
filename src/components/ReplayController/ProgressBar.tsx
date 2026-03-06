@@ -91,23 +91,23 @@ export function ProgressBar({
       {/* Progress Bar Container */}
       <div
         ref={progressRef}
-        className="group relative h-2 cursor-pointer rounded-full bg-muted transition-all hover:h-3"
+        className="group bg-muted relative h-2 cursor-pointer rounded-full transition-all hover:h-3"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         {/* Background Progress */}
-        <div className="h-full rounded-full bg-secondary" />
+        <div className="bg-secondary h-full rounded-full" />
 
         {/* Filled Progress */}
         <div
-          className="absolute top-0 h-full rounded-full bg-primary"
+          className="bg-primary absolute top-0 h-full rounded-full"
           style={{ width: `${displayProgress * 100}%` }}
         />
 
         {/* Progress Handle */}
         <div
-          className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-lg transition-transform ${
+          className={`bg-primary absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full shadow-lg transition-transform ${
             isDragging || hoverProgress !== null
               ? 'scale-110 opacity-100'
               : 'scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100'
@@ -118,15 +118,17 @@ export function ProgressBar({
         {/* Hover Tooltip */}
         {hoverProgress !== null && !isDragging && (
           <div
-            className="absolute bottom-6 min-w-[120px] -translate-x-1/2 rounded bg-black/80 px-2 py-1 text-xs text-white"
+            className="border-border bg-popover text-popover-foreground absolute bottom-6 min-w-[120px] -translate-x-1/2 rounded border px-2 py-1 text-xs"
             style={{ left: `${hoverProgress * 100}%` }}
           >
             <div className="text-center tabular-nums">
               <div>{formatTime(currentDisplayFrame)}</div>
-              <div className="text-muted-foreground">Frame {currentDisplayFrame}</div>
+              <div className="text-muted-foreground">
+                Frame {currentDisplayFrame}
+              </div>
             </div>
             {/* Tooltip Arrow */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-t-4 border-r-2 border-l-2 border-t-black/80 border-r-transparent border-l-transparent" />
+            <div className="border-t-popover absolute top-full left-1/2 -translate-x-1/2 border-t-4 border-r-2 border-l-2 border-r-transparent border-l-transparent" />
           </div>
         )}
       </div>

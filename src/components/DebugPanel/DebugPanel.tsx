@@ -51,7 +51,7 @@ export function DebugPanel({
         style={{ ...getZIndexStyle(UI_Z_INDEX.SYSTEM_OVERLAY) }}
       >
         <DebugModeBanner isVisible={gameState.debugMode} />
-        <div className="flex max-h-[calc(100vh-10rem)] flex-col rounded-lg border border-border bg-card/95 shadow-xl backdrop-blur-sm">
+        <div className="border-border bg-card/95 flex max-h-[calc(100vh-10rem)] flex-col rounded-lg border shadow-xl backdrop-blur-sm">
           <DebugPanelHeader
             isExpanded={isExpanded}
             onToggleExpanded={() => setIsExpanded(!isExpanded)}
@@ -72,8 +72,6 @@ export function DebugPanel({
                 isRunning={isRunning}
               />
 
-              <ControlsInfo controls={controls} />
-
               <PrimaryControls
                 debugMode={gameState.debugMode}
                 gameStatus={gameState.status}
@@ -82,6 +80,8 @@ export function DebugPanel({
                 onRestartGame={actions.restartGame}
                 onSkipCountdown={actions.skipCountdown}
               />
+
+              <ControlsInfo controls={controls} />
 
               <AdvancedSection
                 gameState={gameState}

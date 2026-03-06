@@ -93,8 +93,10 @@ export function TrainingScreen() {
           <ArrowLeft />
           Menu
         </Button>
-        <span className="text-sm font-semibold text-foreground">Training</span>
-        <span className="text-sm text-muted-foreground">Score: {gameState.score}</span>
+        <span className="text-foreground text-sm font-semibold">Training</span>
+        <span className="text-muted-foreground text-sm">
+          Score: {gameState.score}
+        </span>
       </div>
 
       {/* Game area + HUD side by side */}

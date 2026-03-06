@@ -29,8 +29,14 @@ export function computeChainLengths(patterns: Square[]): {
   dark: number;
 } {
   const groups = computeComboGroups(patterns);
-  const light = Math.max(0, ...groups.filter(g => g.color === 1).map(g => g.patternCount));
-  const dark  = Math.max(0, ...groups.filter(g => g.color === 2).map(g => g.patternCount));
+  const light = Math.max(
+    0,
+    ...groups.filter(g => g.color === 1).map(g => g.patternCount)
+  );
+  const dark = Math.max(
+    0,
+    ...groups.filter(g => g.color === 2).map(g => g.patternCount)
+  );
   return { light, dark };
 }
 

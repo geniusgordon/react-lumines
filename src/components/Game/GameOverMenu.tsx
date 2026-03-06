@@ -135,7 +135,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
 
               {hasSubmitted && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-success">
+                  <div className="text-success flex items-center justify-center gap-2">
                     <Check className="h-5 w-5" />
                     <span className="text-sm">
                       Score submitted successfully!
@@ -172,7 +172,7 @@ export const GameOverMenu: React.FC<GameOverMenuProps> = ({
               )}
 
               {shareMessage && (
-                <div className="text-center text-sm text-success">
+                <div className="text-success text-center text-sm">
                   {shareMessage}
                 </div>
               )}

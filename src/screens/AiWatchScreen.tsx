@@ -83,7 +83,7 @@ export function AiWatchScreen() {
                   type="text"
                   value={draft}
                   onChange={e => setDraft(e.target.value)}
-                  className="w-52 rounded border border-border bg-muted px-2 py-0.5 text-xs text-foreground focus:border-ring focus:outline-none"
+                  className="border-border bg-muted text-foreground focus:border-ring w-52 rounded border px-2 py-0.5 text-xs focus:outline-none"
                   spellCheck={false}
                 />
                 <Button type="submit" variant="secondary" size="sm">
@@ -94,7 +94,9 @@ export function AiWatchScreen() {
           )}
         </div>
 
-        <div className="text-sm text-muted-foreground">{aiLoop.currentFPS} fps</div>
+        <div className="text-muted-foreground text-sm">
+          {aiLoop.currentFPS} fps
+        </div>
       </div>
 
       {/* Game */}

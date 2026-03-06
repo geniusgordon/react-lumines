@@ -1,4 +1,4 @@
-import { Upload, Check, Share } from 'lucide-react';
+import { Upload, Check, Share, Download } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -48,23 +48,23 @@ export function ReplayHeader({
 
   return (
     <div
-      className="absolute top-0 right-0 left-0 border-b border-border bg-background p-4"
+      className="border-border bg-background absolute top-0 right-0 left-0 border-b p-4"
       style={{ ...getZIndexStyle(UI_Z_INDEX.SYSTEM_OVERLAY) }}
     >
       <div className="mx-auto flex max-w-4xl items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-primary">
+          <h1 className="text-primary text-2xl font-bold">
             {replayData?.metadata?.playerName || 'Anonymous'}'s Game
             {isOnlineReplay && (
-              <span className="ml-2 text-sm text-primary">(Online)</span>
+              <span className="text-primary ml-2 text-sm">(Online)</span>
             )}
           </h1>
-          <div className="mt-1 text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-1 text-sm">
             <span>{formatDate(savedAt)}</span>
             {replayData?.metadata?.finalScore && (
               <>
                 <span className="mx-2">•</span>
-                <span className="font-semibold text-warning tabular-nums">
+                <span className="text-warning font-semibold tabular-nums">
                   Score: {replayData.metadata.finalScore.toLocaleString()}
                 </span>
               </>
@@ -75,6 +75,7 @@ export function ReplayHeader({
         <div className="flex gap-2">
           {onExport && (
             <Button onClick={onExport} size="sm">
+              <Download />
               Export
             </Button>
           )}
@@ -109,16 +110,16 @@ export function ReplayHeader({
       </div>
 
       {shareMessage && (
-        <div className="text-center text-sm text-success">{shareMessage}</div>
+        <div className="text-success text-center text-sm">{shareMessage}</div>
       )}
 
       {/* Upload Form */}
       {showUploadForm && (
-        <div className="mx-auto mt-4 max-w-4xl border-t border-border py-4">
+        <div className="border-border mx-auto mt-4 max-w-4xl border-t py-4">
           {!hasSubmitted && (
             <div className="space-y-3">
               <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">
+                <label className="text-foreground mb-2 block text-sm font-medium">
                   Your Name (optional)
                 </label>
                 <input
@@ -126,7 +127,7 @@ export function ReplayHeader({
                   value={playerName}
                   onChange={e => setPlayerName(e.target.value)}
                   placeholder="Anonymous"
-                  className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-foreground placeholder-muted-foreground focus:border-ring focus:outline-none"
+                  className="border-border bg-muted text-foreground placeholder-muted-foreground focus:border-ring w-full rounded-lg border px-3 py-2 focus:outline-none"
                   maxLength={50}
                 />
               </div>
@@ -145,14 +146,14 @@ export function ReplayHeader({
           )}
 
           {hasSubmitted && (
-            <div className="flex items-center justify-center gap-2 text-success">
+            <div className="text-success flex items-center justify-center gap-2">
               <Check className="h-5 w-5" />
               <span className="text-sm">Score submitted successfully!</span>
             </div>
           )}
 
           {submissionError && (
-            <div className="text-center text-sm text-destructive">
+            <div className="text-destructive text-center text-sm">
               {submissionError}
             </div>
           )}

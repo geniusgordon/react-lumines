@@ -52,7 +52,7 @@ export function ReplayController({
 
   return (
     <div
-      className="rounded-lg border border-border bg-card/95 px-6 py-4 shadow-xl backdrop-blur-sm"
+      className="border-border bg-card/95 rounded-lg border px-6 py-4 shadow-xl backdrop-blur-sm"
       style={{
         ...getZIndexStyle(UI_Z_INDEX.DROPDOWN),
         transform: 'translateZ(0)',
@@ -92,7 +92,7 @@ export function ReplayController({
         <Button
           size="icon"
           onClick={onPlayPause}
-          className="rounded-full bg-foreground text-background hover:scale-105 hover:bg-foreground"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full hover:scale-105"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (
@@ -129,7 +129,7 @@ export function ReplayController({
         </div>
       </div>
 
-      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
         <span className="min-w-[35px] text-right font-mono tabular-nums">
           {formatTime(currentFrame)}
         </span>
@@ -148,7 +148,7 @@ export function ReplayController({
       </div>
 
       <div className="mt-1 text-center">
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="text-muted-foreground font-mono text-xs tabular-nums">
           {currentFrame.toLocaleString()} / {totalFrames.toLocaleString()}
         </span>
       </div>

@@ -19,16 +19,19 @@ function EfficiencyBar({ efficiency }: { efficiency: number }) {
         ? 'text-warning'
         : 'text-destructive';
   const pct = Math.round(efficiency * 100);
-  return <span className={`font-mono text-xs ${color}`}>{pct}%</span>;
+  return (
+    <span className={`font-mono text-xs tabular-nums ${color}`}>{pct}%</span>
+  );
 }
 
 function ComboGroupRow({ group }: { group: ComboGroup }) {
   const colorLabel = group.color === 1 ? 'Light' : 'Dark';
-  const colorClass = group.color === 1 ? 'text-foreground' : 'text-muted-foreground';
+  const colorClass =
+    group.color === 1 ? 'text-foreground' : 'text-muted-foreground';
   return (
     <div className="flex items-center justify-between gap-2 text-xs">
       <span className={`font-semibold ${colorClass}`}>{colorLabel}</span>
-      <span className="text-muted-foreground">
+      <span className="text-muted-foreground tabular-nums">
         {group.patternCount}p / {group.cellCount}c
       </span>
       <EfficiencyBar efficiency={group.efficiency} />
@@ -49,28 +52,32 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({ gameState }) => {
         : null;
 
   return (
-    <div className="flex w-36 flex-col gap-3 rounded-lg border border-border bg-card/90 p-3 text-foreground">
+    <div className="border-border bg-card/90 text-foreground flex w-36 flex-col gap-3 rounded-lg border p-3">
       {/* Chain lengths */}
       <div>
-        <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
           Chains
         </p>
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <span
-              className={`text-xs ${dominantColor === 'light' ? 'font-bold text-warning' : 'text-foreground'}`}
+              className={`text-xs ${dominantColor === 'light' ? 'text-warning font-bold' : 'text-foreground'}`}
             >
               Light
             </span>
-            <span className="font-mono text-sm">{chains.light}</span>
+            <span className="font-mono text-sm tabular-nums">
+              {chains.light}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span
-              className={`text-xs ${dominantColor === 'dark' ? 'font-bold text-warning' : 'text-muted-foreground'}`}
+              className={`text-xs ${dominantColor === 'dark' ? 'text-warning font-bold' : 'text-muted-foreground'}`}
             >
               Dark
             </span>
-            <span className="font-mono text-sm">{chains.dark}</span>
+            <span className="font-mono text-sm tabular-nums">
+              {chains.dark}
+            </span>
           </div>
         </div>
       </div>
@@ -78,7 +85,7 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({ gameState }) => {
       {/* Combo groups */}
       {groups.length > 0 && (
         <div>
-          <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
             Combos
           </p>
           <div className="space-y-1">
@@ -86,22 +93,24 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({ gameState }) => {
               <ComboGroupRow key={i} group={g} />
             ))}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">p=patterns c=cells</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            p=patterns c=cells
+          </p>
         </div>
       )}
 
       {/* Undo indicator */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">↩ Undo</span>
+        <span className="text-muted-foreground text-xs">↩ Undo</span>
         <span
-          className={`font-mono text-xs ${undoCount > 0 ? 'text-foreground' : 'text-muted-foreground'}`}
+          className={`font-mono text-xs tabular-nums ${undoCount > 0 ? 'text-foreground' : 'text-muted-foreground'}`}
         >
           {undoCount}
         </span>
       </div>
 
       {/* Key hints */}
-      <div className="space-y-0.5 border-t border-border pt-2 text-xs text-muted-foreground">
+      <div className="border-border text-muted-foreground space-y-0.5 border-t pt-2 text-xs">
         <div>[A] Undo</div>
         <div>[S] Sweep</div>
       </div>

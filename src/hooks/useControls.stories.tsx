@@ -37,7 +37,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
   const controlsReturn = useGameControls(gameState, actions, options);
 
   return (
-    <div className="min-h-screen space-y-6 bg-background p-6 text-foreground">
+    <div className="bg-background text-foreground min-h-screen space-y-6 p-6">
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">useControls Hook Demo</h2>
 
@@ -45,17 +45,15 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">Game State</h3>
-            <div className="space-y-1 rounded bg-muted p-3 font-mono text-sm">
+            <div className="bg-muted space-y-1 rounded p-3 font-mono text-sm">
               <div>
-                Status:{' '}
-                <span className="text-primary">{gameState.status}</span>
+                Status: <span className="text-primary">{gameState.status}</span>
               </div>
               <div>
                 Frame: <span className="text-success">{gameState.frame}</span>
               </div>
               <div>
-                Score:{' '}
-                <span className="text-warning">{gameState.score}</span>
+                Score: <span className="text-warning">{gameState.score}</span>
               </div>
               <div>
                 Debug Mode:{' '}
@@ -68,7 +66,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
 
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">Controls State</h3>
-            <div className="space-y-1 rounded bg-muted p-3 font-mono text-sm">
+            <div className="bg-muted space-y-1 rounded p-3 font-mono text-sm">
               <div>
                 Pressed Keys:{' '}
                 <span className="text-warning">
@@ -82,15 +80,17 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         {/* Currently Pressed Keys */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Currently Pressed Keys</h3>
-          <div className="min-h-[40px] rounded bg-muted p-3">
+          <div className="bg-muted min-h-[40px] rounded p-3">
             {controlsReturn.pressedKeys.size === 0 ? (
-              <span className="text-sm text-muted-foreground">No keys pressed</span>
+              <span className="text-muted-foreground text-sm">
+                No keys pressed
+              </span>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {Array.from(controlsReturn.pressedKeys).map(key => (
                   <span
                     key={key}
-                    className="block rounded bg-primary px-2 py-1 text-xs text-primary-foreground"
+                    className="bg-primary text-primary-foreground block rounded px-2 py-1 text-xs"
                   >
                     {key}
                   </span>
@@ -106,14 +106,14 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             {Object.entries(options?.controlsConfig || DEFAULT_CONTROLS).map(
               ([action, keys]) => (
-                <div key={action} className="rounded bg-muted p-3">
-                  <div className="font-semibold text-primary capitalize">
+                <div key={action} className="bg-muted rounded p-3">
+                  <div className="text-primary font-semibold capitalize">
                     {action.replace(/([A-Z])/g, ' $1').trim()}
                   </div>
                   <div className="text-foreground">
                     {keys.map((key: string, index: number) => (
                       <span key={key}>
-                        <code className="rounded bg-secondary px-1">{key}</code>
+                        <code className="bg-secondary rounded px-1">{key}</code>
                         {index < keys.length - 1 ? ', ' : ''}
                       </span>
                     ))}
@@ -127,7 +127,7 @@ function ControlsDemo({ options }: { options?: UseControlsOptions }) {
         {/* Instructions */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Instructions</h3>
-          <div className="space-y-2 rounded bg-muted p-4 text-sm">
+          <div className="bg-muted space-y-2 rounded p-4 text-sm">
             <p>🎮 Try the controls and watch the state update in real-time!</p>
             <p>
               🔧 Switch between different configurations to see behavior changes

@@ -42,7 +42,7 @@ export function PrimaryControls({
 
   return (
     <div className="space-y-3">
-      <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
         Controls
       </div>
 
@@ -67,7 +67,7 @@ export function PrimaryControls({
       )}
 
       <div className="space-y-2">
-        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           New Game with Seed
         </div>
         <div className="flex items-center gap-2">
@@ -76,7 +76,7 @@ export function PrimaryControls({
             value={seedInput}
             onChange={handleSeedInputChange}
             placeholder="Seed (optional)"
-            className="w-36 rounded-md bg-muted px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-ring focus:outline-none"
+            className="border-input bg-muted text-foreground placeholder-muted-foreground focus:ring-ring flex-1 rounded-md border px-4 py-2 text-sm focus:ring-1 focus:outline-none"
             title="Enter custom seed or leave empty for random"
           />
           <Button
@@ -92,7 +92,7 @@ export function PrimaryControls({
 
       {debugMode && gameStatus === 'playing' && (
         <div className="space-y-2">
-          <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Frame Stepping
           </div>
 
@@ -103,7 +103,7 @@ export function PrimaryControls({
               max="999"
               value={stepCount}
               onChange={handleStepCountChange}
-              className="w-24 rounded-md bg-muted px-4 py-2 text-sm text-foreground focus:border-ring focus:outline-none"
+              className="border-input bg-muted text-foreground focus:ring-ring w-20 rounded-md border px-4 py-2 font-mono text-sm tabular-nums [font-feature-settings:'tnum'] focus:ring-1 focus:outline-none"
               title="Number of frames to advance"
             />
             <Button onClick={() => onManualStep(stepCount)} className="flex-1">

@@ -7,23 +7,25 @@ export interface ControlsInfoProps {
 export function ControlsInfo({ controls }: ControlsInfoProps) {
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-primary">Controls</h3>
+      <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        Live Keys
+      </div>
 
       <div className="space-y-2">
         {/* Currently Pressed Keys */}
         <div className="space-y-1">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Pressed Keys ({controls.pressedKeys.size}):
           </div>
-          <div className="h-[32px] rounded bg-muted/50 p-2">
+          <div className="bg-muted/50 h-[32px] rounded p-2">
             <div className="flex h-full flex-wrap items-center gap-1">
               {controls.pressedKeys.size === 0 ? (
-                <span className="text-xs text-muted-foreground">None</span>
+                <span className="text-muted-foreground text-xs">None</span>
               ) : (
                 Array.from(controls.pressedKeys).map(key => (
                   <span
                     key={key}
-                    className="rounded bg-primary/80 px-1 py-0.5 text-xs text-primary-foreground"
+                    className="bg-primary/80 text-primary-foreground rounded px-1 py-0.5 text-xs"
                   >
                     {key.replace('Key', '').replace('Arrow', '')}
                   </span>

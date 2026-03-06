@@ -62,14 +62,14 @@ export function SpeedSelector({ speed, onSpeedChange }: SpeedSelectorProps) {
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute bottom-full left-0 mb-2 w-24 rounded-md bg-muted py-1 shadow-lg ring-1 ring-black/20"
+          className="bg-muted ring-border absolute bottom-full left-0 mb-2 w-24 rounded-md py-1 shadow-lg ring-1"
           style={{ ...getZIndexStyle(UI_Z_INDEX.DROPDOWN) }}
         >
           {SPEED_OPTIONS.map(option => (
             <button
               key={option.value}
               onClick={() => handleSpeedSelect(option.value)}
-              className={`block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
+              className={`hover:bg-accent block w-full px-3 py-2 text-left text-sm transition-colors ${
                 speed === option.value
                   ? 'bg-primary text-primary-foreground'
                   : 'text-foreground'

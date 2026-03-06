@@ -77,10 +77,10 @@ export function AdvancedSection({
   };
 
   return (
-    <div className="border-t border-border pt-4">
+    <div className="border-border border-t pt-4">
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex w-full items-center justify-between text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-xs font-medium tracking-wide uppercase transition-colors"
       >
         <span>Advanced</span>
         <ChevronDown
@@ -90,13 +90,15 @@ export function AdvancedSection({
 
       {showAdvanced && (
         <div className="mt-3 space-y-3">
-          <div className="rounded-md bg-muted/30 p-3">
+          <div className="bg-muted/50 rounded-md p-3">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Debug Mode:</span>
                 <span
                   className={
-                    gameState.debugMode ? 'text-primary' : 'text-muted-foreground'
+                    gameState.debugMode
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
                   }
                 >
                   {gameState.debugMode ? 'Manual' : 'Auto'}
@@ -106,7 +108,9 @@ export function AdvancedSection({
                 <span className="text-muted-foreground">Logging:</span>
                 <span
                   className={
-                    gameState.debugMode ? 'text-success' : 'text-muted-foreground'
+                    gameState.debugMode
+                      ? 'text-success'
+                      : 'text-muted-foreground'
                   }
                 >
                   {gameState.debugMode ? 'Enabled' : 'Disabled'}
@@ -117,7 +121,7 @@ export function AdvancedSection({
 
           {/* Debug Tools Section */}
           <div className="space-y-2">
-            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <div className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Debug Tools
             </div>
 

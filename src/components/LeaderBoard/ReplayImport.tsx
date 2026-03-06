@@ -57,8 +57,8 @@ export const ReplayImport: React.FC<ReplayImportProps> = ({
         <div
           className={`mb-4 rounded-lg p-3 text-center text-sm ${
             importMessage.includes('success')
-              ? 'border border-success/50 bg-success/20 text-success'
-              : 'border border-destructive/50 bg-destructive/20 text-destructive'
+              ? 'border-success/50 bg-success/20 text-success border'
+              : 'border-destructive/50 bg-destructive/20 text-destructive border'
           }`}
         >
           {importMessage}

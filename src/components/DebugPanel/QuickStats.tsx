@@ -27,20 +27,20 @@ export function QuickStats(props: QuickStatsProps) {
   };
 
   return (
-    <div className="rounded-md bg-muted/50 p-3">
-      <div className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+    <div className="bg-muted/50 rounded-md p-3">
+      <div className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
         Game Stats
       </div>
       <div className="grid grid-cols-[2fr_1fr] gap-3 text-sm">
         <div>
           <div className="text-muted-foreground">Status</div>
           <div className={`font-semibold ${getStatusColor(status)}`}>
-            {status}
+            {status.charAt(0).toUpperCase() + status.slice(1)}
           </div>
         </div>
         <div>
           <div className="text-muted-foreground">Score</div>
-          <div className="font-mono font-semibold text-primary tabular-nums">
+          <div className="text-primary font-mono font-semibold tabular-nums [font-feature-settings:'tnum']">
             {score.toLocaleString()}
           </div>
         </div>
@@ -48,14 +48,14 @@ export function QuickStats(props: QuickStatsProps) {
           <div className="text-muted-foreground">Seed</div>
           <div className="flex items-center gap-2">
             <div
-              className="font-mono font-semibold text-primary tabular-nums"
+              className="text-primary font-mono font-semibold tabular-nums [font-feature-settings:'tnum']"
               title={seed}
             >
-              {seed.length > 16 ? `${seed.substring(0, 16)}...` : seed}
+              {seed.length > 12 ? `${seed.substring(0, 12)}...` : seed}
             </div>
             <button
               onClick={() => navigator.clipboard.writeText(seed)}
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground transition-colors"
               title="Copy seed to clipboard"
             >
               <Copy className="h-3 w-3" />
@@ -65,7 +65,7 @@ export function QuickStats(props: QuickStatsProps) {
         {scale && (
           <div>
             <div className="text-muted-foreground">Scale</div>
-            <div className="font-mono font-semibold text-primary tabular-nums">
+            <div className="text-primary font-mono font-semibold tabular-nums [font-feature-settings:'tnum']">
               {(scale * 100).toFixed(0)}%
             </div>
           </div>

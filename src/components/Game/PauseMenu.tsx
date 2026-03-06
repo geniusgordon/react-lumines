@@ -51,7 +51,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({
     >
       <DialogContent
         showCloseButton={false}
-        onEscapeKeyDown={(e) => e.stopPropagation()}
+        onEscapeKeyDown={e => e.stopPropagation()}
         className="bg-popover border-border text-foreground mx-4 max-w-md min-w-[320px] backdrop-blur-md"
       >
         <div className="mb-8 text-center">
