@@ -148,11 +148,15 @@ export function expandReplayDataWithSnapshots(
   replayData: ReplayData
 ): ExpandedReplayData {
   const frameActions = expandReplayData(replayData);
-  const { snapshots, placementCounts } = createSnapshotsForReplay(
+  const { snapshots, placementCounts, scoreEvents } = createSnapshotsForReplay(
     replayData.seed,
     frameActions
   );
-  const analytics = computeReplayAnalytics(snapshots, placementCounts);
+  const analytics = computeReplayAnalytics(
+    snapshots,
+    placementCounts,
+    scoreEvents
+  );
 
   return {
     ...replayData,
@@ -244,9 +248,14 @@ export function findBestSnapshot(
 export function createSnapshotsForReplay(
   seed: string,
   frameActions: FrameActions[]
-): { snapshots: StateSnapshot[]; placementCounts: number[] } {
+): {
+  snapshots: StateSnapshot[];
+  placementCounts: number[];
+  scoreEvents: Array<{ frame: number; delta: number }>;
+} {
   const snapshots: StateSnapshot[] = [];
   const placementCounts = Array(16).fill(0);
+  const scoreEvents: Array<{ frame: number; delta: number }> = [];
 
   // Create initial game state with replay seed
   let gameState: GameState = createInitialGameState(seed, false);
@@ -278,8 +287,17 @@ export function createSnapshotsForReplay(
       gameState = gameReducer(gameState, userAction);
     }
 
+    // Capture score before tick to detect score events
+    const prevScore = gameState.score;
+
     // Apply tick to advance game state
     gameState = gameReducer(gameState, { type: 'TICK' });
+
+    // Record score event if score increased this frame
+    const delta = gameState.score - prevScore;
+    if (delta > 0) {
+      scoreEvents.push({ frame: frameIndex + 1, delta });
+    }
 
     // Create snapshot at regular intervals
     if ((frameIndex + 1) % SNAPSHOT_INTERVAL === 0) {
@@ -290,5 +308,5 @@ export function createSnapshotsForReplay(
     }
   }
 
-  return { snapshots, placementCounts };
+  return { snapshots, placementCounts, scoreEvents };
 }

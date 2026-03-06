@@ -10,7 +10,8 @@ export const KEY_MOMENT_THRESHOLD = 5;
 
 export function computeReplayAnalytics(
   snapshots: StateSnapshot[],
-  placementCounts: number[]
+  placementCounts: number[],
+  scoreEvents: Array<{ frame: number; delta: number }> = []
 ): ReplayAnalytics {
   if (snapshots.length === 0) {
     return {
@@ -30,29 +31,10 @@ export function computeReplayAnalytics(
   let peakChainFrame = 0;
   const scoreDistribution = { small: 0, medium: 0, large: 0 };
 
-  let prevScore = 0;
-
   for (const snapshot of snapshots) {
     const { frame, gameState } = snapshot;
-    const score = gameState.score;
 
-    scoreTimeline.push({ frame, score });
-
-    // Key moments: score jumps
-    const scoreDelta = score - prevScore;
-    if (scoreDelta >= KEY_MOMENT_THRESHOLD) {
-      const chains = computeChainLengths(gameState.detectedPatterns);
-      const chainLength = Math.max(chains.light, chains.dark);
-      keyMoments.push({ frame, scoreDelta, chainLength });
-
-      if (scoreDelta < 100) {
-        scoreDistribution.small++;
-      } else if (scoreDelta < 500) {
-        scoreDistribution.medium++;
-      } else {
-        scoreDistribution.large++;
-      }
-    }
+    scoreTimeline.push({ frame, score: gameState.score });
 
     // Peak chain
     const chains = computeChainLengths(gameState.detectedPatterns);
@@ -61,9 +43,40 @@ export function computeReplayAnalytics(
       peakChainLength = chainLength;
       peakChainFrame = frame;
     }
+  }
 
-    // Column heatmap: use placement counts passed in from simulation
-    prevScore = score;
+  // Build key moments and score distribution from per-frame score events
+  for (const event of scoreEvents) {
+    if (event.delta < KEY_MOMENT_THRESHOLD) {
+      continue;
+    }
+
+    // Find nearest snapshot at or before this frame for chain context
+    let bestSnapshot: StateSnapshot | null = null;
+    for (const snapshot of snapshots) {
+      if (snapshot.frame <= event.frame) {
+        if (!bestSnapshot || snapshot.frame > bestSnapshot.frame) {
+          bestSnapshot = snapshot;
+        }
+      }
+    }
+    const chains = bestSnapshot
+      ? computeChainLengths(bestSnapshot.gameState.detectedPatterns)
+      : { light: 0, dark: 0 };
+    const chainLength = Math.max(chains.light, chains.dark);
+    keyMoments.push({
+      frame: event.frame,
+      scoreDelta: event.delta,
+      chainLength,
+    });
+
+    if (event.delta < 10) {
+      scoreDistribution.small++;
+    } else if (event.delta < 20) {
+      scoreDistribution.medium++;
+    } else {
+      scoreDistribution.large++;
+    }
   }
 
   const columnMax = Math.max(...placementCounts, 1);
