@@ -130,7 +130,7 @@ export function ReplayController({
       </div>
 
       <div className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
-        <span className="min-w-[35px] text-right font-mono tabular-nums">
+        <span className="min-w-[35px] text-right tabular-nums">
           {formatTime(currentFrame)}
         </span>
 
@@ -142,13 +142,13 @@ export function ReplayController({
           />
         </div>
 
-        <span className="min-w-[35px] font-mono tabular-nums">
+        <span className="min-w-[35px] tabular-nums">
           {formatTime(totalFrames)}
         </span>
       </div>
 
       <div className="mt-1 text-center">
-        <span className="text-muted-foreground font-mono text-xs tabular-nums">
+        <span className="text-muted-foreground text-xs tabular-nums">
           {currentFrame.toLocaleString()} / {totalFrames.toLocaleString()}
         </span>
       </div>
