@@ -20,6 +20,7 @@ export interface ReplayControllerProps {
   totalFrames: number;
   speed: number;
   frameRate?: number;
+  markers?: { frame: number }[];
   onPlayPause: () => void;
   onRestart: () => void;
   onSeek: (frame: number) => void;
@@ -33,6 +34,7 @@ export function ReplayController({
   totalFrames,
   speed,
   frameRate = 60,
+  markers,
   onPlayPause,
   onRestart,
   onSeek,
@@ -139,6 +141,7 @@ export function ReplayController({
             progress={progress}
             onSeek={onSeek}
             totalFrames={totalFrames}
+            markers={markers}
           />
         </div>
 

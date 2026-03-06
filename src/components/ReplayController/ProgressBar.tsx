@@ -4,12 +4,14 @@ export interface ProgressBarProps {
   progress: number; // 0-1
   totalFrames: number;
   onSeek: (frame: number) => void;
+  markers?: { frame: number }[];
 }
 
 export function ProgressBar({
   progress,
   totalFrames,
   onSeek,
+  markers,
 }: ProgressBarProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [hoverProgress, setHoverProgress] = useState<number | null>(null);
@@ -104,6 +106,17 @@ export function ProgressBar({
           className="bg-primary absolute top-0 h-full rounded-full"
           style={{ width: `${displayProgress * 100}%` }}
         />
+
+        {/* Key Moment Markers */}
+        {markers &&
+          totalFrames > 0 &&
+          markers.map((m, i) => (
+            <div
+              key={i}
+              className="bg-warning absolute top-0 h-full w-0.5 opacity-70"
+              style={{ left: `${(m.frame / totalFrames) * 100}%` }}
+            />
+          ))}
 
         {/* Progress Handle */}
         <div

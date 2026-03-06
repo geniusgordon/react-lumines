@@ -56,7 +56,7 @@ export function SpeedSelector({ speed, onSpeedChange }: SpeedSelectorProps) {
         <ChevronDown
           className={cn('transition-transform', isOpen && 'rotate-180')}
         />
-        <span className="font-mono tabular-nums">{currentSpeedLabel}</span>
+        <span className="tabular-nums">{currentSpeedLabel}</span>
       </Button>
 
       {/* Dropdown Menu */}
@@ -75,7 +75,7 @@ export function SpeedSelector({ speed, onSpeedChange }: SpeedSelectorProps) {
                   : 'text-foreground'
               }`}
             >
-              <span className="font-mono tabular-nums">{option.label}</span>
+              <span className="tabular-nums">{option.label}</span>
             </button>
           ))}
         </div>

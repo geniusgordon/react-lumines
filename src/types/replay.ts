@@ -36,6 +36,7 @@ export interface FrameActions {
 export type ExpandedReplayData = ReplayData & {
   frameActions: FrameActions[];
   snapshots: StateSnapshot[];
+  analytics: ReplayAnalytics;
 };
 
 export interface SavedReplay {
@@ -63,6 +64,33 @@ export interface ReplayControllerState {
   totalFrames: number;
   speed: number;
   isBuffering: boolean;
+}
+
+// Analytics types
+export interface ScorePoint {
+  frame: number;
+  score: number;
+}
+
+export interface KeyMoment {
+  frame: number;
+  scoreDelta: number;
+  chainLength: number;
+}
+
+export interface ColumnHeatmap {
+  counts: number[]; // length 16
+  max: number;
+}
+
+export interface ReplayAnalytics {
+  scoreTimeline: ScorePoint[];
+  peakChainLength: number;
+  peakChainFrame: number;
+  boardEfficiency: number; // 0-1: cells in patterns / total non-empty at final snapshot
+  keyMoments: KeyMoment[]; // frames where scoreDelta >= KEY_MOMENT_THRESHOLD
+  columnHeatmap: ColumnHeatmap;
+  scoreDistribution: { small: number; medium: number; large: number };
 }
 
 // Controller action handlers

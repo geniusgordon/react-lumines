@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { Game } from '@/components/Game/Game';
 import { ReplayHeader } from '@/components/ReplayHeader';
+import { ReplaySummary } from '@/components/ReplaySummary';
 import { useReplayData } from '@/hooks/useReplayData';
 import { useSaveLoadReplay } from '@/hooks/useSaveLoadReplay';
 
@@ -15,6 +16,7 @@ export function ReplayScreen() {
     useReplayData(id);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   const handleDelete = () => {
     if (!replay) {
@@ -66,6 +68,7 @@ export function ReplayScreen() {
         replayData={replayData}
         onExport={handleExport}
         onDelete={isOnlineReplay ? undefined : () => setShowDeleteConfirm(true)}
+        onSummary={() => setShowSummary(true)}
         onBack={() => navigate('/leaderboard')}
       />
 
@@ -73,6 +76,15 @@ export function ReplayScreen() {
       <div className="flex h-full w-full items-center justify-center pt-[96px]">
         <Game replayMode={true} replayData={replayData} />
       </div>
+
+      {showSummary && (
+        <ReplaySummary
+          analytics={replayData.analytics}
+          finalScore={replayData.metadata.finalScore}
+          playerName={replayData.metadata.playerName}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
 
       {!isOnlineReplay && (
         <DeleteConfirmModal

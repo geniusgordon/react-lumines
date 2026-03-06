@@ -14,6 +14,7 @@ export interface UseGamePlayerReturn {
   actions: UseGameActions;
   gameLoop: UseGameLoopReturn;
   exportReplay: () => ReplayData | null;
+  _dispatch: React.Dispatch<GameAction>;
 }
 
 export function useGamePlayer(
@@ -128,5 +129,6 @@ export function useGamePlayer(
     gameLoop,
     actions: enhancedActions,
     exportReplay,
+    _dispatch,
   };
 }

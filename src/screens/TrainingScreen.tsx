@@ -10,6 +10,7 @@ import { useGame } from '@/hooks/useGame';
 import { useGameControls } from '@/hooks/useGameControls';
 import { useGameLoop } from '@/hooks/useGameLoop';
 import { useResponsiveScale } from '@/hooks/useResponsiveScale';
+import { readAndClearBranchState } from '@/utils/branchState';
 
 export function TrainingScreen() {
   const navigate = useNavigate();
@@ -72,6 +73,15 @@ export function TrainingScreen() {
       actions.skipCountdown();
     }
   }, [gameState.status, actions]);
+
+  // Restore branched state if navigated here from a replay
+  useEffect(() => {
+    const branch = readAndClearBranchState();
+    if (branch && branch.mode === 'training') {
+      _dispatch({ type: 'RESTORE_STATE', payload: { ...branch.gameState, mode: 'training', status: 'playing', undoStack: [] } });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!scale.ready) {
     return (

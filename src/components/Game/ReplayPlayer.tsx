@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 
 import { ReplayController } from '@/components/ReplayController';
+import { ReplayHUD } from '@/components/ReplayHUD';
 import { useGameControls, useReplayPlayer } from '@/hooks';
 import { useReplayControls } from '@/hooks/useReplayControls';
 import type { UseResponsiveScaleReturn } from '@/hooks/useResponsiveScale';
@@ -18,7 +19,6 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
   scale,
   replayData,
 }) => {
-  // Use replay processing hook with controller functionality
   const {
     gameState,
     gameLoop,
@@ -30,7 +30,6 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
     controllerActions,
   } = useReplayPlayer(replayData);
 
-  // Setup controls (disabled for replay mode)
   const controls = useGameControls(gameState, actions, {
     enableKeyRepeat: false,
     keyRepeatDelay: 100,
@@ -40,25 +39,35 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
     return replayData;
   }, [replayData]);
 
-  // Enable keyboard controls for replay
   useReplayControls({
     controllerActions,
     currentSpeed: speed,
     enabled: true,
   });
 
+  const keyMomentMarkers = replayData.analytics.keyMoments.map(m => ({ frame: m.frame }));
+
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center">
-      <div>
-        <GameCore
+      <div className="flex items-start gap-4">
+        <ReplayHUD
           gameState={gameState}
-          actions={actions} // Actions include no-ops for game actions and replay controls
-          controls={controls}
-          gameLoop={gameLoop} // No game loop for replay
-          scale={scale}
-          replayMode={true}
-          exportReplay={exportReplay}
+          analytics={replayData.analytics}
+          currentFrame={currentFrame}
+          totalFrames={totalFrames}
+          sourceReplayId={replayData.id}
         />
+        <div>
+          <GameCore
+            gameState={gameState}
+            actions={actions}
+            controls={controls}
+            gameLoop={gameLoop}
+            scale={scale}
+            replayMode={true}
+            exportReplay={exportReplay}
+          />
+        </div>
       </div>
       <div style={{ width: scale.scaledWidth }}>
         <ReplayController
@@ -66,6 +75,7 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
           currentFrame={currentFrame}
           totalFrames={totalFrames}
           speed={speed}
+          markers={keyMomentMarkers}
           onPlayPause={controllerActions.togglePlayPause}
           onRestart={controllerActions.restart}
           onSeek={controllerActions.seek}

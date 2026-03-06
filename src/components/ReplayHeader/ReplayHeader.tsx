@@ -1,4 +1,4 @@
-import { Upload, Check, Share, Download } from 'lucide-react';
+import { Upload, Check, Share, Download, BarChart2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ export interface ReplayHeaderProps {
   enableUpload?: boolean;
   onExport?: () => void;
   onDelete?: () => void;
+  onSummary?: () => void;
   onBack: () => void;
 }
 
@@ -24,6 +25,7 @@ export function ReplayHeader({
   enableUpload,
   onExport,
   onDelete,
+  onSummary,
   onBack,
 }: ReplayHeaderProps) {
   const [playerName, setPlayerName] = useState('');
@@ -73,6 +75,12 @@ export function ReplayHeader({
         </div>
 
         <div className="flex gap-2">
+          {onSummary && (
+            <Button onClick={onSummary} size="sm" variant="secondary">
+              <BarChart2 />
+              Summary
+            </Button>
+          )}
           {onExport && (
             <Button onClick={onExport} size="sm">
               <Download />

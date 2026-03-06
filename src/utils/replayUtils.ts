@@ -7,6 +7,7 @@ import type {
   ReplayInput,
   StateSnapshot,
 } from '@/types/replay';
+import { computeReplayAnalytics } from './replayAnalytics';
 
 import { TARGET_FPS } from '../constants';
 
@@ -147,11 +148,13 @@ export function expandReplayDataWithSnapshots(
 ): ExpandedReplayData {
   const frameActions = expandReplayData(replayData);
   const snapshots = createSnapshotsForReplay(replayData.seed, frameActions);
+  const analytics = computeReplayAnalytics(snapshots);
 
   return {
     ...replayData,
     frameActions,
     snapshots,
+    analytics,
   };
 }
 
