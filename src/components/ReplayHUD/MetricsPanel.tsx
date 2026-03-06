@@ -19,7 +19,7 @@ function ComboGroupRow({ group }: { group: ComboGroup }) {
       <span className="text-muted-foreground tabular-nums">
         {group.patternCount}p / {group.cellCount}c
       </span>
-      <span className={`font-mono text-xs tabular-nums ${effColor}`}>{pct}%</span>
+      <span className={`text-xs tabular-nums ${effColor}`}>{pct}%</span>
     </div>
   );
 }
@@ -42,13 +42,13 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ gameState }) => {
             <span className={`text-xs ${dominantColor === 'light' ? 'text-warning font-bold' : 'text-foreground'}`}>
               Light
             </span>
-            <span className="font-mono text-sm tabular-nums">{chains.light}</span>
+            <span className="text-sm tabular-nums">{chains.light}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className={`text-xs ${dominantColor === 'dark' ? 'text-warning font-bold' : 'text-muted-foreground'}`}>
               Dark
             </span>
-            <span className="font-mono text-sm tabular-nums">{chains.dark}</span>
+            <span className="text-sm tabular-nums">{chains.dark}</span>
           </div>
         </div>
       </div>

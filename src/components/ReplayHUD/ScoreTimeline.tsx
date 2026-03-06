@@ -49,16 +49,16 @@ export const ScoreTimeline: React.FC<ScoreTimelineProps> = ({
         Score
       </p>
       <svg
-        width={width}
+        width="100%"
         height={height}
-        className="overflow-visible rounded"
-        style={{ background: 'rgba(0,0,0,0.15)' }}
+        viewBox={`0 0 ${width} ${height}`}
+        className="overflow-visible rounded bg-black/15"
       >
         {/* Polyline */}
         <polyline
           points={points}
           fill="none"
-          stroke="hsl(var(--primary))"
+          stroke="var(--primary)"
           strokeWidth="1.5"
           strokeLinejoin="round"
         />
@@ -70,7 +70,7 @@ export const ScoreTimeline: React.FC<ScoreTimelineProps> = ({
             cx={toX(m.frame)}
             cy={toY(scoreTimeline.find(p => p.frame >= m.frame)?.score ?? 0)}
             r={3}
-            fill="hsl(var(--warning))"
+            fill="var(--warning)"
             opacity={0.9}
           />
         ))}
@@ -81,7 +81,7 @@ export const ScoreTimeline: React.FC<ScoreTimelineProps> = ({
           y1={padding.top}
           x2={playheadX}
           y2={height - padding.bottom}
-          stroke="hsl(var(--foreground))"
+          stroke="var(--foreground)"
           strokeWidth="1"
           opacity={0.6}
         />

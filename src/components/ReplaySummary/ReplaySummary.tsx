@@ -1,5 +1,5 @@
-import React from 'react';
 import { X } from 'lucide-react';
+import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { getZIndexStyle, UI_Z_INDEX } from '@/constants/zIndex';
@@ -40,7 +40,12 @@ export const ReplaySummary: React.FC<ReplaySummaryProps> = ({
               <p className="text-muted-foreground text-sm">{playerName}</p>
             )}
           </div>
-          <Button size="icon" variant="ghost" onClick={onClose} aria-label="Close">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onClose}
+            aria-label="Close"
+          >
             <X />
           </Button>
         </div>
