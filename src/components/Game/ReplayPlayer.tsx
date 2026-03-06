@@ -45,7 +45,9 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({
     enabled: true,
   });
 
-  const keyMomentMarkers = replayData.analytics.keyMoments.map(m => ({ frame: m.frame }));
+  const keyMomentMarkers = replayData.analytics.keyMoments.map(m => ({
+    frame: m.frame,
+  }));
 
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center">

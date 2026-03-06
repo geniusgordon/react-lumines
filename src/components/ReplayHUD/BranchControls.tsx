@@ -43,10 +43,20 @@ export const BranchControls: React.FC<BranchControlsProps> = ({
       <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         Branch
       </p>
-      <Button size="sm" variant="secondary" className="w-full text-xs" onClick={handleTakeOver}>
+      <Button
+        size="sm"
+        variant="secondary"
+        className="w-full text-xs"
+        onClick={handleTakeOver}
+      >
         Take Over
       </Button>
-      <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleOpenInTraining}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full text-xs"
+        onClick={handleOpenInTraining}
+      >
         Open in Training
       </Button>
     </div>

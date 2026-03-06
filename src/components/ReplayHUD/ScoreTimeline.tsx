@@ -35,12 +35,18 @@ export const ScoreTimeline: React.FC<ScoreTimelineProps> = ({
   }
 
   const maxScore = Math.max(...scoreTimeline.map(p => p.score), 1);
-  const maxFrame = totalFrames > 0 ? totalFrames : scoreTimeline[scoreTimeline.length - 1].frame || 1;
+  const maxFrame =
+    totalFrames > 0
+      ? totalFrames
+      : scoreTimeline[scoreTimeline.length - 1].frame || 1;
 
   const toX = (frame: number) => padding.left + (frame / maxFrame) * innerW;
-  const toY = (score: number) => padding.top + innerH - (score / maxScore) * innerH;
+  const toY = (score: number) =>
+    padding.top + innerH - (score / maxScore) * innerH;
 
-  const points = scoreTimeline.map(p => `${toX(p.frame)},${toY(p.score)}`).join(' ');
+  const points = scoreTimeline
+    .map(p => `${toX(p.frame)},${toY(p.score)}`)
+    .join(' ');
   const playheadX = toX(currentFrame);
 
   return (

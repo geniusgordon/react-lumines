@@ -4,9 +4,13 @@ interface ScoreDistributionBarProps {
   distribution: { small: number; medium: number; large: number };
 }
 
-export const ScoreDistributionBar: React.FC<ScoreDistributionBarProps> = ({ distribution }) => {
+export const ScoreDistributionBar: React.FC<ScoreDistributionBarProps> = ({
+  distribution,
+}) => {
   const total = distribution.small + distribution.medium + distribution.large;
-  if (total === 0) return null;
+  if (total === 0) {
+    return null;
+  }
 
   const smallPct = (distribution.small / total) * 100;
   const mediumPct = (distribution.medium / total) * 100;

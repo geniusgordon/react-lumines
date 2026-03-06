@@ -7,9 +7,10 @@ import type {
   ReplayInput,
   StateSnapshot,
 } from '@/types/replay';
-import { computeReplayAnalytics } from './replayAnalytics';
 
 import { TARGET_FPS } from '../constants';
+
+import { computeReplayAnalytics } from './replayAnalytics';
 
 // Type guard to validate replay input actions
 function isValidReplayAction(type: string): type is GameActionType {
@@ -147,7 +148,10 @@ export function expandReplayDataWithSnapshots(
   replayData: ReplayData
 ): ExpandedReplayData {
   const frameActions = expandReplayData(replayData);
-  const { snapshots, placementCounts } = createSnapshotsForReplay(replayData.seed, frameActions);
+  const { snapshots, placementCounts } = createSnapshotsForReplay(
+    replayData.seed,
+    frameActions
+  );
   const analytics = computeReplayAnalytics(snapshots, placementCounts);
 
   return {

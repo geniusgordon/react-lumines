@@ -29,7 +29,7 @@ export const ReplaySummary: React.FC<ReplaySummaryProps> = ({
       onClick={onClose}
     >
       <div
-        className="border-border bg-background w-full max-w-md rounded-xl border p-6 shadow-2xl"
+        className="border-border bg-card w-full max-w-md rounded-xl border p-6 shadow-md"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

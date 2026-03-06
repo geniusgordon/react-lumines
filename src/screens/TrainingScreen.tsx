@@ -78,9 +78,17 @@ export function TrainingScreen() {
   useEffect(() => {
     const branch = readAndClearBranchState();
     if (branch && branch.mode === 'training') {
-      _dispatch({ type: 'RESTORE_STATE', payload: { ...branch.gameState, mode: 'training', status: 'playing', undoStack: [] } });
+      _dispatch({
+        type: 'RESTORE_STATE',
+        payload: {
+          ...branch.gameState,
+          mode: 'training',
+          status: 'playing',
+          undoStack: [],
+        },
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!scale.ready) {

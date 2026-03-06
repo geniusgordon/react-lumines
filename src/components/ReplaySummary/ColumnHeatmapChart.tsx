@@ -6,7 +6,9 @@ interface ColumnHeatmapChartProps {
   heatmap: ColumnHeatmap;
 }
 
-export const ColumnHeatmapChart: React.FC<ColumnHeatmapChartProps> = ({ heatmap }) => {
+export const ColumnHeatmapChart: React.FC<ColumnHeatmapChartProps> = ({
+  heatmap,
+}) => {
   const { counts, max } = heatmap;
   const barWidth = 8;
   const gap = 2;
@@ -19,7 +21,12 @@ export const ColumnHeatmapChart: React.FC<ColumnHeatmapChartProps> = ({ heatmap 
         Column Activity
       </p>
       <div className="flex justify-center">
-        <svg width={totalWidth} height={height} viewBox={`0 0 ${totalWidth} ${height}`} className="overflow-visible">
+        <svg
+          width={totalWidth}
+          height={height}
+          viewBox={`0 0 ${totalWidth} ${height}`}
+          className="overflow-visible"
+        >
           {counts.map((count, col) => {
             const opacity = max > 0 ? 0.15 + (count / max) * 0.85 : 0.15;
             const barH = max > 0 ? Math.max(2, (count / max) * height) : 2;

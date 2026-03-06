@@ -7,7 +7,10 @@ interface StatsGridProps {
   finalScore: number;
 }
 
-export const StatsGrid: React.FC<StatsGridProps> = ({ analytics, finalScore }) => {
+export const StatsGrid: React.FC<StatsGridProps> = ({
+  analytics,
+  finalScore,
+}) => {
   const efficiencyPct = Math.round(analytics.boardEfficiency * 100);
   const effColor =
     analytics.boardEfficiency >= 0.4

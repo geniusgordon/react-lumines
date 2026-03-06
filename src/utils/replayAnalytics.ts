@@ -1,9 +1,17 @@
-import type { StateSnapshot, ReplayAnalytics, KeyMoment, ScorePoint } from '@/types/replay';
+import type {
+  StateSnapshot,
+  ReplayAnalytics,
+  KeyMoment,
+  ScorePoint,
+} from '@/types/replay';
 import { computeChainLengths } from '@/utils/trainingMetrics';
 
 export const KEY_MOMENT_THRESHOLD = 5;
 
-export function computeReplayAnalytics(snapshots: StateSnapshot[], placementCounts: number[]): ReplayAnalytics {
+export function computeReplayAnalytics(
+  snapshots: StateSnapshot[],
+  placementCounts: number[]
+): ReplayAnalytics {
   if (snapshots.length === 0) {
     return {
       scoreTimeline: [],
@@ -37,9 +45,13 @@ export function computeReplayAnalytics(snapshots: StateSnapshot[], placementCoun
       const chainLength = Math.max(chains.light, chains.dark);
       keyMoments.push({ frame, scoreDelta, chainLength });
 
-      if (scoreDelta < 100) scoreDistribution.small++;
-      else if (scoreDelta < 500) scoreDistribution.medium++;
-      else scoreDistribution.large++;
+      if (scoreDelta < 100) {
+        scoreDistribution.small++;
+      } else if (scoreDelta < 500) {
+        scoreDistribution.medium++;
+      } else {
+        scoreDistribution.large++;
+      }
     }
 
     // Peak chain
@@ -70,10 +82,13 @@ export function computeReplayAnalytics(snapshots: StateSnapshot[], placementCoun
   const finalBoard = finalState.board;
   for (let col = 0; col < finalBoard.length; col++) {
     for (let row = 0; row < finalBoard[col].length; row++) {
-      if (finalBoard[col][row] !== 0) totalNonEmpty++;
+      if (finalBoard[col][row] !== 0) {
+        totalNonEmpty++;
+      }
     }
   }
-  const boardEfficiency = totalNonEmpty > 0 ? uniquePatternCells.size / totalNonEmpty : 0;
+  const boardEfficiency =
+    totalNonEmpty > 0 ? uniquePatternCells.size / totalNonEmpty : 0;
 
   return {
     scoreTimeline,

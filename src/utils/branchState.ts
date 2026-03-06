@@ -15,7 +15,9 @@ export function writeBranchState(state: BranchState): void {
 
 export function readAndClearBranchState(): BranchState | null {
   const raw = sessionStorage.getItem(BRANCH_STATE_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   sessionStorage.removeItem(BRANCH_STATE_KEY);
   try {
     return JSON.parse(raw) as BranchState;
