@@ -126,3 +126,15 @@ describe('UNDO', () => {
     expect(result).toBe(s);
   });
 });
+
+describe('training mode practice settings', () => {
+  it('initializes practice with defaults in training mode', () => {
+    const s = createInitialGameState('seed', false, 'training');
+    expect(s.practice).toEqual({ speedMultiplier: 1, autoSweep: false });
+  });
+
+  it('does not initialize practice in normal mode', () => {
+    const s = createInitialGameState('seed', false, 'normal');
+    expect(s.practice).toBeUndefined();
+  });
+});
