@@ -194,3 +194,46 @@ describe('SET_PRACTICE_SPEED', () => {
     expect(r).toBe(s);
   });
 });
+
+describe('SET_PRACTICE_AUTO_SWEEP', () => {
+  it('enables autoSweep and resets gameTimer to scaled full duration', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 0.5, autoSweep: false },
+      gameTimer: 0,
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_AUTO_SWEEP',
+      payload: true,
+    });
+    expect(r.practice?.autoSweep).toBe(true);
+    expect(r.gameTimer).toBe(7200); // 3600 / 0.5
+  });
+
+  it('disables autoSweep without touching gameTimer or timeline.x', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: true },
+      gameTimer: 1234,
+      timeline: { ...base.timeline, x: 5 },
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_AUTO_SWEEP',
+      payload: false,
+    });
+    expect(r.practice?.autoSweep).toBe(false);
+    expect(r.gameTimer).toBe(1234);
+    expect(r.timeline.x).toBe(5);
+  });
+
+  it('is a no-op in normal mode', () => {
+    const s = { ...createInitialGameState('seed', false, 'normal'), status: 'playing' as const };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_AUTO_SWEEP',
+      payload: true,
+    });
+    expect(r).toBe(s);
+  });
+});

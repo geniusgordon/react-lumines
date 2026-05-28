@@ -18,6 +18,7 @@ import {
   handleManualSweep,
   handleUndo,
   handleSetPracticeSpeed,
+  handleSetPracticeAutoSweep,
 } from './actions';
 
 // Re-export for backward compatibility
@@ -88,6 +89,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_PRACTICE_SPEED':
       return handleSetPracticeSpeed(state, action);
+
+    case 'SET_PRACTICE_AUTO_SWEEP':
+      return handleSetPracticeAutoSweep(state, action);
 
     default:
       if (state.debugMode) {

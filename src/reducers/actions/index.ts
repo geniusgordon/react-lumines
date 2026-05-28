@@ -34,4 +34,5 @@ export {
   handleManualSweep,
   handleUndo,
   handleSetPracticeSpeed,
+  handleSetPracticeAutoSweep,
 } from './training';

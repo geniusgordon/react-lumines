@@ -103,3 +103,34 @@ export function handleSetPracticeSpeed(
     gameTimer,
   };
 }
+
+/**
+ * Handle SET_PRACTICE_AUTO_SWEEP: toggle auto timeline sweep.
+ * On enable, reset gameTimer to the full scaled duration. On disable, leave
+ * timeline position and gameTimer where they are. No-op outside training mode.
+ */
+export function handleSetPracticeAutoSweep(
+  state: GameState,
+  action: GameAction
+): GameState {
+  if (state.mode !== 'training' || !state.practice) {
+    return state;
+  }
+  const autoSweep = action.payload as boolean;
+
+  if (autoSweep) {
+    const gameTimer = Math.round(
+      TIMER_CONFIG.GAME_DURATION_FRAMES / state.practice.speedMultiplier
+    );
+    return {
+      ...state,
+      practice: { ...state.practice, autoSweep: true },
+      gameTimer,
+    };
+  }
+
+  return {
+    ...state,
+    practice: { ...state.practice, autoSweep: false },
+  };
+}
