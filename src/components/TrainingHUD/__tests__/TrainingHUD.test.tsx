@@ -34,8 +34,10 @@ describe('TrainingHUD practice controls', () => {
   });
 
   it('highlights the currently selected speed preset', () => {
-    const state = baseState();
-    state.practice = { speedMultiplier: 2, autoSweep: false };
+    const state = {
+      ...baseState(),
+      practice: { speedMultiplier: 2 as const, autoSweep: false },
+    };
     render(<TrainingHUD gameState={state} dispatch={() => {}} />);
 
     const selected = screen.getByRole('button', { name: '2x' });

@@ -81,7 +81,7 @@ function PracticeControls({
           );
         })}
       </div>
-      <label className="flex items-center justify-between text-xs">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-foreground">Auto sweep</span>
         <Switch
           checked={practice.autoSweep}
@@ -90,7 +90,7 @@ function PracticeControls({
             dispatch({ type: 'SET_PRACTICE_AUTO_SWEEP', payload: checked })
           }
         />
-      </label>
+      </div>
     </div>
   );
 }
