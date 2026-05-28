@@ -23,7 +23,7 @@ export function TrainingScreen() {
 
   // Game loop: runs TICK for RAF rendering (training mode TICK only updates fallingColumns)
   const gameLoop = useGameLoop(actions.tick, {
-    enabled: gameState.status === 'playing',
+    enabled: gameState.status === 'playing' || gameState.status === 'countdown',
   });
 
   // Training controls: remove A/D (reserved for undo/sweep)
@@ -64,15 +64,15 @@ export function TrainingScreen() {
     return () => window.removeEventListener('keydown', handleTrainingKey);
   }, [handleTrainingKey]);
 
-  // Auto-start and skip countdown
+  // Auto-start; skip countdown only when auto-sweep is off (manual practice mode).
   useEffect(() => {
     if (gameState.status === 'initial') {
       actions.startNewGame();
     }
-    if (gameState.status === 'countdown') {
+    if (gameState.status === 'countdown' && !gameState.practice?.autoSweep) {
       actions.skipCountdown();
     }
-  }, [gameState.status, actions]);
+  }, [gameState.status, gameState.practice?.autoSweep, actions]);
 
   // Restore branched state if navigated here from a replay
   useEffect(() => {

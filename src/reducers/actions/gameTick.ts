@@ -63,11 +63,8 @@ function handleGameTimer(state: GameState): GameState {
  * Handle countdown and timer logic
  */
 export function handleCountdownAndTimer(state: GameState): GameState {
-  // Training mode: only run the game timer when auto-sweep is on; skip countdown.
-  if (state.mode === 'training') {
-    if (state.status === 'playing' && state.practice?.autoSweep) {
-      return handleGameTimer(state);
-    }
+  // Training mode without auto-sweep: no countdown, no game timer — just tick frame.
+  if (state.mode === 'training' && !state.practice?.autoSweep) {
     return { ...state, frame: state.frame + 1 };
   }
 
