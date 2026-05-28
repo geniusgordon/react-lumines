@@ -11,14 +11,26 @@ import type { SeededRNGType } from '@/utils/seededRNG';
 import { BLOCK_HEIGHT, copyBoard, isInBounds } from './helpers';
 
 /**
- * Generate random block using seeded RNG
+ * Generate a block. If `recordedQueue` is provided and has an entry at
+ * `nextIndex`, use that pattern index (replay mode). Otherwise pick via RNG.
+ * `rng.generateId()` is always called so block IDs remain deterministic per run.
  */
-export function generateRandomBlock(rng: SeededRNGType): Block {
-  const pattern = rng.choice(BLOCK_PATTERNS) as BlockPattern;
+export function generateRandomBlock(
+  rng: SeededRNGType,
+  recordedQueue: number[] | null = null,
+  nextIndex: number = 0
+): Block {
+  let patternIndex: number;
+  if (recordedQueue && nextIndex < recordedQueue.length) {
+    patternIndex = recordedQueue[nextIndex];
+  } else {
+    patternIndex = rng.nextInt(BLOCK_PATTERNS.length);
+  }
 
   return {
-    pattern,
+    pattern: BLOCK_PATTERNS[patternIndex] as BlockPattern,
     id: rng.generateId(),
+    patternIndex,
   };
 }
 

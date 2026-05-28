@@ -136,15 +136,21 @@ function updateBlockQueue(
   currentBlock: typeof state.currentBlock;
   queue: typeof state.queue;
   rngState: typeof state.rngState;
+  spawnedBlocks: typeof state.spawnedBlocks;
 } {
   const [nextBlock, ...remainingQueue] = state.queue;
-  const newBlock = generateRandomBlock(rng);
+  const newBlock = generateRandomBlock(
+    rng,
+    state.recordedBlockQueue,
+    state.spawnedBlocks.length
+  );
   const newQueue = [...remainingQueue, newBlock];
 
   return {
     currentBlock: nextBlock,
     queue: newQueue,
     rngState: rng.getState(),
+    spawnedBlocks: [...state.spawnedBlocks, newBlock.patternIndex],
   };
 }
 

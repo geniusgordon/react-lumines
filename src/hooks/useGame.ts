@@ -32,11 +32,17 @@ export interface UseGameReturn {
 export function useGame(
   initialSeed?: string,
   defaultDebugMode = false,
-  mode: 'normal' | 'training' = 'normal'
+  mode: 'normal' | 'training' = 'normal',
+  recordedBlockQueue: number[] | null = null
 ): UseGameReturn {
   const [gameState, dispatch] = useReducer(
     gameReducerWithDebug,
-    createInitialGameState(initialSeed, defaultDebugMode, mode)
+    createInitialGameState(
+      initialSeed,
+      defaultDebugMode,
+      mode,
+      recordedBlockQueue
+    )
   );
 
   // Movement actions

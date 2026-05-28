@@ -19,6 +19,7 @@ describe('replayUtils - creation', () => {
         seed,
         score: 0,
         frame: 0,
+        spawnedBlocks: [],
       });
 
       expect(result.seed).toBe(seed);
@@ -37,6 +38,7 @@ describe('replayUtils - creation', () => {
         seed: 'empty-seed',
         score: 0,
         frame: 0,
+        spawnedBlocks: [],
       });
 
       expect(result.seed).toBe('empty-seed');
@@ -50,12 +52,14 @@ describe('replayUtils - creation', () => {
         seed: 'seed1',
         score: 0,
         frame: 0,
+        spawnedBlocks: [],
       });
       const result2 = createReplayData([], {
         id: 'id',
         seed: 'seed2',
         score: 0,
         frame: 0,
+        spawnedBlocks: [],
       });
 
       // Timestamps should be close but potentially different

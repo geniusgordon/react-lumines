@@ -16,6 +16,7 @@ describe('Position validation', () => {
         [1, 1],
       ],
       id: 'test-block',
+      patternIndex: 0,
     };
   });
 
@@ -51,6 +52,7 @@ describe('Position validation', () => {
         [1, 1],
       ],
       id: 'tall-block',
+      patternIndex: 0,
     };
     expect(isValidPosition(board, tallBlock, { x: 0, y: 0 }, [])).toBe('valid');
   });

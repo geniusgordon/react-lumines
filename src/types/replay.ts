@@ -11,9 +11,19 @@ export interface StateSnapshot {
   gameState: GameState;
 }
 
+export type ReplaySchemaVersion = 1 | 2;
+
 export interface ReplayData {
   id: string;
+  // Schema version. Absent or 1 means legacy (RNG-only block sequence).
+  // 2 includes `blockQueue` so the game can be reconstructed without
+  // depending on the RNG implementation.
+  version?: ReplaySchemaVersion;
   seed: string;
+  // v2 only: ordered list of pattern indices (0–15) of every block
+  // spawned during the game (initial currentBlock + 3 queue + every
+  // subsequently spawned block).
+  blockQueue?: number[];
   inputs: ReplayInput[];
   gameConfig: {
     version: string;

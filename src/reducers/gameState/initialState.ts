@@ -16,15 +16,22 @@ import { SeededRNG } from '@/utils/seededRNG';
 export function createInitialGameState(
   seed: string | undefined,
   debugMode: boolean = false,
-  mode: 'normal' | 'training' = 'normal'
+  mode: 'normal' | 'training' = 'normal',
+  recordedBlockQueue: number[] | null = null
 ): GameState {
   const rng = new SeededRNG(seed);
-  const currentBlock = generateRandomBlock(rng);
+  const currentBlock = generateRandomBlock(rng, recordedBlockQueue, 0);
   // Initialize queue with multiple blocks for preview
   const queue = [
-    generateRandomBlock(rng),
-    generateRandomBlock(rng),
-    generateRandomBlock(rng),
+    generateRandomBlock(rng, recordedBlockQueue, 1),
+    generateRandomBlock(rng, recordedBlockQueue, 2),
+    generateRandomBlock(rng, recordedBlockQueue, 3),
+  ];
+  const spawnedBlocks = [
+    currentBlock.patternIndex,
+    queue[0].patternIndex,
+    queue[1].patternIndex,
+    queue[2].patternIndex,
   ];
 
   return {
@@ -69,6 +76,8 @@ export function createInitialGameState(
     // Deterministic system
     seed: seed ?? Date.now().toString(),
     rngState: rng.getState(),
+    spawnedBlocks,
+    recordedBlockQueue,
 
     // Performance
     lastUpdateTime: 0,

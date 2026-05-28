@@ -29,6 +29,7 @@ export const gameState: GameState = {
       [2, 2],
     ],
     id: '34d22526',
+    patternIndex: 11,
   },
   queue: [
     {
@@ -37,6 +38,7 @@ export const gameState: GameState = {
         [1, 1],
       ],
       id: '48502f5e',
+      patternIndex: 12,
     },
     {
       pattern: [
@@ -44,6 +46,7 @@ export const gameState: GameState = {
         [1, 1],
       ],
       id: 'fb36c0c2',
+      patternIndex: 0,
     },
     {
       pattern: [
@@ -51,6 +54,7 @@ export const gameState: GameState = {
         [1, 1],
       ],
       id: '00dc4892',
+      patternIndex: 4,
     },
   ],
   blockPosition: {
@@ -282,6 +286,8 @@ export const gameState: GameState = {
   ],
   seed: '1751432649457',
   rngState: 495,
+  spawnedBlocks: [11, 12, 0, 4],
+  recordedBlockQueue: null,
   lastUpdateTime: 0,
   debugMode: true,
   mode: 'normal',

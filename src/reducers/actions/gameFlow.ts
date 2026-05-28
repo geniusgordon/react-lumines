@@ -42,7 +42,15 @@ export function handleResume(state: GameState): GameState {
  */
 export function handleRestart(state: GameState, action: GameAction): GameState {
   const seed = action.payload as string;
-  let next = createInitialGameState(seed, state.debugMode, state.mode);
+  // Preserve the recorded block queue across restarts so a replay can be
+  // restarted by `RESTART` (used by `useReplayPlayer.restartReplay`) without
+  // diverging from the original block sequence.
+  let next = createInitialGameState(
+    seed,
+    state.debugMode,
+    state.mode,
+    state.recordedBlockQueue
+  );
   if (next.mode === 'training' && state.practice) {
     next = handleSetPracticeSpeed(next, {
       type: 'SET_PRACTICE_SPEED',

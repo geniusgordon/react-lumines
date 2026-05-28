@@ -9,7 +9,11 @@ import {
 
 import type { GameAction, GameState } from '@/types/game';
 import type { ExpandedReplayData, ReplayData } from '@/types/replay';
-import { validateReplayData, findBestSnapshot } from '@/utils/replayUtils';
+import {
+  validateReplayData,
+  findBestSnapshot,
+  getReplayBlockQueue,
+} from '@/utils/replayUtils';
 
 import { TARGET_FPS, TIMER_CONFIG } from '../constants';
 
@@ -43,7 +47,12 @@ export function useReplayPlayer(
   replayData: ExpandedReplayData,
   initialSpeed: number = 1.0
 ): UseReplayPlayerReturn {
-  const { gameState, actions, _dispatch } = useGame(replayData?.seed, false);
+  const { gameState, actions, _dispatch } = useGame(
+    replayData?.seed,
+    false,
+    'normal',
+    getReplayBlockQueue(replayData)
+  );
   const [speed, setSpeed] = useState(initialSpeed);
   const [isPlaying, setIsPlaying] = useState(false);
   const isSeekingRef = useRef<boolean>(false);

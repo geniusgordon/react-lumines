@@ -19,6 +19,9 @@ export interface Position {
 export interface Block {
   pattern: BlockPattern;
   id: string;
+  // Index into BLOCK_PATTERNS at spawn time (0–15). Stable across rotations.
+  // Used to serialize the spawn sequence into v2 replays.
+  patternIndex: number;
 }
 
 // Timeline sweep state
@@ -130,6 +133,16 @@ export interface GameState {
   // Deterministic system
   seed: string;
   rngState: number; // Current RNG state
+
+  // Spawn history: pattern indices of every block ever spawned in this game,
+  // in order. Appended on each spawn (initial 4 blocks + every placement).
+  // Serialized into v2 replays as `blockQueue`.
+  spawnedBlocks: number[];
+
+  // Replay-only override. When non-null, spawns consume from this queue
+  // (by `spawnedBlocks.length` index) instead of advancing RNG.
+  // Falls back to RNG once exhausted.
+  recordedBlockQueue: number[] | null;
 
   // Performance tracking
   lastUpdateTime: number; // For frame rate consistency

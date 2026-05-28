@@ -26,6 +26,7 @@ describe('replayUtils - integration', () => {
         seed: 'integration-seed',
         score: 0,
         frame: 0,
+        spawnedBlocks: [],
       });
 
       // Validate the replay data
@@ -73,6 +74,7 @@ describe('replayUtils - integration', () => {
         seed: 'complex-seed',
         score: 0,
         frame: 0,
+        spawnedBlocks: [],
       });
       const validation = validateReplayData(replayData);
       const frameActions = expandReplayData(replayData);

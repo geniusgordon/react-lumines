@@ -150,7 +150,8 @@ export function expandReplayDataWithSnapshots(
   const frameActions = expandReplayData(replayData);
   const { snapshots, placementCounts, scoreEvents } = createSnapshotsForReplay(
     replayData.seed,
-    frameActions
+    frameActions,
+    getReplayBlockQueue(replayData)
   );
   const analytics = computeReplayAnalytics(
     snapshots,
@@ -193,11 +194,16 @@ export function compactReplayInputs(
 // Create replay data from recorded inputs and seed
 export function createReplayData(
   recordedInputs: ReplayInput[],
-  gameState: Pick<GameState, 'id' | 'seed' | 'score' | 'frame'>
+  gameState: Pick<
+    GameState,
+    'id' | 'seed' | 'score' | 'frame' | 'spawnedBlocks'
+  >
 ): ReplayData {
   return {
     id: gameState.id,
+    version: 2,
     seed: gameState.seed,
+    blockQueue: [...gameState.spawnedBlocks],
     inputs: compactReplayInputs(recordedInputs),
     gameConfig: {
       version: '1.0.0',
@@ -208,6 +214,15 @@ export function createReplayData(
       duration: Math.floor((gameState.frame / TARGET_FPS) * 1000),
     },
   };
+}
+
+// Extract the block queue override to thread through replay simulation.
+// v2 replays provide `blockQueue`; v1 replays fall back to seeded RNG.
+export function getReplayBlockQueue(replayData: ReplayData): number[] | null {
+  if (replayData.version === 2 && Array.isArray(replayData.blockQueue)) {
+    return replayData.blockQueue;
+  }
+  return null;
 }
 
 // Constants for snapshot optimization
@@ -247,7 +262,8 @@ export function findBestSnapshot(
 // Create all snapshots upfront by simulating the entire replay
 export function createSnapshotsForReplay(
   seed: string,
-  frameActions: FrameActions[]
+  frameActions: FrameActions[],
+  recordedBlockQueue: number[] | null = null
 ): {
   snapshots: StateSnapshot[];
   placementCounts: number[];
@@ -257,8 +273,13 @@ export function createSnapshotsForReplay(
   const placementCounts = Array(16).fill(0);
   const scoreEvents: Array<{ frame: number; delta: number }> = [];
 
-  // Create initial game state with replay seed
-  let gameState: GameState = createInitialGameState(seed, false);
+  // Create initial game state with replay seed (and optional block queue override)
+  let gameState: GameState = createInitialGameState(
+    seed,
+    false,
+    'normal',
+    recordedBlockQueue
+  );
 
   // Start the game and skip countdown
   gameState = gameReducer(gameState, { type: 'START_GAME' });

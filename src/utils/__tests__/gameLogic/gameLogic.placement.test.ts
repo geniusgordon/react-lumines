@@ -21,6 +21,7 @@ describe('Block Placement', () => {
         [1, 2],
       ],
       id: 'test',
+      patternIndex: 9,
     };
   });
 
@@ -47,6 +48,7 @@ describe('Block Placement', () => {
         [2, 2],
       ],
       id: 'test',
+      patternIndex: 15,
     };
 
     // Try to place block at position (0, 0) - column 0 is free, column 1 is blocked
