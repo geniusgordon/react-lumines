@@ -36,11 +36,11 @@ describe('TrainingHUD practice controls', () => {
   it('highlights the currently selected speed preset', () => {
     const state = {
       ...baseState(),
-      practice: { speedMultiplier: 2 as const, autoSweep: false },
+      practice: { speedMultiplier: 0.75 as const, autoSweep: false },
     };
     render(<TrainingHUD gameState={state} dispatch={() => {}} />);
 
-    const selected = screen.getByRole('button', { name: '2x' });
+    const selected = screen.getByRole('button', { name: '0.75x' });
     expect(selected).toHaveAttribute('aria-pressed', 'true');
   });
 });
