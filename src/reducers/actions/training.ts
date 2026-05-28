@@ -1,7 +1,11 @@
-import type { GameState, GameAction, PracticeSpeedMultiplier } from '@/types/game';
+import { TIMER_CONFIG } from '@/constants/gameConfig';
+import type {
+  GameState,
+  GameAction,
+  PracticeSpeedMultiplier,
+} from '@/types/game';
 import { detectPatterns, getPatternCells } from '@/utils/gameLogic/patterns';
 import { clearMarkedCellsAndApplyGravity } from '@/utils/gameLogic/physics';
-import { TIMER_CONFIG } from '@/constants/gameConfig';
 
 const BASE_DROP_INTERVAL = TIMER_CONFIG.FIXED_DROP_INTERVAL;
 const BASE_SWEEP_INTERVAL = TIMER_CONFIG.TIMELINE_SWEEP_INTERVAL;
