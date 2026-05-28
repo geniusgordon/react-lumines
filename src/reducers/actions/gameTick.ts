@@ -63,8 +63,11 @@ function handleGameTimer(state: GameState): GameState {
  * Handle countdown and timer logic
  */
 export function handleCountdownAndTimer(state: GameState): GameState {
-  // Training mode: no game timer, skip countdown progression
+  // Training mode: only run the game timer when auto-sweep is on; skip countdown.
   if (state.mode === 'training') {
+    if (state.status === 'playing' && state.practice?.autoSweep) {
+      return handleGameTimer(state);
+    }
     return { ...state, frame: state.frame + 1 };
   }
 
@@ -153,9 +156,20 @@ export function handleGameTick(
     return newState;
   }
 
-  // Training mode: only update pattern detection and falling columns (gravity after sweep/undo)
+  // Training mode: run drop, optional sweep, pattern detection, falling cols.
   if (newState.mode === 'training') {
+    // Block dropping (uses scaled dropInterval)
+    newState = handleBlockDrop(newState, newState.frame, rng);
+
+    // Pattern detection
     newState = updatePatternDetection(newState);
+
+    // Optional auto-sweep
+    if (newState.practice?.autoSweep) {
+      newState = updateTimeline(newState);
+    }
+
+    // Falling columns
     const { newBoard, newFallingColumns } = updateFallingColumns(
       newState.board,
       newState.fallingColumns
@@ -163,26 +177,15 @@ export function handleGameTick(
     return { ...newState, board: newBoard, fallingColumns: newFallingColumns };
   }
 
-  // Handle block dropping and placement
+  // Normal mode (unchanged)
   newState = handleBlockDrop(newState, newState.frame, rng);
-
-  // Update pattern detection (only once per tick)
   newState = updatePatternDetection(newState);
-
-  // Handle timeline progression and clearing
   newState = updateTimeline(newState);
 
-  // Update falling columns
   const { newBoard, newFallingColumns } = updateFallingColumns(
     newState.board,
     newState.fallingColumns
   );
 
-  newState = {
-    ...newState,
-    board: newBoard,
-    fallingColumns: newFallingColumns,
-  };
-
-  return newState;
+  return { ...newState, board: newBoard, fallingColumns: newFallingColumns };
 }
