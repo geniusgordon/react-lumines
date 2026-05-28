@@ -79,5 +79,11 @@ export function createInitialGameState(
     // Training mode
     mode,
     undoStack: [],
+
+    // Practice settings (training mode only)
+    practice:
+      mode === 'training'
+        ? { speedMultiplier: 1, autoSweep: false }
+        : undefined,
   };
 }

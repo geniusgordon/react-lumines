@@ -10,32 +10,7 @@ function makeTrainingState() {
 }
 
 describe('training mode tick', () => {
-  it('does not advance the timeline when mode is training', () => {
-    const state = makeTrainingState();
-    const initialTimelineX = state.timeline.x;
-
-    // Run enough ticks to normally advance the timeline
-    let s: GameState = state;
-    for (let i = 0; i < state.timeline.sweepInterval + 5; i++) {
-      s = gameReducer(s, { type: 'TICK' });
-    }
-
-    expect(s.timeline.x).toBe(initialTimelineX);
-  });
-
-  it('does not auto-drop the block when mode is training', () => {
-    const state = makeTrainingState();
-    const initialY = state.blockPosition.y;
-
-    let s: GameState = state;
-    for (let i = 0; i < state.dropInterval + 5; i++) {
-      s = gameReducer(s, { type: 'TICK' });
-    }
-
-    expect(s.blockPosition.y).toBe(initialY);
-  });
-
-  it('does not count down game timer when mode is training', () => {
+  it('does not count down game timer when mode is training and autoSweep is off', () => {
     const state = makeTrainingState();
     const initialTimer = state.gameTimer;
 
@@ -124,5 +99,206 @@ describe('UNDO', () => {
     const s = makeTrainingState();
     const result = gameReducer(s, { type: 'UNDO' });
     expect(result).toBe(s);
+  });
+});
+
+describe('training mode practice settings', () => {
+  it('initializes practice with defaults in training mode', () => {
+    const s = createInitialGameState('seed', false, 'training');
+    expect(s.practice).toEqual({ speedMultiplier: 1, autoSweep: false });
+  });
+
+  it('does not initialize practice in normal mode', () => {
+    const s = createInitialGameState('seed', false, 'normal');
+    expect(s.practice).toBeUndefined();
+  });
+});
+
+describe('SET_PRACTICE_SPEED', () => {
+  it('updates speedMultiplier and scales dropInterval and sweepInterval', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    expect(r.practice?.speedMultiplier).toBe(0.5);
+    expect(r.dropInterval).toBe(180); // 90 / 0.5
+    expect(r.timeline.sweepInterval).toBe(30); // 15 / 0.5
+  });
+
+  it('rounds non-integer sweep intervals (2x => 8)', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 2,
+    });
+    expect(r.dropInterval).toBe(45);
+    expect(r.timeline.sweepInterval).toBe(8); // round(15 / 2)
+  });
+
+  it('scales remaining gameTimer when autoSweep is on', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: true },
+      gameTimer: 3600,
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    // Going from 1x to 0.5x doubles the remaining timer
+    expect(r.gameTimer).toBe(7200);
+  });
+
+  it('does not scale gameTimer when autoSweep is off', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    expect(r.gameTimer).toBe(s.gameTimer);
+  });
+
+  it('is a no-op in normal mode', () => {
+    const s = {
+      ...createInitialGameState('seed', false, 'normal'),
+      status: 'playing' as const,
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    expect(r).toBe(s);
+  });
+});
+
+describe('training mode tick honors practice settings', () => {
+  it('auto-drops the block in training mode (scaled drop interval)', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: false },
+    };
+    const initialY = s.blockPosition.y;
+
+    let t: GameState = s;
+    for (let i = 0; i < s.dropInterval + 1; i++) {
+      t = gameReducer(t, { type: 'TICK' });
+    }
+    expect(t.blockPosition.y).toBeGreaterThan(initialY);
+  });
+
+  it('does not advance the timeline when autoSweep is off', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: false },
+    };
+    let t: GameState = s;
+    for (let i = 0; i < s.timeline.sweepInterval + 5; i++) {
+      t = gameReducer(t, { type: 'TICK' });
+    }
+    expect(t.timeline.x).toBe(s.timeline.x);
+  });
+
+  it('advances the timeline when autoSweep is on', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: true },
+    };
+    let t: GameState = s;
+    for (let i = 0; i < s.timeline.sweepInterval + 1; i++) {
+      t = gameReducer(t, { type: 'TICK' });
+    }
+    expect(t.timeline.x).toBe(s.timeline.x + 1);
+  });
+
+  it('counts down gameTimer when autoSweep is on', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: true },
+      gameTimer: 100,
+    };
+    let t: GameState = s;
+    for (let i = 0; i < 10; i++) {
+      t = gameReducer(t, { type: 'TICK' });
+    }
+    expect(t.gameTimer).toBe(90);
+  });
+
+  it('does not count down gameTimer when autoSweep is off', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: false },
+      gameTimer: 100,
+    };
+    let t: GameState = s;
+    for (let i = 0; i < 10; i++) {
+      t = gameReducer(t, { type: 'TICK' });
+    }
+    expect(t.gameTimer).toBe(100);
+  });
+});
+
+describe('practice speed persists across placements', () => {
+  it('preserves scaled dropInterval after HARD_DROP in training mode', () => {
+    const base = makeTrainingState();
+    // Set speed to 0.5x (dropInterval = 180)
+    let s = gameReducer(base, { type: 'SET_PRACTICE_SPEED', payload: 0.5 });
+    expect(s.dropInterval).toBe(180);
+    // Place a block
+    s = gameReducer(s, { type: 'HARD_DROP' });
+    // dropInterval must still be 180, not reverted to 90
+    expect(s.dropInterval).toBe(180);
+  });
+});
+
+describe('SET_PRACTICE_AUTO_SWEEP', () => {
+  it('enables autoSweep and resets gameTimer to scaled full duration', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 0.5, autoSweep: false },
+      gameTimer: 0,
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_AUTO_SWEEP',
+      payload: true,
+    });
+    expect(r.practice?.autoSweep).toBe(true);
+    expect(r.gameTimer).toBe(7200); // 3600 / 0.5
+  });
+
+  it('disables autoSweep without touching gameTimer or timeline.x', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: true },
+      gameTimer: 1234,
+      timeline: { ...base.timeline, x: 5 },
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_AUTO_SWEEP',
+      payload: false,
+    });
+    expect(r.practice?.autoSweep).toBe(false);
+    expect(r.gameTimer).toBe(1234);
+    expect(r.timeline.x).toBe(5);
+  });
+
+  it('is a no-op in normal mode', () => {
+    const s = {
+      ...createInitialGameState('seed', false, 'normal'),
+      status: 'playing' as const,
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_AUTO_SWEEP',
+      payload: true,
+    });
+    expect(r).toBe(s);
   });
 });

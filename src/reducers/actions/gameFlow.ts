@@ -40,7 +40,7 @@ export function handleResume(state: GameState): GameState {
  */
 export function handleRestart(state: GameState, action: GameAction): GameState {
   const seed = action.payload as string;
-  return createInitialGameState(seed, state.debugMode);
+  return createInitialGameState(seed, state.debugMode, state.mode);
 }
 
 /**

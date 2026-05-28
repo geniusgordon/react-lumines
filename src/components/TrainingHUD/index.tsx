@@ -1,6 +1,11 @@
 import React from 'react';
 
-import type { GameState } from '@/types/game';
+import { Switch } from '@/components/ui/switch';
+import type {
+  GameAction,
+  GameState,
+  PracticeSpeedMultiplier,
+} from '@/types/game';
 import {
   computeChainLengths,
   computeComboGroups,
@@ -9,7 +14,10 @@ import {
 
 interface TrainingHUDProps {
   gameState: GameState;
+  dispatch?: React.Dispatch<GameAction>;
 }
+
+const SPEED_PRESETS: PracticeSpeedMultiplier[] = [0.25, 0.5, 1, 2];
 
 function EfficiencyBar({ efficiency }: { efficiency: number }) {
   const color =
@@ -39,7 +47,58 @@ function ComboGroupRow({ group }: { group: ComboGroup }) {
   );
 }
 
-export const TrainingHUD: React.FC<TrainingHUDProps> = ({ gameState }) => {
+function PracticeControls({
+  practice,
+  dispatch,
+}: {
+  practice: NonNullable<GameState['practice']>;
+  dispatch: React.Dispatch<GameAction>;
+}) {
+  return (
+    <div>
+      <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+        Practice
+      </p>
+      <div className="mb-2 flex gap-1">
+        {SPEED_PRESETS.map(mult => {
+          const selected = practice.speedMultiplier === mult;
+          return (
+            <button
+              key={mult}
+              type="button"
+              aria-pressed={selected}
+              onClick={() =>
+                dispatch({ type: 'SET_PRACTICE_SPEED', payload: mult })
+              }
+              className={`flex-1 rounded border px-1 py-0.5 font-mono text-xs ${
+                selected
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border text-foreground hover:bg-accent'
+              }`}
+            >
+              {mult}x
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-foreground">Auto sweep</span>
+        <Switch
+          checked={practice.autoSweep}
+          aria-label="Auto sweep"
+          onCheckedChange={checked =>
+            dispatch({ type: 'SET_PRACTICE_AUTO_SWEEP', payload: checked })
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
+export const TrainingHUD: React.FC<TrainingHUDProps> = ({
+  gameState,
+  dispatch,
+}) => {
   const chains = computeChainLengths(gameState.detectedPatterns);
   const groups = computeComboGroups(gameState.detectedPatterns);
   const undoCount = gameState.undoStack.length;
@@ -53,6 +112,11 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({ gameState }) => {
 
   return (
     <div className="border-border bg-card/90 text-foreground flex w-36 flex-col gap-3 rounded-lg border p-3">
+      {/* Practice controls */}
+      {gameState.practice && dispatch && (
+        <PracticeControls practice={gameState.practice} dispatch={dispatch} />
+      )}
+
       {/* Chain lengths */}
       <div>
         <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">

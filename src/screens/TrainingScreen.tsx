@@ -130,7 +130,7 @@ export function TrainingScreen() {
           trainingMode={true}
           exportReplay={() => null}
         />
-        <TrainingHUD gameState={gameState} />
+        <TrainingHUD gameState={gameState} dispatch={_dispatch} />
       </div>
     </div>
   );

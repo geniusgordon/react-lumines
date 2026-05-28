@@ -228,6 +228,22 @@ describe('Game Reducer - Basic Functionality', () => {
     });
   });
 
+  describe('RESTART preserves mode', () => {
+    it('preserves training mode on restart', () => {
+      const s = createInitialGameState('seed-1', false, 'training');
+      const r = gameReducer(s, { type: 'RESTART', payload: 'seed-2' });
+      expect(r.mode).toBe('training');
+      expect(r.practice).toEqual({ speedMultiplier: 1, autoSweep: false });
+    });
+
+    it('preserves normal mode on restart', () => {
+      const s = createInitialGameState('seed-1', false, 'normal');
+      const r = gameReducer(s, { type: 'RESTART', payload: 'seed-2' });
+      expect(r.mode).toBe('normal');
+      expect(r.practice).toBeUndefined();
+    });
+  });
+
   describe('Error handling', () => {
     it('should ignore invalid actions', () => {
       const invalidAction = {
