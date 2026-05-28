@@ -30,4 +30,8 @@ export {
 } from './gameTick';
 
 // Training actions
-export { handleManualSweep, handleUndo } from './training';
+export {
+  handleManualSweep,
+  handleUndo,
+  handleSetPracticeSpeed,
+} from './training';

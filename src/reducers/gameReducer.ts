@@ -17,6 +17,7 @@ import {
   handleGameTick,
   handleManualSweep,
   handleUndo,
+  handleSetPracticeSpeed,
 } from './actions';
 
 // Re-export for backward compatibility
@@ -84,6 +85,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'UNDO':
       return handleUndo(state);
+
+    case 'SET_PRACTICE_SPEED':
+      return handleSetPracticeSpeed(state, action);
 
     default:
       if (state.debugMode) {

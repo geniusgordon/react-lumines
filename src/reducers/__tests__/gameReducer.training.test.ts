@@ -138,3 +138,59 @@ describe('training mode practice settings', () => {
     expect(s.practice).toBeUndefined();
   });
 });
+
+describe('SET_PRACTICE_SPEED', () => {
+  it('updates speedMultiplier and scales dropInterval and sweepInterval', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    expect(r.practice?.speedMultiplier).toBe(0.5);
+    expect(r.dropInterval).toBe(180); // 90 / 0.5
+    expect(r.timeline.sweepInterval).toBe(30); // 15 / 0.5
+  });
+
+  it('rounds non-integer sweep intervals (2x => 8)', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 2,
+    });
+    expect(r.dropInterval).toBe(45);
+    expect(r.timeline.sweepInterval).toBe(8); // round(15 / 2)
+  });
+
+  it('scales remaining gameTimer when autoSweep is on', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoSweep: true },
+      gameTimer: 3600,
+    };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    // Going from 1x to 0.5x doubles the remaining timer
+    expect(r.gameTimer).toBe(7200);
+  });
+
+  it('does not scale gameTimer when autoSweep is off', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    expect(r.gameTimer).toBe(s.gameTimer);
+  });
+
+  it('is a no-op in normal mode', () => {
+    const s = { ...createInitialGameState('seed', false, 'normal'), status: 'playing' as const };
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 0.5,
+    });
+    expect(r).toBe(s);
+  });
+});
