@@ -57,7 +57,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         <PatternHeatmap detectedPatterns={gameState.detectedPatterns} />
       )}
 
-      {!trainingMode && <TimelineComponent timeline={gameState.timeline} />}
+      {(!trainingMode || gameState.practice?.autoSweep) && (
+        <TimelineComponent timeline={gameState.timeline} />
+      )}
     </div>
   );
 };

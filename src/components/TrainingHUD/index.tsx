@@ -111,7 +111,7 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({
         : null;
 
   return (
-    <div className="border-border bg-card/90 text-foreground flex w-36 flex-col gap-3 rounded-lg border p-3">
+    <div className="border-border bg-card/90 text-foreground flex w-44 flex-col gap-3 rounded-lg border p-3">
       {/* Practice controls */}
       {gameState.practice && dispatch && (
         <PracticeControls practice={gameState.practice} dispatch={dispatch} />

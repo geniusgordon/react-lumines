@@ -7,6 +7,7 @@ export interface ScoreDisplayProps {
   gameTimer: number; // frames remaining
   countdown: number;
   gameStatus: GameStatus;
+  speedMultiplier?: number;
 }
 
 /**
@@ -18,9 +19,10 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   gameTimer,
   countdown,
   gameStatus,
+  speedMultiplier = 1,
 }) => {
-  // Convert frames to seconds for display
-  const timeInSeconds = Math.ceil(gameTimer / 60);
+  // Convert frames to seconds for display, scaling back to real-time at 1x
+  const timeInSeconds = Math.ceil((gameTimer * speedMultiplier) / 60);
 
   return (
     <div className="text-game-text space-y-2">

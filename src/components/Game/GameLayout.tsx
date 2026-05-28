@@ -35,6 +35,7 @@ export const GameLayout: React.FC<GameLayoutProps> = ({
           gameTimer={gameState.gameTimer}
           countdown={gameState.countdown}
           gameStatus={gameState.status}
+          speedMultiplier={gameState.practice?.speedMultiplier}
         />
       </div>
     </div>
