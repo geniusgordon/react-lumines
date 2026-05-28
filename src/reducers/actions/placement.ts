@@ -1,4 +1,4 @@
-import { DEFAULT_VALUES, TIMER_CONFIG } from '@/constants/gameConfig';
+import { DEFAULT_VALUES } from '@/constants/gameConfig';
 import type { GameState } from '@/types/game';
 import {
   placeBlockOnBoard,
@@ -179,7 +179,6 @@ export function placeCurrentBlock(
     ...queueUpdate,
     blockPosition: { ...DEFAULT_VALUES.INITIAL_POSITION },
     dropTimer: 0,
-    dropInterval: TIMER_CONFIG.FIXED_DROP_INTERVAL,
     frame,
   };
 }

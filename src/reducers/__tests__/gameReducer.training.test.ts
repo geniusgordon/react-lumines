@@ -161,7 +161,10 @@ describe('SET_PRACTICE_SPEED', () => {
   });
 
   it('is a no-op in normal mode', () => {
-    const s = { ...createInitialGameState('seed', false, 'normal'), status: 'playing' as const };
+    const s = {
+      ...createInitialGameState('seed', false, 'normal'),
+      status: 'playing' as const,
+    };
     const r = gameReducer(s, {
       type: 'SET_PRACTICE_SPEED',
       payload: 0.5,
@@ -241,6 +244,19 @@ describe('training mode tick honors practice settings', () => {
   });
 });
 
+describe('practice speed persists across placements', () => {
+  it('preserves scaled dropInterval after HARD_DROP in training mode', () => {
+    const base = makeTrainingState();
+    // Set speed to 0.5x (dropInterval = 180)
+    let s = gameReducer(base, { type: 'SET_PRACTICE_SPEED', payload: 0.5 });
+    expect(s.dropInterval).toBe(180);
+    // Place a block
+    s = gameReducer(s, { type: 'HARD_DROP' });
+    // dropInterval must still be 180, not reverted to 90
+    expect(s.dropInterval).toBe(180);
+  });
+});
+
 describe('SET_PRACTICE_AUTO_SWEEP', () => {
   it('enables autoSweep and resets gameTimer to scaled full duration', () => {
     const base = makeTrainingState();
@@ -275,7 +291,10 @@ describe('SET_PRACTICE_AUTO_SWEEP', () => {
   });
 
   it('is a no-op in normal mode', () => {
-    const s = { ...createInitialGameState('seed', false, 'normal'), status: 'playing' as const };
+    const s = {
+      ...createInitialGameState('seed', false, 'normal'),
+      status: 'playing' as const,
+    };
     const r = gameReducer(s, {
       type: 'SET_PRACTICE_AUTO_SWEEP',
       payload: true,
