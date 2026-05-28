@@ -228,7 +228,7 @@ describe('Game Reducer - Basic Functionality', () => {
     });
   });
 
-  describe('RESTART preserves mode', () => {
+  describe('RESTART preserves mode and practice settings', () => {
     it('preserves training mode on restart', () => {
       const s = createInitialGameState('seed-1', false, 'training');
       const r = gameReducer(s, { type: 'RESTART', payload: 'seed-2' });
@@ -241,6 +241,30 @@ describe('Game Reducer - Basic Functionality', () => {
       const r = gameReducer(s, { type: 'RESTART', payload: 'seed-2' });
       expect(r.mode).toBe('normal');
       expect(r.practice).toBeUndefined();
+    });
+
+    it('preserves practice speed multiplier across restart', () => {
+      let s = createInitialGameState('seed-1', false, 'training');
+      s = gameReducer(s, { type: 'SET_PRACTICE_SPEED', payload: 0.5 });
+      expect(s.dropInterval).toBe(180);
+
+      const r = gameReducer(s, { type: 'RESTART', payload: 'seed-2' });
+      expect(r.practice?.speedMultiplier).toBe(0.5);
+      expect(r.dropInterval).toBe(180);
+      expect(r.timeline.sweepInterval).toBe(30);
+    });
+
+    it('preserves auto-sweep flag (and scaled timer) across restart', () => {
+      let s = createInitialGameState('seed-1', false, 'training');
+      s = gameReducer(s, { type: 'SET_PRACTICE_SPEED', payload: 0.5 });
+      s = gameReducer(s, {
+        type: 'SET_PRACTICE_AUTO_SWEEP',
+        payload: true,
+      });
+
+      const r = gameReducer(s, { type: 'RESTART', payload: 'seed-2' });
+      expect(r.practice).toEqual({ speedMultiplier: 0.5, autoSweep: true });
+      expect(r.gameTimer).toBe(7200); // 3600 / 0.5
     });
   });
 

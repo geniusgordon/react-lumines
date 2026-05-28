@@ -1,6 +1,8 @@
 import { createInitialGameState } from '@/reducers/gameState/initialState';
 import type { GameState, GameAction } from '@/types/game';
 
+import { handleSetPracticeSpeed, handleSetPracticeAutoSweep } from './training';
+
 /**
  * Handle game start action
  */
@@ -40,7 +42,20 @@ export function handleResume(state: GameState): GameState {
  */
 export function handleRestart(state: GameState, action: GameAction): GameState {
   const seed = action.payload as string;
-  return createInitialGameState(seed, state.debugMode, state.mode);
+  let next = createInitialGameState(seed, state.debugMode, state.mode);
+  if (next.mode === 'training' && state.practice) {
+    next = handleSetPracticeSpeed(next, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: state.practice.speedMultiplier,
+    });
+    if (state.practice.autoSweep) {
+      next = handleSetPracticeAutoSweep(next, {
+        type: 'SET_PRACTICE_AUTO_SWEEP',
+        payload: true,
+      });
+    }
+  }
+  return next;
 }
 
 /**
