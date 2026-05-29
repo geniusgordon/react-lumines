@@ -3,30 +3,43 @@ import React from 'react';
 import type { GameState } from '@/types/game';
 import {
   computeChainLengths,
-  computeComboGroups,
-  type ComboGroup,
+  summarizeCombosByColor,
+  type ComboColorSummary,
 } from '@/utils/trainingMetrics';
 
 interface MetricsPanelProps {
   gameState: GameState;
 }
 
-function ComboGroupRow({ group }: { group: ComboGroup }) {
-  const colorLabel = group.color === 1 ? 'Light' : 'Dark';
-  const colorClass =
-    group.color === 1 ? 'text-foreground' : 'text-muted-foreground';
-  const pct = Math.round(group.efficiency * 100);
+function ComboRow({
+  label,
+  colorClass,
+  summary,
+}: {
+  label: string;
+  colorClass: string;
+  summary: ComboColorSummary;
+}) {
+  if (summary.patternCount === 0) {
+    return (
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className={`font-semibold ${colorClass}`}>{label}</span>
+        <span className="text-muted-foreground/50 tabular-nums">—</span>
+      </div>
+    );
+  }
+  const pct = Math.round(summary.efficiency * 100);
   const effColor =
-    group.efficiency >= 0.4
+    summary.efficiency >= 0.4
       ? 'text-success'
-      : group.efficiency >= 0.25
+      : summary.efficiency >= 0.25
         ? 'text-warning'
         : 'text-destructive';
   return (
     <div className="flex items-center justify-between gap-2 text-xs">
-      <span className={`font-semibold ${colorClass}`}>{colorLabel}</span>
+      <span className={`font-semibold ${colorClass}`}>{label}</span>
       <span className="text-muted-foreground tabular-nums">
-        {group.patternCount}p / {group.cellCount}c
+        {summary.patternCount}p / {summary.cellCount}c
       </span>
       <span className={`text-xs tabular-nums ${effColor}`}>{pct}%</span>
     </div>
@@ -35,7 +48,7 @@ function ComboGroupRow({ group }: { group: ComboGroup }) {
 
 export const MetricsPanel: React.FC<MetricsPanelProps> = ({ gameState }) => {
   const chains = computeChainLengths(gameState.detectedPatterns);
-  const groups = computeComboGroups(gameState.detectedPatterns);
+  const combos = summarizeCombosByColor(gameState.detectedPatterns);
   const dominantColor =
     chains.light > chains.dark
       ? 'light'
@@ -70,22 +83,25 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ gameState }) => {
         </div>
       </div>
 
-      {/* Combo groups */}
-      {groups.length > 0 && (
-        <div>
-          <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
-            Combos
-          </p>
-          <div className="space-y-1">
-            {groups.map((g, i) => (
-              <ComboGroupRow key={i} group={g} />
-            ))}
-          </div>
-          <p className="text-muted-foreground mt-1 text-xs">
-            p=patterns c=cells
-          </p>
+      {/* Combo groups — always render both colours so the panel height is stable */}
+      <div>
+        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+          Combos
+        </p>
+        <div className="space-y-1">
+          <ComboRow
+            label="Light"
+            colorClass="text-foreground"
+            summary={combos.light}
+          />
+          <ComboRow
+            label="Dark"
+            colorClass="text-muted-foreground"
+            summary={combos.dark}
+          />
         </div>
-      )}
+        <p className="text-muted-foreground mt-1 text-xs">p=patterns c=cells</p>
+      </div>
     </div>
   );
 };

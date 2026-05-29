@@ -7,6 +7,47 @@ export interface ComboGroup {
   efficiency: number; // patternCount / cellCount
 }
 
+export interface ComboColorSummary {
+  patternCount: number; // total patterns across all clusters of this color
+  cellCount: number; // total cells across all clusters of this color
+  efficiency: number; // patternCount / cellCount, 0 when none
+}
+
+/**
+ * Aggregate combo groups into one summary per color, so a HUD can render a
+ * fixed two-row (Light / Dark) display whose height never changes — combo
+ * clusters come and go and vary in count, which otherwise makes a
+ * `groups.map(...)` list jump in height. Mirrors how chain lengths are shown
+ * per-color.
+ */
+export function summarizeCombosByColor(patterns: Square[]): {
+  light: ComboColorSummary;
+  dark: ComboColorSummary;
+} {
+  const light: ComboColorSummary = {
+    patternCount: 0,
+    cellCount: 0,
+    efficiency: 0,
+  };
+  const dark: ComboColorSummary = {
+    patternCount: 0,
+    cellCount: 0,
+    efficiency: 0,
+  };
+
+  for (const group of computeComboGroups(patterns)) {
+    const target = group.color === 1 ? light : dark;
+    target.patternCount += group.patternCount;
+    target.cellCount += group.cellCount;
+  }
+
+  light.efficiency =
+    light.cellCount > 0 ? light.patternCount / light.cellCount : 0;
+  dark.efficiency = dark.cellCount > 0 ? dark.patternCount / dark.cellCount : 0;
+
+  return { light, dark };
+}
+
 /**
  * Compute distance of each column from the board center.
  * Center columns (7 and 8 for a 16-wide board) = 0.

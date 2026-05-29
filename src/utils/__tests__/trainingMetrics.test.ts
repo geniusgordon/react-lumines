@@ -6,6 +6,7 @@ import {
   computeCellContributions,
   computeComboGroups,
   computeColumnDistances,
+  summarizeCombosByColor,
 } from '@/utils/trainingMetrics';
 
 describe('computeColumnDistances', () => {
@@ -132,5 +133,37 @@ describe('computeComboGroups', () => {
     ];
     const groups = computeComboGroups(patterns);
     expect(groups).toHaveLength(2);
+  });
+});
+
+describe('summarizeCombosByColor', () => {
+  it('returns zeroed light and dark summaries for no patterns', () => {
+    expect(summarizeCombosByColor([])).toEqual({
+      light: { patternCount: 0, cellCount: 0, efficiency: 0 },
+      dark: { patternCount: 0, cellCount: 0, efficiency: 0 },
+    });
+  });
+
+  it('aggregates multiple same-color clusters into one color summary', () => {
+    const patterns: Square[] = [
+      { x: 0, y: 0, color: 1 },
+      { x: 1, y: 0, color: 1 }, // adjacent to the first -> one cluster (2 patterns, 6 cells)
+      { x: 8, y: 0, color: 1 }, // separate light cluster (1 pattern, 4 cells)
+    ];
+    const { light, dark } = summarizeCombosByColor(patterns);
+    expect(light.patternCount).toBe(3); // 2 + 1 across both clusters
+    expect(light.cellCount).toBe(10); // 6 + 4
+    expect(light.efficiency).toBeCloseTo(3 / 10);
+    expect(dark).toEqual({ patternCount: 0, cellCount: 0, efficiency: 0 });
+  });
+
+  it('splits totals across colors', () => {
+    const patterns: Square[] = [
+      { x: 0, y: 0, color: 1 },
+      { x: 8, y: 0, color: 2 },
+    ];
+    const { light, dark } = summarizeCombosByColor(patterns);
+    expect(light.patternCount).toBe(1);
+    expect(dark.patternCount).toBe(1);
   });
 });
