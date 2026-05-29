@@ -6,6 +6,7 @@ import type {
   GameState,
   PracticeSpeedMultiplier,
 } from '@/types/game';
+import { computeColorBalance } from '@/utils/placementMetrics';
 import {
   computeChainLengths,
   computeComboGroups,
@@ -101,6 +102,7 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({
 }) => {
   const chains = computeChainLengths(gameState.detectedPatterns);
   const groups = computeComboGroups(gameState.detectedPatterns);
+  const balance = computeColorBalance(gameState.spawnedBlocks);
   const undoCount = gameState.undoStack.length;
 
   const dominantColor =
@@ -143,6 +145,27 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({
               {chains.dark}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Color balance */}
+      <div>
+        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+          Balance
+        </p>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-foreground">L {balance.light}</span>
+          <span
+            data-testid="color-balance-value"
+            className="font-mono tabular-nums"
+          >
+            {balance.delta > 0
+              ? `L+${balance.delta}`
+              : balance.delta < 0
+                ? `D+${Math.abs(balance.delta)}`
+                : '0'}
+          </span>
+          <span className="text-muted-foreground">D {balance.dark}</span>
         </div>
       </div>
 

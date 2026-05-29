@@ -44,3 +44,23 @@ describe('TrainingHUD practice controls', () => {
     expect(selected).toHaveAttribute('aria-pressed', 'true');
   });
 });
+
+describe('TrainingHUD color balance', () => {
+  it('renders a light-heavy balance value from spawnedBlocks', () => {
+    // pattern 0 = all-light; four of them => 16 light, 0 dark, delta +16
+    const state = { ...baseState(), spawnedBlocks: [0, 0, 0, 0] };
+    render(<TrainingHUD gameState={state} dispatch={() => {}} />);
+    const node = screen.getByTestId('color-balance-value');
+    expect(node.textContent).toContain('L');
+    expect(node.textContent).toContain('16');
+  });
+
+  it('shows a neutral balance when light and dark are equal', () => {
+    // pattern 0 = all-light (4), pattern 15 = all-dark (4) => delta 0
+    const state = { ...baseState(), spawnedBlocks: [0, 15] };
+    render(<TrainingHUD gameState={state} dispatch={() => {}} />);
+    expect(screen.getByTestId('color-balance-value').textContent).toContain(
+      '0'
+    );
+  });
+});
