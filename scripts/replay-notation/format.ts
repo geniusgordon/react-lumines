@@ -17,9 +17,41 @@ function hexCol(x: number): string {
   return HEX[x] ?? '?';
 }
 
-export function formatBlockGlyph(block: Block): string {
+// Labels for the current block followed by the upcoming queue.
+const BLOCK_LABELS = ['cur', 'nxt', '+2', '+3', '+4', '+5'];
+
+// Render a single block's two rows, e.g. ['■ ■', '□ □'] (board cell spacing).
+function blockGridRows(block: Block): [string, string] {
   const [[tl, tr], [bl, br]] = block.pattern as CellValue[][];
-  return `[${cell(tl)}${cell(tr)}/${cell(bl)}${cell(br)}]`;
+  return [`${cell(tl)} ${cell(tr)}`, `${cell(bl)} ${cell(br)}`];
+}
+
+/**
+ * Render the current block and the upcoming queue as side-by-side 2x2 grids
+ * with a label row, e.g.:
+ *   cur  nxt  +2   +3
+ *   ■ ■  ■ ■  □ ■  ■ □
+ *   □ □  □ □  □ ■  ■ □
+ */
+export function formatBlockRow(current: Block, queue: Block[]): string {
+  const cols = [current, ...queue].map((block, i) => {
+    const [top, bot] = blockGridRows(block);
+    const label = BLOCK_LABELS[i] ?? `+${i}`;
+    const width = Math.max(label.length, top.length);
+    return {
+      label: label.padEnd(width),
+      top: top.padEnd(width),
+      bot: bot.padEnd(width),
+    };
+  });
+  const sep = '  ';
+  return [
+    cols.map(c => c.label).join(sep),
+    cols.map(c => c.top).join(sep),
+    cols.map(c => c.bot).join(sep),
+  ]
+    .map(line => line.trimEnd())
+    .join('\n');
 }
 
 function formatTimeFromFrame(frame: number): string {
@@ -29,7 +61,6 @@ function formatTimeFromFrame(frame: number): string {
 export interface DropLineFields {
   seq: number;
   frame: number;
-  block: Block;
   columnX: number; // left column (0..BOARD_WIDTH-1); block occupies columnX..columnX+1
   sweepX: number;
 }
@@ -39,7 +70,6 @@ export function formatDropLine(d: DropLineFields): string {
   return (
     `#${String(d.seq).padStart(2, '0')}  ` +
     `f=${d.frame} (${formatTimeFromFrame(d.frame)})  ` +
-    `${formatBlockGlyph(d.block)}  ` +
     `col=${hexCol(d.columnX)}-${hexCol(colRight)}  ` +
     `sweep@col=${hexCol(d.sweepX)}`
   );
@@ -122,5 +152,5 @@ export function formatChapterHeader(
   index: number,
   state: Pick<GameState, 'frame'>
 ): string {
-  return `\n=== Sweep #${index}  (f=${state.frame}, t=${formatTimeFromFrame(state.frame)}) ===`;
+  return `## Sweep #${index}  (f=${state.frame}, t=${formatTimeFromFrame(state.frame)})`;
 }

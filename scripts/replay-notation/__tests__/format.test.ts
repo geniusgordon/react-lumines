@@ -4,7 +4,7 @@ import { BOARD_HEIGHT, BOARD_WIDTH } from '@/constants/gameConfig';
 import type { Block, CellValue, GameBoard } from '@/types/game';
 
 import {
-  formatBlockGlyph,
+  formatBlockRow,
   formatBoardSnapshot,
   formatDropLine,
   formatSweepLine,
@@ -26,67 +26,69 @@ function emptyBoard(): GameBoard {
 }
 
 describe('format', () => {
-  describe('formatBlockGlyph', () => {
-    it('renders all-light block', () => {
-      expect(
-        formatBlockGlyph(
-          makeBlock(
-            [
-              [1, 1],
-              [1, 1],
-            ],
-            0
-          )
+  describe('formatBlockRow', () => {
+    it('renders the current block and queue as side-by-side 2x2 grids', () => {
+      const cur = makeBlock(
+        [
+          [2, 2],
+          [1, 1],
+        ],
+        0
+      );
+      const queue = [
+        makeBlock(
+          [
+            [1, 1],
+            [1, 1],
+          ],
+          0
+        ),
+        makeBlock(
+          [
+            [1, 2],
+            [2, 1],
+          ],
+          6
+        ),
+        makeBlock(
+          [
+            [2, 2],
+            [2, 2],
+          ],
+          15
+        ),
+      ];
+      expect(formatBlockRow(cur, queue)).toBe(
+        ['cur  nxt  +2   +3', '■ ■  □ □  □ ■  ■ ■', '□ □  □ □  ■ □  ■ ■'].join(
+          '\n'
         )
-      ).toBe('[□□/□□]');
+      );
     });
 
-    it('renders all-dark block', () => {
-      expect(
-        formatBlockGlyph(
-          makeBlock(
-            [
-              [2, 2],
-              [2, 2],
-            ],
-            15
-          )
-        )
-      ).toBe('[■■/■■]');
-    });
-
-    it('renders checkerboard block', () => {
-      expect(
-        formatBlockGlyph(
-          makeBlock(
-            [
-              [1, 2],
-              [2, 1],
-            ],
-            6
-          )
-        )
-      ).toBe('[□■/■□]');
+    it('labels extra queue entries beyond the preset labels', () => {
+      const b = makeBlock(
+        [
+          [1, 1],
+          [1, 1],
+        ],
+        0
+      );
+      const queue = Array.from({ length: 6 }, () => b);
+      const labelRow = formatBlockRow(b, queue).split('\n')[0];
+      expect(labelRow).toContain('+5');
+      expect(labelRow).toContain('+6');
     });
   });
 
   describe('formatDropLine', () => {
     it('formats a drop line with hex column and time', () => {
-      const block = makeBlock(
-        [
-          [1, 2],
-          [2, 1],
-        ],
-        6
-      );
       const line = formatDropLine({
         seq: 7,
         frame: 1800,
-        block,
         columnX: 10, // 0xA
         sweepX: 3,
       });
-      expect(line).toBe('#07  f=1800 (30.0s)  [□■/■□]  col=A-B  sweep@col=3');
+      expect(line).toBe('#07  f=1800 (30.0s)  col=A-B  sweep@col=3');
     });
   });
 
