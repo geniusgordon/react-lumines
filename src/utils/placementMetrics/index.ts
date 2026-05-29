@@ -6,3 +6,4 @@ export type {
 } from './types';
 
 export { computeColorBalance } from './colorBalance';
+export { computeDeadCells } from './deadCells';
