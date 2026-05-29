@@ -1,8 +1,8 @@
 import { Upload, Check, Share, Download, BarChart2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Button } from '@/components/ui/button';
-import { UI_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
 import { useReplayShare } from '@/hooks/useReplayShare';
 import { useScoreSubmission } from '@/hooks/useScoreSubmission';
 import type { ReplayData } from '@/types/replay';
@@ -48,82 +48,83 @@ export function ReplayHeader({
   const canUpload =
     enableUpload && !isOnlineReplay && replayData && !hasSubmitted;
 
+  const title = (
+    <>
+      {replayData?.metadata?.playerName || 'Anonymous'}'s Game
+      {isOnlineReplay && <span className="text-primary ml-1">(Online)</span>}
+    </>
+  );
+
+  const meta = (
+    <>
+      {formatDate(savedAt)}
+      {replayData?.metadata?.finalScore && (
+        <>
+          <span className="mx-1">•</span>
+          <span className="text-warning font-semibold tabular-nums">
+            Score: {replayData.metadata.finalScore.toLocaleString()}
+          </span>
+        </>
+      )}
+    </>
+  );
+
+  const actions = (
+    <>
+      {onSummary && (
+        <Button onClick={onSummary} size="sm" variant="secondary">
+          <BarChart2 />
+          Summary
+        </Button>
+      )}
+      {onExport && (
+        <Button onClick={onExport} size="sm">
+          <Download />
+          Export
+        </Button>
+      )}
+      <Button
+        onClick={shareReplay}
+        variant="secondary"
+        size="sm"
+        disabled={isSharing}
+      >
+        <Share />
+        {isSharing ? 'Sharing...' : 'Share'}
+      </Button>
+      {canUpload && (
+        <Button
+          onClick={() => setShowUploadForm(!showUploadForm)}
+          variant="secondary"
+          size="sm"
+        >
+          <Upload />
+          {showUploadForm ? 'Cancel' : 'Upload'}
+        </Button>
+      )}
+      {onDelete && (
+        <Button onClick={onDelete} variant="destructive" size="sm">
+          Delete
+        </Button>
+      )}
+    </>
+  );
+
   return (
-    <div
-      className="border-border bg-background absolute top-0 right-0 left-0 border-b p-4"
-      style={{ ...getZIndexStyle(UI_Z_INDEX.SYSTEM_OVERLAY) }}
+    <ScreenHeader
+      title={title}
+      meta={meta}
+      actions={actions}
+      onBack={onBack}
+      backLabel="Back"
     >
-      <div className="mx-auto flex max-w-4xl items-center justify-between">
-        <div>
-          <h1 className="text-primary text-2xl font-bold">
-            {replayData?.metadata?.playerName || 'Anonymous'}'s Game
-            {isOnlineReplay && (
-              <span className="text-primary ml-2 text-sm">(Online)</span>
-            )}
-          </h1>
-          <div className="text-muted-foreground mt-1 text-sm">
-            <span>{formatDate(savedAt)}</span>
-            {replayData?.metadata?.finalScore && (
-              <>
-                <span className="mx-2">•</span>
-                <span className="text-warning font-semibold tabular-nums">
-                  Score: {replayData.metadata.finalScore.toLocaleString()}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          {onSummary && (
-            <Button onClick={onSummary} size="sm" variant="secondary">
-              <BarChart2 />
-              Summary
-            </Button>
-          )}
-          {onExport && (
-            <Button onClick={onExport} size="sm">
-              <Download />
-              Export
-            </Button>
-          )}
-          <Button
-            onClick={shareReplay}
-            variant="secondary"
-            size="sm"
-            disabled={isSharing}
-          >
-            <Share />
-            {isSharing ? 'Sharing...' : 'Share'}
-          </Button>
-          {canUpload && (
-            <Button
-              onClick={() => setShowUploadForm(!showUploadForm)}
-              variant="secondary"
-              size="sm"
-            >
-              <Upload />
-              {showUploadForm ? 'Cancel' : 'Upload'}
-            </Button>
-          )}
-          {onDelete && (
-            <Button onClick={onDelete} variant="destructive" size="sm">
-              Delete
-            </Button>
-          )}
-          <Button onClick={onBack} variant="secondary" size="sm">
-            Back
-          </Button>
-        </div>
-      </div>
-
       {shareMessage && (
         <div className="text-success text-center text-sm">{shareMessage}</div>
       )}
 
       {/* Upload Form */}
       {showUploadForm && (
-        <div className="border-border mx-auto mt-4 max-w-4xl border-t py-4">
+        <div className="border-border mx-auto mt-4 max-w-4xl border-t px-4 py-4">
           {!hasSubmitted && (
             <div className="space-y-3">
               <div>
@@ -167,6 +168,6 @@ export function ReplayHeader({
           )}
         </div>
       )}
-    </div>
+    </ScreenHeader>
   );
 }

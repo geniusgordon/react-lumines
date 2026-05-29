@@ -1,10 +1,9 @@
-import { ArrowLeft } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { GameCore } from '@/components/Game/GameCore';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TrainingHUD } from '@/components/TrainingHUD';
-import { Button } from '@/components/ui/button';
 import { DEFAULT_CONTROLS } from '@/constants/gameConfig';
 import { useGame } from '@/hooks/useGame';
 import { useGameControls } from '@/hooks/useGameControls';
@@ -101,21 +100,7 @@ export function TrainingScreen() {
 
   return (
     <div className="bg-game-background relative flex h-screen w-full flex-col items-center justify-center">
-      {/* Header */}
-      <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-4 py-3">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft />
-          Menu
-        </Button>
-        <span className="text-foreground text-sm font-semibold">Training</span>
-        <span className="text-muted-foreground text-sm">
-          Score: {gameState.score}
-        </span>
-      </div>
+      <ScreenHeader title="Training" onBack={() => navigate('/')} />
 
       {/* Game area + HUD side by side */}
       <div className="flex items-center gap-6">
