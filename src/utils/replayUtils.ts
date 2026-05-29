@@ -7,7 +7,7 @@ import type {
   ReplayInput,
   StateSnapshot,
 } from '@/types/replay';
-import type { SweepEvent } from '@/utils/placementMetrics';
+import { detectPayout, type SweepEvent } from '@/utils/placementMetrics';
 
 import { TARGET_FPS } from '../constants';
 
@@ -315,25 +315,29 @@ export function createSnapshotsForReplay(
       gameState = gameReducer(gameState, userAction);
     }
 
-    // Capture score before tick to detect score events
-    const prevScore = gameState.score;
-    const prevMarked = gameState.markedCells.length;
+    // Hold the pre-tick state (reducer is immutable, so this stays valid)
+    // to feed the shared payout detector after the tick.
+    const preTick = gameState;
 
     // Apply tick to advance game state
     gameState = gameReducer(gameState, { type: 'TICK' });
 
+    const { payout, clearedCells, scoreDelta } = detectPayout(
+      preTick,
+      gameState
+    );
+
     // Record score event if score increased this frame
-    const delta = gameState.score - prevScore;
-    if (delta > 0) {
-      scoreEvents.push({ frame: frameIndex + 1, delta });
+    if (scoreDelta > 0) {
+      scoreEvents.push({ frame: frameIndex + 1, delta: scoreDelta });
     }
 
-    // Detect a sweep payout: markedCells transitioned from >0 to 0
-    if (prevMarked > 0 && gameState.markedCells.length === 0) {
+    // Record a sweep payout via the shared predicate
+    if (payout) {
       sweepEvents.push({
         frame: frameIndex + 1,
-        clearedCells: prevMarked,
-        scoreDelta: delta,
+        clearedCells,
+        scoreDelta,
         dropsSincePrevious: dropsSincePayout,
       });
       dropsSincePayout = 0;

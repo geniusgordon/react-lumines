@@ -28,8 +28,11 @@ export function computeColorBalance(spawnedBlocks: number[]): ColorBalance {
     const pattern = BLOCK_PATTERNS[patternIndex];
     for (const row of pattern) {
       for (const cell of row) {
-        if (cell === 1) light += 1;
-        else if (cell === 2) dark += 1;
+        if (cell === 1) {
+          light += 1;
+        } else if (cell === 2) {
+          dark += 1;
+        }
       }
     }
     perDropCumulative.push(light - dark);

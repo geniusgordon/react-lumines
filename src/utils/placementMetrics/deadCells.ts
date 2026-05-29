@@ -17,7 +17,9 @@ export function computeDeadCells(board: GameBoard): DeadCellsResult {
   for (let y = 0; y < BOARD_HEIGHT; y++) {
     for (let x = 0; x < BOARD_WIDTH; x++) {
       const color = board[y][x];
-      if (color === 0) continue;
+      if (color === 0) {
+        continue;
+      }
 
       if (!isCellAlive(board, x, y, color)) {
         cells.push({ x, y });
@@ -41,9 +43,15 @@ function isCellAlive(
 ): boolean {
   for (const wx of [x - 1, x]) {
     for (const wy of [y - 1, y]) {
-      if (wx < 0 || wy < 0) continue;
-      if (wx + 1 >= BOARD_WIDTH || wy + 1 >= BOARD_HEIGHT) continue;
-      if (windowCanClose(board, wx, wy, color)) return true;
+      if (wx < 0 || wy < 0) {
+        continue;
+      }
+      if (wx + 1 >= BOARD_WIDTH || wy + 1 >= BOARD_HEIGHT) {
+        continue;
+      }
+      if (windowCanClose(board, wx, wy, color)) {
+        return true;
+      }
     }
   }
   return false;
@@ -58,7 +66,9 @@ function windowCanClose(
   for (let dy = 0; dy < 2; dy++) {
     for (let dx = 0; dx < 2; dx++) {
       const c = board[wy + dy][wx + dx];
-      if (c !== 0 && c !== color) return false;
+      if (c !== 0 && c !== color) {
+        return false;
+      }
     }
   }
   return true;
