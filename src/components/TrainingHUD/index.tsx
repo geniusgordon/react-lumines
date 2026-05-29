@@ -17,7 +17,7 @@ interface TrainingHUDProps {
   dispatch?: React.Dispatch<GameAction>;
 }
 
-const SPEED_PRESETS: PracticeSpeedMultiplier[] = [0.5, 0.75, 1];
+const SPEED_PRESETS: PracticeSpeedMultiplier[] = [0.5, 0.75, 1, 1.25];
 
 function EfficiencyBar({ efficiency }: { efficiency: number }) {
   const color =

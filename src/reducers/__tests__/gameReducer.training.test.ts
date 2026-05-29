@@ -136,6 +136,16 @@ describe('SET_PRACTICE_SPEED', () => {
     expect(r.timeline.sweepInterval).toBe(20); // 15 / 0.75
   });
 
+  it('scales drop and sweep intervals at 1.25x', () => {
+    const s = makeTrainingState();
+    const r = gameReducer(s, {
+      type: 'SET_PRACTICE_SPEED',
+      payload: 1.25,
+    });
+    expect(r.dropInterval).toBe(72); // 90 / 1.25
+    expect(r.timeline.sweepInterval).toBe(12); // 15 / 1.25
+  });
+
   it('scales remaining gameTimer when autoSweep is on', () => {
     const base = makeTrainingState();
     const s: GameState = {

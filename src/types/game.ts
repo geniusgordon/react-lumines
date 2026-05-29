@@ -80,7 +80,7 @@ export type GameActionType =
   | 'RESTORE_STATE' // Restore game state from snapshot
   | 'MANUAL_SWEEP' // Training: trigger full left-to-right sweep
   | 'UNDO' // Training: restore state before last placement
-  | 'SET_PRACTICE_SPEED' // Training: set speed multiplier (0.5 | 0.75 | 1)
+  | 'SET_PRACTICE_SPEED' // Training: set speed multiplier (0.5 | 0.75 | 1 | 1.25)
   | 'SET_PRACTICE_AUTO_SWEEP'; // Training: enable/disable auto timeline sweep
 
 // Game action structure
@@ -90,7 +90,7 @@ export interface GameAction {
 }
 
 // Practice / slow mode (training only)
-export type PracticeSpeedMultiplier = 0.5 | 0.75 | 1;
+export type PracticeSpeedMultiplier = 0.5 | 0.75 | 1 | 1.25;
 
 export interface PracticeSettings {
   speedMultiplier: PracticeSpeedMultiplier;
