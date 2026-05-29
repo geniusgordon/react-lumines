@@ -2,7 +2,8 @@ import React from 'react';
 
 import { BOARD_WIDTH, BOARD_HEIGHT } from '@/constants/gameConfig';
 import { GAME_FIELD_Z_INDEX, getZIndexStyle } from '@/constants/zIndex';
-import type { Square } from '@/types/game';
+import type { GameBoard, Square } from '@/types/game';
+import { computeDeadCells } from '@/utils/placementMetrics';
 import {
   computeCellContributions,
   computeColumnDistances,
@@ -10,6 +11,7 @@ import {
 
 export interface PatternHeatmapProps {
   detectedPatterns: Square[];
+  board: GameBoard;
 }
 
 const COLUMN_DISTANCES = computeColumnDistances(BOARD_WIDTH);
@@ -28,8 +30,10 @@ function distanceColor(distance: number): string {
 
 export const PatternHeatmap: React.FC<PatternHeatmapProps> = ({
   detectedPatterns,
+  board,
 }) => {
   const contributions = computeCellContributions(detectedPatterns);
+  const dead = computeDeadCells(board);
 
   return (
     <>
@@ -45,6 +49,23 @@ export const PatternHeatmap: React.FC<PatternHeatmapProps> = ({
             height: `calc(${BOARD_HEIGHT} * var(--spacing-block-size))`,
             backgroundColor: distanceColor(COLUMN_DISTANCES[col]),
             ...getZIndexStyle(GAME_FIELD_Z_INDEX.GAME_EFFECTS - 1),
+          }}
+        />
+      ))}
+
+      {/* Dead-cell overlays */}
+      {dead.cells.map(pos => (
+        <div
+          key={`dead-${pos.x},${pos.y}`}
+          data-testid="dead-cell"
+          className="pointer-events-none absolute border-2 border-red-500/60"
+          style={{
+            left: `calc(${pos.x} * var(--spacing-block-size))`,
+            top: `calc(${pos.y} * var(--spacing-block-size))`,
+            width: 'var(--spacing-block-size)',
+            height: 'var(--spacing-block-size)',
+            backgroundColor: 'rgba(255, 60, 60, 0.20)',
+            ...getZIndexStyle(GAME_FIELD_Z_INDEX.GAME_EFFECTS),
           }}
         />
       ))}

@@ -54,7 +54,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <FallingBlocks fallingColumns={gameState.fallingColumns} />
 
       {trainingMode && (
-        <PatternHeatmap detectedPatterns={gameState.detectedPatterns} />
+        <PatternHeatmap
+          detectedPatterns={gameState.detectedPatterns}
+          board={gameState.board}
+        />
       )}
 
       {(!trainingMode || gameState.practice?.autoSweep) && (
