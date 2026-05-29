@@ -127,10 +127,19 @@ export interface NotationSummary {
   durationFrames: number;
 }
 
+export interface AnalyticsSummary {
+  peakChainLength: number;
+  peakChainFrame: number;
+  boardEfficiency: number;
+  keyMoments: unknown[];
+  scoreDistribution: { small: number; medium: number; large: number };
+}
+
 export function formatHeader(
   replay: ReplayData,
   summary: NotationSummary,
-  filenameOrId: string
+  filenameOrId: string,
+  analytics?: AnalyticsSummary
 ): string {
   const lines: string[] = [];
   lines.push(`# Replay ${filenameOrId}`);
@@ -145,6 +154,13 @@ export function formatHeader(
     `- duration: ${summary.durationFrames} frames (${formatTimeFromFrame(summary.durationFrames)})`
   );
   lines.push(`- drops: ${summary.drops}, sweep payouts: ${summary.sweeps}`);
+  if (analytics) {
+    const eff = Math.round(analytics.boardEfficiency * 100);
+    const sd = analytics.scoreDistribution;
+    lines.push(
+      `- analytics: peakChain=${analytics.peakChainLength} (f=${analytics.peakChainFrame}), efficiency=${eff}%, keyMoments=${analytics.keyMoments.length}, scoreDistribution=${sd.small}/${sd.medium}/${sd.large}`
+    );
+  }
   return lines.join('\n');
 }
 
@@ -153,4 +169,101 @@ export function formatChapterHeader(
   state: Pick<GameState, 'frame'>
 ): string {
   return `## Sweep #${index}  (f=${state.frame}, t=${formatTimeFromFrame(state.frame)})`;
+}
+
+export interface DropAnnotationFields {
+  pspDelta: number;
+  balance: number; // light - dark; positive means more light spawned
+  dead: number;
+}
+
+function pspArrow(delta: number): string {
+  if (delta > 0) {
+    return `▲+${delta}`;
+  }
+  if (delta < 0) {
+    return `▼${delta}`;
+  }
+  return `=0`;
+}
+
+function balanceLabel(balance: number): string {
+  if (balance > 0) {
+    return `bal=L${balance}`;
+  }
+  if (balance < 0) {
+    return `bal=D${Math.abs(balance)}`;
+  }
+  return `bal=0`;
+}
+
+export function formatDropAnnotation(f: DropAnnotationFields): string {
+  const parts = [`PSP ${pspArrow(f.pspDelta)}`, balanceLabel(f.balance)];
+  if (f.dead > 0) {
+    parts.push(`dead=${f.dead}`);
+  }
+  return parts.join('  ');
+}
+
+export interface SweepAnnotationFields {
+  clearedCells: number;
+  dropsSincePrevious: number;
+}
+
+export function formatSweepAnnotation(f: SweepAnnotationFields): string {
+  const ratio =
+    f.dropsSincePrevious === 0
+      ? '∞'
+      : (f.clearedCells / f.dropsSincePrevious).toFixed(2);
+  return `yield=${f.clearedCells}  drops=${f.dropsSincePrevious}  ratio=${ratio}`;
+}
+
+const HEATMAP_GLYPHS = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+export function formatColumnHeatmapAscii(counts: number[]): string {
+  const max = Math.max(0, ...counts);
+  const glyphs = counts.map(c => {
+    if (max === 0) {
+      return HEATMAP_GLYPHS[0];
+    }
+    const idx = Math.min(
+      HEATMAP_GLYPHS.length - 1,
+      Math.floor((c / max) * (HEATMAP_GLYPHS.length - 1))
+    );
+    return HEATMAP_GLYPHS[idx];
+  });
+  const header = '  0 1 2 3 4 5 6 7 8 9 A B C D E F';
+  return `${header}\n  ${glyphs.join(' ')}`;
+}
+
+export interface SummaryFields {
+  columnCounts: number[];
+  balance: {
+    light: number;
+    dark: number;
+    delta: number;
+    magnitudeRatio: number;
+  };
+  deadCellsFinal: number;
+  sweepYield: { total: number; mean: number; payouts: number };
+}
+
+export function formatSummaryBlock(f: SummaryFields): string {
+  const lines: string[] = [];
+  lines.push('## Summary');
+  lines.push('');
+  lines.push('```');
+  lines.push('column placement heatmap:');
+  lines.push(formatColumnHeatmapAscii(f.columnCounts));
+  lines.push('');
+  const pct = Math.round(f.balance.magnitudeRatio * 100);
+  lines.push(
+    `color balance: light=${f.balance.light} dark=${f.balance.dark} (Δ=${f.balance.delta}, imbalance=${pct}%)`
+  );
+  lines.push(`dead cells (final): ${f.deadCellsFinal}`);
+  lines.push(
+    `sweep payouts: ${f.sweepYield.payouts}  total yield: ${f.sweepYield.total} cells  mean yield/payout: ${f.sweepYield.mean.toFixed(2)}`
+  );
+  lines.push('```');
+  return lines.join('\n');
 }
