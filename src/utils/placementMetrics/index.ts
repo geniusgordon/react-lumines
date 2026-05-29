@@ -7,3 +7,4 @@ export type {
 
 export { computeColorBalance } from './colorBalance';
 export { computeDeadCells } from './deadCells';
+export { computeSweepYield } from './sweepYield';
