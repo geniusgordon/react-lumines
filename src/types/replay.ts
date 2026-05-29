@@ -101,6 +101,11 @@ export interface ReplayAnalytics {
   keyMoments: KeyMoment[]; // frames where scoreDelta >= KEY_MOMENT_THRESHOLD
   columnHeatmap: ColumnHeatmap;
   scoreDistribution: { small: number; medium: number; large: number };
+  sweepYield: {
+    total: number;
+    mean: number;
+    payouts: number;
+  };
 }
 
 // Controller action handlers

@@ -4,6 +4,8 @@ import type {
   KeyMoment,
   ScorePoint,
 } from '@/types/replay';
+import { computeSweepYield } from '@/utils/placementMetrics';
+import type { SweepEvent } from '@/utils/placementMetrics';
 import { computeChainLengths } from '@/utils/trainingMetrics';
 
 export const KEY_MOMENT_THRESHOLD = 5;
@@ -11,7 +13,8 @@ export const KEY_MOMENT_THRESHOLD = 5;
 export function computeReplayAnalytics(
   snapshots: StateSnapshot[],
   placementCounts: number[],
-  scoreEvents: Array<{ frame: number; delta: number }> = []
+  scoreEvents: Array<{ frame: number; delta: number }> = [],
+  sweepEvents: SweepEvent[] = []
 ): ReplayAnalytics {
   if (snapshots.length === 0) {
     return {
@@ -22,6 +25,7 @@ export function computeReplayAnalytics(
       keyMoments: [],
       columnHeatmap: { counts: Array(16).fill(0), max: 0 },
       scoreDistribution: { small: 0, medium: 0, large: 0 },
+      sweepYield: { total: 0, mean: 0, payouts: 0 },
     };
   }
 
@@ -103,6 +107,8 @@ export function computeReplayAnalytics(
   const boardEfficiency =
     totalNonEmpty > 0 ? uniquePatternCells.size / totalNonEmpty : 0;
 
+  const sweepStats = computeSweepYield(sweepEvents);
+
   return {
     scoreTimeline,
     peakChainLength,
@@ -111,5 +117,10 @@ export function computeReplayAnalytics(
     keyMoments,
     columnHeatmap: { counts: placementCounts, max: columnMax },
     scoreDistribution,
+    sweepYield: {
+      total: sweepStats.total,
+      mean: sweepStats.mean,
+      payouts: sweepEvents.length,
+    },
   };
 }

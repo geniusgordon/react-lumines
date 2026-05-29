@@ -7,6 +7,7 @@ import type {
   ReplayInput,
   StateSnapshot,
 } from '@/types/replay';
+import type { SweepEvent } from '@/utils/placementMetrics';
 
 import { TARGET_FPS } from '../constants';
 
@@ -148,15 +149,17 @@ export function expandReplayDataWithSnapshots(
   replayData: ReplayData
 ): ExpandedReplayData {
   const frameActions = expandReplayData(replayData);
-  const { snapshots, placementCounts, scoreEvents } = createSnapshotsForReplay(
-    replayData.seed,
-    frameActions,
-    getReplayBlockQueue(replayData)
-  );
+  const { snapshots, placementCounts, scoreEvents, sweepEvents } =
+    createSnapshotsForReplay(
+      replayData.seed,
+      frameActions,
+      getReplayBlockQueue(replayData)
+    );
   const analytics = computeReplayAnalytics(
     snapshots,
     placementCounts,
-    scoreEvents
+    scoreEvents,
+    sweepEvents
   );
 
   return {
@@ -268,10 +271,13 @@ export function createSnapshotsForReplay(
   snapshots: StateSnapshot[];
   placementCounts: number[];
   scoreEvents: Array<{ frame: number; delta: number }>;
+  sweepEvents: SweepEvent[];
 } {
   const snapshots: StateSnapshot[] = [];
   const placementCounts = Array(16).fill(0);
   const scoreEvents: Array<{ frame: number; delta: number }> = [];
+  const sweepEvents: SweepEvent[] = [];
+  let dropsSincePayout = 0;
 
   // Create initial game state with replay seed (and optional block queue override)
   let gameState: GameState = createInitialGameState(
@@ -304,12 +310,14 @@ export function createSnapshotsForReplay(
         if (x + 1 < placementCounts.length) {
           placementCounts[x + 1] = (placementCounts[x + 1] ?? 0) + 1;
         }
+        dropsSincePayout += 1;
       }
       gameState = gameReducer(gameState, userAction);
     }
 
     // Capture score before tick to detect score events
     const prevScore = gameState.score;
+    const prevMarked = gameState.markedCells.length;
 
     // Apply tick to advance game state
     gameState = gameReducer(gameState, { type: 'TICK' });
@@ -318,6 +326,17 @@ export function createSnapshotsForReplay(
     const delta = gameState.score - prevScore;
     if (delta > 0) {
       scoreEvents.push({ frame: frameIndex + 1, delta });
+    }
+
+    // Detect a sweep payout: markedCells transitioned from >0 to 0
+    if (prevMarked > 0 && gameState.markedCells.length === 0) {
+      sweepEvents.push({
+        frame: frameIndex + 1,
+        clearedCells: prevMarked,
+        scoreDelta: delta,
+        dropsSincePrevious: dropsSincePayout,
+      });
+      dropsSincePayout = 0;
     }
 
     // Create snapshot at regular intervals
@@ -329,5 +348,5 @@ export function createSnapshotsForReplay(
     }
   }
 
-  return { snapshots, placementCounts, scoreEvents };
+  return { snapshots, placementCounts, scoreEvents, sweepEvents };
 }
