@@ -2,7 +2,7 @@ import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 import type { GameAction, GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 import {
-  computeColorBalance,
+  computeBoardColorBalance,
   computeDeadCells,
   computeSweepYield,
   type SweepEvent,
@@ -97,7 +97,7 @@ export function replayToNotation(
         dropsSinceLastPayout += 1;
 
         const pspDelta = state.detectedPatterns.length - pspBefore;
-        const balance = computeColorBalance(state.spawnedBlocks).delta;
+        const balance = computeBoardColorBalance(state.board).delta;
         const dead = computeDeadCells(state.board).count;
 
         const dropLine = formatDropLine({
@@ -168,7 +168,7 @@ export function replayToNotation(
   const yieldStats = computeSweepYield(sweepEvents);
   const summaryBlock = formatSummaryBlock({
     columnCounts: expanded.analytics.columnHeatmap.counts,
-    balance: computeColorBalance(state.spawnedBlocks),
+    balance: computeBoardColorBalance(state.board),
     deadCellsFinal: computeDeadCells(state.board).count,
     sweepYield: {
       total: yieldStats.total,

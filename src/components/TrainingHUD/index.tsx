@@ -6,7 +6,7 @@ import type {
   GameState,
   PracticeSpeedMultiplier,
 } from '@/types/game';
-import { computeColorBalance } from '@/utils/placementMetrics';
+import { computeBoardColorBalance } from '@/utils/placementMetrics';
 import {
   computeChainLengths,
   computeComboGroups,
@@ -102,7 +102,7 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({
 }) => {
   const chains = computeChainLengths(gameState.detectedPatterns);
   const groups = computeComboGroups(gameState.detectedPatterns);
-  const balance = computeColorBalance(gameState.spawnedBlocks);
+  const balance = computeBoardColorBalance(gameState.board);
   const undoCount = gameState.undoStack.length;
 
   const dominantColor =

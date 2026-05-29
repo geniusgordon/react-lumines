@@ -1,11 +1,11 @@
 export type {
-  ColorBalance,
+  BoardColorBalance,
   DeadCellsResult,
   SweepEvent,
   SweepYieldStats,
 } from './types';
 
-export { computeColorBalance } from './colorBalance';
+export { computeBoardColorBalance } from './boardColorBalance';
 export { computeDeadCells } from './deadCells';
 export { computeSweepYield } from './sweepYield';
 export { detectPayout, type PayoutResult } from './sweepDetection';

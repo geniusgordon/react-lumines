@@ -1,11 +1,10 @@
 import type { Position } from '@/types/game';
 
-export interface ColorBalance {
-  light: number; // total light (1) cells across all spawned blocks
-  dark: number; // total dark (2) cells across all spawned blocks
-  delta: number; // light - dark (signed)
-  magnitudeRatio: number; // |delta| / total, in [0, 1]; 0 when total=0
-  perDropCumulative: number[]; // running delta after each spawn (length === spawnedBlocks.length)
+export interface BoardColorBalance {
+  light: number; // light (1) cells currently on the board
+  dark: number; // dark (2) cells currently on the board
+  delta: number; // light - dark (signed); what the player's placements + clears produced
+  magnitudeRatio: number; // |delta| / total non-empty cells, in [0, 1]; 0 when board empty
 }
 
 export interface DeadCellsResult {
