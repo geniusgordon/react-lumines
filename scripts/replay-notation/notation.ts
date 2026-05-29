@@ -86,9 +86,7 @@ export function replayToNotation(
             sweepX: preDrop.timeline.x,
           })
         );
-        chapterLines.push(
-          formatBlockRow(preDrop.currentBlock, preDrop.queue)
-        );
+        chapterLines.push(formatBlockRow(preDrop.currentBlock, preDrop.queue));
         chapterLines.push(
           formatBoardSnapshot({
             board: state.board,
