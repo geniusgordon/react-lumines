@@ -71,7 +71,7 @@ function PracticeControls({
               onClick={() =>
                 dispatch({ type: 'SET_PRACTICE_SPEED', payload: mult })
               }
-              className={`flex-1 rounded border px-1 py-0.5 font-mono text-xs ${
+              className={`flex-1 rounded border px-0.5 py-0.5 font-mono text-xs ${
                 selected
                   ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-border text-foreground hover:bg-accent'
@@ -113,7 +113,7 @@ export const TrainingHUD: React.FC<TrainingHUDProps> = ({
         : null;
 
   return (
-    <div className="border-border bg-card/90 text-foreground flex w-44 flex-col gap-3 rounded-lg border p-3">
+    <div className="border-border bg-card/90 text-foreground flex w-56 shrink-0 flex-col gap-3 rounded-lg border p-3">
       {/* Practice controls */}
       {gameState.practice && dispatch && (
         <PracticeControls practice={gameState.practice} dispatch={dispatch} />
