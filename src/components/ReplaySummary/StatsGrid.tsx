@@ -20,7 +20,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
         : 'text-destructive';
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       <div className="bg-muted/30 rounded-lg p-3 text-center">
         <div className="text-foreground text-2xl font-bold tabular-nums">
           {finalScore.toLocaleString()}
@@ -44,6 +44,20 @@ export const StatsGrid: React.FC<StatsGridProps> = ({
           {analytics.keyMoments.length}
         </div>
         <div className="text-muted-foreground text-xs">Key Moments</div>
+      </div>
+      <div className="bg-muted/30 rounded-lg p-3 text-center">
+        <div className="text-foreground text-2xl font-bold tabular-nums">
+          {analytics.sweepYield.mean.toFixed(1)}
+        </div>
+        <div className="text-muted-foreground text-xs">
+          Yield / Sweep ({analytics.sweepYield.payouts} payouts)
+        </div>
+      </div>
+      <div className="bg-muted/30 rounded-lg p-3 text-center">
+        <div className="text-foreground text-2xl font-bold tabular-nums">
+          {analytics.sweepYield.total}
+        </div>
+        <div className="text-muted-foreground text-xs">Total Cells Cleared</div>
       </div>
     </div>
   );
