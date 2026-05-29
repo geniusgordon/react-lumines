@@ -4,3 +4,5 @@ export type {
   SweepEvent,
   SweepYieldStats,
 } from './types';
+
+export { computeColorBalance } from './colorBalance';
