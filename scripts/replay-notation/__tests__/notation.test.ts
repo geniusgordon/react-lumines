@@ -107,3 +107,39 @@ describe('replayToNotation', () => {
     expect(md).toMatch(/#01\s+f=/);
   });
 });
+
+describe('replayToNotation — Phase 2 annotations', () => {
+  it('appends PSP and color-balance annotations to drop lines', () => {
+    const { recordedInputs, finalState } = recordFixedScript('annot-seed');
+    const replay = createReplayData(recordedInputs, finalState);
+
+    const md = replayToNotation(replay, { source: 'a.json' });
+
+    expect(md).toMatch(/#\d+\s.*\/\/\s+PSP\s+[▲▼=]/);
+    expect(md).toMatch(/bal=[LD0]/);
+  });
+
+  it('appends yield/ratio annotation to sweep payout lines', () => {
+    const { recordedInputs, finalState } = recordFixedScript('sweep-seed');
+    const replay = createReplayData(recordedInputs, finalState);
+
+    const md = replayToNotation(replay, { source: 's.json' });
+    if (md.includes('>>> SWEEP')) {
+      expect(md).toMatch(
+        />>>\s+SWEEP[^\n]*\/\/\s+yield=\d+\s+drops=\d+\s+ratio=/
+      );
+    }
+  });
+
+  it('emits a Summary block with heatmap, balance, dead cells, and sweep yield', () => {
+    const { recordedInputs, finalState } = recordFixedScript('summary-seed');
+    const replay = createReplayData(recordedInputs, finalState);
+
+    const md = replayToNotation(replay, { source: 'sum.json' });
+    expect(md).toContain('## Summary');
+    expect(md).toContain('column placement heatmap:');
+    expect(md).toContain('color balance: light=');
+    expect(md).toContain('dead cells (final): ');
+    expect(md).toContain('sweep payouts: ');
+  });
+});

@@ -1,15 +1,27 @@
 import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 import type { GameAction, GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
-import { expandReplayData, getReplayBlockQueue } from '@/utils/replayUtils';
+import {
+  computeColorBalance,
+  computeDeadCells,
+  computeSweepYield,
+  type SweepEvent,
+} from '@/utils/placementMetrics';
+import {
+  expandReplayDataWithSnapshots,
+  getReplayBlockQueue,
+} from '@/utils/replayUtils';
 
 import { detectSweepEvent } from './events';
 import {
   formatBlockRow,
   formatBoardSnapshot,
   formatChapterHeader,
+  formatDropAnnotation,
   formatDropLine,
   formatHeader,
+  formatSummaryBlock,
+  formatSweepAnnotation,
   formatSweepLine,
   type NotationSummary,
 } from './format';
@@ -36,7 +48,8 @@ export function replayToNotation(
   replay: ReplayData,
   options: NotationOptions
 ): string {
-  const frameActions = expandReplayData(replay);
+  const expanded = expandReplayDataWithSnapshots(replay);
+  const frameActions = expanded.frameActions;
   const recordedBlockQueue = getReplayBlockQueue(replay);
 
   let state: GameState = createInitialGameState(
@@ -54,6 +67,8 @@ export function replayToNotation(
   let chapterLines: string[] = [];
   let dropCount = 0;
   let payoutCount = 0;
+  const sweepEvents: SweepEvent[] = [];
+  let dropsSinceLastPayout = 0;
 
   // Flush the current chapter's monospace lines as a fenced code block.
   const flushChapter = (): void => {
@@ -76,15 +91,23 @@ export function replayToNotation(
     for (const action of frameData.userActions as GameAction[]) {
       if (action.type === 'HARD_DROP') {
         const preDrop = state;
+        const pspBefore = preDrop.detectedPatterns.length;
         state = gameReducer(state, action);
         dropCount += 1;
+        dropsSinceLastPayout += 1;
+
+        const pspDelta = state.detectedPatterns.length - pspBefore;
+        const balance = computeColorBalance(state.spawnedBlocks).delta;
+        const dead = computeDeadCells(state.board).count;
+
+        const dropLine = formatDropLine({
+          seq: dropCount,
+          frame: preDrop.frame,
+          columnX: preDrop.blockPosition.x,
+          sweepX: preDrop.timeline.x,
+        });
         chapterLines.push(
-          formatDropLine({
-            seq: dropCount,
-            frame: preDrop.frame,
-            columnX: preDrop.blockPosition.x,
-            sweepX: preDrop.timeline.x,
-          })
+          `${dropLine}  // ${formatDropAnnotation({ pspDelta, balance, dead })}`
         );
         chapterLines.push(formatBlockRow(preDrop.currentBlock, preDrop.queue));
         chapterLines.push(
@@ -103,9 +126,22 @@ export function replayToNotation(
 
     const sweep = detectSweepEvent(preTick, state);
     if (sweep) {
-      chapterLines.push(formatSweepLine(sweep));
       if (sweep.payout) {
         payoutCount += 1;
+        const sweepLine = formatSweepLine(sweep);
+        chapterLines.push(
+          `${sweepLine}  // ${formatSweepAnnotation({
+            clearedCells: sweep.clearedCells,
+            dropsSincePrevious: dropsSinceLastPayout,
+          })}`
+        );
+        sweepEvents.push({
+          frame: state.frame,
+          clearedCells: sweep.clearedCells,
+          scoreDelta: sweep.scoreDelta,
+          dropsSincePrevious: dropsSinceLastPayout,
+        });
+        dropsSinceLastPayout = 0;
         chapterLines.push(
           formatBoardSnapshot({
             board: state.board,
@@ -114,6 +150,8 @@ export function replayToNotation(
         );
         // Open the next chapter unless this was the very last action.
         openChapter();
+      } else {
+        chapterLines.push(formatSweepLine(sweep));
       }
     }
   }
@@ -127,7 +165,24 @@ export function replayToNotation(
     finalScore: state.score,
     durationFrames: state.frame,
   };
-  const header = formatHeader(replay, summary, options.source);
+  const yieldStats = computeSweepYield(sweepEvents);
+  const summaryBlock = formatSummaryBlock({
+    columnCounts: expanded.analytics.columnHeatmap.counts,
+    balance: computeColorBalance(state.spawnedBlocks),
+    deadCellsFinal: computeDeadCells(state.board).count,
+    sweepYield: {
+      total: yieldStats.total,
+      mean: yieldStats.mean,
+      payouts: sweepEvents.length,
+    },
+  });
 
-  return `${header}\n\n${sections.join('\n\n')}\n`;
+  const header = formatHeader(
+    replay,
+    summary,
+    options.source,
+    expanded.analytics
+  );
+
+  return `${header}\n\n${sections.join('\n\n')}\n\n${summaryBlock}\n`;
 }
