@@ -3,6 +3,14 @@ export type {
   DeadCellsResult,
   SweepEvent,
   SweepYieldStats,
+  RegionEff,
+  RegionEfficiencyResult,
+  WellProfile,
+  FrozenGrowthResult,
+  PayoutColorRecord,
+  FocusRhythmStats,
+  DecisionRegretResult,
+  SweepValueStats,
 } from './types';
 
 export { computeBoardColorBalance } from './boardColorBalance';
