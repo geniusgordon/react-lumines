@@ -31,14 +31,6 @@ dist-ssr
 *storybook.log
 storybook-static
 
-# Python
-__pycache__/
-*.pyc
-python/.venv/
-python/checkpoints/
-python/logs/
-python/demos/
-
 # Git worktrees
 .worktrees/
 .claude/
