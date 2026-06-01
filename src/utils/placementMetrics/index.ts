@@ -20,3 +20,4 @@ export { detectPayout, type PayoutResult } from './sweepDetection';
 export { computeRegionEfficiency } from './regionEfficiency';
 export { computeWellProfile } from './wellProfile';
 export { computeFrozenGrowth } from './frozenGrowth';
+export { computeFocusRhythm, summarizePayoutColor } from './focusRhythm';
