@@ -4,6 +4,7 @@ import type { ReplayData } from '@/types/replay';
 import {
   computeBoardColorBalance,
   computeDeadCells,
+  computeDecisionRegret,
   computeSweepYield,
   type SweepEvent,
 } from '@/utils/placementMetrics';
@@ -12,6 +13,7 @@ import {
   getReplayBlockQueue,
 } from '@/utils/replayUtils';
 
+import { detectBoardTags } from './detectors';
 import { detectSweepEvent } from './events';
 import {
   formatBlockRow,
@@ -100,14 +102,26 @@ export function replayToNotation(
         const balance = computeBoardColorBalance(state.board).delta;
         const dead = computeDeadCells(state.board).count;
 
+        const tags = detectBoardTags(state.board);
+        const regret = computeDecisionRegret(
+          preDrop.board,
+          preDrop.fallingColumns,
+          preDrop.currentBlock,
+          preDrop.blockPosition.x
+        ).regret;
+        if (regret > 0) {
+          tags.push(`MISSED-SQUARE(-${regret})`);
+        }
+
         const dropLine = formatDropLine({
           seq: dropCount,
           frame: preDrop.frame,
           columnX: preDrop.blockPosition.x,
           sweepX: preDrop.timeline.x,
         });
+        const tagSuffix = tags.length > 0 ? `  [${tags.join(' ')}]` : '';
         chapterLines.push(
-          `${dropLine}  // ${formatDropAnnotation({ pspDelta, balance, dead })}`
+          `${dropLine}  // ${formatDropAnnotation({ pspDelta, balance, dead })}${tagSuffix}`
         );
         chapterLines.push(formatBlockRow(preDrop.currentBlock, preDrop.queue));
         chapterLines.push(
