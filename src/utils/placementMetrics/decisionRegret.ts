@@ -1,5 +1,10 @@
 import { BOARD_HEIGHT, BOARD_WIDTH } from '@/constants/gameConfig';
-import type { Block, BlockPattern, FallingColumn, GameBoard } from '@/types/game';
+import type {
+  Block,
+  BlockPattern,
+  FallingColumn,
+  GameBoard,
+} from '@/types/game';
 import { detectPatterns, rotateBlockPattern } from '@/utils/gameLogic';
 
 // FallingColumn is part of the public API signature so callers can pass game
@@ -48,7 +53,12 @@ export function computeDecisionRegret(
         candidate.windows > best.windows ||
         (candidate.windows === best.windows && candidate.dead < best.dead);
       if (better) {
-        best = { windows: candidate.windows, dead: candidate.dead, x, rotation };
+        best = {
+          windows: candidate.windows,
+          dead: candidate.dead,
+          x,
+          rotation,
+        };
       }
     }
   }
@@ -124,4 +134,3 @@ function evaluate(
     dead: computeDeadCells(newBoard).count,
   };
 }
-

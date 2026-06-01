@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Square } from '@/types/game';
 
-import {
-  computeFocusRhythm,
-  summarizePayoutColor,
-} from '../focusRhythm';
+import { computeFocusRhythm, summarizePayoutColor } from '../focusRhythm';
 import type { PayoutColorRecord } from '../types';
 
 function cells(colors: Array<1 | 2>): Square[] {

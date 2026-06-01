@@ -58,8 +58,7 @@ export function computeFocusRhythm(
       flips += 1;
     }
   }
-  const alternationRate =
-    records.length > 1 ? flips / (records.length - 1) : 0;
+  const alternationRate = records.length > 1 ? flips / (records.length - 1) : 0;
 
   let handoffs = 0;
   for (const r of records) {

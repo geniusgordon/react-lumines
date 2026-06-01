@@ -12,9 +12,7 @@ export function spearman(xs: number[], ys: number[]): number {
 }
 
 function rank(values: number[]): number[] {
-  const order = values
-    .map((v, i) => ({ v, i }))
-    .sort((a, b) => a.v - b.v);
+  const order = values.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
   const ranks = new Array<number>(values.length).fill(0);
   let i = 0;
   while (i < order.length) {

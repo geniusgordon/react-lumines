@@ -145,7 +145,9 @@ function main(): void {
     }))
     .sort((a, b) => Math.abs(b.rho) - Math.abs(a.rho));
 
-  process.stdout.write(`# Strategy metric vs finalScore (N=${runs.length})\n\n`);
+  process.stdout.write(
+    `# Strategy metric vs finalScore (N=${runs.length})\n\n`
+  );
   process.stdout.write('Spearman rho, sorted by |rho| (strongest first):\n\n');
   for (const { metric, rho } of correlations) {
     process.stdout.write(`  ${rho.toFixed(3).padStart(7)}  ${metric}\n`);
