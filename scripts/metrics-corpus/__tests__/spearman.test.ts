@@ -23,4 +23,16 @@ describe('spearman', () => {
   it('returns 0 for fewer than two points', () => {
     expect(spearman([1], [2])).toBe(0);
   });
+
+  it('returns 0 for mismatched-length inputs', () => {
+    expect(spearman([1, 2], [3])).toBe(0);
+  });
+
+  it('handles non-degenerate ties end-to-end', () => {
+    // xs has a tie (the two 2s get average rank 2.5); ys is strictly increasing.
+    // Correlation is high but < 1 because of the tie.
+    const r = spearman([1, 2, 2, 4], [1, 2, 3, 4]);
+    expect(r).toBeGreaterThan(0.9);
+    expect(r).toBeLessThan(1);
+  });
 });
