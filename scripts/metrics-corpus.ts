@@ -8,10 +8,11 @@ import {
   computeFocusRhythm,
   computeFrozenGrowth,
   computeRegionEfficiency,
+  computeSweepValue,
   computeWellProfile,
   summarizePayoutColor,
 } from '@/utils/placementMetrics';
-import type { PayoutColorRecord } from '@/utils/placementMetrics';
+import type { PayoutColorRecord, SweepEvent } from '@/utils/placementMetrics';
 import { validateReplayData } from '@/utils/replayUtils';
 
 import { simulateReplay } from './metrics-corpus/simulateReplay';
@@ -28,6 +29,7 @@ interface RunMetrics {
   alternationRate: number;
   meanPurity: number;
   handoffRate: number;
+  meanSweepValue: number;
 }
 
 function analyzeReplay(replay: ReplayData, source: string): RunMetrics {
@@ -38,6 +40,7 @@ function analyzeReplay(replay: ReplayData, source: string): RunMetrics {
   let sumSealPressure = 0;
   let sumRegret = 0;
   const payoutRecords: PayoutColorRecord[] = [];
+  const sweepEvents: SweepEvent[] = [];
 
   const finalState = simulateReplay(replay, {
     onDrop: ({ pre, post }) => {
@@ -64,10 +67,17 @@ function analyzeReplay(replay: ReplayData, source: string): RunMetrics {
         dominantShare,
         postBalanceDelta: computeBoardColorBalance(post.board).delta,
       });
+      sweepEvents.push({
+        frame: post.frame,
+        clearedCells: pre.markedCells.length,
+        scoreDelta: post.score - pre.score,
+        dropsSincePrevious: 0,
+      });
     },
   });
 
   const rhythm = computeFocusRhythm(payoutRecords);
+  const sweepValue = computeSweepValue(sweepEvents);
   const safeDrops = drops === 0 ? 1 : drops;
 
   return {
@@ -81,6 +91,7 @@ function analyzeReplay(replay: ReplayData, source: string): RunMetrics {
     alternationRate: rhythm.alternationRate,
     meanPurity: rhythm.meanPurity,
     handoffRate: rhythm.handoffRate,
+    meanSweepValue: sweepValue.meanPoints,
   };
 }
 
@@ -133,6 +144,7 @@ function main(): void {
     'alternationRate',
     'meanPurity',
     'handoffRate',
+    'meanSweepValue',
   ];
 
   const correlations = metricKeys
