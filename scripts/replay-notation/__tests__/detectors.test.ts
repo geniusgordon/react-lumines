@@ -37,4 +37,16 @@ describe('detectBoardTags', () => {
     }
     expect(detectBoardTags(board)).toContain('THIN-STACK');
   });
+
+  it('flags SEALED-COLOR when a color is hemmed in by the opposite color', () => {
+    const board = emptyBoard();
+    // A tight mixed cluster: every 2x2 window here mixes light and dark, so
+    // both colors are "blocked" (contaminated) rather than open to grow.
+    board[BOARD_HEIGHT - 1][2] = 1;
+    board[BOARD_HEIGHT - 1][3] = 2;
+    board[BOARD_HEIGHT - 2][2] = 2;
+    board[BOARD_HEIGHT - 2][3] = 1;
+    const tags = detectBoardTags(board);
+    expect(tags.some(t => t.startsWith('SEALED-COLOR'))).toBe(true);
+  });
 });
