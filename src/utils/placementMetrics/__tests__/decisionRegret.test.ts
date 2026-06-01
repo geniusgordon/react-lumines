@@ -45,4 +45,17 @@ describe('computeDecisionRegret', () => {
     expect(r.regret).toBeGreaterThan(0);
     expect(r.bestX).toBe(4);
   });
+
+  it('settles each covered column independently (per-column gravity)', () => {
+    // col5 has one light cell on the floor; col6 has a light column of height 2.
+    // Dropping an all-light 2x2 at x=5 must settle col5 -> rows 7,8,9 and
+    // col6 -> rows 6,7,8,9, producing TWO stacked 2x2 windows. A rigid-landing
+    // model would float col5's cells and yield only one window.
+    const board = emptyBoard();
+    board[BOARD_HEIGHT - 1][5] = 1; // (col5, row9)
+    board[BOARD_HEIGHT - 1][6] = 1; // (col6, row9)
+    board[BOARD_HEIGHT - 2][6] = 1; // (col6, row8)
+    const r = computeDecisionRegret(board, [], lightBlock(), 5);
+    expect(r.chosenWindows).toBe(2);
+  });
 });

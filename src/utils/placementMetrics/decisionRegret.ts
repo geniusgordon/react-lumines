@@ -71,8 +71,10 @@ export function computeDecisionRegret(
  * NOTE: We do NOT use placeBlockOnBoard/findDropPosition here because those
  * functions operate in the game's "top-entry" coordinate system (blocks enter
  * from y=-2 and placeBlockOnBoard only works correctly when position.y < 0).
- * For evaluation purposes we compute column heights directly and write the
- * placed cells by hand.
+ * For evaluation purposes we use per-column gravity (matching
+ * createFallingColumns/applyGravity): each column the block covers settles
+ * independently to its own floor, so a 2-wide block over uneven columns does
+ * NOT stay rigid — its halves land separately.
  */
 function evaluate(
   board: GameBoard,
@@ -86,53 +88,34 @@ function evaluate(
     return null;
   }
 
-  // Compute the topmost row (0-based from top) that is occupied per column.
-  // "top of stack" = first non-zero row from the top in that column,
-  // or BOARD_HEIGHT if the column is empty.
-  function stackTop(col: number): number {
-    for (let row = 0; row < BOARD_HEIGHT; row++) {
-      if (board[row][col] !== 0) {
-        return row;
-      }
-    }
-    return BOARD_HEIGHT;
-  }
+  const newBoard: GameBoard = board.map(row => [...row]);
 
-  // For each column the block covers, find the landing row for that column
-  // of the pattern. The block lands so its bottom row sits just above the
-  // existing stack. "landingRow" = the board row occupied by the BOTTOM row
-  // of the pattern in column x+px.
-  //
-  // landingRow = stackTop(x + px) - 1  (one row above the existing stack top)
-  // The block's bottom pattern row (patternH-1) sits at landingRow,
-  // so the block's top pattern row (0) sits at landingRow - (patternH-1).
-  //
-  // We need the same vertical offset for all columns (gravity is uniform).
-  // The limiting column is whichever has the highest stack.
-  let landingRow = BOARD_HEIGHT - 1; // row where the bottom of pattern lands
+  // Per-column gravity: each covered column's cells fall to that column's own
+  // floor, independently (matching createFallingColumns/applyGravity). A 2-wide
+  // block over uneven columns does NOT stay rigid — its halves land separately.
   for (let px = 0; px < patternW; px++) {
     const col = x + px;
-    const top = stackTop(col);
-    // block bottom must be at top-1 at most
-    landingRow = Math.min(landingRow, top - 1);
-  }
 
-  // Top row where pattern[0] is placed
-  const topRow = landingRow - (patternH - 1);
-
-  // Reject if pattern would go above the board
-  if (topRow < 0) {
-    return null;
-  }
-
-  // Build a copy of the board with the block placed
-  const newBoard: GameBoard = board.map(row => [...row]);
-  for (let py = 0; py < patternH; py++) {
-    for (let px = 0; px < patternW; px++) {
-      const cell = pattern[py][px];
-      if (cell !== 0) {
-        newBoard[topRow + py][x + px] = cell;
+    // First empty row above this column's stack (BOARD_HEIGHT-1 if column empty).
+    let writeRow = BOARD_HEIGHT - 1;
+    for (let row = 0; row < BOARD_HEIGHT; row++) {
+      if (board[row][col] !== 0) {
+        writeRow = row - 1;
+        break;
       }
+    }
+
+    // Place this column's pattern cells from the bottom pattern row upward.
+    for (let py = patternH - 1; py >= 0; py--) {
+      const cell = pattern[py][px];
+      if (cell === 0) {
+        continue;
+      }
+      if (writeRow < 0) {
+        return null; // column overflow -> illegal placement
+      }
+      newBoard[writeRow][col] = cell;
+      writeRow -= 1;
     }
   }
 
