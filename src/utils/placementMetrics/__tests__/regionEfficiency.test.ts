@@ -56,6 +56,16 @@ describe('computeRegionEfficiency', () => {
     expect(sq.efficiency).toBeGreaterThan(st.efficiency);
   });
 
+  it('handles a region spanning all four board edges', () => {
+    const board = emptyBoard();
+    fillRect(board, 0, 0, BOARD_WIDTH, BOARD_HEIGHT, 1);
+    const r = computeRegionEfficiency(board);
+    expect(r.regions).toHaveLength(1);
+    expect(r.regions[0].cells).toBe(BOARD_WIDTH * BOARD_HEIGHT);
+    expect(r.regions[0].windows).toBe((BOARD_WIDTH - 1) * (BOARD_HEIGHT - 1));
+    expect(r.totalWindows).toBe((BOARD_WIDTH - 1) * (BOARD_HEIGHT - 1));
+  });
+
   it('separates two regions of different colors', () => {
     const board = emptyBoard();
     fillRect(board, 0, 0, 2, 2, 1);

@@ -37,6 +37,9 @@ export function computeRegionEfficiency(
 
   const totalWindows = regions.reduce((s, r) => s + r.windows, 0);
   const totalCells = regions.reduce((s, r) => s + r.cells, 0);
+  // meanEfficiency is the UNWEIGHTED mean of per-region efficiencies —
+  // a single-cell region counts as much as a large one.
+  // For a weighted board-level ratio use totalWindows / totalCells instead.
   const meanEfficiency =
     regions.length === 0
       ? 0
