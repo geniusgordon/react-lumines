@@ -22,3 +22,4 @@ export { computeWellProfile } from './wellProfile';
 export { computeFrozenGrowth } from './frozenGrowth';
 export { computeFocusRhythm, summarizePayoutColor } from './focusRhythm';
 export { computeSweepValue } from './sweepValue';
+export { computeDecisionRegret } from './decisionRegret';
