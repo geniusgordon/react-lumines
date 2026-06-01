@@ -21,3 +21,4 @@ export { computeRegionEfficiency } from './regionEfficiency';
 export { computeWellProfile } from './wellProfile';
 export { computeFrozenGrowth } from './frozenGrowth';
 export { computeFocusRhythm, summarizePayoutColor } from './focusRhythm';
+export { computeSweepValue } from './sweepValue';
