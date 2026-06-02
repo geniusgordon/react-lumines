@@ -35,7 +35,9 @@ function analyze(replay: ReplayData, file: string): Row {
     onPayout: ({ pre, post }) => {
       payouts += 1;
       const d = post.score - pre.score;
-      if (d > biggest) biggest = d;
+      if (d > biggest) {
+        biggest = d;
+      }
     },
   });
   const score = final.score;
@@ -71,7 +73,9 @@ function main(): void {
   const rows: Row[] = [];
   let skipped = 0;
   for (const f of readdirSync(dir)) {
-    if (!f.endsWith('.json')) continue;
+    if (!f.endsWith('.json')) {
+      continue;
+    }
     try {
       const replay = JSON.parse(
         readFileSync(join(dir, f), 'utf8')
@@ -110,13 +114,16 @@ function main(): void {
   const bottom = rows.slice(n - k);
 
   process.stdout.write(`\n=== Your ${n} games — score decomposition ===\n`);
-  process.stdout.write(`score = payouts x win/payout (win/payout = mean 2x2 windows cashed per sweep)\n\n`);
+  process.stdout.write(
+    `score = payouts x win/payout (win/payout = mean 2x2 windows cashed per sweep)\n\n`
+  );
   summarize('ALL', rows);
   summarize(`TOP ${k}`, top);
   summarize(`BOTTOM ${k}`, bottom);
 
   // Which lever moves with score: payout COUNT or payout SIZE?
-  const dPayouts = mean(top.map(r => r.payouts)) - mean(bottom.map(r => r.payouts));
+  const dPayouts =
+    mean(top.map(r => r.payouts)) - mean(bottom.map(r => r.payouts));
   const dSize =
     mean(top.map(r => r.winPerPayout)) - mean(bottom.map(r => r.winPerPayout));
   process.stdout.write(
