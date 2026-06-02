@@ -1,5 +1,4 @@
-import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
-import type { GameAction, GameState } from '@/types/game';
+import type { GameState } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 import {
   computeBoardColorBalance,
@@ -8,6 +7,7 @@ import {
   computeSweepYield,
   type SweepEvent,
 } from '@/utils/placementMetrics';
+import { driveReplay, replayTotalFrames } from '@/utils/replaySimulation';
 import {
   expandReplayDataWithSnapshots,
   getReplayBlockQueue,
@@ -53,15 +53,10 @@ export function replayToNotation(
   const expanded = expandReplayDataWithSnapshots(replay);
   const frameActions = expanded.frameActions;
   const recordedBlockQueue = getReplayBlockQueue(replay);
-
-  let state: GameState = createInitialGameState(
-    replay.seed,
-    false,
-    'normal',
-    recordedBlockQueue
+  const totalFrames = replayTotalFrames(
+    replay.metadata?.duration,
+    frameActions.length
   );
-  state = gameReducer(state, { type: 'START_GAME' });
-  state = gameReducer(state, { type: 'SKIP_COUNTDOWN' });
 
   // Markdown sections: alternating chapter headings and fenced code blocks.
   const sections: string[] = [];
@@ -81,28 +76,30 @@ export function replayToNotation(
   };
 
   // Close the open chapter and start a new heading.
-  const openChapter = (): void => {
+  const openChapter = (state: GameState): void => {
     flushChapter();
     sections.push(formatChapterHeader(payoutCount + 1, state));
   };
 
-  // Emit a leading chapter header so the first events have a parent.
-  openChapter();
-
-  for (const frameData of frameActions) {
-    for (const action of frameData.userActions as GameAction[]) {
-      if (action.type === 'HARD_DROP') {
-        const preDrop = state;
-        const pspBefore = preDrop.detectedPatterns.length;
-        state = gameReducer(state, action);
+  const finalState = driveReplay(
+    replay.seed,
+    frameActions,
+    totalFrames,
+    recordedBlockQueue,
+    {
+      onStart: state => {
+        openChapter(state);
+      },
+      onHardDrop: (preDrop, postState) => {
         dropCount += 1;
         dropsSinceLastPayout += 1;
 
-        const pspDelta = state.detectedPatterns.length - pspBefore;
-        const balance = computeBoardColorBalance(state.board).delta;
-        const dead = computeDeadCells(state.board).count;
+        const pspBefore = preDrop.detectedPatterns.length;
+        const pspDelta = postState.detectedPatterns.length - pspBefore;
+        const balance = computeBoardColorBalance(postState.board).delta;
+        const dead = computeDeadCells(postState.board).count;
 
-        const tags = detectBoardTags(state.board);
+        const tags = detectBoardTags(postState.board);
         const regret = computeDecisionRegret(
           preDrop.board,
           preDrop.fallingColumns,
@@ -126,49 +123,45 @@ export function replayToNotation(
         chapterLines.push(formatBlockRow(preDrop.currentBlock, preDrop.queue));
         chapterLines.push(
           formatBoardSnapshot({
-            board: state.board,
-            timelineX: state.timeline.x,
+            board: postState.board,
+            timelineX: postState.timeline.x,
           })
         );
-      } else {
-        state = gameReducer(state, action);
-      }
+      },
+      onFrame: (preTick, postState) => {
+        const sweep = detectSweepEvent(preTick, postState);
+        if (sweep) {
+          if (sweep.payout) {
+            payoutCount += 1;
+            const sweepLine = formatSweepLine(sweep);
+            chapterLines.push(
+              `${sweepLine}  // ${formatSweepAnnotation({
+                clearedCells: sweep.clearedCells,
+                dropsSincePrevious: dropsSinceLastPayout,
+              })}`
+            );
+            sweepEvents.push({
+              frame: postState.frame,
+              clearedCells: sweep.clearedCells,
+              scoreDelta: sweep.scoreDelta,
+              dropsSincePrevious: dropsSinceLastPayout,
+            });
+            dropsSinceLastPayout = 0;
+            chapterLines.push(
+              formatBoardSnapshot({
+                board: postState.board,
+                timelineX: postState.timeline.x,
+              })
+            );
+            // Open the next chapter unless this was the very last action.
+            openChapter(postState);
+          } else {
+            chapterLines.push(formatSweepLine(sweep));
+          }
+        }
+      },
     }
-
-    const preTick = state;
-    state = gameReducer(state, { type: 'TICK' });
-
-    const sweep = detectSweepEvent(preTick, state);
-    if (sweep) {
-      if (sweep.payout) {
-        payoutCount += 1;
-        const sweepLine = formatSweepLine(sweep);
-        chapterLines.push(
-          `${sweepLine}  // ${formatSweepAnnotation({
-            clearedCells: sweep.clearedCells,
-            dropsSincePrevious: dropsSinceLastPayout,
-          })}`
-        );
-        sweepEvents.push({
-          frame: state.frame,
-          clearedCells: sweep.clearedCells,
-          scoreDelta: sweep.scoreDelta,
-          dropsSincePrevious: dropsSinceLastPayout,
-        });
-        dropsSinceLastPayout = 0;
-        chapterLines.push(
-          formatBoardSnapshot({
-            board: state.board,
-            timelineX: state.timeline.x,
-          })
-        );
-        // Open the next chapter unless this was the very last action.
-        openChapter();
-      } else {
-        chapterLines.push(formatSweepLine(sweep));
-      }
-    }
-  }
+  );
 
   // Flush the final chapter (a trailing heading with no events stays bare).
   flushChapter();
@@ -176,14 +169,14 @@ export function replayToNotation(
   const summary: NotationSummary = {
     drops: dropCount,
     sweeps: payoutCount,
-    finalScore: state.score,
-    durationFrames: state.frame,
+    finalScore: finalState.score,
+    durationFrames: finalState.frame,
   };
   const yieldStats = computeSweepYield(sweepEvents);
   const summaryBlock = formatSummaryBlock({
     columnCounts: expanded.analytics.columnHeatmap.counts,
-    balance: computeBoardColorBalance(state.board),
-    deadCellsFinal: computeDeadCells(state.board).count,
+    balance: computeBoardColorBalance(finalState.board),
+    deadCellsFinal: computeDeadCells(finalState.board).count,
     sweepYield: {
       total: yieldStats.total,
       mean: yieldStats.mean,

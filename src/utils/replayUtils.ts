@@ -1,4 +1,3 @@
-import { gameReducer, createInitialGameState } from '@/reducers/gameReducer';
 import type { GameAction, GameActionType, GameState } from '@/types/game';
 import type {
   ExpandedReplayData,
@@ -12,6 +11,7 @@ import { detectPayout, type SweepEvent } from '@/utils/placementMetrics';
 import { TARGET_FPS } from '../constants';
 
 import { computeReplayAnalytics } from './replayAnalytics';
+import { driveReplay, replayTotalFrames } from './replaySimulation';
 
 // Type guard to validate replay input actions
 function isValidReplayAction(type: string): type is GameActionType {
@@ -149,10 +149,15 @@ export function expandReplayDataWithSnapshots(
   replayData: ReplayData
 ): ExpandedReplayData {
   const frameActions = expandReplayData(replayData);
+  const totalFrames = replayTotalFrames(
+    replayData.metadata?.duration,
+    frameActions.length
+  );
   const { snapshots, placementCounts, scoreEvents, sweepEvents } =
     createSnapshotsForReplay(
       replayData.seed,
       frameActions,
+      totalFrames,
       getReplayBlockQueue(replayData)
     );
   const analytics = computeReplayAnalytics(
@@ -266,6 +271,7 @@ export function findBestSnapshot(
 export function createSnapshotsForReplay(
   seed: string,
   frameActions: FrameActions[],
+  totalFrames: number,
   recordedBlockQueue: number[] | null = null
 ): {
   snapshots: StateSnapshot[];
@@ -279,78 +285,43 @@ export function createSnapshotsForReplay(
   const sweepEvents: SweepEvent[] = [];
   let dropsSincePayout = 0;
 
-  // Create initial game state with replay seed (and optional block queue override)
-  let gameState: GameState = createInitialGameState(
-    seed,
-    false,
-    'normal',
-    recordedBlockQueue
-  );
-
-  // Start the game and skip countdown
-  gameState = gameReducer(gameState, { type: 'START_GAME' });
-  gameState = gameReducer(gameState, { type: 'SKIP_COUNTDOWN' });
-
-  // Create snapshot at frame 0 (initial state)
-  snapshots.push({
-    frame: 0,
-    gameState: JSON.parse(JSON.stringify(gameState)), // Deep clone
-  });
-
-  // Simulate each frame and create snapshots at intervals
-  for (let frameIndex = 0; frameIndex < frameActions.length; frameIndex++) {
-    const frameData = frameActions[frameIndex];
-
-    // Apply user actions for this frame
-    for (const userAction of frameData.userActions) {
-      // Track placements: record block x before HARD_DROP (block is 2 wide)
-      if (userAction.type === 'HARD_DROP') {
-        const x = gameState.blockPosition.x;
-        placementCounts[x] = (placementCounts[x] ?? 0) + 1;
-        if (x + 1 < placementCounts.length) {
-          placementCounts[x + 1] = (placementCounts[x + 1] ?? 0) + 1;
-        }
-        dropsSincePayout += 1;
-      }
-      gameState = gameReducer(gameState, userAction);
-    }
-
-    // Hold the pre-tick state (reducer is immutable, so this stays valid)
-    // to feed the shared payout detector after the tick.
-    const preTick = gameState;
-
-    // Apply tick to advance game state
-    gameState = gameReducer(gameState, { type: 'TICK' });
-
-    const { payout, clearedCells, scoreDelta } = detectPayout(
-      preTick,
-      gameState
-    );
-
-    // Record score event if score increased this frame
-    if (scoreDelta > 0) {
-      scoreEvents.push({ frame: frameIndex + 1, delta: scoreDelta });
-    }
-
-    // Record a sweep payout via the shared predicate
-    if (payout) {
-      sweepEvents.push({
-        frame: frameIndex + 1,
-        clearedCells,
-        scoreDelta,
-        dropsSincePrevious: dropsSincePayout,
-      });
-      dropsSincePayout = 0;
-    }
-
-    // Create snapshot at regular intervals
-    if ((frameIndex + 1) % SNAPSHOT_INTERVAL === 0) {
+  driveReplay(seed, frameActions, totalFrames, recordedBlockQueue, {
+    onStart: state => {
       snapshots.push({
-        frame: frameIndex + 1,
-        gameState: JSON.parse(JSON.stringify(gameState)), // Deep clone
+        frame: 0,
+        gameState: JSON.parse(JSON.stringify(state)),
       });
-    }
-  }
+    },
+    onHardDrop: pre => {
+      const x = pre.blockPosition.x;
+      placementCounts[x] = (placementCounts[x] ?? 0) + 1;
+      if (x + 1 < placementCounts.length) {
+        placementCounts[x + 1] = (placementCounts[x + 1] ?? 0) + 1;
+      }
+      dropsSincePayout += 1;
+    },
+    onFrame: (preTick, post, frame) => {
+      const { payout, clearedCells, scoreDelta } = detectPayout(preTick, post);
+      if (scoreDelta > 0) {
+        scoreEvents.push({ frame: frame + 1, delta: scoreDelta });
+      }
+      if (payout) {
+        sweepEvents.push({
+          frame: frame + 1,
+          clearedCells,
+          scoreDelta,
+          dropsSincePrevious: dropsSincePayout,
+        });
+        dropsSincePayout = 0;
+      }
+      if ((frame + 1) % SNAPSHOT_INTERVAL === 0) {
+        snapshots.push({
+          frame: frame + 1,
+          gameState: JSON.parse(JSON.stringify(post)),
+        });
+      }
+    },
+  });
 
   return { snapshots, placementCounts, scoreEvents, sweepEvents };
 }
