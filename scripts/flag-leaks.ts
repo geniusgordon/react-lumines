@@ -44,7 +44,6 @@ function main(): void {
   } catch (err) {
     process.stderr.write(`failed to read ${path}: ${(err as Error).message}\n`);
     process.exit(1);
-    return;
   }
   const validation = validateReplayData(replay);
   if (!validation.valid) {
