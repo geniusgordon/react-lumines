@@ -141,3 +141,11 @@ src/
 ### Supabase Type Generation
 
 - `pnpm gen-types` - Regenerate `src/types/database.gen.ts` from linked Supabase project (requires `supabase` CLI and linked project)
+
+## Strategy Analysis Tooling
+
+A data-driven toolset for improving play, documented in **`docs/strategy/README.md`** (entry point) and **`docs/strategy/building-patterns.md`** (construction catalog).
+
+- Metrics library: `src/utils/placementMetrics/` (pure, tested board metrics; score = internal 2×2-window count, not cleared cells)
+- Shared faithful replay simulator: `src/utils/replaySimulation.ts` (`driveReplay` — ticks through countdown, runs full duration; only trust metrics from replays that reproduce their recorded `finalScore`)
+- CLIs in `scripts/`: `flag-leaks.ts` (premature/fragmented payouts), `analyze-mygames.ts` (score decomposition over `replays/`), `metrics-corpus.ts` (Spearman vs finalScore), `replay-to-notation.ts` (annotated game record)
