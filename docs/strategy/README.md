@@ -66,6 +66,17 @@ warning). Use it to track progress across sessions.
 pnpm tsx scripts/analyze-mygames.ts
 ```
 
+### `scripts/aggregate-leaks.ts` — corpus-wide leak audit (reads `replays/`)
+Runs the `flag-leaks` classifier across every reproducing replay and clusters the
+premature small payouts by **game phase**, **dominant color**, and **gap column**,
+then lists the worst-fragmenting games. Use it to find which *habit* to drill —
+e.g. the current corpus leaks cluster hard on **gap column 11** (fields built
+rightward but cashed before col 11 was bridged). Re-run after a session to watch
+a cluster shrink.
+```
+pnpm tsx scripts/aggregate-leaks.ts
+```
+
 ### `scripts/metrics-corpus.ts <replay.json …>` — cross-game correlations
 Computes each strategy metric per game and reports its Spearman correlation with
 `finalScore`, sorted by strength. Needs ≥2 replays.
