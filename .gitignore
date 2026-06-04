@@ -34,3 +34,6 @@ storybook-static
 # Git worktrees
 .worktrees/
 .claude/
+
+# Downloaded replays
+replays/

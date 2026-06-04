@@ -15,6 +15,7 @@
     "test:ui": "vitest --ui",
     "test:watch": "vitest watch",
     "replay:notation": "tsx scripts/replay-to-notation.ts",
+    "replay:download": "tsx --env-file=.env.local scripts/download-replays.ts",
     "gen-types": "supabase gen types typescript --linked > src/types/database.gen.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
