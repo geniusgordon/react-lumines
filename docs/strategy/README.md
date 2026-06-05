@@ -89,6 +89,19 @@ catalog in [building-patterns.md](./building-patterns.md).
 pnpm tsx scripts/mine-patterns.ts
 ```
 
+### `scripts/harvest-trace.ts [caps|trace|all]` — harvest construction (reads `replays/`)
+Works *backward* from real payouts — the "interleaved setups + scores" lens that
+immediate per-drop metrics miss. `caps` tests the off-color-on-top question
+(open-top columns harvest taller, 4.08 vs 3.76 cells/col; ~49% of field-tops are
+dead-weight off-color caps). `trace` prints the multi-drop construction of the
+biggest harvests as ASCII (`+` placed, `*` cleared) so you can read how a big
+field was actually built. This is what corrected primitive 4 in
+[building-patterns.md](./building-patterns.md): off-color belongs in its own
+region, not capping the field.
+```
+pnpm tsx scripts/harvest-trace.ts trace
+```
+
 ### `scripts/checker-usage.ts` — checker-block audit (reads `replays/`)
 Mines every checker drop and measures how often it actually completed a 2×2
 window (vs the "always contaminates" folklore), compares yield against all other
