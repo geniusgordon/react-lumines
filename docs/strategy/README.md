@@ -57,18 +57,32 @@ so one sweep cashes both colors. (Full toolkit in
 
 ---
 
-## The round cycle
+## The combo chain — the scoring engine
 
-1. **Lay a wide base** of color A across as many columns as you can, keeping the A
-   surface **open on top** so it can keep growing.
-2. **Widen, don't wall.** Bridge columns to keep the field contiguous to 8+ wide.
-   Send color B to its **own adjacent block**, not onto A's top — build A and a
-   smaller B field side by side so one sweep cashes both.
-3. **Harvest wide.** Let the timeline sweep the whole run in one pass — aim for a
-   single 16–28 window payout, not three 6-window ones.
-4. **Alternate.** Build the next wide field with B and stage A to the side. Which
-   color leads alternates round to round (`alternationRate` correlates +0.35 with
-   score); the off-color is never just a cap.
+The biggest lever above raw harvest size is **not making isolated harvests at
+all** — it's anchoring **one region** and re-harvesting it every time the sweep
+comes back around. This is the clearest advanced finding in your replays:
+
+- **78% of all payouts re-harvest the previous region** (>50% column overlap), and
+  your **top games chain 86% vs 72%** in your bottom games (correlation +0.33).
+- Chained cashes land **~240 frames apart — exactly one sweep cycle** (15
+  frames/col × 16 cols). The sweep cashes your region, you refill it before it
+  comes back, it cashes again. Your longest chain ran **15 straight cashes of one
+  region**, 9–20 windows each — roughly the whole game's score from one engine.
+
+How to run the engine:
+
+1. **Anchor, don't scatter.** Pick a wide region and keep building *there*. The
+   same columns pay every cycle; spreading builds across the board breaks the chain.
+2. **Refill on the residue.** A cash clears only the completed 2×2s; the leftover
+   cells (off-color, partials) stay as **scaffolding**. Build the next field on top
+   of them — you start halfway up, not from the floor.
+3. **Pace to the cycle (~240 frames ≈ 4s).** You have about one sweep revolution to
+   refill before the timeline returns. That cadence is your clock.
+4. **Let color alternate inside the chain.** As residue flips, consecutive cashes
+   swing light-heavy → dark-heavy → light-heavy. *This* is the real mechanism
+   behind the +0.35 alternation signal — colors take turns within the same region,
+   not an off-color cap "becoming the next base."
 
 ---
 
@@ -121,3 +135,24 @@ The construction claims (the landing law, off-color-to-its-own-region, checkers
 being usable) come from mining every drop and tracing every harvest, not from
 these correlations — see [building-patterns.md](./building-patterns.md) for the
 per-claim evidence.
+
+### What did *not* move the needle (and untapped frontiers)
+
+Mining honestly means reporting the nulls. In this corpus, three plausible
+"advanced" levers showed **no correlation with score**:
+
+- **Sweep-relative timing.** Where you drop is statistically *independent* of the
+  sweep position (mean lead ~7 of 16 for top and bottom alike). You aren't timing
+  builds to the sweep at all — so this isn't disproven, it's **unexploited**.
+- **Surface flatness.** Bumpiness, buried "dead" cells, and deep wells *weakly
+  correlate positively* with score — roughness is a side-effect of ambitious
+  building, not a cause of failure. Global flatness is not the lever; **field-level
+  contiguity** (Law 2) is.
+- **Queue / 2-ply forecast.** Only ~9% of moves beat the greedy choice on a
+  2-block lookahead, with no link to score. You're barely using the preview.
+
+Timing and forecast are the **open frontiers**: the data can't yet say whether
+deliberate sweep-timing or preview play helps, because your games don't do them.
+They're the natural place to run controlled experiments next. The tools that
+produced these nulls (`timing-analysis.ts`, `surface-analysis.ts`,
+`queue-analysis.ts`) are in [tools.md](./tools.md).

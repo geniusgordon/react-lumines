@@ -82,6 +82,40 @@ finding.
 pnpm tsx scripts/checker-usage.ts
 ```
 
+### `combo-inheritance.ts [stats|trace]` — combo chaining *(reads `replays/`)*
+`stats`: how often consecutive payouts re-harvest the same region (chain rate),
+the frame gap between them (≈ one sweep cycle), residue carried across cashes, and
+correlations with score. `trace`: prints the longest chain in the corpus cash by
+cash, cropped to the region, so the refill-on-scaffolding cycle is visible. Source
+of the **combo-chain** finding (top games chain 86% vs 72%).
+```
+pnpm tsx scripts/combo-inheritance.ts trace
+```
+
+### `timing-analysis.ts` — sweep-relative timing *(reads `replays/`)*
+Histograms where drops land relative to the sweep (the "lead") and correlates it
+with score. Returned a **null** (drop position is independent of the sweep) — kept
+as the frontier baseline for any future timing experiment.
+```
+pnpm tsx scripts/timing-analysis.ts
+```
+
+### `surface-analysis.ts` — floor/surface quality *(reads `replays/`)*
+Samples buried "dead" cells, surface bumpiness, and deep narrow wells per drop and
+correlates with score. Finding: flatness is **not** a success lever (roughness
+weakly tracks *higher* scores — a side-effect of ambitious building).
+```
+pnpm tsx scripts/surface-analysis.ts
+```
+
+### `queue-analysis.ts` — queue / 2-ply forecast *(reads `replays/`)*
+Tests whether the chosen move sets up the next queued block better than a greedy
+1-ply move (2-ply lookahead). Returned a **null** — preview play is barely used
+and doesn't track score. Slow (~35s; it does a 1-ply search per drop).
+```
+pnpm tsx scripts/queue-analysis.ts
+```
+
 ### `metrics-corpus.ts <replay.json …>` — cross-game correlations
 Computes each strategy metric per game and reports its Spearman correlation with
 `finalScore`, sorted by strength. Needs ≥2 replays. Source of the +0.62 / +0.35 /

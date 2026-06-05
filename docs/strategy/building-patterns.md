@@ -169,6 +169,42 @@ hole that fragments the harvest.
 
 ---
 
+## Advanced: the combo chain (the scoring engine)
+
+The five primitives build *one* field. The real engine is re-harvesting **one
+region** every sweep cycle — see the strategy doc for the headline numbers (78% of
+payouts re-harvest the prior region; top games 86% vs 72%; cashes land ~240 frames
+= one sweep cycle apart). Here is what it looks like, three consecutive cashes from
+a real 15-cash chain (`01982c72`, `scripts/combo-inheritance.ts trace`):
+
+```
+cash 3: 12 win              cash 4: 18 win  (+210f ≈ 1 cycle)   cash 5: 17 win
+ · · · · · · D ·             · · · L · · D ·                    · · · L · · L ·
+ · · L L L · · ·             · · · L · · D ·                    · · L L · L L ·
+ · D L D*D*L L L             · · D D D · D ·                    · · L L L D*D*·
+ · L L D*D*D*D*D*            · · D D D D D L*L*                 · · L L D*D*D*·
+ · L L D*D*D*D*D*            · · D D L*L*L*L*L*                 · D L D*D*D*D*L
+ · L L L D*D*D*D*            · · L*L*L*L*L*L*L*D                · L D*D*D*D*D*D*
+```
+
+Read across: each cash clears only the completed 2×2s (`*`); the unmarked cells
+stay as **scaffolding**, and the next batch of drops refills *on top of them* —
+you start halfway up, not from the floor. Notice the color **alternates** cash to
+cash (dark-heavy → light-heavy → dark-heavy): the off-color left by one cash is the
+field for the next. That is the real mechanism behind the `alternationRate` +0.35
+signal — not an off-color "cap becoming the base."
+
+To run it: **anchor one wide region and keep building there**, refill on the
+residue, pace to the ~240-frame cycle, and let the two colors take turns. Scatter
+your builds and the chain breaks into one-off harvests.
+
+**Frontiers (unexploited in the corpus).** Two advanced levers showed *no* signal
+because your games don't currently use them — deliberate **sweep-relative timing**
+(your drop column is independent of the sweep position) and **queue/preview play**
+(only ~9% of moves beat a greedy 1-ply choice on a 2-block lookahead). The combo
+chain already implies a clock (the sweep cycle); explicitly timing refills to it,
+and using the preview to pre-shape the region, are the natural experiments next.
+
 ## Leaks and fixes
 
 The timeline cashes the instant it crosses a column with no completed 2×2. Your
