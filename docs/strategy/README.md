@@ -77,6 +77,16 @@ a cluster shrink.
 pnpm tsx scripts/aggregate-leaks.ts
 ```
 
+### `scripts/checker-usage.ts` — checker-block audit (reads `replays/`)
+Mines every checker drop and measures how often it actually completed a 2×2
+window (vs the "always contaminates" folklore), compares yield against all other
+blocks, and dumps the most productive checker placements as ASCII so the real
+pattern is readable. Finding: checkers are the weakest block but productive 57%
+of the time — the seam-straddle (primitive 5) is the high-value use.
+```
+pnpm tsx scripts/checker-usage.ts
+```
+
 ### `scripts/metrics-corpus.ts <replay.json …>` — cross-game correlations
 Computes each strategy metric per game and reports its Spearman correlation with
 `finalScore`, sorted by strength. Needs ≥2 replays.

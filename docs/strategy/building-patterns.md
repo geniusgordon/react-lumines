@@ -51,7 +51,7 @@ floor independently** (per-column gravity).
 | **Pure** | `LL/LL`, `DD/DD` | 2 | Free growth. Drop straight onto a same-color field → +2×2. |
 | **Single-off** | `LL/LD` (3+1) | 8 | Mostly good; the lone off-cell is a minor contaminant — aim it upward/outward. |
 | **Domino** | `LL/DD` ↔ `DL/DL` | 4 | The workhorse. Rotate to choose: a 2-wide *color layer* OR two adjacent *mono columns*. |
-| **Checker** | `LD/DL` | 2 | The problem child — rotating a checker stays a checker. Always contaminates; dump it where it gets covered or cleared. |
+| **Checker** | `LD/DL` | 2 | The weakest block, *not* a dead one. Rotating stays a checker, but its halves split under per-column gravity — straddle a light/dark seam and each half completes a window on its own side (see primitive 5). |
 
 Reading a block: rows are top→bottom as they fall. The **bottom row lands
 lower**. So `DD/LL` (top dark, bottom light) settles light-under-dark in each
@@ -92,13 +92,39 @@ a cap that (a) stays out of the mono field and (b) falls down to become the next
 round's base after the harvest — this *is* the color-alternation rhythm
 (`alternationRate` correlated +0.35 with score).
 
-### 5. Checker disposal
-Checkers (`LD/DL`) can't be made mono by rotation. Options, best first:
-- Drop on top of the field's cap where the stray cell joins the off-color pile.
-- Place at the far edge/wall where one half abuts same-color and the other is
-  destined to be swept/cleared next.
-- Never drop a checker into the *middle* of a forming field — it punches a
-  contaminated hole that fragments the harvest.
+### 5. Checker split-fill (the seam straddle)
+Checkers (`LD/DL`) can't be made mono by rotation, but "always contaminates" is
+**false**. Mined over the corpus (`scripts/checker-usage.ts`): of 473 checker
+drops, **57% created at least one 2×2 window and 59% put a checker cell directly
+inside a new window** — and checker placements were regret-free **48%** of the
+time, essentially identical to every other block (49%). They are the *weakest*
+block (0.67 windows/drop vs 1.78 for non-checkers) but routinely productive.
+
+The high-value pattern: **straddle the seam between a light shelf and a dark shelf
+that differ in height by about one cell.** Because the two same-color cells sit on
+opposite diagonals, each half lands on its own color and completes a window on
+each side; the two off-color cells end up on *top* as caps (primitive 4). One
+checker → two windows, no contamination.
+
+```
+real drop (01982885, checker @ cols 8-9, +2 windows, regret 0):
+   cols: 6 7 8 9            cols: 6 7 8 9
+before:    · · · ·   drop      · · D ·   <- dark cap rides on top
+           L L · ·   LD|DL     L L L ·   <- light half completes the light shelf
+           L L L ·   at 8-9    L L L ·
+           D D D ·             D D D L   <- light cap rides on top
+           D D D ·             D D D D   <- dark half completes the dark shelf
+           D D D D             D D D D
+```
+The light shelf (cols 6–8) tops out one row above the dark shelf (col 9 floor),
+so col 8 takes `L` then `D`, col 9 takes `D` then `L` — a light 2×2 forms top-left,
+a dark 2×2 forms bottom-right, and both stray cells cap out.
+
+Fallbacks when no seam is available, best first:
+- Drop on the off-color cap so the stray cell joins the off-color pile.
+- Place at the far edge/wall where one half abuts same-color.
+- Never drop a checker into the *middle* of a forming mono field — that punches a
+  contaminated hole and fragments the harvest.
 
 ## The #1 leak: premature small payouts
 
