@@ -77,6 +77,18 @@ a cluster shrink.
 pnpm tsx scripts/aggregate-leaks.ts
 ```
 
+### `scripts/mine-patterns.ts` — building-pattern miner (reads `replays/`)
+Tags every drop with a color-agnostic *landing signature* — for each of the
+block's two columns, did its bottom cell land on the **same** color, the
+**opposite** color, or empty **floor**? — then clusters `(block-kind × signature)`,
+ranks by total 2×2 windows produced, and prints a real ASCII example of each.
+Surfaces the data-backed "landing law": aim both halves at their own color
+(`same+same`); the same block on `floor+floor` yields ~10–20× less. Feeds the
+catalog in [building-patterns.md](./building-patterns.md).
+```
+pnpm tsx scripts/mine-patterns.ts
+```
+
 ### `scripts/checker-usage.ts` — checker-block audit (reads `replays/`)
 Mines every checker drop and measures how often it actually completed a 2×2
 window (vs the "always contaminates" folklore), compares yield against all other

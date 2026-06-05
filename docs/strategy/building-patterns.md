@@ -57,6 +57,39 @@ Reading a block: rows are top→bottom as they fall. The **bottom row lands
 lower**. So `DD/LL` (top dark, bottom light) settles light-under-dark in each
 column — useful for laying a light base with a dark cap.
 
+## The landing law (the one rule that beats block-kind)
+
+Mining every drop in the corpus (`scripts/mine-patterns.ts`) shows that *where a
+block's two halves land* predicts its value far more than which block it is.
+Classify each half by the cell its bottom touches: its **own** color (`same`),
+the **opposite** color (`opp`), or empty **floor**. Aiming both halves at their
+own color (`same+same`) is the universal high-value move:
+
+| block | win/drop (`same+same`) | productive | placed-well note |
+|---|---|---|---|
+| **pure** | **3.00** | 90% | highest value — extend your field |
+| **domino-V** | 2.14 | 94% | the workhorse bridge |
+| **single-off** | 2.02 | 90% | your most common good move (1624 drops) |
+| **domino-H** | 1.71 | 98% | |
+| **checker** | 0.89 | 73% | weakest; seam-straddle only (primitive 5) |
+
+Landing quality swings yield ~10–20×. Same block, different landing:
+`single-off :: same+same` = **2.02/drop, 90% productive**, but
+`single-off :: floor+floor` = **0.09/drop, 9% productive**. So **before every drop,
+ask: will both halves land on their own color?**
+
+- **`opp+same` is the validated "off-color to top" (primitive 4):** one half
+  extends a field, the off half caps it. `domino-V :: opp+same` even edges out
+  `same+same` at **2.18/drop** — a clean cap is as good as a second extension.
+- **The real mistakes** (low yield *and* a better move almost always existed,
+  by regret): `single-off :: floor+opp` (8% regret-free), `pure :: floor+opp`
+  (14%), `domino-V :: opp+opp` (23%). Don't dump a partial or mismatched block
+  onto a bare or opposite-color column — route it onto a matching field.
+- **Setup moves are the exception:** the metric counts *immediate* windows, so a
+  deliberate base-layer (the floor course, primitive 3 — `domino-H` on floor)
+  scores 0 immediate windows yet isn't a mistake. Judge those by what they enable
+  next, not by this number.
+
 ## Construction primitives (with validated numbers)
 
 ### 1. Pure extend
