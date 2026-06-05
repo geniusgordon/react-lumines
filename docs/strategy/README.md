@@ -1,161 +1,123 @@
-# Lumines Strategy Analysis
+# Lumines Strategy
 
-A toolset for improving your own play, data-driven rather than by intuition. It
-replays your recorded games through the real game engine, measures what happened
-at the board level, and tells you concretely where points were left on the table.
+A strategy for playing this game better, **derived from your own 48 leaderboard
+replays** rather than from folklore. Every claim here is either provable from the
+scoring function or extracted by replaying your real games through the game engine
+and measuring what actually happened on the board.
 
-Companion docs:
-- **[building-patterns.md](./building-patterns.md)** — the construction catalog
-  (block alphabet, named patterns with ASCII, the harvest cycle). *What to build.*
-- This README — the tools, metrics, and how to use them. *How to measure.*
+This doc is the strategy. Two companions go deeper:
 
-## TL;DR — the practice loop
+- **[building-patterns.md](./building-patterns.md)** — *how to build*: the block
+  toolkit and the concrete placement recipes, with ASCII diagrams.
+- **[tools.md](./tools.md)** — *how to measure*: the scripts that mine your
+  replays, the metrics library, and the replay-fidelity rules behind every number.
+
+---
+
+## The one fact everything follows from
+
+**Your score per sweep = the number of internal 2×2 single-color windows the
+timeline cashes — not the number of cells cleared.**
+
+- A solid `W×H` single-color rectangle is worth `(W−1)(H−1)` windows.
+  A `2×2` is worth 1; an `8×5` is worth `7×4 = 28` (the biggest harvest in your
+  corpus).
+- The timeline sweeps left→right, **accumulating** window value across a
+  *contiguous run* of columns that each carry a completed 2×2, and **cashes the
+  whole run** the instant it reaches a column with no completed 2×2 (a "gap
+  column"). Both colors' windows in the run are cashed together.
+
+Everything below is a consequence of this one fact.
+
+---
+
+## The three laws
+
+### Law 1 — Size: build wide *and* tall
+`(W−1)(H−1)` grows fastest when you grow *both* dimensions, so a fat rectangle
+beats a thin strip of the same cell count. Widening a tall field adds `2×(H−1)`
+windows; heightening a wide field adds `2×(W−1)` — so **widen first**, build up
+later. The target shape is one big field, roughly `8×5`, cashed in a single sweep.
+
+### Law 2 — Contiguity: one unbroken run, no gap columns
+The sweep cashes at the first gap column, so a single bare or unfinished column
+*inside* your field splits one big harvest into two small ones. This is your **#1
+leak**: 87 premature payouts (<8 windows, avg 3.7) across 48 games, clustered hard
+on **gap column 11** — fields built rightward but cashed before column 11 was
+completed. Keep the run contiguous; bridge the gap before the sweep reaches it.
+
+### Law 3 — Landing: every half onto its own color
+The single biggest predictor of a drop's value is not which block it is, but
+**where its two halves land**. Aim *both* halves at their own color. The same
+block placed well vs badly swings ~10–20× in value. Crucially, **off-color does
+not go on top of your field** — a cap scores nothing and blocks the column from
+growing taller. Off-color goes into its **own ≥2-wide region** beside the field,
+so one sweep cashes both colors. (Full toolkit in
+[building-patterns.md](./building-patterns.md).)
+
+---
+
+## The round cycle
+
+1. **Lay a wide base** of color A across as many columns as you can, keeping the A
+   surface **open on top** so it can keep growing.
+2. **Widen, don't wall.** Bridge columns to keep the field contiguous to 8+ wide.
+   Send color B to its **own adjacent block**, not onto A's top — build A and a
+   smaller B field side by side so one sweep cashes both.
+3. **Harvest wide.** Let the timeline sweep the whole run in one pass — aim for a
+   single 16–28 window payout, not three 6-window ones.
+4. **Alternate.** Build the next wide field with B and stage A to the side. Which
+   color leads alternates round to round (`alternationRate` correlates +0.35 with
+   score); the off-color is never just a cap.
+
+---
+
+## Your scorecard (current corpus baseline)
+
+| metric | now | target | why |
+|---|---|---|---|
+| `win/payout` (windows per sweep) | **14.1** | **16+** | Law 1 — bigger harvests; your best game hit 16.5 |
+| biggest single payout | **23.8** | **28** | an `8×5` field |
+| premature payouts (<8 win) / game | **~1.8** (87 total) | **0** | Law 2 — stop fragmenting |
+
+Your top 9 games average `win/payout` **15.4** with **fewer** payouts (14.4);
+your bottom 9 average **13.4** with **more** payouts (15.4). The lever is payout
+**size**, not count — and `meanSweepValue` (windows/payout) is the strongest
+single correlate of final score (**+0.62**). Re-run
+`pnpm tsx scripts/analyze-mygames.ts` after a session to track these.
+
+---
+
+## The practice loop
 
 ```
-play a game  ->  pnpm tsx scripts/flag-leaks.ts <replay.json>   (spot fragmented harvests)
-             ->  apply the domino-bridge fix (see building-patterns.md)
-             ->  pnpm tsx scripts/analyze-mygames.ts            (track win/payout & small-payout count)
+play a game
+  ->  pnpm tsx scripts/harvest-trace.ts trace      see how your big harvests were built
+  ->  pnpm tsx scripts/flag-leaks.ts <replay>      find fragmented harvests in that game
+  ->  fix ONE habit (start with bridging gap column 11)
+  ->  pnpm tsx scripts/analyze-mygames.ts          track win/payout & small-payout count
 ```
-Targets: small payouts (<8 windows) → 0; `win/payout` → 16+; biggest payout → 28.
 
-## The one fact everything is built on
+Drill one leak at a time. The fastest single win is converting bridgeable
+premature payouts into the wide harvests they should have been.
 
-**Score per payout = the number of internal 2×2 monochrome windows the timeline
-cashes in one sweep — not the number of cells cleared.** A W×H mono rectangle is
-worth `(W−1)(H−1)`. The timeline accumulates across a *contiguous run* of
-pattern-bearing columns and cashes when it hits a column with no completed 2×2.
-So a big score = **wide, solid, single-color fields harvested in one sweep**, and
-the dominant leak is letting the sweep cash a narrow field early.
+---
 
-Every metric below is derived from this fact or validated against it.
+## Why believe this (evidence)
 
-## Data-backed findings (from 48 faithfully-reproduced replays)
+Derived from 48 of your 50 replays that **reproduce faithfully** (simulated score
+== recorded score; 2 legacy replays are excluded — see
+[tools.md](./tools.md)). Headline signals (Spearman ρ vs final score; small,
+luck-influenced corpus, so treat as suggestive and lean on the ones with a
+mechanism):
 
-| signal | result | takeaway |
+| signal | ρ | reading |
 |---|---|---|
-| `meanSweepValue` (windows/payout) | Spearman **+0.62** vs finalScore | payout **size** is the #1 lever |
-| top vs bottom games | top have *fewer* payouts (14.4 vs 15.4) but *bigger* (15.4 vs 13.4 win/payout) | build wider, harvest less often |
-| `alternationRate` | **+0.35** | alternate the dominant color round-to-round (keep) |
-| `meanPurity` | **−0.29** | per-payout single-color purity *hurts* — it caps span |
-| premature small payouts | 87 across 48 games, avg 3.7 windows | converting them ≈ **+14 pts/game** |
-| biggest harvests | 8-wide × 5-tall mono rectangles (`(8−1)(5−1)=28`) | the target shape |
+| `meanSweepValue` (windows/payout) | **+0.62** | payout **size** is the #1 lever (Law 1) |
+| `alternationRate` | **+0.35** | alternate the lead color round-to-round |
+| `meanPurity` (per-payout single-colorness) | **−0.29** | forcing purity *caps span* — mixed wide runs win |
 
-Full reasoning and the construction recipes are in
-[building-patterns.md](./building-patterns.md).
-
-## Tools
-
-All read replays that **faithfully reproduce** (simulated score == recorded
-`finalScore`). Legacy v1 replays that diverge are skipped/warned — see *Replay
-fidelity* below.
-
-### `scripts/flag-leaks.ts <replay.json>` — per-game leak finder
-Flags each **premature small payout** (<8 windows) and whether it was
-**bridgeable** (same-color material sat at/just past the gap column → you
-fragmented one big harvest into small ones) vs **edge/clean** (nothing to
-connect). Prints a board snippet for the worst fragmented harvest.
-```
-pnpm tsx scripts/flag-leaks.ts replays/0197f030-….json
-```
-
-### `scripts/analyze-mygames.ts` — score decomposition (reads `replays/`)
-Per-corpus breakdown: `score = payouts × win/payout`, plus a top-vs-bottom
-contrast and total decision-regret. Skips non-reproducing replays (with a
-warning). Use it to track progress across sessions.
-```
-pnpm tsx scripts/analyze-mygames.ts
-```
-
-### `scripts/aggregate-leaks.ts` — corpus-wide leak audit (reads `replays/`)
-Runs the `flag-leaks` classifier across every reproducing replay and clusters the
-premature small payouts by **game phase**, **dominant color**, and **gap column**,
-then lists the worst-fragmenting games. Use it to find which *habit* to drill —
-e.g. the current corpus leaks cluster hard on **gap column 11** (fields built
-rightward but cashed before col 11 was bridged). Re-run after a session to watch
-a cluster shrink.
-```
-pnpm tsx scripts/aggregate-leaks.ts
-```
-
-### `scripts/mine-patterns.ts` — building-pattern miner (reads `replays/`)
-Tags every drop with a color-agnostic *landing signature* — for each of the
-block's two columns, did its bottom cell land on the **same** color, the
-**opposite** color, or empty **floor**? — then clusters `(block-kind × signature)`,
-ranks by total 2×2 windows produced, and prints a real ASCII example of each.
-Surfaces the data-backed "landing law": aim both halves at their own color
-(`same+same`); the same block on `floor+floor` yields ~10–20× less. Feeds the
-catalog in [building-patterns.md](./building-patterns.md).
-```
-pnpm tsx scripts/mine-patterns.ts
-```
-
-### `scripts/harvest-trace.ts [caps|trace|all]` — harvest construction (reads `replays/`)
-Works *backward* from real payouts — the "interleaved setups + scores" lens that
-immediate per-drop metrics miss. `caps` tests the off-color-on-top question
-(open-top columns harvest taller, 4.08 vs 3.76 cells/col; ~49% of field-tops are
-dead-weight off-color caps). `trace` prints the multi-drop construction of the
-biggest harvests as ASCII (`+` placed, `*` cleared) so you can read how a big
-field was actually built. This is what corrected primitive 4 in
-[building-patterns.md](./building-patterns.md): off-color belongs in its own
-region, not capping the field.
-```
-pnpm tsx scripts/harvest-trace.ts trace
-```
-
-### `scripts/checker-usage.ts` — checker-block audit (reads `replays/`)
-Mines every checker drop and measures how often it actually completed a 2×2
-window (vs the "always contaminates" folklore), compares yield against all other
-blocks, and dumps the most productive checker placements as ASCII so the real
-pattern is readable. Finding: checkers are the weakest block but productive 57%
-of the time — the seam-straddle (primitive 5) is the high-value use.
-```
-pnpm tsx scripts/checker-usage.ts
-```
-
-### `scripts/metrics-corpus.ts <replay.json …>` — cross-game correlations
-Computes each strategy metric per game and reports its Spearman correlation with
-`finalScore`, sorted by strength. Needs ≥2 replays.
-```
-pnpm tsx scripts/metrics-corpus.ts replays/*.json
-```
-
-### `scripts/replay-to-notation.ts <replay.json>` — annotated game record
-Markdown move-by-move record with board snapshots and named pattern tags
-(`NARROW-WELL`, `THIN-STACK`, `SEALED-COLOR`, `MISSED-SQUARE(-N)`) on each drop.
-
-## Metrics library (`src/utils/placementMetrics/`)
-
-Pure functions over a board (or a list of payout records), each unit-tested:
-
-| function | measures | intuition |
-|---|---|---|
-| `computeRegionEfficiency` | windows ÷ cells per mono region | square > thin strip (provable) |
-| `computeWellProfile` | well depth + bumpiness | narrow towers/gaps create bare columns |
-| `computeFrozenGrowth` | per-color "seal pressure" | don't wall a color off early |
-| `computeFocusRhythm` | payout purity / alternation / hand-off | color rhythm across rounds |
-| `computeSweepValue` | points (scoreDelta) per payout | the real value unit |
-| `computeDecisionRegret` | chosen vs best placement (windows) | per-drop "points left on the table" |
-| `computeBoardColorBalance`, `computeDeadCells`, `computeSweepYield`, `detectPayout` | supporting metrics | |
-
-## Replay fidelity (important)
-
-Simulation runs through the real `gameReducer` via the shared driver
-`src/utils/replaySimulation.ts` (`driveReplay`), which mirrors the live player:
-it **ticks through the countdown** and runs the **full game duration** (not just
-to the last input). With this, **48/50** of the legacy v1 leaderboard replays
-reproduce their recorded score exactly.
-
-- **v2 replays** (recorded by the current build) store the block queue and always
-  reproduce. Any game you record now is v2.
-- **v1 replays** reconstruct blocks from the seed RNG. Most reproduce because the
-  RNG is unchanged; a few very old ones diverge (end in early game-over) and are
-  auto-excluded by each tool's trust guard.
-- **Never trust board-level metrics from a replay that didn't reproduce** — the
-  simulated game isn't the one that was played. The tools enforce this.
-
-## Provenance
-
-This system was built spec-first; see
-`docs/superpowers/specs/2026-06-02-lumines-strategy-metrics-design.md` and
-`docs/superpowers/plans/2026-06-02-lumines-strategy-metrics.md` for the original
-design and implementation plan.
+The construction claims (the landing law, off-color-to-its-own-region, checkers
+being usable) come from mining every drop and tracing every harvest, not from
+these correlations — see [building-patterns.md](./building-patterns.md) for the
+per-claim evidence.

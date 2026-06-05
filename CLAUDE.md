@@ -144,8 +144,8 @@ src/
 
 ## Strategy Analysis Tooling
 
-A data-driven toolset for improving play, documented in **`docs/strategy/README.md`** (entry point) and **`docs/strategy/building-patterns.md`** (construction catalog).
+A data-driven strategy + toolset for improving play, in three docs: **`docs/strategy/README.md`** (the strategy — start here), **`docs/strategy/building-patterns.md`** (how to build: block toolkit + placement recipes), and **`docs/strategy/tools.md`** (how to measure: every script + the metrics library).
 
 - Metrics library: `src/utils/placementMetrics/` (pure, tested board metrics; score = internal 2×2-window count, not cleared cells)
 - Shared faithful replay simulator: `src/utils/replaySimulation.ts` (`driveReplay` — ticks through countdown, runs full duration; only trust metrics from replays that reproduce their recorded `finalScore`)
-- CLIs in `scripts/`: `flag-leaks.ts` (premature/fragmented payouts), `analyze-mygames.ts` (score decomposition over `replays/`), `metrics-corpus.ts` (Spearman vs finalScore), `replay-to-notation.ts` (annotated game record)
+- CLIs in `scripts/`: `analyze-mygames.ts` (score decomposition), `flag-leaks.ts` + `aggregate-leaks.ts` (premature/fragmented payouts, per-game and corpus-wide), `harvest-trace.ts` (harvest construction, backward from payouts), `mine-patterns.ts` (landing-law pattern miner), `checker-usage.ts` (checker audit), `metrics-corpus.ts` (Spearman vs finalScore), `replay-to-notation.ts` (annotated game record)
