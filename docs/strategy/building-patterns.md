@@ -5,9 +5,10 @@ provable from the scoring function or extracted from your real replays (mined wi
 the tools in [tools.md](./tools.md)). Read the strategy first for *why*; this doc
 is *how*.
 
-Quick legend for diagrams: `L` = light, `D` = dark, `·` = empty. In trace
-snippets, `+` marks a cell the current drop placed and `*` marks a cell cleared in
-the harvest.
+Quick legend for diagrams: `·` empty, `○` light, `●` dark. In harvest snippets
+`◌`/`◍` mark a light/dark cell **cleared this sweep**; in before/after snippets
+`*` marks a cell the current drop placed. All board diagrams are real positions
+pulled from your replays (`scripts/doc-examples.ts`), not hand-drawn.
 
 ---
 
@@ -17,23 +18,23 @@ Every 28-window harvest in your corpus is the same thing: **one wide, tall, soli
 single-color rectangle, kept open on top so it grew tall, cashed in one sweep.**
 
 ```
-real harvest (01986b2e, 28 windows, all-light; * = cleared, plain = survived):
-  · · · · · · D · · · · · · · · ·
-  · · · D · · D · · · · · · · · ·     <- dark on top SCORED NOTHING:
-  · · · D · · D · · · · · · · · ·        thin 1-wide stacks, never marked.
-  · · · D · D D · D · · · · · · ·        It capped cols 3 & 6 and blocked them.
-  · · D D · L*L*L*L*· · · · · · ·
-  · D L*L*L*L*L*L*L*· · · · · · ·     <- the light mass that actually paid:
-  · D L*L*L*L*L*L*L*· · · · · · ·        wide AND tall, open on top.
-  · L*L*L*L*L*L*L*L*L*· · · · · ·
-  · L*L*L*L*L*L*L*L*L*· · · · · ·
-  · L*L*D L*L*L*L*L*D · · · · · ·
+real harvest (01986b2e, 28 windows, all-light):
+  · · · · · · ● · · · · 
+  · · · ● · · ● · · · · 
+  · · · ● · · ● · · · · 
+  · · · ● · ● ● · ● · · 
+  · · ● ● · ◌ ◌ ◌ ◌ · · 
+  · ● ◌ ◌ ◌ ◌ ◌ ◌ ◌ · · 
+  · ● ◌ ◌ ◌ ◌ ◌ ◌ ◌ · · 
+  · ◌ ◌ ◌ ◌ ◌ ◌ ◌ ◌ ◌ · 
+  · ◌ ◌ ◌ ◌ ◌ ◌ ◌ ◌ ◌ · 
+  · ◌ ◌ ● ◌ ◌ ◌ ◌ ◌ ● · 
 ```
 
-Read it carefully: **every cleared cell is light.** The dark riding on top is not
-"staging for next round" — it is dead weight that scored zero and capped two
-columns so they couldn't grow taller. This single example overturns the old
-"push the off-color up" advice (see primitive 4).
+Read it carefully: **every cleared cell (`◌`) is light.** The dark (`●`) riding on
+top is not "staging for next round" — it is dead weight that scored zero and capped
+columns so they couldn't grow taller. This single example overturns the old "push
+the off-color up" advice (see primitive 4).
 
 Two laws are visible at once:
 - **Windows per cell** — `(W−1)(H−1)` rewards a fat rectangle over a thin one.
@@ -52,11 +53,11 @@ splits, its halves landing at different heights).
 
 | kind | example | count | win/drop placed well | how to use it |
 |---|---|---|---|---|
-| **Pure** | `LL/LL` | 2 | **3.00** | Free growth — drop straight onto a same-color field. |
-| **Domino-V** | `LD/LD` | (4 total) | 2.14 | The workhorse bridge — two adjacent mono columns. |
-| **Single-off** | `LL/LD` (3+1) | 8 | 2.02 | Your most common block; aim the 3-side at its field, the lone cell outward. |
-| **Domino-H** | `LL/DD` | (4 total) | 1.71 | A two-color *layer* — a floor course, or one color onto each of two fields. |
-| **Checker** | `LD/DL` | 2 | 0.89 | Weakest, **not** dead — straddle a seam (primitive 5). |
+| **Pure** | `○○/○○` | 2 | **3.00** | Free growth — drop straight onto a same-color field. |
+| **Domino-V** | `○●/○●` | (4 total) | 2.14 | The workhorse bridge — two adjacent mono columns. |
+| **Single-off** | `○○/○●` (3+1) | 8 | 2.02 | Your most common block; aim the 3-side at its field, the lone cell outward. |
+| **Domino-H** | `○○/●●` | (4 total) | 1.71 | A two-color *layer* — a floor course, or one color onto each of two fields. |
+| **Checker** | `○●/●○` | 2 | 0.89 | Weakest, **not** dead — straddle a seam (primitive 5). |
 
 (Dominoes are 4 blocks total; rotation flips each between the H and V form.)
 Reading a block: rows fall top→bottom, so the **bottom row lands lower**.
@@ -102,6 +103,19 @@ Drop a pure block onto its own field. If the field is `W×H`, widening adds
 `2×(H−1)` windows, heightening adds `2×(W−1)`. **Widen first**, build up later.
 Highest value of any move (3.00 win/drop).
 
+```
+real drop (0197f030 @col 8, +6 windows in one drop; * = placed):
+before:            after:
+  ● · · ·            ● · · ·
+  ○ · · ·            ○ · · ·
+  ○ · · ·            ○ · · ·
+  ○ · · ○            ○ ○*○*○
+  ○ · · ○            ○ ○*○*○
+  ○ ○ ○ ○            ○ ○ ○ ○
+```
+A single pure light block dropped into the notch fuses the two light walls into
+one solid `4×?` block — six new 2×2 windows from one piece.
+
 ### 2. Domino bridge — the highest-value skill
 Rotate a domino to a **vertical split** and drop it at the field's edge,
 wanted-color toward the field, off-color seeding the neighbor column. Widens the
@@ -109,14 +123,14 @@ field by one column **without ever leaving a bare column** — directly serves L
 
 ```
         col: 3 4 5 6              col: 3 4 5 6
-before:       L L · ·   drop LD|LD       L L L D
-              L L · ·   at cols 5-6      L L L D
+before:       ○ ○ · ·   drop ○●|○●       ○ ○ ○ ●
+              ○ ○ · ·   at cols 5-6      ○ ○ ○ ●
 ```
 Light is now `2×3` (cols 3–5) and col 6 is seeded dark, contiguous — the sweep
 won't cash early. A following domino completes the dark and the run keeps growing.
 
 ### 3. Floor course
-Use **horizontal-split** dominoes (`DD/LL`) across the bottom to start a wide base
+Use **horizontal-split** dominoes (`●●/○○`) across the bottom to start a wide base
 fast. Note the dark half lands *on top* of the light in each column — that is debt
 (primitive 4), not staging; it pays only if you grow it into its own dark field.
 
@@ -140,6 +154,20 @@ What to do instead:
 3. The `alternationRate` +0.35 signal is real, but the mechanism is **alternating
    which color is the wide field round-to-round** — not "the cap becomes the base."
 
+```
+real two-color harvest (01982ddb, 23 windows — one sweep cashes BOTH colors):
+  · · · · ◌ ◌ · ◌ ◌ · 
+  · · ◌ ◌ ◌ ◌ ◌ ◌ ◌ · 
+  · · ◌ ◌ ◌ ◌ ◌ ◍ ◍ · 
+  · ● ◌ ◌ ◍ ◍ ◍ ◍ ◍ · 
+  · ○ ◍ ◍ ◍ ◍ ◍ ◍ ◍ · 
+  · ◍ ◍ ◍ ◍ ◍ ◍ ◍ ◍ · 
+  · ◍ ◍ ◍ ◍ ◍ ◍ ○ ● ○ 
+```
+The light block (`◌`) and the dark mass (`◍`) are *side by side*, each its own
+solid region, so the contiguous run cashes both at once — far more than a light
+field with the dark wasted as a cap on top.
+
 ### 5. Checker split-fill — the seam straddle
 "Always contaminates" is **false** (`scripts/checker-usage.ts`): of 473 checker
 drops, 57% created a 2×2 and 59% put a checker cell inside a new window, and they
@@ -154,12 +182,12 @@ from one checker.
 ```
 real drop (01982885, checker @ cols 8-9, +2 windows, regret 0):
    cols: 6 7 8 9            cols: 6 7 8 9
-before:    · · · ·   drop      · · D ·   <- dark stray caps out (the tax)
-           L L · ·   LD|DL     L L L ·   <- light half completes the light shelf
-           L L L ·   at 8-9    L L L ·
-           D D D ·             D D D L   <- light stray caps out
-           D D D ·             D D D D   <- dark half completes the dark shelf
-           D D D D             D D D D
+before:    · · · ·   drop      · · ● ·   <- dark stray caps out (the tax)
+           ○ ○ · ·   ○●|●○     ○ ○ ○ ·   <- light half completes the light shelf
+           ○ ○ ○ ·   at 8-9    ○ ○ ○ ·
+           ● ● ● ·             ● ● ● ○   <- light stray caps out
+           ● ● ● ·             ● ● ● ●   <- dark half completes the dark shelf
+           ● ● ● ●             ● ● ● ●
 ```
 
 Fallbacks when no seam exists, best first: drop on an existing off-color cap so
@@ -177,22 +205,29 @@ payouts re-harvest the prior region; top games 86% vs 72%; cashes land ~240 fram
 = one sweep cycle apart). Here is what it looks like, three consecutive cashes from
 a real 15-cash chain (`01982c72`, `scripts/combo-inheritance.ts trace`):
 
+Three consecutive cashes of the same region (cols 2–14), each ~one sweep cycle
+apart — note the color flips dark → light → mixed as the residue inverts:
+
 ```
-cash 3: 12 win              cash 4: 18 win  (+210f ≈ 1 cycle)   cash 5: 17 win
- · · · · · · D ·             · · · L · · D ·                    · · · L · · L ·
- · · L L L · · ·             · · · L · · D ·                    · · L L · L L ·
- · D L D*D*L L L             · · D D D · D ·                    · · L L L D*D*·
- · L L D*D*D*D*D*            · · D D D D D L*L*                 · · L L D*D*D*·
- · L L D*D*D*D*D*            · · D D L*L*L*L*L*                 · D L D*D*D*D*L
- · L L L D*D*D*D*            · · L*L*L*L*L*L*L*D                · L D*D*D*D*D*D*
+cash 7: 16 windows (dark)      cash 8: 20 windows (light)     cash 9: 13 windows
+  · ● · · · · · · · · ·          · · · · ○ · · · · · ·          · · · · ○ ○ · · · · ·
+  · ● · · · · · · · · ·          · · · · ● · · · · · ·          · · ● ○ ○ ○ ○ ○ · · ·
+  · ○ ○ · · · ○ · · · ·          · · · · ● · · · · · ·          · · ● ○ ○ ○ ○ ○ · · ·
+  · ○ ○ · ○ ○ ○ ○ · · ·          · ● · · ● · · · · · ·          · · ● ○ ◍ ◍ ◍ ○ ○ · ·
+  · ○ ○ ○ ○ ◍ ◍ ◍ · · ·          · ● · · ● ● · ● · · ·          · · ● ● ◍ ◍ ◍ ◍ ◍ ◍ ·
+  · ○ ○ ○ ○ ◍ ◍ ◍ · · ·          · ◌ ◌ ◌ ◌ ● ● ● · · ·          · ● ◌ ◌ ◍ ◍ ◍ ◍ ◍ ◍ ○
+  · ○ ○ ○ ○ ◍ ◍ ◍ ○ · ·          · ◌ ◌ ◌ ◌ ● ◌ ◌ ◌ · ·          · ● ◌ ◌ ◍ ◍ ◍ ◍ ◍ ◍ ●
+  · ◍ ◍ ◍ ◍ ◍ ◍ ◍ ◍ · ·          · ◌ ◌ ◌ ◌ ◌ ◌ ◌ ◌ · ·
+  · ◍ ◍ ◍ ◍ ◍ ◍ ◍ ◍ · ○          · ◌ ◌ ◌ ◌ ◌ ◌ ◌ ◌ · ○
+  · ◍ ◍ ◍ ◍ ○ ● ○ ○ ● ●          · ◌ ◌ ◌ ◌ ◌ ● ◌ ◌ ● ●
 ```
 
-Read across: each cash clears only the completed 2×2s (`*`); the unmarked cells
-stay as **scaffolding**, and the next batch of drops refills *on top of them* —
-you start halfway up, not from the floor. Notice the color **alternates** cash to
-cash (dark-heavy → light-heavy → dark-heavy): the off-color left by one cash is the
-field for the next. That is the real mechanism behind the `alternationRate` +0.35
-signal — not an off-color "cap becoming the base."
+Each cash clears only the completed 2×2s (`◌`/`◍`); the unmarked cells stay as
+**scaffolding**, and the next batch of drops refills *on top of them* — you start
+halfway up, not from the floor. The color **alternates** cash to cash: the
+off-color left by one cash becomes the field for the next. That is the real
+mechanism behind the `alternationRate` +0.35 signal — not an off-color "cap
+becoming the base."
 
 To run it: **anchor one wide region and keep building there**, refill on the
 residue, pace to the ~240-frame cycle, and let the two colors take turns. Scatter
@@ -216,6 +251,21 @@ column 11) come from three causes:
 | **bare column inside the field** | splits one big payout into two small | domino-bridge (primitive 2); keep columns contiguous |
 | **narrow tower / deep well** | the gap *is* a bare column | keep the surface level; widen before building tall |
 | **off-color sealed in a lone 1-wide column** | that column has no 2×2 = a gap | give off-color its own **≥2-wide** region (primitive 4) |
+
+```
+real leak (01982e04) — sweep cashed at gap col 6 for only 5 windows:
+  · · ● · · · · · · 
+  · · ● · · · · ● · 
+  · · ● ● · · ● ● ● 
+  · · ◌ ◌ · ● ○ ○ ○ 
+  · · ◌ ◌ ● ● ○ ○ ○ 
+  · ◌ ◌ ◌ ◌ ● ○ ○ ○ 
+  · ◌ ◌ ◌ ◌ ○ ○ ○ ○ 
+```
+Only the small light field (`◌`, cols 1–4) cashed. A dark wall at col 5 split it
+from a **whole second light field** (`○`, cols 6–8, 13 cells) sitting one column
+past the gap. Bridge col 5 instead of walling it off and this is one ~18-window
+harvest, not a 5-window scrap.
 
 Converting your bridgeable premature payouts into the wide harvests they should
 have been is the single biggest available gain — see `scripts/flag-leaks.ts` and

@@ -124,6 +124,15 @@ Computes each strategy metric per game and reports its Spearman correlation with
 pnpm tsx scripts/metrics-corpus.ts replays/*.json
 ```
 
+### `doc-examples.ts` — faithful diagram generator *(reads `replays/`)*
+Emits the real board diagrams embedded in [building-patterns.md](./building-patterns.md)
+(target harvest, two-color side-by-side, premature leak, pure extend, combo chain)
+in the circle notation `· ○ ●` / `◌ ◍`. Re-run it if you want fresh examples; paste
+its output into the doc so every diagram stays a real, reproducible position.
+```
+pnpm tsx scripts/doc-examples.ts
+```
+
 ### `replay-to-notation.ts <replay.json>` — annotated game record
 Markdown move-by-move record with board snapshots and named pattern tags
 (`NARROW-WELL`, `THIN-STACK`, `SEALED-COLOR`, `MISSED-SQUARE(-N)`) on each drop.
