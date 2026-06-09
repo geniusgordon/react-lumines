@@ -73,7 +73,7 @@ export function handleUndo(state: GameState): GameState {
 
 /**
  * Handle SET_PRACTICE_SPEED: update multiplier and rescale drop/sweep intervals.
- * When autoSweep is on, also rescales the remaining gameTimer proportionally.
+ * When autoAdvance is on, also rescales the remaining gameTimer proportionally.
  * No-op outside training mode.
  */
 export function handleSetPracticeSpeed(
@@ -95,7 +95,7 @@ export function handleSetPracticeSpeed(
     Math.round(BASE_SWEEP_INTERVAL / newMultiplier)
   );
 
-  const gameTimer = state.practice.autoSweep
+  const gameTimer = state.practice.autoAdvance
     ? Math.max(0, Math.round((state.gameTimer * oldMultiplier) / newMultiplier))
     : state.gameTimer;
 
@@ -109,32 +109,32 @@ export function handleSetPracticeSpeed(
 }
 
 /**
- * Handle SET_PRACTICE_AUTO_SWEEP: toggle auto timeline sweep.
+ * Handle SET_PRACTICE_AUTO_ADVANCE: toggle auto-advance (timeline sweep + block gravity).
  * On enable, reset gameTimer to the full scaled duration. On disable, leave
  * timeline position and gameTimer where they are. No-op outside training mode.
  */
-export function handleSetPracticeAutoSweep(
+export function handleSetPracticeAutoAdvance(
   state: GameState,
   action: GameAction
 ): GameState {
   if (state.mode !== 'training' || !state.practice) {
     return state;
   }
-  const autoSweep = action.payload as boolean;
+  const autoAdvance = action.payload as boolean;
 
-  if (autoSweep) {
+  if (autoAdvance) {
     const gameTimer = Math.round(
       TIMER_CONFIG.GAME_DURATION_FRAMES / state.practice.speedMultiplier
     );
     return {
       ...state,
-      practice: { ...state.practice, autoSweep: true },
+      practice: { ...state.practice, autoAdvance: true },
       gameTimer,
     };
   }
 
   return {
     ...state,
-    practice: { ...state.practice, autoSweep: false },
+    practice: { ...state.practice, autoAdvance: false },
   };
 }

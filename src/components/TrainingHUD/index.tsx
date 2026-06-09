@@ -94,12 +94,12 @@ function PracticeControls({
         })}
       </div>
       <div className="flex items-center justify-between text-xs">
-        <span className="text-foreground">Auto sweep</span>
+        <span className="text-foreground">Auto-advance</span>
         <Switch
-          checked={practice.autoSweep}
-          aria-label="Auto sweep"
+          checked={practice.autoAdvance}
+          aria-label="Auto-advance"
           onCheckedChange={checked =>
-            dispatch({ type: 'SET_PRACTICE_AUTO_SWEEP', payload: checked })
+            dispatch({ type: 'SET_PRACTICE_AUTO_ADVANCE', payload: checked })
           }
         />
       </div>

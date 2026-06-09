@@ -10,7 +10,7 @@ function makeTrainingState() {
 }
 
 describe('training mode tick', () => {
-  it('does not count down game timer when mode is training and autoSweep is off', () => {
+  it('does not count down game timer when mode is training and autoAdvance is off', () => {
     const state = makeTrainingState();
     const initialTimer = state.gameTimer;
 
@@ -105,7 +105,7 @@ describe('UNDO', () => {
 describe('training mode practice settings', () => {
   it('initializes practice with defaults in training mode', () => {
     const s = createInitialGameState('seed', false, 'training');
-    expect(s.practice).toEqual({ speedMultiplier: 1, autoSweep: false });
+    expect(s.practice).toEqual({ speedMultiplier: 1, autoAdvance: false });
   });
 
   it('does not initialize practice in normal mode', () => {
@@ -146,11 +146,11 @@ describe('SET_PRACTICE_SPEED', () => {
     expect(r.timeline.sweepInterval).toBe(12); // 15 / 1.25
   });
 
-  it('scales remaining gameTimer when autoSweep is on', () => {
+  it('scales remaining gameTimer when autoAdvance is on', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: true },
+      practice: { speedMultiplier: 1, autoAdvance: true },
       gameTimer: 3600,
     };
     const r = gameReducer(s, {
@@ -161,7 +161,7 @@ describe('SET_PRACTICE_SPEED', () => {
     expect(r.gameTimer).toBe(7200);
   });
 
-  it('does not scale gameTimer when autoSweep is off', () => {
+  it('does not scale gameTimer when autoAdvance is off', () => {
     const s = makeTrainingState();
     const r = gameReducer(s, {
       type: 'SET_PRACTICE_SPEED',
@@ -184,11 +184,26 @@ describe('SET_PRACTICE_SPEED', () => {
 });
 
 describe('training mode tick honors practice settings', () => {
-  it('auto-drops the block in training mode (scaled drop interval)', () => {
+  it('does not auto-drop the block when autoAdvance is off (think indefinitely)', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: false },
+      practice: { speedMultiplier: 1, autoAdvance: false },
+    };
+    const initialY = s.blockPosition.y;
+
+    let t: GameState = s;
+    for (let i = 0; i < s.dropInterval + 1; i++) {
+      t = gameReducer(t, { type: 'TICK' });
+    }
+    expect(t.blockPosition.y).toBe(initialY);
+  });
+
+  it('auto-drops the block in training mode when autoAdvance is on (scaled drop interval)', () => {
+    const base = makeTrainingState();
+    const s: GameState = {
+      ...base,
+      practice: { speedMultiplier: 1, autoAdvance: true },
     };
     const initialY = s.blockPosition.y;
 
@@ -199,11 +214,11 @@ describe('training mode tick honors practice settings', () => {
     expect(t.blockPosition.y).toBeGreaterThan(initialY);
   });
 
-  it('does not advance the timeline when autoSweep is off', () => {
+  it('does not advance the timeline when autoAdvance is off', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: false },
+      practice: { speedMultiplier: 1, autoAdvance: false },
     };
     let t: GameState = s;
     for (let i = 0; i < s.timeline.sweepInterval + 5; i++) {
@@ -212,11 +227,11 @@ describe('training mode tick honors practice settings', () => {
     expect(t.timeline.x).toBe(s.timeline.x);
   });
 
-  it('advances the timeline when autoSweep is on', () => {
+  it('advances the timeline when autoAdvance is on', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: true },
+      practice: { speedMultiplier: 1, autoAdvance: true },
     };
     let t: GameState = s;
     for (let i = 0; i < s.timeline.sweepInterval + 1; i++) {
@@ -225,11 +240,11 @@ describe('training mode tick honors practice settings', () => {
     expect(t.timeline.x).toBe(s.timeline.x + 1);
   });
 
-  it('counts down gameTimer when autoSweep is on', () => {
+  it('counts down gameTimer when autoAdvance is on', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: true },
+      practice: { speedMultiplier: 1, autoAdvance: true },
       gameTimer: 100,
     };
     let t: GameState = s;
@@ -239,11 +254,11 @@ describe('training mode tick honors practice settings', () => {
     expect(t.gameTimer).toBe(90);
   });
 
-  it('does not count down gameTimer when autoSweep is off', () => {
+  it('does not count down gameTimer when autoAdvance is off', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: false },
+      practice: { speedMultiplier: 1, autoAdvance: false },
       gameTimer: 100,
     };
     let t: GameState = s;
@@ -267,35 +282,35 @@ describe('practice speed persists across placements', () => {
   });
 });
 
-describe('SET_PRACTICE_AUTO_SWEEP', () => {
-  it('enables autoSweep and resets gameTimer to scaled full duration', () => {
+describe('SET_PRACTICE_AUTO_ADVANCE', () => {
+  it('enables autoAdvance and resets gameTimer to scaled full duration', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 0.5, autoSweep: false },
+      practice: { speedMultiplier: 0.5, autoAdvance: false },
       gameTimer: 0,
     };
     const r = gameReducer(s, {
-      type: 'SET_PRACTICE_AUTO_SWEEP',
+      type: 'SET_PRACTICE_AUTO_ADVANCE',
       payload: true,
     });
-    expect(r.practice?.autoSweep).toBe(true);
+    expect(r.practice?.autoAdvance).toBe(true);
     expect(r.gameTimer).toBe(7200); // 3600 / 0.5
   });
 
-  it('disables autoSweep without touching gameTimer or timeline.x', () => {
+  it('disables autoAdvance without touching gameTimer or timeline.x', () => {
     const base = makeTrainingState();
     const s: GameState = {
       ...base,
-      practice: { speedMultiplier: 1, autoSweep: true },
+      practice: { speedMultiplier: 1, autoAdvance: true },
       gameTimer: 1234,
       timeline: { ...base.timeline, x: 5 },
     };
     const r = gameReducer(s, {
-      type: 'SET_PRACTICE_AUTO_SWEEP',
+      type: 'SET_PRACTICE_AUTO_ADVANCE',
       payload: false,
     });
-    expect(r.practice?.autoSweep).toBe(false);
+    expect(r.practice?.autoAdvance).toBe(false);
     expect(r.gameTimer).toBe(1234);
     expect(r.timeline.x).toBe(5);
   });
@@ -306,7 +321,7 @@ describe('SET_PRACTICE_AUTO_SWEEP', () => {
       status: 'playing' as const,
     };
     const r = gameReducer(s, {
-      type: 'SET_PRACTICE_AUTO_SWEEP',
+      type: 'SET_PRACTICE_AUTO_ADVANCE',
       payload: true,
     });
     expect(r).toBe(s);

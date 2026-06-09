@@ -92,7 +92,7 @@ export function createInitialGameState(
     // Practice settings (training mode only)
     practice:
       mode === 'training'
-        ? { speedMultiplier: 1, autoSweep: false }
+        ? { speedMultiplier: 1, autoAdvance: false }
         : undefined,
   };
 }

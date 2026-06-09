@@ -63,15 +63,15 @@ export function TrainingScreen() {
     return () => window.removeEventListener('keydown', handleTrainingKey);
   }, [handleTrainingKey]);
 
-  // Auto-start; skip countdown only when auto-sweep is off (manual practice mode).
+  // Auto-start; skip countdown only when auto-advance is off (manual practice mode).
   useEffect(() => {
     if (gameState.status === 'initial') {
       actions.startNewGame();
     }
-    if (gameState.status === 'countdown' && !gameState.practice?.autoSweep) {
+    if (gameState.status === 'countdown' && !gameState.practice?.autoAdvance) {
       actions.skipCountdown();
     }
-  }, [gameState.status, gameState.practice?.autoSweep, actions]);
+  }, [gameState.status, gameState.practice?.autoAdvance, actions]);
 
   // Restore branched state if navigated here from a replay
   useEffect(() => {

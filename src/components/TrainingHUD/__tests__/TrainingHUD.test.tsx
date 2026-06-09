@@ -21,14 +21,14 @@ describe('TrainingHUD practice controls', () => {
     });
   });
 
-  it('dispatches SET_PRACTICE_AUTO_SWEEP when the toggle is clicked', () => {
+  it('dispatches SET_PRACTICE_AUTO_ADVANCE when the toggle is clicked', () => {
     const dispatch = vi.fn();
     render(<TrainingHUD gameState={baseState()} dispatch={dispatch} />);
 
-    fireEvent.click(screen.getByRole('switch', { name: /auto sweep/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /auto-advance/i }));
 
     expect(dispatch).toHaveBeenCalledWith({
-      type: 'SET_PRACTICE_AUTO_SWEEP',
+      type: 'SET_PRACTICE_AUTO_ADVANCE',
       payload: true,
     });
   });
@@ -36,7 +36,7 @@ describe('TrainingHUD practice controls', () => {
   it('highlights the currently selected speed preset', () => {
     const state = {
       ...baseState(),
-      practice: { speedMultiplier: 0.75 as const, autoSweep: false },
+      practice: { speedMultiplier: 0.75 as const, autoAdvance: false },
     };
     render(<TrainingHUD gameState={state} dispatch={() => {}} />);
 

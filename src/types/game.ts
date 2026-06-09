@@ -81,7 +81,7 @@ export type GameActionType =
   | 'MANUAL_SWEEP' // Training: trigger full left-to-right sweep
   | 'UNDO' // Training: restore state before last placement
   | 'SET_PRACTICE_SPEED' // Training: set speed multiplier (0.5 | 0.75 | 1 | 1.25)
-  | 'SET_PRACTICE_AUTO_SWEEP'; // Training: enable/disable auto timeline sweep
+  | 'SET_PRACTICE_AUTO_ADVANCE'; // Training: enable/disable auto-advance (timeline sweep + block gravity)
 
 // Game action structure
 export interface GameAction {
@@ -94,7 +94,7 @@ export type PracticeSpeedMultiplier = 0.5 | 0.75 | 1 | 1.25;
 
 export interface PracticeSettings {
   speedMultiplier: PracticeSpeedMultiplier;
-  autoSweep: boolean;
+  autoAdvance: boolean;
 }
 
 // Complete game state

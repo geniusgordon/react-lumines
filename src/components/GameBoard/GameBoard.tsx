@@ -60,7 +60,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         />
       )}
 
-      {(!trainingMode || gameState.practice?.autoSweep) && (
+      {(!trainingMode || gameState.practice?.autoAdvance) && (
         <TimelineComponent timeline={gameState.timeline} />
       )}
     </div>

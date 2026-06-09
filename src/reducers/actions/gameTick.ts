@@ -63,8 +63,8 @@ function handleGameTimer(state: GameState): GameState {
  * Handle countdown and timer logic
  */
 export function handleCountdownAndTimer(state: GameState): GameState {
-  // Training mode without auto-sweep: no countdown, no game timer — just tick frame.
-  if (state.mode === 'training' && !state.practice?.autoSweep) {
+  // Training mode without auto-advance: no countdown, no game timer — just tick frame.
+  if (state.mode === 'training' && !state.practice?.autoAdvance) {
     return { ...state, frame: state.frame + 1 };
   }
 
@@ -155,14 +155,18 @@ export function handleGameTick(
 
   // Training mode: run drop, optional sweep, pattern detection, falling cols.
   if (newState.mode === 'training') {
-    // Block dropping (uses scaled dropInterval)
-    newState = handleBlockDrop(newState, newState.frame, rng);
+    // Block dropping (uses scaled dropInterval).
+    // When auto-advance is off, the block stays put so the player can think
+    // indefinitely — they advance it manually via move/rotate/hard-drop.
+    if (newState.practice?.autoAdvance) {
+      newState = handleBlockDrop(newState, newState.frame, rng);
+    }
 
     // Pattern detection
     newState = updatePatternDetection(newState);
 
-    // Optional auto-sweep
-    if (newState.practice?.autoSweep) {
+    // Optional auto-advance (timeline sweep)
+    if (newState.practice?.autoAdvance) {
       newState = updateTimeline(newState);
     }
 
