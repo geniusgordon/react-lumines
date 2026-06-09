@@ -9,10 +9,15 @@ import type { BlockPattern, GameBoard, Square } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 import { detectPatterns } from '@/utils/gameLogic';
 
+import { cellGlyph } from './glyphs';
 import { analyzePayout } from './leaks/analyzePayout';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
-function place(board: GameBoard, pattern: BlockPattern, x: number): { board: GameBoard; cells: Square[] } | null {
+function place(
+  board: GameBoard,
+  pattern: BlockPattern,
+  x: number
+): { board: GameBoard; cells: Square[] } | null {
   const w = pattern[0].length;
   if (x < 0 || x + w > BOARD_WIDTH) {
     return null;
@@ -59,11 +64,11 @@ function render(
         any = true;
       }
       if (opts.cleared?.has(k)) {
-        line += v === 1 ? '◌ ' : '◍ ';
+        line += cellGlyph(v, true) + ' ';
       } else if (opts.placed?.has(k)) {
-        line += (v === 1 ? '○' : '●') + '*';
+        line += cellGlyph(v) + '*';
       } else {
-        line += (v === 0 ? '·' : v === 1 ? '○' : '●') + ' ';
+        line += cellGlyph(v) + ' ';
       }
     }
     if (any) {
@@ -81,7 +86,10 @@ function loadAll(): { file: string; replay: ReplayData }[] {
       continue;
     }
     try {
-      out.push({ file: f, replay: JSON.parse(readFileSync(join(dir, f), 'utf8')) as ReplayData });
+      out.push({
+        file: f,
+        replay: JSON.parse(readFileSync(join(dir, f), 'utf8')) as ReplayData,
+      });
     } catch {
       /* skip */
     }
@@ -89,10 +97,35 @@ function loadAll(): { file: string; replay: ReplayData }[] {
   return out;
 }
 
-interface Side { file: string; board: GameBoard; marked: Square[]; delta: number; minor: number }
-interface Leak { file: string; board: GameBoard; marked: Square[]; gapCol: number; beyond: number; windows: number }
-interface Pure { file: string; before: GameBoard; after: GameBoard; placed: Set<string>; x: number; created: number }
-interface Cash { board: GameBoard; marked: Square[]; cols: Set<number>; delta: number }
+interface Side {
+  file: string;
+  board: GameBoard;
+  marked: Square[];
+  delta: number;
+  minor: number;
+}
+interface Leak {
+  file: string;
+  board: GameBoard;
+  marked: Square[];
+  gapCol: number;
+  beyond: number;
+  windows: number;
+}
+interface Pure {
+  file: string;
+  before: GameBoard;
+  after: GameBoard;
+  placed: Set<string>;
+  x: number;
+  created: number;
+}
+interface Cash {
+  board: GameBoard;
+  marked: Square[];
+  cols: Set<number>;
+  delta: number;
+}
 
 // Find the longest run of consecutive same-region cashes (>50% column overlap).
 function longestChain(cashes: Cash[]): Cash[] {
@@ -120,7 +153,10 @@ function longestChain(cashes: Cash[]): Cash[] {
 
 function bounds(cells: { x: number }[]): [number, number] {
   const xs = cells.map(c => c.x);
-  return [Math.max(0, Math.min(...xs) - 1), Math.min(BOARD_WIDTH - 1, Math.max(...xs) + 1)];
+  return [
+    Math.max(0, Math.min(...xs) - 1),
+    Math.min(BOARD_WIDTH - 1, Math.max(...xs) + 1),
+  ];
 }
 
 function main(): void {
@@ -133,7 +169,12 @@ function main(): void {
   // --- Example 3: a clean pure extend (before/after)
   let pureEx: Pure | null = null;
   // --- Example 4: the all-light target harvest (off-color on top scores nothing)
-  let target: { file: string; board: GameBoard; marked: Square[]; delta: number } | null = null;
+  let target: {
+    file: string;
+    board: GameBoard;
+    marked: Square[];
+    delta: number;
+  } | null = null;
   // --- Example 5: a combo chain (consecutive cashes of one region)
   const CHAIN_FILE = '01982c72';
 
@@ -142,7 +183,8 @@ function main(): void {
       onDrop: ({ pre, post }) => {
         void post;
         const p = pre.currentBlock.pattern;
-        const isPure = p[0][0] === p[0][1] && p[0][0] === p[1][0] && p[0][0] === p[1][1];
+        const isPure =
+          p[0][0] === p[0][1] && p[0][0] === p[1][0] && p[0][0] === p[1][1];
         if (!isPure) {
           return;
         }
@@ -169,17 +211,44 @@ function main(): void {
         const dark = marked.filter(c => c.color === 2).length;
         const minor = Math.min(light, dark);
         const delta = post.score - pre.score;
-        if (minor >= 6 && delta >= 16 && (!bestSide || minor > bestSide.minor)) {
-          bestSide = { file, board: pre.board.map(r => [...r]), marked: marked.map(c => ({ ...c })), delta, minor };
+        if (
+          minor >= 6 &&
+          delta >= 16 &&
+          (!bestSide || minor > bestSide.minor)
+        ) {
+          bestSide = {
+            file,
+            board: pre.board.map(r => [...r]),
+            marked: marked.map(c => ({ ...c })),
+            delta,
+            minor,
+          };
         }
         const gapCol = post.timeline.x;
         const a = analyzePayout(pre.board, marked, delta, gapCol);
-        if (a.premature && a.bridgeable && a.beyondCells >= 3 && (!leak || a.beyondCells > leak.beyond)) {
-          leak = { file, board: pre.board.map(r => [...r]), marked: marked.map(c => ({ ...c })), gapCol, beyond: a.beyondCells, windows: delta };
+        if (
+          a.premature &&
+          a.bridgeable &&
+          a.beyondCells >= 3 &&
+          (!leak || a.beyondCells > leak.beyond)
+        ) {
+          leak = {
+            file,
+            board: pre.board.map(r => [...r]),
+            marked: marked.map(c => ({ ...c })),
+            gapCol,
+            beyond: a.beyondCells,
+            windows: delta,
+          };
         }
         // all-light target harvest with surviving dark on top
         if (dark === 0 && delta >= 20 && (!target || delta > target.delta)) {
-          target = { file, board: pre.board.map(r => [...r]), marked: marked.map(c => ({ ...c })), delta };
+          target = {
+            file,
+            board: pre.board.map(r => [...r]),
+            marked: marked.map(c => ({ ...c })),
+            delta,
+          };
         }
       },
     });
@@ -202,37 +271,77 @@ function main(): void {
     });
   }
 
-  process.stdout.write('Legend: · empty  ○ light  ● dark  ◌/◍ cleared this sweep  * placed by drop\n');
+  process.stdout.write(
+    'Legend: · empty  ○ light  ● dark  ◌/◍ cleared this sweep  * placed by drop\n'
+  );
 
   if (bestSide) {
     const s: Side = bestSide;
     const [lo, hi] = bounds(s.marked);
-    process.stdout.write(`\n### Two-color side-by-side harvest (${s.file.slice(0, 8)}, ${s.delta} windows)\n\n`);
-    process.stdout.write(render(s.board, lo, hi, { cleared: new Set(s.marked.map(c => key(c.x, c.y))) }) + '\n');
+    process.stdout.write(
+      `\n### Two-color side-by-side harvest (${s.file.slice(0, 8)}, ${s.delta} windows)\n\n`
+    );
+    process.stdout.write(
+      render(s.board, lo, hi, {
+        cleared: new Set(s.marked.map(c => key(c.x, c.y))),
+      }) + '\n'
+    );
   }
 
   if (leak) {
     const s: Leak = leak;
-    const [lo, hi] = bounds([...s.marked, { x: Math.min(BOARD_WIDTH - 1, s.gapCol + 2) }]);
-    process.stdout.write(`\n### Premature leak — cashed at gap col ${s.gapCol}, only ${s.windows} windows (${s.file.slice(0, 8)})\n\n`);
-    process.stdout.write(render(s.board, lo, hi, { cleared: new Set(s.marked.map(c => key(c.x, c.y))) }) + '\n');
-    process.stdout.write(`  (gap column = ${s.gapCol}; ${s.beyond} same-color cells sat just past it — bridge it and this is one big harvest)\n`);
+    const [lo, hi] = bounds([
+      ...s.marked,
+      { x: Math.min(BOARD_WIDTH - 1, s.gapCol + 2) },
+    ]);
+    process.stdout.write(
+      `\n### Premature leak — cashed at gap col ${s.gapCol}, only ${s.windows} windows (${s.file.slice(0, 8)})\n\n`
+    );
+    process.stdout.write(
+      render(s.board, lo, hi, {
+        cleared: new Set(s.marked.map(c => key(c.x, c.y))),
+      }) + '\n'
+    );
+    process.stdout.write(
+      `  (gap column = ${s.gapCol}; ${s.beyond} same-color cells sat just past it — bridge it and this is one big harvest)\n`
+    );
   }
 
   if (pureEx) {
     const s: Pure = pureEx;
     const cells = [...s.placed].map(k => ({ x: Number(k.split(',')[0]) }));
     const [lo, hi] = bounds(cells);
-    process.stdout.write(`\n### Pure extend (+${s.created} windows in one drop, ${s.file.slice(0, 8)} @col ${s.x})\n\n`);
-    process.stdout.write('before:\n' + render(s.before, lo, hi) + '\n\nafter:\n' + render(s.after, lo, hi, { placed: s.placed }) + '\n');
+    process.stdout.write(
+      `\n### Pure extend (+${s.created} windows in one drop, ${s.file.slice(0, 8)} @col ${s.x})\n\n`
+    );
+    process.stdout.write(
+      'before:\n' +
+        render(s.before, lo, hi) +
+        '\n\nafter:\n' +
+        render(s.after, lo, hi, { placed: s.placed }) +
+        '\n'
+    );
   }
 
   if (target) {
-    const s: { file: string; board: GameBoard; marked: Square[]; delta: number } = target;
+    const s: {
+      file: string;
+      board: GameBoard;
+      marked: Square[];
+      delta: number;
+    } = target;
     const [lo, hi] = bounds(s.marked);
-    process.stdout.write(`\n### Target harvest — all-light, ${s.delta} windows (${s.file.slice(0, 8)})\n\n`);
-    process.stdout.write(render(s.board, lo, hi, { cleared: new Set(s.marked.map(c => key(c.x, c.y))) }) + '\n');
-    process.stdout.write('  (every cleared cell is light; the ● on top is dead weight that scored nothing)\n');
+    process.stdout.write(
+      `\n### Target harvest — all-light, ${s.delta} windows (${s.file.slice(0, 8)})\n\n`
+    );
+    process.stdout.write(
+      render(s.board, lo, hi, {
+        cleared: new Set(s.marked.map(c => key(c.x, c.y))),
+      }) + '\n'
+    );
+    process.stdout.write(
+      '  (every cleared cell is light; the ● on top is dead weight that scored nothing)\n'
+    );
   }
 
   const chain = longestChain(chainCashes);
@@ -242,10 +351,18 @@ function main(): void {
     const allCols = three.flatMap(c => [...c.cols]);
     const lo = Math.max(0, Math.min(...allCols) - 1);
     const hi = Math.min(BOARD_WIDTH - 1, Math.max(...allCols) + 1);
-    process.stdout.write(`\n### Combo chain — 3 consecutive cashes of one region (${CHAIN_FILE}, chain length ${chain.length})\n`);
+    process.stdout.write(
+      `\n### Combo chain — 3 consecutive cashes of one region (${CHAIN_FILE}, chain length ${chain.length})\n`
+    );
     for (let i = 0; i < three.length; i++) {
-      process.stdout.write(`\ncash ${mid + i + 1}: ${three[i].delta} windows\n`);
-      process.stdout.write(render(three[i].board, lo, hi, { cleared: new Set(three[i].marked.map(c => key(c.x, c.y))) }) + '\n');
+      process.stdout.write(
+        `\ncash ${mid + i + 1}: ${three[i].delta} windows\n`
+      );
+      process.stdout.write(
+        render(three[i].board, lo, hi, {
+          cleared: new Set(three[i].marked.map(c => key(c.x, c.y))),
+        }) + '\n'
+      );
     }
   }
 }

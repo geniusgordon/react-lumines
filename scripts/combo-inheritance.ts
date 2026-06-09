@@ -5,6 +5,7 @@ import { BOARD_HEIGHT } from '@/constants/gameConfig';
 import type { GameBoard } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 
+import { cellGlyph } from './glyphs';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
 interface PayoutRec {
@@ -115,7 +116,12 @@ function main(): void {
       }
       // ratio of (height present before this build) to (height when it cashed)
       if (totalH > 0) {
-        reuse.push(Math.min(1, inheritedH / (inheritedH + b.delta / Math.max(1, b.cols.size))));
+        reuse.push(
+          Math.min(
+            1,
+            inheritedH / (inheritedH + b.delta / Math.max(1, b.cols.size))
+          )
+        );
       }
     }
     games.push({
@@ -123,9 +129,15 @@ function main(): void {
       score: final.score,
       payouts: recs.length,
       chained,
-      meanGapChained: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0,
-      meanResidue: recs.length ? recs.reduce((s, r) => s + r.residue, 0) / recs.length : 0,
-      scaffoldReuse: reuse.length ? reuse.reduce((a, b) => a + b, 0) / reuse.length : 0,
+      meanGapChained: gaps.length
+        ? gaps.reduce((a, b) => a + b, 0) / gaps.length
+        : 0,
+      meanResidue: recs.length
+        ? recs.reduce((s, r) => s + r.residue, 0) / recs.length
+        : 0,
+      scaffoldReuse: reuse.length
+        ? reuse.reduce((a, b) => a + b, 0) / reuse.length
+        : 0,
     });
     corpus.push({ file: f, recs });
   }
@@ -141,11 +153,14 @@ function main(): void {
   games.sort((a, b) => b.score - a.score);
   const n = games.length;
   const k = Math.max(5, Math.floor(n / 5));
-  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const mean = (xs: number[]) =>
+    xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   const top = games.slice(0, k);
   const bottom = games.slice(n - k);
 
-  process.stdout.write(`\n=== Combo chaining & inheritance — ${n} games ===\n\n`);
+  process.stdout.write(
+    `\n=== Combo chaining & inheritance — ${n} games ===\n\n`
+  );
   const allChainRate = mean(games.map(g => g.chained / Math.max(1, g.payouts)));
   process.stdout.write(
     `chained payouts (re-harvest same region, col-overlap>50%): ` +
@@ -168,14 +183,26 @@ function main(): void {
       `TOP ${mean(top.map(g => g.scaffoldReuse)).toFixed(2)}   BOTTOM ${mean(bottom.map(g => g.scaffoldReuse)).toFixed(2)}\n`
   );
 
-  process.stdout.write(`\nPearson(chain-rate, score)   = ${pearson(games.map(g => g.chained / Math.max(1, g.payouts)), games.map(g => g.score)).toFixed(3)}\n`);
-  process.stdout.write(`Pearson(mean-residue, score) = ${pearson(games.map(g => g.meanResidue), games.map(g => g.score)).toFixed(3)}\n`);
+  process.stdout.write(
+    `\nPearson(chain-rate, score)   = ${pearson(
+      games.map(g => g.chained / Math.max(1, g.payouts)),
+      games.map(g => g.score)
+    ).toFixed(3)}\n`
+  );
+  process.stdout.write(
+    `Pearson(mean-residue, score) = ${pearson(
+      games.map(g => g.meanResidue),
+      games.map(g => g.score)
+    ).toFixed(3)}\n`
+  );
 }
 
 // Find the longest run of consecutive payouts whose regions overlap (>50%
 // columns), then print each cash in that run cropped to the region so the
 // refill-and-re-harvest cycle is visible.
-function traceLongestChain(corpus: { file: string; recs: PayoutRec[] }[]): void {
+function traceLongestChain(
+  corpus: { file: string; recs: PayoutRec[] }[]
+): void {
   let best: { file: string; recs: PayoutRec[] } | null = null;
   for (const g of corpus) {
     let runStart = 0;
@@ -209,14 +236,20 @@ function traceLongestChain(corpus: { file: string; recs: PayoutRec[] }[]): void 
     `\n=== Longest combo chain: ${best.file.slice(0, 8)} — ` +
       `${best.recs.length} consecutive cashes of the same region (cols ${lo}-${hi}) ===\n`
   );
-  process.stdout.write(`(* = cleared this cash; the region refills and pays again each sweep cycle)\n`);
+  process.stdout.write(
+    `(· empty  ○ light  ● dark;  ◌/◍ = cleared this cash; the region refills and pays again each sweep cycle)\n`
+  );
   let prev = 0;
   for (let i = 0; i < best.recs.length; i++) {
     const r = best.recs[i];
     const gap = i === 0 ? 0 : r.frame - prev;
     prev = r.frame;
     process.stdout.write(
-      `\n  cash ${i + 1}: ${r.delta} windows` + (i > 0 ? `  (+${gap} frames ≈ ${(gap / 240).toFixed(1)} sweep cycles)` : '') + `\n`
+      `\n  cash ${i + 1}: ${r.delta} windows` +
+        (i > 0
+          ? `  (+${gap} frames ≈ ${(gap / 240).toFixed(1)} sweep cycles)`
+          : '') +
+        `\n`
     );
     for (let y = 0; y < BOARD_HEIGHT; y++) {
       let line = '   ';
@@ -226,8 +259,8 @@ function traceLongestChain(corpus: { file: string; recs: PayoutRec[] }[]): void 
         if (v !== 0) {
           any = true;
         }
-        const ch = v === 1 ? 'L' : v === 2 ? 'D' : '·';
-        line += r.marked.has(`${x},${y}`) ? `${ch}*` : `${ch} `;
+        const cleared = r.marked.has(`${x},${y}`);
+        line += `${cellGlyph(v, cleared)} `;
       }
       if (any) {
         process.stdout.write(line + '\n');

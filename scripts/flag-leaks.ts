@@ -6,6 +6,7 @@ import type { GameBoard } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 import { validateReplayData } from '@/utils/replayUtils';
 
+import { cellGlyph } from './glyphs';
 import { analyzePayout, type PayoutLeak } from './leaks/analyzePayout';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
@@ -15,10 +16,9 @@ interface LeakRecord extends PayoutLeak {
 }
 
 function boardSnippet(board: GameBoard, gapCol: number): string {
-  const sym = (v: number) => (v === 1 ? 'L' : v === 2 ? 'D' : '·');
   const lines: string[] = [];
   for (const row of board) {
-    lines.push('  ' + row.map(sym).join(' '));
+    lines.push('  ' + row.map(v => cellGlyph(v)).join(' '));
   }
   lines.push(
     '  ' +

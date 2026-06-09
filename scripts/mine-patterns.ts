@@ -7,6 +7,7 @@ import type { ReplayData } from '@/types/replay';
 import { detectPatterns } from '@/utils/gameLogic';
 import { computeDecisionRegret } from '@/utils/placementMetrics';
 
+import { cellGlyph } from './glyphs';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
 type Kind = 'pure' | 'single-off' | 'domino-H' | 'domino-V' | 'checker';
@@ -68,7 +69,12 @@ function place(
 // Color-agnostic landing class for one column: does the block's BOTTOM cell in
 // that column land on the same color (extend), opposite color (cap), or floor?
 type Landing = 'same' | 'opp' | 'floor';
-function landingOf(board: GameBoard, pattern: BlockPattern, x: number, px: number): Landing {
+function landingOf(
+  board: GameBoard,
+  pattern: BlockPattern,
+  x: number,
+  px: number
+): Landing {
   const col = x + px;
   let surfaceRow = -1;
   for (let row = 0; row < BOARD_HEIGHT; row++) {
@@ -91,7 +97,14 @@ interface PatternStat {
   windows: number; // total windows created across drops with this signature
   productive: number;
   regretFree: number;
-  example?: { file: string; board: GameBoard; pattern: BlockPattern; x: number; cells: Square[]; created: number };
+  example?: {
+    file: string;
+    board: GameBoard;
+    pattern: BlockPattern;
+    x: number;
+    cells: Square[];
+    created: number;
+  };
 }
 
 interface KindStat {
@@ -137,9 +150,19 @@ function main(): void {
             }
           }
         }
-        const regret = computeDecisionRegret(pre.board, pre.fallingColumns, pre.currentBlock, x).regret;
+        const regret = computeDecisionRegret(
+          pre.board,
+          pre.fallingColumns,
+          pre.currentBlock,
+          x
+        ).regret;
 
-        const k = localKinds.get(kind) ?? { drops: 0, windows: 0, productive: 0, regretFree: 0 };
+        const k = localKinds.get(kind) ?? {
+          drops: 0,
+          windows: 0,
+          productive: 0,
+          regretFree: 0,
+        };
         k.drops += 1;
         k.windows += created;
         if (created >= 1) {
@@ -158,7 +181,12 @@ function main(): void {
         // order-independent landing pair so L/R mirror images merge
         const pair = [l0, l1].sort().join('+');
         const sig = `${kind} :: ${pair}`;
-        const s = localSigs.get(sig) ?? { count: 0, windows: 0, productive: 0, regretFree: 0 };
+        const s = localSigs.get(sig) ?? {
+          count: 0,
+          windows: 0,
+          productive: 0,
+          regretFree: 0,
+        };
         s.count += 1;
         s.windows += created;
         if (created >= 1) {
@@ -169,7 +197,14 @@ function main(): void {
         }
         // keep the highest-window example for this signature
         if (created >= 1 && (!s.example || created > s.example.created)) {
-          s.example = { file: f, board: pre.board.map(r => [...r]), pattern: pat, x, cells: res.cells, created };
+          s.example = {
+            file: f,
+            board: pre.board.map(r => [...r]),
+            pattern: pat,
+            x,
+            cells: res.cells,
+            created,
+          };
         }
         localSigs.set(sig, s);
       },
@@ -180,7 +215,12 @@ function main(): void {
       continue;
     }
     for (const [k, v] of localKinds) {
-      const g = kinds.get(k) ?? { drops: 0, windows: 0, productive: 0, regretFree: 0 };
+      const g = kinds.get(k) ?? {
+        drops: 0,
+        windows: 0,
+        productive: 0,
+        regretFree: 0,
+      };
       g.drops += v.drops;
       g.windows += v.windows;
       g.productive += v.productive;
@@ -188,7 +228,12 @@ function main(): void {
       kinds.set(k, g);
     }
     for (const [sig, v] of localSigs) {
-      const g = sigs.get(sig) ?? { count: 0, windows: 0, productive: 0, regretFree: 0 };
+      const g = sigs.get(sig) ?? {
+        count: 0,
+        windows: 0,
+        productive: 0,
+        regretFree: 0,
+      };
       g.count += v.count;
       g.windows += v.windows;
       g.productive += v.productive;
@@ -203,7 +248,8 @@ function main(): void {
   if (skipped > 0) {
     process.stderr.write(`(skipped ${skipped} non-reproducing replay(s))\n`);
   }
-  const pct = (n: number, d: number) => (d === 0 ? '0%' : `${Math.round((100 * n) / d)}%`);
+  const pct = (n: number, d: number) =>
+    d === 0 ? '0%' : `${Math.round((100 * n) / d)}%`;
   const per = (n: number, d: number) => (d === 0 ? '0.00' : (n / d).toFixed(2));
 
   // ---- per-kind summary ---------------------------------------------------
@@ -211,7 +257,13 @@ function main(): void {
   process.stdout.write(
     `${'kind'.padEnd(12)} ${'drops'.padStart(6)} ${'win/drop'.padStart(9)} ${'productive'.padStart(11)} ${'regret-free'.padStart(12)}\n`
   );
-  const kindOrder: Kind[] = ['pure', 'single-off', 'domino-H', 'domino-V', 'checker'];
+  const kindOrder: Kind[] = [
+    'pure',
+    'single-off',
+    'domino-H',
+    'domino-V',
+    'checker',
+  ];
   for (const k of kindOrder) {
     const v = kinds.get(k);
     if (!v) {
@@ -224,9 +276,15 @@ function main(): void {
   }
 
   // ---- ranked patterns ----------------------------------------------------
-  process.stdout.write(`\n=== Building patterns, ranked by total windows produced ===\n`);
-  process.stdout.write(`(landing = where each half's bottom cell sat: same color / opp color / floor)\n`);
-  const ranked = [...sigs.entries()].sort((a, b) => b[1].windows - a[1].windows);
+  process.stdout.write(
+    `\n=== Building patterns, ranked by total windows produced ===\n`
+  );
+  process.stdout.write(
+    `(landing = where each half's bottom cell sat: same color / opp color / floor)\n`
+  );
+  const ranked = [...sigs.entries()].sort(
+    (a, b) => b[1].windows - a[1].windows
+  );
   for (const [sig, s] of ranked) {
     process.stdout.write(
       `\n${sig}\n  used ${s.count}x  |  ${s.windows} win total (${per(s.windows, s.count)}/drop)  |  ` +
@@ -236,7 +294,9 @@ function main(): void {
       printExample(s.example);
     }
   }
-  process.stdout.write(`\nLegend: L=light D=dark ·=empty   [x]=cell placed by this drop\n`);
+  process.stdout.write(
+    `\nLegend: · empty  ○ light  ● dark   * = cell placed by this drop\n`
+  );
 }
 
 function printExample(ex: {
@@ -257,13 +317,14 @@ function printExample(ex: {
   const ys = ex.cells.map(c => c.y);
   const top = Math.max(0, Math.min(...ys) - 1);
   const bot = Math.min(BOARD_HEIGHT - 1, Math.max(...ys) + 2);
-  const sym = (v: number) => (v === 1 ? 'L' : v === 2 ? 'D' : '·');
-  process.stdout.write(`  e.g. ${ex.file.slice(0, 8)} @col ${ex.x}, +${ex.created} win  (cols ${lo}..${hi})\n`);
+  process.stdout.write(
+    `  e.g. ${ex.file.slice(0, 8)} @col ${ex.x}, +${ex.created} win  (cols ${lo}..${hi}; * = placed)\n`
+  );
   for (let y = top; y <= bot; y++) {
     let line = '   ';
     for (let x = lo; x <= hi; x++) {
-      const ch = sym(after.board[y][x]);
-      line += placed.has(`${x},${y}`) ? `[${ch}]` : ` ${ch} `;
+      const ch = cellGlyph(after.board[y][x]);
+      line += (placed.has(`${x},${y}`) ? `${ch}*` : `${ch} `) + ' ';
     }
     process.stdout.write(line + '\n');
   }

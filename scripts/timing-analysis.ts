@@ -10,7 +10,7 @@ import { simulateReplay } from './metrics-corpus/simulateReplay';
 // 0 = same column as the sweep; 1 = the very next column it will reach (least time
 // to finish the field); BOARD_WIDTH-1 = the column it just passed (most time).
 function lead(dropCol: number, timelineX: number): number {
-  return ((dropCol - timelineX) % BOARD_WIDTH + BOARD_WIDTH) % BOARD_WIDTH;
+  return (((dropCol - timelineX) % BOARD_WIDTH) + BOARD_WIDTH) % BOARD_WIDTH;
 }
 
 interface Game {
@@ -73,9 +73,15 @@ function main(): void {
   const k = Math.max(5, Math.floor(n / 5));
   const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-  process.stdout.write(`\n=== Timeline timing — where drops land relative to the sweep ===\n`);
-  process.stdout.write(`(lead = columns ahead of the sweep in its travel direction;\n`);
-  process.stdout.write(` 1 = swept next/least build time, ${BOARD_WIDTH - 1} = just swept/most build time)\n\n`);
+  process.stdout.write(
+    `\n=== Timeline timing — where drops land relative to the sweep ===\n`
+  );
+  process.stdout.write(
+    `(lead = columns ahead of the sweep in its travel direction;\n`
+  );
+  process.stdout.write(
+    ` 1 = swept next/least build time, ${BOARD_WIDTH - 1} = just swept/most build time)\n\n`
+  );
 
   const total = leadHist.reduce((a, b) => a + b, 0);
   for (let l = 0; l < BOARD_WIDTH; l++) {
@@ -99,8 +105,15 @@ function main(): void {
   // crude correlation of meanLead with score (Spearman-ish via Pearson on ranks)
   const xs = games.map(g => g.meanLead);
   const ys = games.map(g => g.score);
-  process.stdout.write(`\nPearson(meanLead, score) = ${pearson(xs, ys).toFixed(3)}\n`);
-  process.stdout.write(`Pearson(dangerRate, score) = ${pearson(games.map(g => g.dangerRate), ys).toFixed(3)}\n`);
+  process.stdout.write(
+    `\nPearson(meanLead, score) = ${pearson(xs, ys).toFixed(3)}\n`
+  );
+  process.stdout.write(
+    `Pearson(dangerRate, score) = ${pearson(
+      games.map(g => g.dangerRate),
+      ys
+    ).toFixed(3)}\n`
+  );
 }
 
 function pearson(xs: number[], ys: number[]): number {

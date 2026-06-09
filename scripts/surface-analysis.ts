@@ -44,7 +44,8 @@ function main(): void {
       skipped += 1;
       continue;
     }
-    const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+    const mean = (xs: number[]) =>
+      xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
     games.push({
       file: f,
       score: final.score,
@@ -60,17 +61,23 @@ function main(): void {
   games.sort((a, b) => b.score - a.score);
   const n = games.length;
   const k = Math.max(5, Math.floor(n / 5));
-  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const mean = (xs: number[]) =>
+    xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   const top = games.slice(0, k);
   const bottom = games.slice(n - k);
 
-  process.stdout.write(`\n=== Surface / floor quality — ${n} games (sampled per drop) ===\n\n`);
+  process.stdout.write(
+    `\n=== Surface / floor quality — ${n} games (sampled per drop) ===\n\n`
+  );
   const row = (label: string, sel: (g: Game) => number) =>
     process.stdout.write(
       `${label.padEnd(22)} ALL ${mean(games.map(sel)).toFixed(2).padStart(6)}   ` +
         `TOP ${mean(top.map(sel)).toFixed(2).padStart(6)}   ` +
         `BOTTOM ${mean(bottom.map(sel)).toFixed(2).padStart(6)}   ` +
-        `r=${pearson(games.map(sel), games.map(g => g.score)).toFixed(2)}\n`
+        `r=${pearson(
+          games.map(sel),
+          games.map(g => g.score)
+        ).toFixed(2)}\n`
     );
   row('dead cells (buried)', g => g.meanDead);
   row('bumpiness (roughness)', g => g.meanBumpiness);

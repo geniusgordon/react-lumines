@@ -5,6 +5,7 @@ import { BOARD_HEIGHT, BOARD_WIDTH } from '@/constants/gameConfig';
 import type { BlockPattern, GameBoard, Square } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
 
+import { cellGlyph } from './glyphs';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
 // ---- per-column gravity placement (to annotate which cells a drop added) -----
@@ -126,7 +127,11 @@ function collect(): Payout[] {
         const snap: DropSnap = {
           board: pre.board.map(r => [...r]),
           x: pre.blockPosition.x,
-          placed: place(pre.board, pre.currentBlock.pattern, pre.blockPosition.x),
+          placed: place(
+            pre.board,
+            pre.currentBlock.pattern,
+            pre.blockPosition.x
+          ),
         };
         buffer.push(snap);
         if (buffer.length > HIST) {
@@ -154,10 +159,6 @@ function collect(): Payout[] {
   return out;
 }
 
-function sym(v: number): string {
-  return v === 1 ? 'L' : v === 2 ? 'D' : '·';
-}
-
 function printBoard(
   board: GameBoard,
   lo: number,
@@ -171,14 +172,13 @@ function printBoard(
     let line = '   ';
     for (let x = lo; x <= hi; x++) {
       const k = `${x},${y}`;
-      let ch = sym(board[y][x]);
+      const v = board[y][x];
       if (marked?.has(k)) {
-        ch = ch.toLowerCase() === ch ? ch : ch; // keep letter; mark with *
-        line += `${ch}*`;
+        line += `${cellGlyph(v, true)} `; // cleared this sweep (◌/◍)
       } else if (placed?.has(k)) {
-        line += `${ch}+`;
+        line += `${cellGlyph(v)}*`; // placed by this drop
       } else {
-        line += `${ch} `;
+        line += `${cellGlyph(v)} `;
       }
       line += ' ';
     }
@@ -191,11 +191,14 @@ function main(): void {
   const payouts = collect();
 
   if (mode === 'caps' || mode === 'all') {
-    process.stdout.write(`\n=== Off-color-on-top test — ${payouts.length} payouts ===\n`);
+    process.stdout.write(
+      `\n=== Off-color-on-top test — ${payouts.length} payouts ===\n`
+    );
     // Bucket payouts by whether the field top survived as off-color (blocking).
     const withBlock = payouts.filter(p => p.blockingCaps > 0);
     const noBlock = payouts.filter(p => p.blockingCaps === 0);
-    const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+    const mean = (xs: number[]) =>
+      xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
     process.stdout.write(
       `\nfields with a SURVIVING off-color cap on top: ${withBlock.length} ` +
         `(${Math.round((100 * withBlock.length) / payouts.length)}%)\n`
@@ -221,7 +224,10 @@ function main(): void {
         `blocking-cap ${block} (${Math.round((100 * block) / tot)}%)\n`
     );
     // Among the biggest harvests, what do their tops look like?
-    const big = payouts.slice().sort((a, b) => b.delta - a.delta).slice(0, 20);
+    const big = payouts
+      .slice()
+      .sort((a, b) => b.delta - a.delta)
+      .slice(0, 20);
     const bigOpen = big.reduce((s, p) => s + p.openTops, 0);
     const bigBlock = big.reduce((s, p) => s + p.blockingCaps, 0);
     const bigHarv = big.reduce((s, p) => s + p.harvestedCaps, 0);
@@ -242,9 +248,16 @@ function main(): void {
   }
 
   if (mode === 'trace' || mode === 'all') {
-    const big = payouts.slice().sort((a, b) => b.delta - a.delta).slice(0, 3);
-    process.stdout.write(`\n=== Construction of the ${big.length} biggest harvests ===\n`);
-    process.stdout.write(`(+ = cell this drop placed; * = cell cleared in the harvest)\n`);
+    const big = payouts
+      .slice()
+      .sort((a, b) => b.delta - a.delta)
+      .slice(0, 3);
+    process.stdout.write(
+      `\n=== Construction of the ${big.length} biggest harvests ===\n`
+    );
+    process.stdout.write(
+      `(· empty  ○ light  ● dark;  * = placed this drop;  ◌/◍ = cleared in the harvest)\n`
+    );
     for (const p of big) {
       const lo = Math.max(0, Math.min(...p.cols) - 1);
       const hi = Math.min(BOARD_WIDTH - 1, Math.max(...p.cols) + 1);
@@ -257,10 +270,18 @@ function main(): void {
       let i = 0;
       for (const s of p.history) {
         i += 1;
-        process.stdout.write(`\n  drop -${p.history.length - i} (@col ${s.x}):\n`);
-        printBoard(s.board, lo, hi, undefined, new Set(s.placed.map(c => `${c.x},${c.y}`)));
+        process.stdout.write(
+          `\n  drop -${p.history.length - i} (@col ${s.x}):\n`
+        );
+        printBoard(
+          s.board,
+          lo,
+          hi,
+          undefined,
+          new Set(s.placed.map(c => `${c.x},${c.y}`))
+        );
       }
-      process.stdout.write(`\n  >>> at cash (marked = *):\n`);
+      process.stdout.write(`\n  >>> at cash (◌/◍ = cleared):\n`);
       printBoard(p.board, lo, hi, markSet);
     }
   }

@@ -9,7 +9,11 @@ import { detectPatterns, rotateBlockPattern } from '@/utils/gameLogic';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
 // Settle a block (per-column gravity) and return resulting board, or null if illegal.
-function place(board: GameBoard, pattern: BlockPattern, x: number): GameBoard | null {
+function place(
+  board: GameBoard,
+  pattern: BlockPattern,
+  x: number
+): GameBoard | null {
   const w = pattern[0].length;
   if (x < 0 || x + w > BOARD_WIDTH) {
     return null;
@@ -36,7 +40,10 @@ function place(board: GameBoard, pattern: BlockPattern, x: number): GameBoard | 
 }
 
 // Best window delta achievable for one block over all rotations x columns.
-function bestWindows(board: GameBoard, pat: BlockPattern): { windows: number; board: GameBoard } {
+function bestWindows(
+  board: GameBoard,
+  pat: BlockPattern
+): { windows: number; board: GameBoard } {
   const base = detectPatterns(board).length;
   let best = { windows: 0, board };
   let p = pat;
@@ -95,7 +102,11 @@ function main(): void {
         const base = detectPatterns(pre.board).length;
 
         // chosen current placement
-        const chosenBoard = place(pre.board, pre.currentBlock.pattern, pre.blockPosition.x);
+        const chosenBoard = place(
+          pre.board,
+          pre.currentBlock.pattern,
+          pre.blockPosition.x
+        );
         if (!chosenBoard) {
           return;
         }
@@ -121,7 +132,9 @@ function main(): void {
     games.push({
       file: f,
       score: final.score,
-      setupGain: setupGains.length ? setupGains.reduce((a, b) => a + b, 0) / setupGains.length : 0,
+      setupGain: setupGains.length
+        ? setupGains.reduce((a, b) => a + b, 0) / setupGains.length
+        : 0,
       forecastRate: drops ? forecast / drops : 0,
     });
   }
@@ -132,11 +145,14 @@ function main(): void {
   games.sort((a, b) => b.score - a.score);
   const n = games.length;
   const k = Math.max(5, Math.floor(n / 5));
-  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const mean = (xs: number[]) =>
+    xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
   const top = games.slice(0, k);
   const bottom = games.slice(n - k);
 
-  process.stdout.write(`\n=== Queue / forecast play — ${n} games (2-ply vs greedy) ===\n\n`);
+  process.stdout.write(
+    `\n=== Queue / forecast play — ${n} games (2-ply vs greedy) ===\n\n`
+  );
   process.stdout.write(
     `setup-gain (extra windows the NEXT block gains from the chosen vs greedy move):\n` +
       `  ALL ${mean(games.map(g => g.setupGain)).toFixed(3)}   ` +
@@ -150,8 +166,14 @@ function main(): void {
       `BOTTOM ${(100 * mean(bottom.map(g => g.forecastRate))).toFixed(1)}%\n`
   );
   process.stdout.write(
-    `\nPearson(setup-gain, score)   = ${pearson(games.map(g => g.setupGain), games.map(g => g.score)).toFixed(3)}\n` +
-      `Pearson(forecast-rate, score) = ${pearson(games.map(g => g.forecastRate), games.map(g => g.score)).toFixed(3)}\n`
+    `\nPearson(setup-gain, score)   = ${pearson(
+      games.map(g => g.setupGain),
+      games.map(g => g.score)
+    ).toFixed(3)}\n` +
+      `Pearson(forecast-rate, score) = ${pearson(
+        games.map(g => g.forecastRate),
+        games.map(g => g.score)
+      ).toFixed(3)}\n`
   );
 }
 

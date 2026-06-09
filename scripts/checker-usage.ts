@@ -4,9 +4,10 @@ import { join } from 'node:path';
 import { BOARD_HEIGHT, BOARD_WIDTH } from '@/constants/gameConfig';
 import type { BlockPattern, GameBoard, Square } from '@/types/game';
 import type { ReplayData } from '@/types/replay';
-import { computeDecisionRegret } from '@/utils/placementMetrics';
 import { detectPatterns } from '@/utils/gameLogic';
+import { computeDecisionRegret } from '@/utils/placementMetrics';
 
+import { cellGlyph } from './glyphs';
 import { simulateReplay } from './metrics-corpus/simulateReplay';
 
 // A checker is a 2x2 with the two diagonals each one color and the colors
@@ -84,8 +85,18 @@ interface Agg {
 
 function main(): void {
   const dir = 'replays';
-  const checker: Agg = { drops: 0, windowsCreated: 0, productive: 0, regretFree: 0 };
-  const other: Agg = { drops: 0, windowsCreated: 0, productive: 0, regretFree: 0 };
+  const checker: Agg = {
+    drops: 0,
+    windowsCreated: 0,
+    productive: 0,
+    regretFree: 0,
+  };
+  const other: Agg = {
+    drops: 0,
+    windowsCreated: 0,
+    productive: 0,
+    regretFree: 0,
+  };
   const checkerDrops: CheckerDrop[] = [];
   let skipped = 0;
 
@@ -101,8 +112,18 @@ function main(): void {
     }
 
     const pending: CheckerDrop[] = [];
-    const localChecker: Agg = { drops: 0, windowsCreated: 0, productive: 0, regretFree: 0 };
-    const localOther: Agg = { drops: 0, windowsCreated: 0, productive: 0, regretFree: 0 };
+    const localChecker: Agg = {
+      drops: 0,
+      windowsCreated: 0,
+      productive: 0,
+      regretFree: 0,
+    };
+    const localOther: Agg = {
+      drops: 0,
+      windowsCreated: 0,
+      productive: 0,
+      regretFree: 0,
+    };
 
     const final = simulateReplay(replay, {
       onDrop: ({ pre }) => {
@@ -184,7 +205,8 @@ function main(): void {
     process.stderr.write(`(skipped ${skipped} non-reproducing replay(s))\n`);
   }
 
-  const pct = (n: number, d: number) => (d === 0 ? '0%' : `${Math.round((100 * n) / d)}%`);
+  const pct = (n: number, d: number) =>
+    d === 0 ? '0%' : `${Math.round((100 * n) / d)}%`;
   const per = (n: number, d: number) => (d === 0 ? '0' : (n / d).toFixed(2));
 
   process.stdout.write(
@@ -224,16 +246,20 @@ function main(): void {
   );
 
   // Top examples where a checker cell completed windows — read off the pattern.
-  process.stdout.write(`\n--- top checker placements that completed windows (local snippet) ---\n`);
+  process.stdout.write(
+    `\n--- top checker placements that completed windows (local snippet) ---\n`
+  );
   const top = touching
     .slice()
-    .sort((a, b) => b.createdTouching - a.createdTouching || b.created - a.created)
+    .sort(
+      (a, b) => b.createdTouching - a.createdTouching || b.created - a.created
+    )
     .slice(0, 6);
   for (const d of top) {
     printExample(d);
   }
   process.stdout.write(
-    `\nLegend: L=light D=dark ·=empty   [x]=cell placed by this checker drop\n`
+    `\nLegend: · empty  ○ light  ● dark   * = cell placed by this checker drop\n`
   );
 }
 
@@ -246,17 +272,16 @@ function printExample(d: CheckerDrop): void {
   const ys = d.cells.map(c => c.y);
   const top = Math.max(0, Math.min(...ys) - 2);
   const bot = Math.min(BOARD_HEIGHT - 1, Math.max(...ys) + 1);
-  const sym = (v: number) => (v === 1 ? 'L' : v === 2 ? 'D' : '·');
   process.stdout.write(
     `\n${d.file.slice(0, 8)}  checker @col ${d.x}  created ${d.created} win (${d.createdTouching} using a checker cell), regret ${d.regret}\n`
   );
-  process.stdout.write(`  cols ${lo}..${hi}   (after drop)\n`);
+  process.stdout.write(`  cols ${lo}..${hi}   (after drop; * = placed)\n`);
   for (let y = top; y <= bot && after; y++) {
     let line = '  ';
     for (let x = lo; x <= hi; x++) {
       const here = `${x},${y}`;
-      const ch = sym(after.board[y][x]);
-      line += placed.has(here) ? `[${ch}]` : ` ${ch} `;
+      const ch = cellGlyph(after.board[y][x]);
+      line += (placed.has(here) ? `${ch}*` : `${ch} `) + ' ';
     }
     process.stdout.write(line + '\n');
   }

@@ -31,9 +31,11 @@ function phaseOf(frac: number): 'early' | 'mid' | 'late' {
 }
 
 function pct(n: number, d: number): string {
-  return d === 0 ? '  0%' : `${Math.round((100 * n) / d)
-    .toString()
-    .padStart(3)}%`;
+  return d === 0
+    ? '  0%'
+    : `${Math.round((100 * n) / d)
+        .toString()
+        .padStart(3)}%`;
 }
 
 function main(): void {
@@ -63,7 +65,7 @@ function main(): void {
         const windows = post.score - pre.score;
         const gapCol = post.timeline.x;
         const leak = analyzePayout(pre.board, pre.markedCells, windows, gapCol);
-        const frac = (post.frame / 60) * 1000 / duration;
+        const frac = ((post.frame / 60) * 1000) / duration;
         leaks.push({ ...leak, file: f, phase: phaseOf(frac) });
       },
     });
@@ -104,7 +106,9 @@ function main(): void {
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
   // ---- Corpus summary -----------------------------------------------------
-  process.stdout.write(`\n=== Leak audit — ${games.length} reproducing games ===\n\n`);
+  process.stdout.write(
+    `\n=== Leak audit — ${games.length} reproducing games ===\n\n`
+  );
   process.stdout.write(
     `payouts: ${totalPayouts}   ` +
       `premature (<8 win): ${premature.length} (${pct(premature.length, totalPayouts)})   ` +
@@ -138,7 +142,9 @@ function main(): void {
         .toString()
         .padStart(3)}   premature ${prem.length
         .toString()
-        .padStart(3)} (${pct(prem.length, inPhase.length)})   bridgeable ${brid.length
+        .padStart(
+          3
+        )} (${pct(prem.length, inPhase.length)})   bridgeable ${brid.length
         .toString()
         .padStart(3)}\n`
     );
@@ -155,25 +161,33 @@ function main(): void {
     process.stdout.write(
       `  ${name.padEnd(5)}  premature ${prem.length
         .toString()
-        .padStart(3)} (${pct(prem.length, premature.length)} of premature)   bridgeable ${brid.length
+        .padStart(
+          3
+        )} (${pct(prem.length, premature.length)} of premature)   bridgeable ${brid.length
         .toString()
         .padStart(3)}\n`
     );
   }
 
   // ---- Cluster by gap column ----------------------------------------------
-  process.stdout.write(`\n--- where the sweep cashed early (gap column of premature payouts) ---\n`);
+  process.stdout.write(
+    `\n--- where the sweep cashed early (gap column of premature payouts) ---\n`
+  );
   const byCol = new Map<number, number>();
   for (const l of premature) {
     byCol.set(l.gapCol, (byCol.get(l.gapCol) ?? 0) + 1);
   }
   const cols = [...byCol.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
   for (const [col, n] of cols) {
-    process.stdout.write(`  col ${col.toString().padStart(2)}  ${'█'.repeat(n)} ${n}\n`);
+    process.stdout.write(
+      `  col ${col.toString().padStart(2)}  ${'█'.repeat(n)} ${n}\n`
+    );
   }
 
   // ---- Worst games --------------------------------------------------------
-  process.stdout.write(`\n--- worst offenders (most bridgeable fragmentation) ---\n`);
+  process.stdout.write(
+    `\n--- worst offenders (most bridgeable fragmentation) ---\n`
+  );
   const worst = games
     .slice()
     .sort((a, b) => b.bridgeable - a.bridgeable)
